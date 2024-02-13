@@ -1,5 +1,5 @@
 ################################################################################
-# Copyright (c) 2023 - 2024 Advanced Micro Devices, Inc.
+# Copyright (c) 2024 Advanced Micro Devices, Inc.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to dec
@@ -49,36 +49,11 @@ find_library(ROCDECODE_LIBRARY NAMES rocdecode HINTS ${ROCM_PATH}/lib)
 find_path(ROCDECODE_INCLUDE_DIR NAMES rocdecode.h PATHS /opt/rocm/include/rocdecode ${ROCM_PATH}/include/rocdecode)
 find_path(ROCDECODE_INCLUDE_DIR NAMES rocparser.h PATHS /opt/rocm/include/rocparser ${ROCM_PATH}/include/rocparser)
 
-# Backend
-if(BUILD_PYPACKAGE)
-    if(NOT DEFINED BACKEND)
-        set(BACKEND "HIP")   # set default backend to HIP
-    else()
-        message("-- ${Red}Warning: rocPyDecode PyBind backend option: ${BACKEND} -- unknown${ColourReset}")
-        message("-- ${Red}Warning: rocPyDecode PyBind default backend will be enforced${ColourReset}")
-        set(BACKEND "HIP")
-    endif()
-    message("-- ${BoldBlue}rocPyDecode PyBind Backend set to -- ${BACKEND}${ColourReset}")
-
-    # Find HIP Support
-    if(GPU_SUPPORT AND "${BACKEND}" STREQUAL "HIP")
-        if(NOT DEFINED HIP_PATH)
-            if(NOT DEFINED ENV{HIP_PATH})
-                set(HIP_PATH ${ROCM_PATH} CACHE PATH "Path to which HIP has been installed")
-            else()
-                set(HIP_PATH $ENV{HIP_PATH} CACHE PATH "Path to which HIP has been installed")
-            endif()
-        endif()
-        list(APPEND CMAKE_PREFIX_PATH ${ROCM_PATH}/hip ${ROCM_PATH})
-        find_package(HIP QUIET)
-        if(HIP_FOUND)
-            message("-- ${White}rocPyDecode PyBind -- Using HIP -- Path:" ${HIP_PATH} "\tVersion:" ${HIP_VERSION} "\tCompiler:" ${HIP_COMPILER} ${ColourReset})
-        else()
-            set(BUILD_ROCDECODE_PYBIND false)
-            message("-- ${Yellow}rocPyDecode PyBind requires HIP, Not Found${ColourReset}")
-        endif()
-    endif()
-
+# HIP
+if(NOT DEFINED ENV{HIP_PATH})
+    set(HIP_PATH ${ROCM_PATH} CACHE PATH "Path to which HIP has been installed")
+else()
+    set(HIP_PATH $ENV{HIP_PATH} CACHE PATH "Path to which HIP has been installed")
 endif()
 
 # Dependency Check
@@ -97,8 +72,7 @@ if(${BUILD_ROCDECODE_PYBIND})
     include_directories(../../rocDecode/api)
 
     # FFMPEG
-    include_directories(${AVUTIL_INCLUDE_DIR} ${AVCODEC_INCLUDE_DIR}
-                        ${AVFORMAT_INCLUDE_DIR})
+    include_directories(${AVUTIL_INCLUDE_DIR} ${AVCODEC_INCLUDE_DIR} ${AVFORMAT_INCLUDE_DIR})
     set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${FFMPEG_LIBRARIES})
     # Python3	
     include_directories(${Python3_INCLUDE_DIRS})	
