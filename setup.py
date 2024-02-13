@@ -41,6 +41,6 @@ setup(
       packages=find_packages(where='@TARGET_NAME@'),
       package_dir={'amd':'@TARGET_NAME@/amd'},
       include_package_data=True,
-      ext_modules=[Extension('rocPyDecode',sources=['rocPyDecode.cpp','rocPyVideoDecode.cpp','rocPyVideoDemuxer.cpp'], include_dirs=['@pybind11_INCLUDE_DIRS@', '@PROJECT_SOURCE_DIR@'])],
+      ext_modules=[Extension('rocPyDecode',sources=['roc_pydecode.cpp','roc_pyvideodecode.cpp','roc_pyvideodemuxer.cpp'], include_dirs=['@pybind11_INCLUDE_DIRS@', '@PROJECT_SOURCE_DIR@'])],
       distclass=BinaryDistribution
       )

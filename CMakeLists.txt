@@ -54,18 +54,9 @@ if(BUILD_PYPACKAGE)
     if(NOT DEFINED BACKEND)
         set(BACKEND "HIP")   # set default backend to HIP
     else()
-        if("${BACKEND}" STREQUAL "OPENCL" OR "${BACKEND}" STREQUAL "OCL" OR "${BACKEND}" STREQUAL "OpenCL")
-            set(BACKEND "OPENCL")
-        elseif("${BACKEND}" STREQUAL "HIP" OR "${BACKEND}" STREQUAL "hip")
-            set(BACKEND "HIP")
-        elseif("${BACKEND}" STREQUAL "host" OR "${BACKEND}" STREQUAL "CPU" OR "${BACKEND}" STREQUAL "cpu")
-            set(BACKEND "CPU")
-            set(GPU_SUPPORT OFF)
-        else()
-            message("-- ${Red}Warning: rocPyDecode PyBind backend option: ${BACKEND} -- unknown${ColourReset}")
-            message("-- ${Red}Warning: rocPyDecode PyBind default backend will be enforced${ColourReset}")
-            set(BACKEND "HIP")
-        endif()
+        message("-- ${Red}Warning: rocPyDecode PyBind backend option: ${BACKEND} -- unknown${ColourReset}")
+        message("-- ${Red}Warning: rocPyDecode PyBind default backend will be enforced${ColourReset}")
+        set(BACKEND "HIP")
     endif()
     message("-- ${BoldBlue}rocPyDecode PyBind Backend set to -- ${BACKEND}${ColourReset}")
 
@@ -88,16 +79,6 @@ if(BUILD_PYPACKAGE)
         endif()
     endif()
 
-    # Find OpenCL Support
-    if(GPU_SUPPORT AND "${BACKEND}" STREQUAL "OPENCL")
-        find_package(OpenCL QUIET)
-        if(OpenCL_FOUND)
-            message("-- ${White}rocPyDecode PyBind -- Using OpenCL -- Path:" ${OpenCL_LIBRARIES} "\tVersion:" ${CL_TARGET_OpenCL_VERSION})
-        else()
-            set(BUILD_ROCDECODE_PYBIND false)
-            message("-- ${Yellow}rocPyDecode PyBind requires OpenCL, Not Found${ColourReset}")
-        endif()
-    endif()
 endif()
 
 # Dependency Check
@@ -110,16 +91,15 @@ if(${BUILD_ROCDECODE_PYBIND})
     endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)	
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
     
-     # find rocDecode
     # rocDecode
     include_directories (${ROCDECODE_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/..)    
     set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${ROCDECODE_LIBRARY})
     include_directories(../../rocDecode/api)
 
     # FFMPEG
-    include_directories(${AVUTIL_INCLUDE_DIR} ${AVCODEC_INCLUDE_DIR} ${AVFORMAT_INCLUDE_DIR})
+    include_directories(${AVUTIL_INCLUDE_DIR} ${AVCODEC_INCLUDE_DIR}
+                        ${AVFORMAT_INCLUDE_DIR})
     set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${FFMPEG_LIBRARIES})
-
     # Python3	
     include_directories(${Python3_INCLUDE_DIRS})	
     message("-- ${Green}NOTE: rocPyDecode pybind requires Python3, Found --  ${Python3_EXECUTABLE} ${ColourReset}")	
@@ -133,11 +113,10 @@ if(${BUILD_ROCDECODE_PYBIND})
 
     pybind11_add_module(rocPyDecode MODULE ${sources})
     target_link_libraries(rocPyDecode PRIVATE ${LINK_LIBRARY_LIST})
-    # add_dependencies(rocPyDecode rocdecode) # Essam: NOT YET recognized to be present (E: Unable to locate package rocdecode << when: "sudo apt install rocdecode rocdecode-dev rocdecode-test" )
     message("-- ${White}rocPyDecode -- Link Libraries: ${LINK_LIBRARY_LIST}${ColourReset}")
     message("-- ${White}rocPyDecode -- CMAKE_CXX_FLAGS:${CMAKE_CXX_FLAGS}${ColourReset}")
 
-    #SO: temporary fix (for not finding rocdecode):
+    #temporary fix (for not finding rocdecode):
     add_definitions(-D __HIP_PLATFORM_AMD__)
     include_directories(/opt/rocm/include)
 
@@ -153,17 +132,17 @@ if(${BUILD_ROCDECODE_PYBIND})
     CONFIGURE_FILE(setup.py
                 ${CMAKE_BINARY_DIR}/setup.py @ONLY
                 )
-    CONFIGURE_FILE(getrocDecodewheelname.py
-                ${CMAKE_BINARY_DIR}/getrocDecodewheelname.py @ONLY
+    CONFIGURE_FILE(get_rocdecode_wheelname.py
+                ${CMAKE_BINARY_DIR}/get_rocdecode_wheelname.py @ONLY
                 )
-    CONFIGURE_FILE(source/rocPyDecode.cpp
-                ${CMAKE_BINARY_DIR}/rocPyDecode.cpp @ONLY
+    CONFIGURE_FILE(source/roc_pydecode.cpp
+                ${CMAKE_BINARY_DIR}/roc_pydecode.cpp @ONLY
                 )
-    CONFIGURE_FILE(source/rocPyVideoDecode.cpp
-                ${CMAKE_BINARY_DIR}/rocPyVideoDecode.cpp @ONLY
+    CONFIGURE_FILE(source/roc_pyvideodecode.cpp
+                ${CMAKE_BINARY_DIR}/roc_pyvideodecode.cpp @ONLY
                 )
-    CONFIGURE_FILE(source/rocPyVideoDemuxer.cpp
-                ${CMAKE_BINARY_DIR}/rocPyVideoDemuxer.cpp @ONLY
+    CONFIGURE_FILE(source/roc_pyvideodemuxer.cpp
+                ${CMAKE_BINARY_DIR}/roc_pyvideodemuxer.cpp @ONLY
                 )
 
     foreach (filename ${pyfiles})
@@ -174,7 +153,7 @@ if(${BUILD_ROCDECODE_PYBIND})
         configure_file("${filename}" "${CMAKE_BINARY_DIR}/${TARGET_NAME}/${ITEM_PATH_REL}" COPYONLY)
     endforeach (filename)
 
-    execute_process(COMMAND "${Python3_EXECUTABLE}" getrocDecodewheelname.py OUTPUT_VARIABLE PY_WHEELFILE
+    execute_process(COMMAND "${Python3_EXECUTABLE}" get_rocdecode_wheelname.py OUTPUT_VARIABLE PY_WHEELFILE
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
     message(STATUS "Detected rocPyDecode Python wheel filename ${PY_WHEELFILE}")
         

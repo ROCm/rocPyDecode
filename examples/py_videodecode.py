@@ -274,8 +274,8 @@ if b_generate_md5:
 print("\n") # end
 
 
-# examples of command line (from pyRocDecode/build folder):
+# examples of command line :
 # (1)
-# python3 ../pyExample.py -i /opt/rocm/share/rocdecode/video/AMD_driving_virtual_20-H265.mp4
+# python3 ../examples/py_videodecode.py -i /opt/rocm/share/rocdecode/video/AMD_driving_virtual_20-H265.mp4
 # (2)
-# python3 ../pyExample.py -i ../AMP_A_Samsung_4.bit -md5_check ../AMP_A_Samsung_4.md5 -o TEST.raw -m 1
+# python3 ../examples/py_videodecode.py -i ../AMP_A_Samsung_4.bit -md5_check ../AMP_A_Samsung_4.md5 -o TEST.raw -m 1
