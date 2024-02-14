@@ -11,7 +11,6 @@ written primarily in C/C++ language can be used effectively in Python.
 * CMake Version `3.5` or higher
 * Python Version `3`
 * PIP3
-* PIP3 Packages - `numpy`, `opencv-python`, `torch`
 * [CuPy for rocm](https://github.com/ROCmSoftwarePlatform/cupy)
 
 ## rocPyDecode install
