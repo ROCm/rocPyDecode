@@ -37,7 +37,7 @@ setup(
       url='https://github.com/ROCm/rocPyDecode',
       version='1.0.0',
       author='AMD',
-      license='Apache License 2.0',
+      license='MIT License',
       packages=find_packages(where='@TARGET_NAME@'),
       package_dir={'amd':'@TARGET_NAME@/amd'},
       include_package_data=True,

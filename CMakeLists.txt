@@ -24,63 +24,80 @@
 cmake_minimum_required (VERSION 3.5)
 project(rocPyDecode)
 set(TARGET_NAME rocPyDecode)
-option(BUILD_PYPACKAGE  "Build rocPyDecode Python Package" ON)
-
-set(CMAKE_INSTALL_LIBDIR "lib" CACHE STRING "Library install directory")
-include(GNUInstallDirs)
-
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR})
-
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake)
-set(ROCM_PATH /opt/rocm CACHE PATH "Default ROCm Installation Path")
 set(CMAKE_CXX_STANDARD 17)
-set(BUILD_ROCDECODE_PYBIND true)
-set(ROCDECODE_PYTHON ON)
+
+# ROCM Path
+if(DEFINED ENV{ROCM_PATH})
+  set(ROCM_PATH $ENV{ROCM_PATH} CACHE PATH "${White}${PROJECT_NAME}: Default ROCm installation path${ColourReset}")
+elseif(ROCM_PATH)
+  message("-- ${White}${PROJECT_NAME} :ROCM_PATH Set -- ${ROCM_PATH}${ColourReset}")
+else()
+  set(ROCM_PATH /opt/rocm CACHE PATH "${White}${PROJECT_NAME}: Default ROCm installation path${ColourReset}")
+endif()
+
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../../cmake)
+list(APPEND CMAKE_PREFIX_PATH ${ROCM_PATH}/hip ${ROCM_PATH})
+set(CMAKE_CXX_COMPILER ${ROCM_PATH}/llvm/bin/clang++)
+
+# rocDecode sample build type
+set(DEFAULT_BUILD_TYPE "Release")
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE "${DEFAULT_BUILD_TYPE}" CACHE STRING "rocDecode Default Build Type" FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release")
+endif()
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+  # -O0 -- Don't Optimize output file 
+  # -gdwarf-4  -- generate debugging information, dwarf-4 for making valgrind work
+  # -Og -- Optimize for debugging experience rather than speed or size
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -gdwarf-4 -Og")
+else()
+  # -O3       -- Optimize output file 
+  # -DNDEBUG  -- turn off asserts 
+  # -fPIC     -- Generate position-independent code if possible
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -DNDEBUG -fPIC")
+endif()
+
 set(Python3_FIND_VIRTUALENV FIRST)	
 find_package(Python3 QUIET COMPONENTS Interpreter Development)
-find_package(pybind11 QUIET CONFIG)	
-find_package(HALF QUIET)
+
+find_package(pybind11 QUIET CONFIG)
+find_package(HIP QUIET)
 find_package(FFmpeg QUIET)
+
+if (PYTHONVERSION)
+    find_package(Python3 "${PYTHONVERSION}" EXACT QUIET COMPONENTS Interpreter Development)
+else()
+    set(Python3_FIND_VIRTUALENV FIRST)
+    find_package(Python3 QUIET COMPONENTS Interpreter Development)
+endif()
 
 # find rocDecode
 find_library(ROCDECODE_LIBRARY NAMES rocdecode HINTS ${ROCM_PATH}/lib)
 find_path(ROCDECODE_INCLUDE_DIR NAMES rocdecode.h PATHS /opt/rocm/include/rocdecode ${ROCM_PATH}/include/rocdecode)
-find_path(ROCDECODE_INCLUDE_DIR NAMES rocparser.h PATHS /opt/rocm/include/rocparser ${ROCM_PATH}/include/rocparser)
 
-# HIP
-if(NOT DEFINED ENV{HIP_PATH})
-    set(HIP_PATH ${ROCM_PATH} CACHE PATH "Path to which HIP has been installed")
-else()
-    set(HIP_PATH $ENV{HIP_PATH} CACHE PATH "Path to which HIP has been installed")
+if(ROCDECODE_LIBRARY AND ROCDECODE_INCLUDE_DIR)
+    set(ROCDECODE_FOUND TRUE)
+    message("-- ${White}${PROJECT_NAME}: Using rocDecode -- \n\tLibraries:${ROCDECODE_LIBRARY} \n\tIncludes:${ROCDECODE_INCLUDE_DIR}${ColourReset}")
 endif()
 
-# Dependency Check
+if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND) # AND FFMPEG_FOUND) # this works in rocDecode and DOES NOT here, ffmpeg always not found: Essam Aly
 
-if(${BUILD_ROCDECODE_PYBIND})
     # avoid setting the default installation path to /usr/local
     if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)	
         message("-- ${Green}NOTE: rocPyDecode PyBind default installation path -- ${Python3_STDARCH} ${ColourReset}")	
         set(CMAKE_INSTALL_PREFIX_PYTHON ${Python3_STDARCH} CACHE PATH "rocPyDecode PyBind default installation path" FORCE)	
     endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)	
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-    
-    # rocDecode
-    include_directories (${ROCDECODE_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/..)    
-    set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${ROCDECODE_LIBRARY})
-    include_directories(../../rocDecode/api)
-
+	
+    # HIP
+    set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} hip::host)
     # FFMPEG
-    include_directories(${AVUTIL_INCLUDE_DIR} ${AVCODEC_INCLUDE_DIR} ${AVFORMAT_INCLUDE_DIR})
+    include_directories(${AVUTIL_INCLUDE_DIR} ${AVCODEC_INCLUDE_DIR}
+                        ${AVFORMAT_INCLUDE_DIR})
     set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${FFMPEG_LIBRARIES})
-    # Python3	
-    include_directories(${Python3_INCLUDE_DIRS})	
-    message("-- ${Green}NOTE: rocPyDecode pybind requires Python3, Found --  ${Python3_EXECUTABLE} ${ColourReset}")	
-    # PyBind11	
-    include_directories(${pybind11_INCLUDE_DIRS})
-    # half
-    include_directories(${HALF_INCLUDE_DIRS})
+    # rocDecode
+    include_directories (${ROCDECODE_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/..)
+    set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${ROCDECODE_LIBRARY})
 
     file(GLOB_RECURSE pyfiles amd/*.py)
     file(GLOB_RECURSE sources source/*.cpp)
@@ -89,11 +106,7 @@ if(${BUILD_ROCDECODE_PYBIND})
     target_link_libraries(rocPyDecode PRIVATE ${LINK_LIBRARY_LIST})
     message("-- ${White}rocPyDecode -- Link Libraries: ${LINK_LIBRARY_LIST}${ColourReset}")
     message("-- ${White}rocPyDecode -- CMAKE_CXX_FLAGS:${CMAKE_CXX_FLAGS}${ColourReset}")
-
-    #temporary fix (for not finding rocdecode):
-    add_definitions(-D __HIP_PLATFORM_AMD__)
-    include_directories(/opt/rocm/include)
-
+ 
     set_target_properties(rocPyDecode PROPERTIES
         PREFIX "${PYTHON_MODULE_PREFIX}"
         SUFFIX "${PYTHON_MODULE_EXTENSION}"
