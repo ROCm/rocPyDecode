@@ -153,14 +153,6 @@ if(crop_rect[0]!=crop_rect[2] and crop_rect[1]!=crop_rect[3]):
     p_crop_rect.r = crop_rect[2]
     p_crop_rect.b = crop_rect[3]
 
- 
-# params can be passed as args
-# --------------------------------
-# input_file_path = str('/opt/rocm/share/rocdecode/video/AMD_driving_virtual_20-H265.mp4') # 76bf033470ed2b82492ae03840a9a81d
-# input_file_path = str('../AMP_A_Samsung_4.bit')   # 204a86c542bf72ba4959932b02e916a1  
-# output_file_path = np.array("frames.test.raw")    # for visual testing
-# ref_md5_file = str('../AMP_A_Samsung_4.md5')      # carries: 204a86c542bf72ba4959932b02e916a1
-
 output_name_ptr = ctypes.c_void_p(output_file_path.ctypes.data) 
 
 # instantiate decode object 
