@@ -24,11 +24,9 @@ THE SOFTWARE.
     
  using namespace pybind11::literals; // NOLINT
 
-static void *ctypes_void_ptr(const py::object &object)
-{
+static void *ctypes_void_ptr(const py::object &object) {
     auto ptr_as_int = getattr(object, "value", py::none());
-    if (ptr_as_int.is_none())
-    {
+    if (ptr_as_int.is_none()) {
         return nullptr;
     }
     void *ptr = PyLong_AsVoidPtr(ptr_as_int.ptr());
@@ -159,8 +157,7 @@ static const char * GetVideoCodecString(rocDecVideoCodec e_codec) {
  * @param codec_id 
  * @return const char* 
  */
-const char *pyRocVideoDecoder::GetCodecFmtName(rocDecVideoCodec codec_id)
-{
+const char *pyRocVideoDecoder::GetCodecFmtName(rocDecVideoCodec codec_id) {
     return GetVideoCodecString(codec_id);
 }
 
@@ -187,8 +184,7 @@ static const char * GetSurfaceFormatString(rocDecVideoSurfaceFormat surface_form
  * @param surface_format_id - enum for surface format
  * @return const char* 
  */
-const char *pyRocVideoDecoder::GetSurfaceFmtName(rocDecVideoSurfaceFormat surface_format_id)
-{
+const char *pyRocVideoDecoder::GetSurfaceFmtName(rocDecVideoSurfaceFormat surface_format_id) {
     return GetSurfaceFormatString(surface_format_id);
 }
 
@@ -837,7 +833,7 @@ int pyRocVideoDecoder::DecodeFrame(int pkt_flags) {
 }
 
 // for pyhton binding
-py::object pyRocVideoDecoder::wrapper_DecodeFrame(py::object& pkt_flags_in){   
+py::object pyRocVideoDecoder::wrapper_DecodeFrame(py::object& pkt_flags_in) {   
     auto p_pkt_flags = (int *) ctypes_void_ptr(pkt_flags_in);
     int pkt_flags = *p_pkt_flags; 
     int ret = pyRocVideoDecoder::DecodeFrame(pkt_flags);
@@ -850,13 +846,13 @@ uint8_t* pyRocVideoDecoder::GetFrame(int64_t *pts) {
         decoded_frame_cnt_--;
         if (out_mem_type_ == OUT_SURFACE_MEM_DEV_INTERNAL && !vp_frames_q_.empty()) {
             DecFrameBuffer *fb = &vp_frames_q_.front();
-            if (pts){
+            if (pts) {
                 *pts = fb->pts;
             }
             current_frame_ptr = fb->frame_ptr; //essam: save it internally for latter use with other func calls
             return fb->frame_ptr;
         } else {
-            if (pts){
+            if (pts) {
                  *pts = vp_frames_[decoded_frame_cnt_ret_].pts;
             }
             current_frame_ptr = vp_frames_[decoded_frame_cnt_ret_].frame_ptr; //essam: save it internally for latter use with other func calls
@@ -949,10 +945,7 @@ bool pyRocVideoDecoder::ReleaseInternalFrames() {
     return true;
 }
 
- 
-
-
-
+  
 void pyRocVideoDecoder::SaveFrameToFile(std::string output_file_name) {
     uint8_t *hst_ptr = nullptr;
     OutputSurfaceInfo *surf_info = &output_surface_info_; // Essam Added for simplicity

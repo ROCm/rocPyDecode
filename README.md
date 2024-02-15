@@ -1,10 +1,6 @@
 # rocDecode Python Binding
 
-rocDecode Python Binding allows you to call functions and pass data from Python to rocDecode C/C++ libraries,
-letting you take advantage of the rocDecode functionality in both languages.
-
-rocPyDecode.so is a wrapper library that bridges python and C/C++, so that a rocDecode functionality
-written primarily in C/C++ language can be used effectively in Python.
+The rocDecode Python Binding is a tool that allows users to access rocDecode APIs in both Python and C/C++ languages. It works by connecting Python and C/C++ libraries, enabling the calling of functions and data passing between the two languages. The rocPyDecode.so library is a wrapper that facilitates the use of rocDecode APIs that are written primarily in C/C++ language within Python.
 
 ## Prerequisites
 * [rocDecode C/C++ Library](https://github.com/ROCm/rocDecode)
@@ -15,7 +11,6 @@ written primarily in C/C++ language can be used effectively in Python.
 
 ## rocPyDecode install
 
-rocPyDecode installs during rocDecode build with below command
 ```
 sudo cmake --build . --target PyPackageInstall
 ```

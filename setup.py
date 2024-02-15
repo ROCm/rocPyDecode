@@ -33,7 +33,7 @@ class BinaryDistribution(Distribution):
 
 setup(
       name='amd-rocpydecode',
-      description='AMD ROCm Decoder Library',
+      description='AMD ROCm Video Decoder Library',
       url='https://github.com/ROCm/rocPyDecode',
       version='1.0.0',
       author='AMD',

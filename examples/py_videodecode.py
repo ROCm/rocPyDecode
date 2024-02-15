@@ -1,5 +1,5 @@
 # rocPyDecode main module
-import rocPyDecode as pR
+import rocPyDecode as rocpdec
 import ctypes 
 import numpy as np
 import datetime
@@ -18,7 +18,7 @@ b_md5_check = False              # can be passed as arg
 
 # init Params (can be passed as args)
 device_id = 0
-mem_type = pR.OUT_SURFACE_MEM_DEV_INTERNAL
+mem_type = rocpdec.OUT_SURFACE_MEM_DEV_INTERNAL
 b_force_zero_latency = False
 p_crop_rect = None
 b_extract_sei_messages = False
@@ -142,12 +142,12 @@ for i in range(args_count):
         if ((i+1) == args_count):
             ShowHelpAndExit()
         i += 1    
-        mem_type = pR.OutputSurfaceMemoryType(int(sys.argv[i]))
+        mem_type = rocpdec.OutputSurfaceMemoryType(int(sys.argv[i]))
         continue
 
 # did user pass crop rect?
 if(crop_rect[0]!=crop_rect[2] and crop_rect[1]!=crop_rect[3]):
-    p_crop_rect = pR.Rect()
+    p_crop_rect = rocpdec.Rect()
     p_crop_rect.l = crop_rect[0]
     p_crop_rect.t = crop_rect[1]
     p_crop_rect.r = crop_rect[2]
@@ -156,7 +156,7 @@ if(crop_rect[0]!=crop_rect[2] and crop_rect[1]!=crop_rect[3]):
 output_name_ptr = ctypes.c_void_p(output_file_path.ctypes.data) 
 
 # instantiate decode object 
-viddec = pR.pyRocVideoDecoder(input_file_path, device_id, mem_type, b_force_zero_latency, p_crop_rect, b_extract_sei_messages,0,0,0)
+viddec = rocpdec.pyRocVideoDecoder(input_file_path, device_id, mem_type, b_force_zero_latency, p_crop_rect, b_extract_sei_messages,0,0,0)
  
 viddec.GetDeviceinfo(ctypes.c_void_p(device_name.ctypes.data),
                      ctypes.c_void_p(gcn_arch_name.ctypes.data),
@@ -204,14 +204,10 @@ while True:
 
     # Treat False ret as end of stream indicator
     if (b_ret == False):
-        pkg_flags = pkg_flags | [int(pR.ROCDEC_PKT_ENDOFSTREAM)]
+        pkg_flags = pkg_flags | [int(rocpdec.ROCDEC_PKT_ENDOFSTREAM)]
 
     n_frame_returned = viddec.DecodeFrame(ctypes.c_void_p(pkg_flags.ctypes.data))
-
-    end_time = datetime.datetime.now()
-    time_per_frame = end_time - start_time
-    total_dec_time = total_dec_time + time_per_frame.total_seconds()
-    
+  
     b_ret_info = viddec.GetOutputSurfaceInfo() 
 
     if (n_frame==0 and b_ret_info==False):
@@ -230,6 +226,11 @@ while True:
         # release frame        
         viddec.ReleaseFrame(ctypes.c_void_p(pts.ctypes.data), 
                             ctypes.c_void_p(b_t.ctypes.data))
+
+    # measure after completing a whole frame
+    end_time = datetime.datetime.now()
+    time_per_frame = end_time - start_time
+    total_dec_time = total_dec_time + time_per_frame.total_seconds()
 
     n_frame += n_frame_returned
 
