@@ -80,7 +80,7 @@ if(ROCDECODE_LIBRARY AND ROCDECODE_INCLUDE_DIR)
     message("-- ${White}${PROJECT_NAME}: Using rocDecode -- \n\tLibraries:${ROCDECODE_LIBRARY} \n\tIncludes:${ROCDECODE_INCLUDE_DIR}${ColourReset}")
 endif()
 
-if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG_FOUND) # this works in rocDecode and DOES NOT here, ffmpeg always not found: Essam Aly
+if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG_FOUND) 
 
     # avoid setting the default installation path to /usr/local
     if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)	
@@ -90,7 +90,7 @@ if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 	
     # HIP
-    set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} hip::device)
+    set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} hip::host)
     # FFMPEG
     include_directories(${AVUTIL_INCLUDE_DIR} ${AVCODEC_INCLUDE_DIR}
                         ${AVFORMAT_INCLUDE_DIR})
