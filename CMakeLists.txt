@@ -99,8 +99,7 @@ if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
     include_directories (${ROCDECODE_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/..)
     set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${ROCDECODE_LIBRARY})
 
-    file(GLOB_RECURSE pyfiles amd/*.py)
-    file(GLOB_RECURSE sources source/*.cpp)
+    file(GLOB_RECURSE sources src/*.cpp)
 
     pybind11_add_module(rocPyDecode MODULE ${sources})
     target_link_libraries(rocPyDecode PRIVATE ${LINK_LIBRARY_LIST})
@@ -113,22 +112,19 @@ if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}")
     set(TARGET_PYMODULE_NAME "${PYTHON_MODULE_PREFIX}rocPyDecode${PYTHON_MODULE_EXTENSION}")
 
-    CONFIGURE_FILE(amd/__init__.py
-                ${CMAKE_BINARY_DIR}/${TARGET_NAME}/__init__.py @ONLY
-                )
     CONFIGURE_FILE(setup.py
                 ${CMAKE_BINARY_DIR}/setup.py @ONLY
                 )
     CONFIGURE_FILE(get_rocdecode_wheelname.py
                 ${CMAKE_BINARY_DIR}/get_rocdecode_wheelname.py @ONLY
                 )
-    CONFIGURE_FILE(source/roc_pydecode.cpp
+    CONFIGURE_FILE(src/roc_pydecode.cpp
                 ${CMAKE_BINARY_DIR}/roc_pydecode.cpp @ONLY
                 )
-    CONFIGURE_FILE(source/roc_pyvideodecode.cpp
+    CONFIGURE_FILE(src/roc_pyvideodecode.cpp
                 ${CMAKE_BINARY_DIR}/roc_pyvideodecode.cpp @ONLY
                 )
-    CONFIGURE_FILE(source/roc_pyvideodemuxer.cpp
+    CONFIGURE_FILE(src/roc_pyvideodemuxer.cpp
                 ${CMAKE_BINARY_DIR}/roc_pyvideodemuxer.cpp @ONLY
                 )
 

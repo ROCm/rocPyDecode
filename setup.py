@@ -21,6 +21,7 @@
 from setuptools import setup, find_packages, Extension
 from setuptools.dist import Distribution
 import sys
+import os
 
 if sys.version_info < (3, 0):
     sys.exit('rocPyDecode Python Package requires Python > 3.0')
@@ -30,7 +31,7 @@ class BinaryDistribution(Distribution):
     @classmethod
     def has_ext_modules(self):
         return True
-
+ 
 setup(
       name='amd-rocpydecode',
       description='AMD ROCm Video Decoder Library',
@@ -39,8 +40,8 @@ setup(
       author='AMD',
       license='MIT License',
       packages=find_packages(where='@TARGET_NAME@'),
-      package_dir={'amd':'@TARGET_NAME@/amd'},
+      package_dir={'py_package':'@TARGET_NAME@/py_package'},
       include_package_data=True,
-      ext_modules=[Extension('rocPyDecode',sources=['roc_pydecode.cpp','roc_pyvideodecode.cpp','roc_pyvideodemuxer.cpp'], include_dirs=['@pybind11_INCLUDE_DIRS@', '@PROJECT_SOURCE_DIR@'])],
+      ext_modules=[Extension('rocPyDecode',sources=['src/roc_pydecode.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp'], include_dirs=['@pybind11_INCLUDE_DIRS@', '../rocDecode/api','/opt/rocm/include'],extra_compile_args=['-D__HIP_PLATFORM_AMD__'])],
       distclass=BinaryDistribution
       )
