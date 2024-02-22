@@ -42,8 +42,14 @@ parser.add_argument('-m', '--mem_type', type=int, default=0, help='Output surfac
 try:
     args = parser.parse_args()  
 except:
-    print("ERROR: Incorrect arguments were passed.")
-    sys.exit()
+    help_ = False
+    if(len(sys.argv[0])>=2):
+        if(sys.argv[1]=="--help") or (sys.argv[1]=="-h"):
+            help_ = True    
+    if(help_==False):
+        print("ERROR: Incorrect arguments were passed.\n")
+    print("\n")
+    sys.exit()    
 
 input_file_path = args.input
 output_file_path = args.output
@@ -221,5 +227,5 @@ print("\n") # end
 # (1) python3 ../samples/py_videodecode.py -i /opt/rocm/share/rocdecode/video/AMD_driving_virtual_20-H265.mp4
 # (2) python3 ../samples/py_videodecode.py -i ../AMP_A_Samsung_4.bit -md5_check ../AMP_A_Samsung_4.md5 -o TEST.raw -m 1
 # debug in vscode, add this to your debugger launch.json:
-#   "args": [   "-i","/opt/rocm/share/rocdecode/video/AMD_driving_virtual_20-H265.mp4", "-m","1", "-d","0", "-z","True", "-sei","True", "-md5","True", "-md5_check","", "-crop","0","0","100","200"]
+#   "args": ["-i","/opt/rocm/share/rocdecode/video/AMD_driving_virtual_20-H265.mp4", "-m","1", "-d","0", "-z","True", "-sei","True", "-md5","True", "-md5_check","", "-crop","0","0","100","200"]
 
