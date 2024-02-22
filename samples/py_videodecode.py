@@ -4,6 +4,7 @@ import ctypes
 import numpy as np
 import datetime
 import sys
+import argparse
 import os.path
 
 # empty init
@@ -17,141 +18,90 @@ b_generate_md5 = False           # can be passed as arg
 b_md5_check = False              # can be passed as arg
 
 # init Params (can be passed as args)
-device_id = 0
-mem_type = rocpdec.OUT_SURFACE_MEM_DEV_INTERNAL
+b_extract_sei_messages = False
 b_force_zero_latency = False
 p_crop_rect = None
-b_extract_sei_messages = False
-b_flushing = True
 device_name =  np.zeros(100,str)
 gcn_arch_name = np.zeros(100,str)
 pci_bus_id = np.array(1)
 pci_domain_id = np.array(1)
 pci_device_id = np.array(1)
 
-def ShowHelpAndExit():
-    print("\nCommand Line Options:"
-    ,"\n-i             Input File Path - required"
-    ,"\n-o             Output File Path - dumps output if requested; optional"
-    ,"\n-d             GPU device ID (0 for the first device, 1 for the second, etc.);" 
-    ,"\n               optional; default: 0"
-    ,"\n-z             force_zero_latency (force_zero_latency, Decoded frames will be"
-    ,"\n               flushed out for display immediately); optional;"
-    ,"\n-sei           extract SEI messages; optional;"
-    ,"\n-md5           generate MD5 message digest on the decoded YUV image sequence; optional;"
-    ,"\n-md5_check     Input MD5 File Path - generate MD5 message digest on the decoded YUV image" 
-    ,"\n               sequence and compare to the reference MD5 string in a file; optional;"
-    ,"\n-crop          l t r b rectangle for output, l=left, t=top, r=right, b=bottom,"
-    ,"\n               output crop rectangle must have width and height of even numbers,"
-    ,"\n               (not used when using interopped decoded frame); optional; default: [original size]"
-    ,"\n-m             output_surface_memory_type - decoded surface memory; optional; default - 0"
-    ,"\n               [0 : OUT_SURFACE_MEM_DEV_INTERNAL, 1 : OUT_SURFACE_MEM_DEV_COPIED, 2 : OUT_SURFACE_MEM_HOST_COPIED]"
-    ,"\n-h             Display this help information\n\n")
+# accept arguments for: input_file_path, output_file_path, gpu_device_id, force_zero_latency_flag, extract_sei_messages_flag, generate_md5_message_digest_flag, input_md5_file_path, crop_rectangle_4_values, and output_surface_memory_type
+parser = argparse.ArgumentParser(description='PyRocDecode Video Decode Arguments')
+parser.add_argument('-i', '--input', type=str, help='Input File Path - required')
+parser.add_argument('-o', '--output', type=str, help='Output File Path - optional')
+parser.add_argument('-d', '--device', type=int, default=0, help='GPU device ID - optional, default 0')
+parser.add_argument('-z', '--zero_latency', type=str, help='Force zero latency - [optios: yes,no], default: no')
+parser.add_argument('-sei', '--extract_sei', type=str, help='Extract SEI messages - [optios: yes,no], default: no')
+parser.add_argument('-md5', '--generate_md5',type=str, help='Generate MD5 message digest - [optios: yes,no], default: no')
+parser.add_argument('-md5_check', '--input_md5', type=str, help='Input MD5 File Path, optional, if passed  then -md5 set to yes')
+parser.add_argument('-crop', '--crop_rect', nargs='+', type=int, help='Crop rectangle (left, top, right, bottom), optional, default: no cropping')
+parser.add_argument('-m', '--mem_type', type=int, default=0, help='Output surface memory type, default 0, [options: 0:OUT_SURFACE_MEM_DEV_INTERNAL, 1:OUT_SURFACE_MEM_DEV_COPIED, 2:OUT_SURFACE_MEM_HOST_COPIED]')
+
+try:
+    args = parser.parse_args()  
+except:
+    print("ERROR: Incorrect arguments were passed.")
     sys.exit()
 
-# parser for the params:
-# ----------------------
-args_count = len(sys.argv)
-
-if args_count<=1:    
-    ShowHelpAndExit()
-
-crop_rect = np.zeros(4,int) # left, top, right, bottom, all zeros now
-
-for i in range(args_count):
-
-    # help 
-    if (sys.argv[i] == "-h"):
-        ShowHelpAndExit()
-        continue
-
-    # input file name-path
-    if (sys.argv[i] == "-i"):
-        if ((i+1) == args_count):
-            ShowHelpAndExit()
-        i += 1
-        input_file_path = str(sys.argv[i])
-        if (input_file_path==""):
-            ShowHelpAndExit()
-        if(os.path.isfile(input_file_path) == False):
-            print("File name:", input_file_path, " doesn't exist, please check params .." )
-            ShowHelpAndExit()
-        continue
-
-    # output file name, enable b_dump_output_frames
-    if (sys.argv[i] == "-o"):
-        if ((i+1) == args_count):
-            ShowHelpAndExit()
-        i += 1
-        output_file_path = np.array(sys.argv[i])
-        if (output_file_path==""):
-            print("Output File Name is empty, please check params .." )
-            ShowHelpAndExit()
-             
-        b_dump_output_frames = True
-        continue
-    
-    # device id
-    if (sys.argv[i] == "-d"):
-        if ((i+1) == args_count):
-            ShowHelpAndExit()
-        i += 1
-        device_id = int(sys.argv[i])
-        continue
-  
-    # b_force_zero_latency
-    if (sys.argv[i] == "-z"):       
-        b_force_zero_latency = True
-        continue
-
-    # b_extract_sei_messages
-    if (sys.argv[i] == "-sei"):    
-        b_extract_sei_messages = True
-        continue      
-
-    # b_generate_md5
-    if (sys.argv[i] == "-md5"):
-        b_generate_md5 = True
-        continue
+input_file_path = args.input
+output_file_path = args.output
+device_id = args.device
+force_zero_latency = args.zero_latency
+extract_sei_messages = args.extract_sei
+generate_md5 = args.generate_md5
+ref_md5_file = args.input_md5
+crop_rect = args.crop_rect
+mem_type = rocpdec.OutputSurfaceMemoryType(args.mem_type)
  
-    # b_generate_md5, b_md5_check, ref_md5_file
-    if (sys.argv[i] == "-md5_check"):
-        if ((i+1) == args_count):
-            ShowHelpAndExit()        
-        i += 1
-        ref_md5_file = str(sys.argv[i])
-        if(os.path.isfile(ref_md5_file) == False):
-            print("File name:", ref_md5_file, " doesn't exist, please check params .." )
-            ShowHelpAndExit()        
-        b_generate_md5 = True 
+# do we have rect from user
+if (args.crop_rect != None):
+    if (args.crop_rect != [0,0,0,0]):
+        p_crop_rect = rocpdec.Rect()
+        p_crop_rect.l = crop_rect[0]
+        p_crop_rect.t = crop_rect[1]
+        p_crop_rect.r = crop_rect[2]
+        p_crop_rect.b = crop_rect[3]
+    
+# Input file name (must)
+valid_input = False
+if (input_file_path!=None):
+    if os.path.exists(input_file_path):
+        valid_input= True
+if (valid_input==False):
+    print("ERROR: Must provide valid input file full path name")
+    exit()
+
+# Output file name (optional, & flag to dump frames out)  
+if (output_file_path!=None ):
+    b_dump_output_frames = True
+
+# md5 file full path, & md5 flag
+if (ref_md5_file!=None):
+    if os.path.exists(ref_md5_file):
+        b_generate_md5 = True
+
+# md5
+if (generate_md5 in ('yes','no')):
+    if generate_md5 =='yes':
         b_md5_check = True
-        continue
+ 
+# force 0 latency
+if (force_zero_latency in ('yes','no')):
+    if force_zero_latency =='yes':
+        b_force_zero_latency = True
 
-    # crop rectangle
-    if (sys.argv[i] == "-crop"):
-        if ((i+4) >= args_count):
-            ShowHelpAndExit()
-        for s in range(4):
-            crop_rect[s] = int(sys.argv[i+(s+1)])
-        print("Crop: ", crop_rect)
-        i += 3 # for loop will add another 1
-        continue
+# sei
+if (extract_sei_messages in ('yes','no')):
+    if extract_sei_messages =='yes':
+        b_extract_sei_messages = True
 
-    # mem_type, memory type
-    if (sys.argv[i] == "-m"):
-        if ((i+1) == args_count):
-            ShowHelpAndExit()
-        i += 1    
-        mem_type = rocpdec.OutputSurfaceMemoryType(int(sys.argv[i]))
-        continue
-
-# did user pass crop rect?
-if(crop_rect[0]!=crop_rect[2] and crop_rect[1]!=crop_rect[3]):
-    p_crop_rect = rocpdec.Rect()
-    p_crop_rect.l = crop_rect[0]
-    p_crop_rect.t = crop_rect[1]
-    p_crop_rect.r = crop_rect[2]
-    p_crop_rect.b = crop_rect[3]
+# valid to pass
+if (output_file_path==None):
+    output_file_path = np.array("")
+else:
+    output_file_path = np.array(output_file_path)
 
 output_name_ptr = ctypes.c_void_p(output_file_path.ctypes.data) 
 
@@ -268,7 +218,8 @@ print("\n") # end
 
 
 # examples of command line :
-# (1)
-# python3 ../examples/py_videodecode.py -i /opt/rocm/share/rocdecode/video/AMD_driving_virtual_20-H265.mp4
-# (2)
-# python3 ../examples/py_videodecode.py -i ../AMP_A_Samsung_4.bit -md5_check ../AMP_A_Samsung_4.md5 -o TEST.raw -m 1
+# (1) python3 ../samples/py_videodecode.py -i /opt/rocm/share/rocdecode/video/AMD_driving_virtual_20-H265.mp4
+# (2) python3 ../samples/py_videodecode.py -i ../AMP_A_Samsung_4.bit -md5_check ../AMP_A_Samsung_4.md5 -o TEST.raw -m 1
+# debug in vscode, add this to your debugger launch.json:
+#   "args": [   "-i","/opt/rocm/share/rocdecode/video/AMD_driving_virtual_20-H265.mp4", "-m","1", "-d","0", "-z","True", "-sei","True", "-md5","True", "-md5_check","", "-crop","0","0","100","200"]
+
