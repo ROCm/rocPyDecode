@@ -1,5 +1,5 @@
-# rocPyDecode main module
-import rocPyDecode as rocpdec
+
+import rocPyDecode as rocpdec   # rocPyDecode main module
 import ctypes 
 import numpy as np
 import datetime
