@@ -13,11 +13,11 @@ output_file_path = np.array("")
 ref_md5_file = ""
  
 # init for decoding
-b_dump_output_frames = False     # can be passed as arg
-b_generate_md5 = False           # can be passed as arg
-b_md5_check = False              # can be passed as arg
+b_dump_output_frames = False     # set if "Output File Path" is passed as arg
+b_generate_md5 = False           # set if "Input MD5 File Path" is passed as arg
+b_md5_check = False              # set if "generate_md5" is passed as arg
 
-# init Params (can be passed as args)
+# init Params (set based on passed args)
 b_extract_sei_messages = False
 b_force_zero_latency = False
 p_crop_rect = None
