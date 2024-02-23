@@ -227,5 +227,5 @@ print("\n") # end
 # (1) python3 ../samples/py_videodecode.py -i /opt/rocm/share/rocdecode/video/AMD_driving_virtual_20-H265.mp4
 # (2) python3 ../samples/py_videodecode.py -i ../AMP_A_Samsung_4.bit -md5_check ../AMP_A_Samsung_4.md5 -o TEST.raw -m 1
 # To debug in vscode, add this [example arg list] to your debugger launch.json:
-# "args": ["-i","/opt/rocm/share/rocdecode/video/AMD_driving_virtual_20-H265.mp4","-o","test_frames_out.RAW","-m","1", "-d","0","-z","yes","-sei","yes","-md5","yes","-md5_check","out_file_name.txt","-crop","0","0","100","200"]
+# "args": ["-i","/opt/rocm/share/rocdecode/video/AMD_driving_virtual_20-H265.mp4","-o","test_frames_out.RAW","-m","1", "-d","0","-z","yes","-sei","yes","-md5","yes","-md5_check","input_md5_file_name.txt","-crop","0","0","100","200"]
 
