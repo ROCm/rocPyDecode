@@ -87,11 +87,14 @@ if (output_file_path!=None ):
 if (ref_md5_file!=None):
     if os.path.exists(ref_md5_file):
         b_generate_md5 = True
+        b_md5_check = True
+    else:
+        print("Warning: The reference MD5 input file full path name is not valid,\n\t incorrect, or file doesn't exist,\n\t no MD5 check will be performed.\n")
 
 # md5
 if (generate_md5 in ('yes','no')):
     if generate_md5 =='yes':
-        b_md5_check = True
+        b_generate_md5 = True
  
 # force 0 latency
 if (force_zero_latency in ('yes','no')):
