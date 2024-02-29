@@ -25,17 +25,13 @@ THE SOFTWARE.
 namespace py = pybind11;
 
 PYBIND11_MODULE(rocPyDecode, m) {
-    // py::options options;
-    // options.enable_function_signatures();
-
+ 
     m.doc() = "Python bindings for the C++ portions of rocDecode ..";
 
-    py::enum_<OutputSurfaceMemoryType>(m, "OutputSurfaceMemoryType", "")
-        .value("OUT_SURFACE_MEM_DEV_INTERNAL",OUT_SURFACE_MEM_DEV_INTERNAL)
-        .value("OUT_SURFACE_MEM_DEV_COPIED",OUT_SURFACE_MEM_DEV_COPIED)
-        .value("OUT_SURFACE_MEM_HOST_COPIED",OUT_SURFACE_MEM_HOST_COPIED)
-        .export_values(); 
-        
+    // ----------------
+    // Class/Structure:
+    // ----------------
+
     py::class_<Rect>(m, "Rect")
         .def(py::init<>())
         .def_readwrite("l",&Rect::l)
@@ -43,7 +39,19 @@ PYBIND11_MODULE(rocPyDecode, m) {
         .def_readwrite("r",&Rect::r)
         .def_readwrite("b",&Rect::b);
 
-    py::enum_<RocdecVideoPacketFlags>(m,"RocdecVideoPacketFlags")
+    // ------
+    // Types:
+    // ------
+    py::module types_m = m.def_submodule("types");
+    types_m.doc() = "Datatypes and options used by rocdecode";
+
+    py::enum_<OutputSurfaceMemoryType>(types_m, "OutputSurfaceMemoryType", "Surface Memory Types")
+        .value("OUT_SURFACE_MEM_DEV_INTERNAL",OUT_SURFACE_MEM_DEV_INTERNAL)
+        .value("OUT_SURFACE_MEM_DEV_COPIED",OUT_SURFACE_MEM_DEV_COPIED)
+        .value("OUT_SURFACE_MEM_HOST_COPIED",OUT_SURFACE_MEM_HOST_COPIED)
+        .export_values(); 
+
+    py::enum_<RocdecVideoPacketFlags>(types_m,"RocdecVideoPacketFlags","Video Packet Flags")
         .value("ROCDEC_PKT_ENDOFSTREAM",ROCDEC_PKT_ENDOFSTREAM)
         .value("ROCDEC_PKT_TIMESTAMP",ROCDEC_PKT_TIMESTAMP)
         .value("ROCDEC_PKT_DISCONTINUITY",ROCDEC_PKT_DISCONTINUITY)
