@@ -17,31 +17,3 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
-
-from setuptools import setup, find_packages, Extension
-from setuptools.dist import Distribution
-import sys
-import os
-
-if sys.version_info < (3, 0):
-    sys.exit('rocPyDecode Python Package requires Python > 3.0')
-
-class BinaryDistribution(Distribution):
-    """Distribution which always forces a binary package with platform name"""
-    @classmethod
-    def has_ext_modules(self):
-        return True
- 
-setup(
-      name='amd-rocpydecode',
-      description='AMD ROCm Video Decoder Library',
-      url='https://github.com/ROCm/rocPyDecode',
-      version='1.0.0',
-      author='AMD',
-      license='MIT License',
-      packages=find_packages(where='@TARGET_NAME@'),
-      package_dir={'rocdecode':'@TARGET_NAME@/rocdecode'},
-      include_package_data=True,
-      ext_modules=[Extension('rocPyDecode',sources=['src/roc_pydecode.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp'], include_dirs=['@pybind11_INCLUDE_DIRS@', '../rocDecode/api','/opt/rocm/include'],extra_compile_args=['-D__HIP_PLATFORM_AMD__'])],
-      distclass=BinaryDistribution
-      )
