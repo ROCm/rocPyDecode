@@ -22,6 +22,7 @@ THE SOFTWARE.
 
 #include "../inc/roc_pyvideodecode.h"
 
+using namespace std;
 namespace py = pybind11;
 
 PYBIND11_MODULE(rocPyDecode, m) {
@@ -59,19 +60,17 @@ PYBIND11_MODULE(rocPyDecode, m) {
         .value("ROCDEC_PKT_NOTIFY_EOS",ROCDEC_PKT_NOTIFY_EOS)
         .export_values(); 
 
-    // ---------------
-    // Demuxer
-    // ---------------
-    py::class_<pyVideoDemuxer> (m, "pyVideoDemuxer")
+    // -------------------------------
+    // USER Demuxer 'usrVideoDemuxer'
+    // -------------------------------
+    py::class_<pyVideoDemuxer, usrVideoDemuxer, std::shared_ptr<pyVideoDemuxer>> (m, "usrVideoDemuxer")
         .def(py::init<const char*>())
-        .def("GetCodecID",&pyVideoDemuxer::GetCodecID,"get Codec ID")
-        .def("Demux",&pyVideoDemuxer::wrapper_Demux);
-         py::class_<pyVideoDemuxer::StreamProvider>(m,"StreamProvider")
-            .def("GetData",&pyVideoDemuxer::StreamProvider::GetData,"get data");
+        .def("GetCodec_ID",&pyVideoDemuxer::GetCodec_ID,"Get Codec ID")
+        .def("DemuxFrame",&pyVideoDemuxer::DemuxFrame);
 
-    // ---------------
-    // pyRocVideoDecoder
-    // ---------------
+    // --------------------------------------
+    // AMD Video Decoder 'pyRocVideoDecoder'
+    // --------------------------------------
     py::class_<pyRocVideoDecoder> (m, "pyRocVideoDecoder")
         .def(py::init<const char*,int,OutputSurfaceMemoryType,bool,const Rect *,bool,int,int,uint32_t>())
         .def("GetDeviceinfo",&pyRocVideoDecoder::wrapper_GetDeviceinfo)

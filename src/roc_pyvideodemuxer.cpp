@@ -47,6 +47,23 @@ extern "C" {
 
 namespace py = pybind11;
   
+usrVideoDemuxer::usrVideoDemuxer(const char *input_file_path) : pyVideoDemuxer(input_file_path)
+{
+}
+usrVideoDemuxer::~usrVideoDemuxer()
+{
+}
+
+bool usrVideoDemuxer::DemuxFrame()
+{
+    return Demux();
+}
+
+AVCodecID usrVideoDemuxer::GetCodec_ID() 
+{
+    return GetCodecID();
+}
+
 pyVideoDemuxer::~pyVideoDemuxer() {
     if (!av_fmt_input_ctx_) {
         return;

@@ -41,10 +41,10 @@ pyRocVideoDecoder::pyRocVideoDecoder(const char *input_file_path, int device_id,
     std::cout << "pyRocVideoDecoder Constructor..\n";
 
     // instantiate Demuxer and save its ptr
-    demuxer = new pyVideoDemuxer(input_file_path);
+    demuxer = new usrVideoDemuxer(input_file_path); //pyVideoDemuxer
 
     // setting the code here instead of sending it in
-    codec_id_ = AVCodec2RocDecVideoCodec(demuxer->GetCodecID());
+    codec_id_ = AVCodec2RocDecVideoCodec(demuxer->GetCodec_ID());
 
     if (!InitHIP(device_id_)) {
         THROW("Failed to initilize the HIP");
@@ -905,8 +905,7 @@ bool pyRocVideoDecoder::ReleaseFrame(int64_t pTimestamp, bool b_flushing) {
     if (!vp_frames_q_.empty()) {
         std::lock_guard<std::mutex> lock(mtx_vp_frame_);
         DecFrameBuffer *fb = &vp_frames_q_.front();
-        void *mapped_frame_ptr = fb->frame_ptr;
-
+  
         if (pTimestamp != fb->pts) {
             std::cerr << "Decoded Frame is released out of order" << std::endl;
             return false;

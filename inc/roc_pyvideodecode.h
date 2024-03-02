@@ -182,7 +182,7 @@ class pyRocVideoDecoder {
        */
 
         // added to create local instance of the demuxer within, to access its ptrs
-        pyVideoDemuxer *demuxer; // a pyVideoDemuxer instance pointer to be allocated
+        usrVideoDemuxer *demuxer; // a pyVideoDemuxer instance pointer to be allocated
 
         pyRocVideoDecoder(const char *input_file_path, int device_id,  OutputSurfaceMemoryType out_mem_type, bool force_zero_latency = false,
                           const Rect *p_crop_rect = nullptr, bool extract_user_SEI_Message = false, int max_width = 0, int max_height = 0,
@@ -192,7 +192,7 @@ class pyRocVideoDecoder {
         rocDecVideoCodec GetCodecId() { return codec_id_; }
 
         hipStream_t GetStream() {return hip_stream_;}
-
+ 
         /**
          * @brief Get the output frame width
          */

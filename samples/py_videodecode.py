@@ -1,5 +1,6 @@
 
 import rocPyDecode as rocpdec   # rocPyDecode main module
+import rocPyDecode.types as roctypes
 import ctypes 
 import numpy as np
 import datetime
@@ -59,7 +60,7 @@ extract_sei_messages = args.extract_sei
 generate_md5 = args.generate_md5
 ref_md5_file = args.input_md5
 crop_rect = args.crop_rect
-mem_type = rocpdec.OutputSurfaceMemoryType(args.mem_type)
+mem_type = roctypes.OutputSurfaceMemoryType(args.mem_type)
  
 # do we have rect from user
 if (args.crop_rect != None):
@@ -114,6 +115,8 @@ else:
 
 output_name_ptr = ctypes.c_void_p(output_file_path.ctypes.data) 
 
+# xx = rocpdec.usrVideoDemuxer()
+
 # instantiate decode object 
 viddec = rocpdec.pyRocVideoDecoder(input_file_path, device_id, mem_type, b_force_zero_latency, p_crop_rect, b_extract_sei_messages,0,0,0)
  
@@ -159,11 +162,11 @@ total_dec_time = float(0.0)
 while True:           
     start_time = datetime.datetime.now()
     
-    b_ret = viddec.demuxer.Demux()
+    b_ret = viddec.demuxer.DemuxFrame()
 
     # Treat False ret as end of stream indicator
     if (b_ret == False):
-        pkg_flags = pkg_flags | [int(rocpdec.ROCDEC_PKT_ENDOFSTREAM)]
+        pkg_flags = pkg_flags | [int(roctypes.ROCDEC_PKT_ENDOFSTREAM)]
 
     n_frame_returned = viddec.DecodeFrame(ctypes.c_void_p(pkg_flags.ctypes.data))
   

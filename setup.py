@@ -40,6 +40,7 @@ setup(
       author='AMD',
       license='MIT License',
       packages=find_packages(where='@TARGET_NAME@'),
+      package_data={"rocdecode": ["__init__.pyi"]},
       package_dir={'rocdecode':'@TARGET_NAME@/rocdecode'},
       include_package_data=True,
       ext_modules=[Extension('rocPyDecode',sources=['src/roc_pydecode.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp'], include_dirs=['@pybind11_INCLUDE_DIRS@', '../rocDecode/api','/opt/rocm/include'],extra_compile_args=['-D__HIP_PLATFORM_AMD__'])],

@@ -20,10 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#pragma once
-
-#ifndef pyVideoDemuxer_
-#define pyVideoDemuxer_
+#pragma once 
 
 #include <iostream>
 extern "C" {
@@ -42,7 +39,8 @@ extern "C" {
  
   
 #include <pybind11/pybind11.h>	// Necessary from pybind11
- 
+
+#include <pybind11/functional.h>
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
 #include <iostream>
@@ -50,21 +48,30 @@ extern "C" {
 #include <pybind11/eval.h>
 
 namespace py = pybind11;
- 
-// Video Demuxer Interface class
+  
+//
+// Generic data provider
+//
+class StreamProvider {
+    public:
+        virtual ~StreamProvider() {}
+        virtual int GetData(uint8_t *buf, int buf_size) = 0;
+};
+
+//
+// AMD Video Demuxer Interface class
+//
 class pyVideoDemuxer {
     public:
-        class StreamProvider {
-            public:
-                virtual ~StreamProvider() {}
-                virtual int GetData(uint8_t *buf, int buf_size) = 0;
-        };
         AVCodecID GetCodecID() { return av_video_codec_id_; };
         pyVideoDemuxer(){};
         pyVideoDemuxer(const char *input_file_path) : pyVideoDemuxer(CreateFmtContextUtil(input_file_path)) {}
         pyVideoDemuxer(StreamProvider *stream_provider) : pyVideoDemuxer(CreateFmtContextUtil(stream_provider)) {av_io_ctx_ = av_fmt_input_ctx_->pb;}
         ~pyVideoDemuxer();
         
+        virtual bool DemuxFrame(){return false;};
+        virtual AVCodecID GetCodec_ID(){return (AVCodecID)0;};
+
         bool Demux();
 
         // for pyhton binding
@@ -95,4 +102,16 @@ class pyVideoDemuxer {
         int64_t current_pts = 0;
 };
 
-#endif //pyVideoDemuxer_
+//
+// User defined Demux Process
+//
+class usrVideoDemuxer : public pyVideoDemuxer {
+
+    public: 
+
+        usrVideoDemuxer(const char *input_file_path);
+        ~usrVideoDemuxer();
+
+        bool DemuxFrame() override;
+        AVCodecID GetCodec_ID() override;
+};

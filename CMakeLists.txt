@@ -77,7 +77,7 @@ find_path(ROCDECODE_INCLUDE_DIR NAMES rocdecode.h PATHS /opt/rocm/include/rocdec
 
 if(ROCDECODE_LIBRARY AND ROCDECODE_INCLUDE_DIR)
     set(ROCDECODE_FOUND TRUE)
-    message("-- ${White}${PROJECT_NAME}: Using rocDecode -- \n\tLibraries:${ROCDECODE_LIBRARY} \n\tIncludes:${ROCDECODE_INCLUDE_DIR}${ColourReset}")
+    message("-- ${Green}${PROJECT_NAME}: Using rocDecode -- \n\tLibraries:${ROCDECODE_LIBRARY} \n\tIncludes:${ROCDECODE_INCLUDE_DIR}${ColourReset}")
 endif()
 
 if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG_FOUND) 
@@ -99,9 +99,15 @@ if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
     include_directories (${ROCDECODE_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/..)
     set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${ROCDECODE_LIBRARY})
 
+    # rocPyDecode include
+    include_directories (${ROCPYDECODE_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/inc)
+    set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${ROCPYDECODE_LIBRARY})
+
+    file(GLOB_RECURSE include inc/*.cpp)
     file(GLOB_RECURSE sources src/*.cpp)
 
-    pybind11_add_module(rocPyDecode MODULE ${sources})
+    pybind11_add_module(rocPyDecode MODULE ${sources} ${include})
+    
     target_link_libraries(rocPyDecode PRIVATE ${LINK_LIBRARY_LIST})
     message("-- ${White}rocPyDecode -- Link Libraries: ${LINK_LIBRARY_LIST}${ColourReset}")
     message("-- ${White}rocPyDecode -- CMAKE_CXX_FLAGS:${CMAKE_CXX_FLAGS}${ColourReset}")
