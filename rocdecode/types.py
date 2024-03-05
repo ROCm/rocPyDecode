@@ -30,6 +30,23 @@ from rocPyDecode.types import ROCDEC_PKT_DISCONTINUITY
 from rocPyDecode.types import ROCDEC_PKT_ENDOFPICTURE
 from rocPyDecode.types import ROCDEC_PKT_NOTIFY_EOS
 
+# Video Codecs
+from rocPyDecode.types import rocDecVideoCodec_MPEG1
+from rocPyDecode.types import rocDecVideoCodec_MPEG2
+from rocPyDecode.types import rocDecVideoCodec_MPEG4
+from rocPyDecode.types import rocDecVideoCodec_AVC
+from rocPyDecode.types import rocDecVideoCodec_HEVC
+from rocPyDecode.types import rocDecVideoCodec_AV1
+from rocPyDecode.types import rocDecVideoCodec_VP8
+from rocPyDecode.types import rocDecVideoCodec_VP9
+from rocPyDecode.types import rocDecVideoCodec_JPEG
+from rocPyDecode.types import rocDecVideoCodec_NumCodecs
+from rocPyDecode.types import rocDecVideoCodec_YUV420
+from rocPyDecode.types import rocDecVideoCodec_YV12
+from rocPyDecode.types import rocDecVideoCodec_NV12
+from rocPyDecode.types import rocDecVideoCodec_YUYV
+from rocPyDecode.types import rocDecVideoCodec_UYVY
+
 _known_types = {
 
     OUT_SURFACE_MEM_DEV_INTERNAL: ("OUT_SURFACE_MEM_DEV_INTERNAL", OUT_SURFACE_MEM_DEV_INTERNAL),
@@ -41,6 +58,22 @@ _known_types = {
     ROCDEC_PKT_DISCONTINUITY: ("ROCDEC_PKT_DISCONTINUITY", ROCDEC_PKT_DISCONTINUITY),
     ROCDEC_PKT_ENDOFPICTURE: ("ROCDEC_PKT_ENDOFPICTURE", ROCDEC_PKT_ENDOFPICTURE),
     ROCDEC_PKT_NOTIFY_EOS: ("ROCDEC_PKT_NOTIFY_EOS", ROCDEC_PKT_NOTIFY_EOS),
+
+    rocDecVideoCodec_MPEG1: ("rocDecVideoCodec_MPEG1",rocDecVideoCodec_MPEG1),  
+    rocDecVideoCodec_MPEG2: ("rocDecVideoCodec_MPEG2",rocDecVideoCodec_MPEG2),
+    rocDecVideoCodec_MPEG4: ("rocDecVideoCodec_MPEG4",rocDecVideoCodec_MPEG4),
+    rocDecVideoCodec_AVC: ("rocDecVideoCodec_AVC",rocDecVideoCodec_AVC),
+    rocDecVideoCodec_HEVC: ("rocDecVideoCodec_HEVC",rocDecVideoCodec_HEVC),
+    rocDecVideoCodec_AV1: ("rocDecVideoCodec_AV1",rocDecVideoCodec_AV1),
+    rocDecVideoCodec_VP8: ("rocDecVideoCodec_VP8",rocDecVideoCodec_VP8),
+    rocDecVideoCodec_VP9: ("rocDecVideoCodec_VP9",rocDecVideoCodec_VP9),
+    rocDecVideoCodec_JPEG: ("rocDecVideoCodec_JPEG",rocDecVideoCodec_JPEG),
+    rocDecVideoCodec_NumCodecs: ("rocDecVideoCodec_NumCodecs",rocDecVideoCodec_NumCodecs),
+    rocDecVideoCodec_YUV420: ("rocDecVideoCodec_YUV420",rocDecVideoCodec_YUV420),
+    rocDecVideoCodec_YV12: ("rocDecVideoCodec_YV12",rocDecVideoCodec_YV12),
+    rocDecVideoCodec_NV12: ("rocDecVideoCodec_NV12",rocDecVideoCodec_NV12),
+    rocDecVideoCodec_YUYV: ("rocDecVideoCodec_YUYV",rocDecVideoCodec_YUYV),
+    rocDecVideoCodec_UYVY: ("rocDecVideoCodec_UYVY",rocDecVideoCodec_UYVY),
 }
 
 def data_type_function(dtype):

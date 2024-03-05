@@ -1,5 +1,5 @@
 
-import rocPyDecode as rocpdec   # rocPyDecode main module
+import rocPyDecode as rocpydec   # rocPyDecode main module
 import rocPyDecode.types as roctypes
 import ctypes 
 import numpy as np
@@ -65,7 +65,7 @@ mem_type = roctypes.OutputSurfaceMemoryType(args.mem_type)
 # do we have rect from user
 if (args.crop_rect != None):
     if (args.crop_rect != [0,0,0,0]):
-        p_crop_rect = rocpdec.Rect()
+        p_crop_rect = rocpydec.Rect()
         p_crop_rect.l = crop_rect[0]
         p_crop_rect.t = crop_rect[1]
         p_crop_rect.r = crop_rect[2]
@@ -115,10 +115,21 @@ else:
 
 output_name_ptr = ctypes.c_void_p(output_file_path.ctypes.data) 
 
-# xx = rocpdec.usrVideoDemuxer()
+# instantiate demuxer instance 
+demuxer = rocpydec.usrVideoDemuxer(input_file_path)
 
-# instantiate decode object 
-viddec = rocpdec.pyRocVideoDecoder(input_file_path, device_id, mem_type, b_force_zero_latency, p_crop_rect, b_extract_sei_messages,0,0,0)
+# get the used coded id
+coded_id = rocpydec.AVCodec2RocDecVideoCodec(demuxer.GetCodec_ID())
+ 
+# instantiate decoder instance 
+viddec = rocpydec.pyRocVideoDecoder(
+    device_id, 
+    mem_type, 
+    coded_id, 
+    b_force_zero_latency, 
+    p_crop_rect, 
+    b_extract_sei_messages,
+    0,0,0)
  
 viddec.GetDeviceinfo(ctypes.c_void_p(device_name.ctypes.data),
                      ctypes.c_void_p(gcn_arch_name.ctypes.data),
@@ -151,43 +162,50 @@ viddec.SetReconfigParams(ctypes.c_void_p(cfg_flush.ctypes.data),
 # prepare params for the decoding loop 
 # -------------------------------------
  
-pkg_flags = np.array([0])                               
+pkg_flags = int(0)                              
 n_frame_returned = 0
-pts = np.zeros(1,int)
-b_t = np.zeros(1,bool)
-n_frame = np.zeros(1,int)
+ 
+b_t = np.ndarray(shape=(1), dtype=np.uint8)
+
+n_frame = int(0)
 total_dec_time = float(0.0)
+
+frame_adrs = np.ndarray(shape=(0), dtype=np.uint64) # just one uint64 storage (an address)
+frame_size = np.ndarray(shape=(0), dtype=np.int64)  # just one uint64 storage (int value)
+frame_pts  = np.ndarray(shape=(0), dtype=np.int64)  # just one uint64 storage (int value)
+
+surface_info_structure_mem = np.ndarray(shape=(0), dtype=np.uint8)
 
 # go until no more to decode
 while True:           
     start_time = datetime.datetime.now()
     
-    b_ret = viddec.demuxer.DemuxFrame()
+    b_ret = demuxer.DemuxFrame(frame_adrs, frame_size, frame_pts)
 
     # Treat False ret as end of stream indicator
     if (b_ret == False):
-        pkg_flags = pkg_flags | [int(roctypes.ROCDEC_PKT_ENDOFSTREAM)]
+        pkg_flags = pkg_flags | int(roctypes.ROCDEC_PKT_ENDOFSTREAM)
 
-    n_frame_returned = viddec.DecodeFrame(ctypes.c_void_p(pkg_flags.ctypes.data))
-  
-    b_ret_info = viddec.GetOutputSurfaceInfo() 
+    n_frame_returned = viddec.DecodeFrame(frame_adrs[0], frame_size[0], pkg_flags, frame_pts[0])
+
+    # OutputSurfaceInfo **surface_info_adrs  
+    b_ret_info = viddec.GetOutputSurfaceInfoAdrs(surface_info_structure_mem) 
 
     if (n_frame==0 and b_ret_info==False):
         print("Error: Failed to get Output Surface Info!\n")
         break
                 
     for i in range(n_frame_returned): 
-        viddec.GetFrame(ctypes.c_void_p(pts.ctypes.data))        
+        viddec.GetFrameAddress(frame_pts, frame_adrs)        
 
         if b_generate_md5:
-            viddec.UpdateMd5ForFrame()
+            viddec.UpdateMd5ForFrame(frame_adrs[0], surface_info_structure_mem)
 
         if b_dump_output_frames: 
-            viddec.SaveFrameToFile( output_name_ptr )
+            viddec.SaveFrameToFile( output_name_ptr, frame_adrs[0], surface_info_structure_mem )
 
         # release frame        
-        viddec.ReleaseFrame(ctypes.c_void_p(pts.ctypes.data), 
-                            ctypes.c_void_p(b_t.ctypes.data))
+        viddec.ReleaseFrame(frame_pts, b_t)
 
     # measure after completing a whole frame
     end_time = datetime.datetime.now()
@@ -205,9 +223,12 @@ n_frame += viddec.GetNumOfFlushedFrames()
 print("info: Total frame decoded: " + str(n_frame))
 
 if b_dump_output_frames==False:
-    print("info: avg decoding time per frame: " + str((total_dec_time / n_frame)*1000) + " ms")
-    print("info: avg FPS: " + str(n_frame / total_dec_time) + "\n")
-
+    if(n_frame>0):
+        print("info: avg decoding time per frame: " + str((total_dec_time / n_frame)*1000) + " ms")
+        print("info: avg FPS: " + str(n_frame / total_dec_time) + "\n")
+    else:
+        print( "info: frame count= ", n_frame )
+      
 if b_generate_md5:
     digest = np.zeros(16,np.uint8)
     str_digest = ""

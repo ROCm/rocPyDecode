@@ -47,16 +47,27 @@ extern "C" {
 
 namespace py = pybind11;
   
-usrVideoDemuxer::usrVideoDemuxer(const char *input_file_path) : pyVideoDemuxer(input_file_path)
-{
-}
-usrVideoDemuxer::~usrVideoDemuxer()
-{
-}
 
-bool usrVideoDemuxer::DemuxFrame()
-{
-    return Demux();
+bool usrVideoDemuxer::DemuxFrame(py::array_t<uint64_t>& frame_adrs, py::array_t<int64_t>& frame_size, py::array_t<int64_t>& pts_in) {
+
+    uint8_t *video=nullptr;
+    int video_size=0;
+    int64_t pts=0;
+
+    bool ret = Demux(&video, &video_size, &pts); 
+  
+    int64_t vd_size = video_size;
+
+    frame_adrs.resize({sizeof(uint64_t)}, false);
+    memcpy(frame_adrs.mutable_data(), (uint64_t*)&video, sizeof(uint64_t)); // copy the adrs, not the content: Essam
+
+    frame_size.resize({sizeof( int64_t)}, false);
+    memcpy(frame_size.mutable_data(), &vd_size, sizeof(int64_t));  
+
+    pts_in.resize({sizeof( int64_t)}, false);
+    memcpy(pts_in.mutable_data(), &pts, sizeof(int64_t));
+
+    return ret;
 }
 
 AVCodecID usrVideoDemuxer::GetCodec_ID() 
@@ -65,6 +76,7 @@ AVCodecID usrVideoDemuxer::GetCodec_ID()
 }
 
 pyVideoDemuxer::~pyVideoDemuxer() {
+    
     if (!av_fmt_input_ctx_) {
         return;
     }
@@ -87,12 +99,12 @@ pyVideoDemuxer::~pyVideoDemuxer() {
     }
 }
 
-bool pyVideoDemuxer::Demux() {
+bool pyVideoDemuxer::Demux(uint8_t **video, int *video_size, int64_t *pts) {
  
     if (!av_fmt_input_ctx_) {
         return false;
     }
-    current_video_packet_size = 0;
+    *video_size = 0;
     if (packet_->data) {
         av_packet_unref(packet_);
     }
@@ -115,11 +127,10 @@ bool pyVideoDemuxer::Demux() {
             std::cerr << "ERROR: av_bsf_receive_packet failed!" << std::endl;
             return false;
         }
-        current_video_packet = packet_filtered_->data;
-        current_video_packet_size = packet_filtered_->size;
-        
-        current_pts = (int64_t) (packet_filtered_->pts * default_time_scale_ * time_base_);
-
+        *video = packet_filtered_->data;
+        *video_size = packet_filtered_->size;
+        if (pts)
+            *pts = (int64_t) (packet_filtered_->pts * default_time_scale_ * time_base_);
         } else {
            if (is_mpeg4_ && (frame_count_ == 0)) {
                int ext_data_size = av_fmt_input_ctx_->streams[av_stream_]->codecpar->extradata_size;
@@ -131,32 +142,25 @@ bool pyVideoDemuxer::Demux() {
                     }
                     memcpy(data_with_header_, av_fmt_input_ctx_->streams[av_stream_]->codecpar->extradata, ext_data_size);
                     memcpy(data_with_header_ + ext_data_size, packet_->data + 3, packet_->size - 3 * sizeof(uint8_t));
-                    current_video_packet = data_with_header_;
-                    current_video_packet_size = ext_data_size + packet_->size - 3 * sizeof(uint8_t);
+                    *video = data_with_header_;
+                    *video_size = ext_data_size + packet_->size - 3 * sizeof(uint8_t);
                 }
             } else {
-                current_video_packet = packet_->data;
-                current_video_packet_size = packet_->size;
+                *video = packet_->data;
+                *video_size = packet_->size;
             }
-            
-            current_pts = (int64_t)(packet_->pts * default_time_scale_ * time_base_);
+            if (pts)
+                *pts = (int64_t)(packet_->pts * default_time_scale_ * time_base_);
     }
     frame_count_++;
-
-    return (current_video_packet_size>0) ? true : false; // add the *video_size !=0 as indication not end of stream: essam
+ 
+    return true;
 }
-
-// for pyhton binding
-py::object pyVideoDemuxer::wrapper_Demux() {
-    // use internal storage for pointer
-    bool ret = Demux();
-    return py::cast(ret);
-}
-
+ 
 pyVideoDemuxer::pyVideoDemuxer(AVFormatContext *av_fmt_input_ctx) : av_fmt_input_ctx_(av_fmt_input_ctx) {
 
-    // init, 1st time construction
-    std::cout << "pyVideoDemuxer Constructor..\n";
+    // init, 1st time 
+    std::cout << "Info: pyVideoDemuxer Constructor ..\n"; 
 
     av_log_set_level(AV_LOG_QUIET);
     if (!av_fmt_input_ctx_) {
@@ -181,6 +185,55 @@ pyVideoDemuxer::pyVideoDemuxer(AVFormatContext *av_fmt_input_ctx) : av_fmt_input
         return;
     }
     av_video_codec_id_ = av_fmt_input_ctx_->streams[av_stream_]->codecpar->codec_id;
+    width_ = av_fmt_input_ctx_->streams[av_stream_]->codecpar->width;
+    height_ = av_fmt_input_ctx_->streams[av_stream_]->codecpar->height;
+    chroma_format_ = (AVPixelFormat)av_fmt_input_ctx_->streams[av_stream_]->codecpar->format;
+    bit_rate_ = av_fmt_input_ctx_->streams[av_stream_]->codecpar->bit_rate;
+    frame_rate_ = av_fmt_input_ctx_->streams[av_stream_]->r_frame_rate;
+
+    switch (chroma_format_) {
+        case AV_PIX_FMT_YUV420P10LE:
+        case AV_PIX_FMT_GRAY10LE:
+            bit_depth_ = 10;
+            chroma_height_ = (height_ + 1) >> 1;
+            byte_per_pixel_ = 2;
+            break;
+        case AV_PIX_FMT_YUV420P12LE:
+            bit_depth_ = 12;
+            chroma_height_ = (height_ + 1) >> 1;
+            byte_per_pixel_ = 2;
+            break;
+        case AV_PIX_FMT_YUV444P10LE:
+            bit_depth_ = 10;
+            chroma_height_ = height_ << 1;
+            byte_per_pixel_ = 2;
+            break;
+        case AV_PIX_FMT_YUV444P12LE:
+            bit_depth_ = 12;
+            chroma_height_ = height_ << 1;
+            byte_per_pixel_ = 2;
+            break;
+        case AV_PIX_FMT_YUV444P:
+            bit_depth_ = 8;
+            chroma_height_ = height_ << 1;
+            byte_per_pixel_ = 1;
+            break;
+        case AV_PIX_FMT_YUV420P:
+        case AV_PIX_FMT_YUVJ420P:
+        case AV_PIX_FMT_YUVJ422P:
+        case AV_PIX_FMT_YUVJ444P:
+        case AV_PIX_FMT_GRAY8:
+            bit_depth_ = 8;
+            chroma_height_ = (height_ + 1) >> 1;
+            byte_per_pixel_ = 1;
+            break;
+        default:
+            chroma_format_ = AV_PIX_FMT_YUV420P;
+            bit_depth_ = 8;
+            chroma_height_ = (height_ + 1) >> 1;
+            byte_per_pixel_ = 1;
+        }
+
     AVRational time_base = av_fmt_input_ctx_->streams[av_stream_]->time_base;
     time_base_ = av_q2d(time_base);
 

@@ -64,18 +64,24 @@ class StreamProvider {
 class pyVideoDemuxer {
     public:
         AVCodecID GetCodecID() { return av_video_codec_id_; };
-        pyVideoDemuxer(){};
+       
         pyVideoDemuxer(const char *input_file_path) : pyVideoDemuxer(CreateFmtContextUtil(input_file_path)) {}
         pyVideoDemuxer(StreamProvider *stream_provider) : pyVideoDemuxer(CreateFmtContextUtil(stream_provider)) {av_io_ctx_ = av_fmt_input_ctx_->pb;}
-        ~pyVideoDemuxer();
-        
-        virtual bool DemuxFrame(){return false;};
-        virtual AVCodecID GetCodec_ID(){return (AVCodecID)0;};
-
-        bool Demux();
-
-        // for pyhton binding
-        py::object wrapper_Demux();
+        virtual ~pyVideoDemuxer();
+        bool Demux(uint8_t **video, int *video_size, int64_t *pts = nullptr);
+        const uint32_t GetWidth() const { return width_;}
+        const uint32_t GetHeight() const { return height_;}
+        const uint32_t GetChromaHeight() const { return chroma_height_;}
+        const uint32_t GetBitDepth() const { return bit_depth_;}
+        const uint32_t GetBytePerPixel() const { return byte_per_pixel_;}
+        const uint32_t GetBitRate() const { return bit_rate_;}
+        const double GetFrameRate() const {return frame_rate_.den != 0 ? frame_rate_.num / frame_rate_.den : 0;};
+				
+        // for python binding
+        virtual bool DemuxFrame(py::array_t<uint64_t>& frame_adrs, py::array_t<int64_t>& frame_size, py::array_t<int64_t>& pts_in) = 0;
+        virtual AVCodecID GetCodec_ID() = 0;
+     		
+	private:
   
         pyVideoDemuxer(AVFormatContext *av_fmt_input_ctx);
         AVFormatContext *CreateFmtContextUtil(StreamProvider *stream_provider);
@@ -87,6 +93,8 @@ class pyVideoDemuxer {
         AVPacket* packet_filtered_ = nullptr;
         AVBSFContext *av_bsf_ctx_ = nullptr;
         AVCodecID av_video_codec_id_;
+        AVPixelFormat chroma_format_;
+        AVRational frame_rate_ = {};
         uint8_t *data_with_header_ = nullptr;
         int av_stream_ = 0;
         bool is_h264_ = false; 
@@ -94,12 +102,13 @@ class pyVideoDemuxer {
         bool is_mpeg4_ = false;
         int64_t default_time_scale_ = 1000;
         double time_base_ = 0.0;
-        unsigned int frame_count_ = 0;
-
-        // ADDED: TO ELEMINATE THE NEED FOR BACK/FORTH POINTERS EXCHANGE between python and C++
-        uint8_t *current_video_packet = nullptr;
-        int current_video_packet_size = 0;
-        int64_t current_pts = 0;
+        uint32_t frame_count_ = 0;
+        uint32_t width_ = 0;
+        uint32_t height_ = 0;
+        uint32_t chroma_height_ = 0;
+        uint32_t bit_depth_ = 0;
+        uint32_t byte_per_pixel_ = 0;
+        uint32_t bit_rate_ = 0;
 };
 
 //
@@ -109,9 +118,10 @@ class usrVideoDemuxer : public pyVideoDemuxer {
 
     public: 
 
-        usrVideoDemuxer(const char *input_file_path);
-        ~usrVideoDemuxer();
+        usrVideoDemuxer(const char *input_file_path) : pyVideoDemuxer(input_file_path){};
+        ~usrVideoDemuxer(){};
 
-        bool DemuxFrame() override;
+        bool DemuxFrame(py::array_t<uint64_t>& frame_adrs, py::array_t<int64_t>& frame_size, py::array_t<int64_t>& pts_in) override;
         AVCodecID GetCodec_ID() override;
 };
+

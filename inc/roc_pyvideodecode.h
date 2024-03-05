@@ -125,6 +125,7 @@ private:
     }                                                                                                         \
     while (0)
 
+
 struct Rect {
     int l, t, r, b;
 };
@@ -184,7 +185,7 @@ class pyRocVideoDecoder {
         // added to create local instance of the demuxer within, to access its ptrs
         usrVideoDemuxer *demuxer; // a pyVideoDemuxer instance pointer to be allocated
 
-        pyRocVideoDecoder(const char *input_file_path, int device_id,  OutputSurfaceMemoryType out_mem_type, bool force_zero_latency = false,
+        pyRocVideoDecoder(int device_id,  OutputSurfaceMemoryType out_mem_type, rocDecVideoCodec codec, bool force_zero_latency = false,
                           const Rect *p_crop_rect = nullptr, bool extract_user_SEI_Message = false, int max_width = 0, int max_height = 0,
                           uint32_t clk_rate = 1000);
         ~pyRocVideoDecoder();
@@ -264,10 +265,10 @@ class pyRocVideoDecoder {
          * @return true 
          * @return false 
          */
-        bool GetOutputSurfaceInfo();
+        bool GetOutputSurfaceInfo(OutputSurfaceInfo **surface_info);
 
         // for pyhton binding
-        py::object wrapper_GetOutputSurfaceInfo();
+        py::object wrapper_GetOutputSurfaceInfoAdrs(py::array_t<uint8_t>& surface_info_adrs);
 
         /**
          * @brief Function to set the Reconfig Params object
@@ -290,11 +291,8 @@ class pyRocVideoDecoder {
          * @param flags - video packet flags
          * @return int - num of frames to display
          */
-        int DecodeFrame(  int pkt_flags );
-        
-        // for pyhton binding
-        py::object wrapper_DecodeFrame(  py::object& pkt_flags_in );
-
+        int DecodeFrame(uint64_t frame_adrs, int64_t frame_size, int pkt_flags, int64_t pts_in);
+    
         /**
          * @brief This function returns a decoded frame and timestamp. This should be called in a loop fetching all the available frames
          * 
@@ -302,7 +300,7 @@ class pyRocVideoDecoder {
         uint8_t* GetFrame(int64_t *pts);
 
         // for pyhton binding
-        py::object wrapper_GetFrame(py::object& pts_in);
+        py::object wrapper_GetFrameAddress(py::array_t<int64_t>& pts_in, py::array_t<uint64_t>& frame_mem);
 
         /**
          * @brief function to release frame after use by the application: Only used with "OUT_SURFACE_MEM_DEV_INTERNAL"
@@ -315,7 +313,7 @@ class pyRocVideoDecoder {
         bool ReleaseFrame(int64_t pTimestamp, bool b_flushing = false);
 
         // for pyhton binding
-        py::object wrapper_ReleaseFrame(py::object& pTimestamp_in, py::object& b_flushing_in);
+        py::object wrapper_ReleaseFrame(py::array_t<int64_t>& pTimestamp_in, py::array_t<bool>& b_flushing_in);
 
         /**
          * @brief utility function to save image to a file
@@ -348,10 +346,10 @@ class pyRocVideoDecoder {
          * @param dev_mem           - pointer to surface memory
          * @param surf_info         - surface info
          */
-        void SaveFrameToFile(std::string output_file_name);
+        void SaveFrameToFile(std::string output_file_name, void *surf_mem, OutputSurfaceInfo *surf_info);
 
         // for pyhton binding
-        py::object wrapper_SaveFrameToFile(py::object& output_file_name_in);
+        py::object wrapper_SaveFrameToFile(py::object& output_file_name_in,py::array_t<uint64_t>& surf_mem_adrs, py::array_t<uint8_t>& surface_info_adrs);
 
         /**
          * @brief Helper function to start MD5 calculation
@@ -367,10 +365,10 @@ class pyRocVideoDecoder {
          * @param dev_mem           - pointer to surface memory
          * @param surf_info         - surface info
          */
-        void UpdateMd5ForFrame();
+        void UpdateMd5ForFrame(void *surf_mem, OutputSurfaceInfo *surf_info);
 
         // for pyhton binding
-        py::object wrapper_UpdateMd5ForFrame();
+        py::object wrapper_UpdateMd5ForFrame(py::array_t<uint64_t>& surf_mem_adrs, py::array_t<uint8_t>& surface_info_adrs);
 
         /**
          * @brief Helper function to complete MD5 calculation
@@ -392,7 +390,7 @@ class pyRocVideoDecoder {
         // for pyhton binding
         py::object wrapper_GetNumOfFlushedFrames();
 
-        // Added for simplicty, for pyhton binding
+        // Added for simplicity, for python binding
         int ReconfigureFlushCallback();
 
         
@@ -449,7 +447,7 @@ class pyRocVideoDecoder {
          * @brief function to release all internal frames and clear the vp_frames_q_ (used with reconfigure): Only used with "OUT_SURFACE_MEM_DEV_INTERNAL"
          * 
          * @return true      - success
-         * @return false     - falied
+         * @return false     - failed
          */
         bool ReleaseInternalFrames();
 
@@ -461,7 +459,6 @@ class pyRocVideoDecoder {
 
 
         // added for python binding simplicity    
-        uint8_t * current_frame_ptr;
         ReconfigParams py_reconfig_params;
  
         int num_devices_;
@@ -518,7 +515,8 @@ extern "C" {
     #include <libavcodec/avcodec.h>
     #include <libavformat/avformat.h>
 }
-static inline rocDecVideoCodec AVCodec2RocDecVideoCodec(AVCodecID av_codec) {
+
+static rocDecVideoCodec AVCodec2RocDecVideoCodec(AVCodecID av_codec) {
     switch (av_codec) {
     case AV_CODEC_ID_MPEG1VIDEO : return rocDecVideoCodec_MPEG1;
     case AV_CODEC_ID_MPEG2VIDEO : return rocDecVideoCodec_MPEG2;

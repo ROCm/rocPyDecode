@@ -33,21 +33,16 @@ static void *ctypes_void_ptr(const py::object &object) {
     return ptr;
 } 
 
-pyRocVideoDecoder::pyRocVideoDecoder(const char *input_file_path, int device_id, OutputSurfaceMemoryType out_mem_type, bool force_zero_latency,
+pyRocVideoDecoder::pyRocVideoDecoder(int device_id, OutputSurfaceMemoryType out_mem_type, rocDecVideoCodec codec, bool force_zero_latency,
               const Rect *p_crop_rect, bool extract_user_sei_Message, int max_width, int max_height, uint32_t clk_rate) :
-              device_id_{device_id}, out_mem_type_(out_mem_type), b_force_zero_latency_(force_zero_latency), 
+              device_id_{device_id}, out_mem_type_(out_mem_type), codec_id_(codec), b_force_zero_latency_(force_zero_latency), 
               b_extract_sei_message_(extract_user_sei_Message), max_width_ (max_width), max_height_(max_height) {
 
-    std::cout << "pyRocVideoDecoder Constructor..\n";
-
-    // instantiate Demuxer and save its ptr
-    demuxer = new usrVideoDemuxer(input_file_path); //pyVideoDemuxer
-
-    // setting the code here instead of sending it in
-    codec_id_ = AVCodec2RocDecVideoCodec(demuxer->GetCodec_ID());
+    // init, 1st time 
+    std::cout << "Info: pyRocVideoDecoder Constructor ..\n";
 
     if (!InitHIP(device_id_)) {
-        THROW("Failed to initilize the HIP");
+        THROW("Failed to initialize the HIP");
     }
     if (p_crop_rect) crop_rect_ = *p_crop_rect;
     if (b_extract_sei_message_) {
@@ -375,8 +370,8 @@ int pyRocVideoDecoder::HandleVideoSequence(RocdecVideoFormat *p_video_format) {
     if (!(crop_rect_.r && crop_rect_.b)) {
         disp_width_ = p_video_format->display_area.right - p_video_format->display_area.left;
         disp_height_ = p_video_format->display_area.bottom - p_video_format->display_area.top;
-        videoDecodeCreateInfo.target_width = disp_width_;
-        videoDecodeCreateInfo.target_height = disp_height_;
+        videoDecodeCreateInfo.target_width = (disp_width_ + 1) & ~1;
+        videoDecodeCreateInfo.target_height = (disp_height_ + 1) & ~1;
     } else {
         videoDecodeCreateInfo.display_area.left = crop_rect_.l;
         videoDecodeCreateInfo.display_area.top = crop_rect_.t;
@@ -410,7 +405,7 @@ int pyRocVideoDecoder::HandleVideoSequence(RocdecVideoFormat *p_video_format) {
         output_surface_info_.output_surface_size_in_bytes = surface_stride_ * (surface_vstride_ + (chroma_vstride_ * num_chroma_planes_));
         output_surface_info_.mem_type = OUT_SURFACE_MEM_DEV_INTERNAL;
     } else if (out_mem_type_ == OUT_SURFACE_MEM_DEV_COPIED) {
-        output_surface_info_.output_surface_size_in_bytes = GetFrameSizePitched();
+        output_surface_info_.output_surface_size_in_bytes = GetFrameSize();
         output_surface_info_.mem_type = OUT_SURFACE_MEM_DEV_COPIED;
     } else if (out_mem_type_ == OUT_SURFACE_MEM_HOST_COPIED){
         output_surface_info_.output_surface_size_in_bytes = GetFrameSize();
@@ -432,7 +427,7 @@ int pyRocVideoDecoder::HandleVideoSequence(RocdecVideoFormat *p_video_format) {
         << "\tResize       : " << videoDecodeCreateInfo.target_width << "x" << videoDecodeCreateInfo.target_height << std::endl
     ;
     input_video_info_str_ << std::endl;
-    std::cout << input_video_info_str_.str();
+    std::cout << "Info: input_video_info_str: " << input_video_info_str_.str();
 
     ROCDEC_API_CALL(rocDecCreateDecoder(&roc_decoder_, &videoDecodeCreateInfo));
     return num_decode_surfaces;
@@ -492,7 +487,6 @@ int pyRocVideoDecoder::ReconfigureDecoder(RocdecVideoFormat *p_video_format) {
         ROCDEC_THROW("Reconfigure Not supported for bit depth change", ROCDEC_NOT_SUPPORTED);
         return 0;
     }
-
     bool is_decode_res_changed = !(p_video_format->coded_width == coded_width_ && p_video_format->coded_height == coded_height_);
     bool is_display_rect_changed = !(p_video_format->display_area.bottom == disp_rect_.b &&
                                      p_video_format->display_area.top == disp_rect_.t &&
@@ -504,7 +498,8 @@ int pyRocVideoDecoder::ReconfigureDecoder(RocdecVideoFormat *p_video_format) {
 
     // Flush and clear internal frame store to reconfigure when either coded size or display size has changed.
     num_frames_flushed_during_reconfig_ += ReconfigureFlushCallback();
-    std::cout << "Essamm: added : ReconfigureFlushCallback returned = " << num_frames_flushed_during_reconfig_ << "\n";
+    
+    std::cout << "Info: ReconfigureFlushCallback returned value = " << num_frames_flushed_during_reconfig_ << "\n";
 
     // clear the existing output buffers of different size
     // note that app lose the remaining frames in the vp_frames/vp_frames_q in case application didn't set p_fn_reconfigure_flush_ callback
@@ -580,7 +575,7 @@ int pyRocVideoDecoder::ReconfigureDecoder(RocdecVideoFormat *p_video_format) {
         output_surface_info_.output_surface_size_in_bytes = surface_stride_ * (surface_vstride_ + (chroma_vstride_ * num_chroma_planes_));
         output_surface_info_.mem_type = OUT_SURFACE_MEM_DEV_INTERNAL;
     } else if (out_mem_type_ == OUT_SURFACE_MEM_DEV_COPIED) {
-        output_surface_info_.output_surface_size_in_bytes = GetFrameSizePitched();
+        output_surface_info_.output_surface_size_in_bytes = GetFrameSize();
         output_surface_info_.mem_type = OUT_SURFACE_MEM_DEV_COPIED;
     } else if (out_mem_type_ == OUT_SURFACE_MEM_HOST_COPIED) {
         output_surface_info_.output_surface_size_in_bytes = GetFrameSize();
@@ -609,7 +604,7 @@ int pyRocVideoDecoder::ReconfigureDecoder(RocdecVideoFormat *p_video_format) {
         << "\tResize       : " << reconfig_params.target_width << "x" << reconfig_params.target_height << std::endl
     ;
     input_video_info_str_ << std::endl;
-    std::cout << input_video_info_str_.str();
+    std::cout << "Info: input_video_info_str: " << input_video_info_str_.str();
 
     is_decoder_reconfigured_ = true;
 
@@ -711,7 +706,7 @@ int pyRocVideoDecoder::HandlePictureDisplay(RocdecParserDispInfo *pDispInfo) {
                     DecFrameBuffer dec_frame = { 0 };
                     if (out_mem_type_ == OUT_SURFACE_MEM_DEV_COPIED) {
                         // allocate device memory
-                        HIP_API_CALL(hipMalloc((void **)&dec_frame.frame_ptr, GetFrameSizePitched()));
+                        HIP_API_CALL(hipMalloc((void **)&dec_frame.frame_ptr, GetFrameSize()));
                     } else {
                         dec_frame.frame_ptr = new uint8_t[GetFrameSize()];
                     }
@@ -722,44 +717,48 @@ int pyRocVideoDecoder::HandlePictureDisplay(RocdecParserDispInfo *pDispInfo) {
                 p_dec_frame = vp_frames_[decoded_frame_cnt_ - 1].frame_ptr;
             }
             // Copy luma data
-            int dst_pitch = surface_stride_;
+            int dst_pitch = disp_width_ * byte_per_pixel_;
+            uint8_t *p_src_ptr_y = static_cast<uint8_t *>(src_dev_ptr[0]) + crop_rect_.t * src_pitch[0] + crop_rect_.l * byte_per_pixel_;
             if (out_mem_type_ == OUT_SURFACE_MEM_DEV_COPIED) {
                 if (src_pitch[0] == dst_pitch) {
                     int luma_size = src_pitch[0] * coded_height_;
-                    HIP_API_CALL(hipMemcpyDtoDAsync(p_dec_frame, src_dev_ptr[0], luma_size, hip_stream_));
+                    HIP_API_CALL(hipMemcpyDtoDAsync(p_dec_frame, p_src_ptr_y, luma_size, hip_stream_));
                 } else {
                     // use 2d copy to copy an ROI
-                    HIP_API_CALL(hipMemcpy2DAsync(p_dec_frame, dst_pitch, src_dev_ptr[0], src_pitch[0], coded_width_ * byte_per_pixel_, coded_height_, hipMemcpyDeviceToDevice, hip_stream_));
+                    HIP_API_CALL(hipMemcpy2DAsync(p_dec_frame, dst_pitch, p_src_ptr_y, src_pitch[0], dst_pitch, disp_height_, hipMemcpyDeviceToDevice, hip_stream_));
                 }
             } else
-                HIP_API_CALL(hipMemcpy2DAsync(p_dec_frame, coded_width_ * byte_per_pixel_, src_dev_ptr[0], src_pitch[0], coded_width_ * byte_per_pixel_, coded_height_, hipMemcpyDeviceToHost, hip_stream_));
+                HIP_API_CALL(hipMemcpy2DAsync(p_dec_frame, dst_pitch, p_src_ptr_y, src_pitch[0], dst_pitch, disp_height_, hipMemcpyDeviceToHost, hip_stream_));
 
             // Copy chroma plane ( )
             // rocDec output gives pointer to luma and chroma pointers seperated for the decoded frame
-            uint8_t *p_frame_uv = p_dec_frame + dst_pitch * coded_height_;
+            uint8_t *p_frame_uv = p_dec_frame + dst_pitch * disp_height_;
+            uint8_t *p_src_ptr_uv = (num_chroma_planes_ == 1) ? static_cast<uint8_t *>(src_dev_ptr[1]) + (crop_rect_.t >> 1) * src_pitch[1] + crop_rect_.l * byte_per_pixel_ :
+                                                    static_cast<uint8_t *>(src_dev_ptr[1]) + crop_rect_.t * src_pitch[1] + crop_rect_.l  * byte_per_pixel_;
             if (out_mem_type_ == OUT_SURFACE_MEM_DEV_COPIED) {
                 if (src_pitch[1] == dst_pitch) {
                     int chroma_size = chroma_height_ * dst_pitch;
-                    HIP_API_CALL(hipMemcpyDtoDAsync(p_frame_uv, src_dev_ptr[1], chroma_size, hip_stream_));
+                    HIP_API_CALL(hipMemcpyDtoDAsync(p_frame_uv, p_src_ptr_uv, chroma_size, hip_stream_));
                 } else {
                     // use 2d copy to copy an ROI
-                    HIP_API_CALL(hipMemcpy2DAsync(p_frame_uv, dst_pitch, src_dev_ptr[1], src_pitch[1], coded_width_ * byte_per_pixel_, chroma_height_, hipMemcpyDeviceToDevice, hip_stream_));
+                    HIP_API_CALL(hipMemcpy2DAsync(p_frame_uv, dst_pitch, p_src_ptr_uv, src_pitch[1], dst_pitch, chroma_height_, hipMemcpyDeviceToDevice, hip_stream_));
                 }
             } else
-                HIP_API_CALL(hipMemcpy2DAsync(p_frame_uv, dst_pitch, src_dev_ptr[1], src_pitch[1], coded_width_ * byte_per_pixel_, chroma_height_, hipMemcpyDeviceToHost, hip_stream_));
+                HIP_API_CALL(hipMemcpy2DAsync(p_frame_uv, dst_pitch, p_src_ptr_uv, src_pitch[1], dst_pitch, chroma_height_, hipMemcpyDeviceToHost, hip_stream_));
 
             if (num_chroma_planes_ == 2) {
-                uint8_t *p_frame_uv = p_dec_frame + dst_pitch * (coded_height_ + chroma_height_);
+                uint8_t *p_frame_v = p_dec_frame + dst_pitch * (disp_height_ + chroma_height_);
+                uint8_t *p_src_ptr_v = static_cast<uint8_t *>(src_dev_ptr[2]) + crop_rect_.t * src_pitch[2] + crop_rect_.l * byte_per_pixel_;
                 if (out_mem_type_ == OUT_SURFACE_MEM_DEV_COPIED) {
                     if (src_pitch[2] == dst_pitch) {
                         int chroma_size = chroma_height_ * dst_pitch;
-                        HIP_API_CALL(hipMemcpyDtoDAsync(p_frame_uv, src_dev_ptr[2], chroma_size, hip_stream_));
+                        HIP_API_CALL(hipMemcpyDtoDAsync(p_frame_v, p_src_ptr_v, chroma_size, hip_stream_));
                     } else {
                         // use 2d copy to copy an ROI
-                        HIP_API_CALL(hipMemcpy2DAsync(p_frame_uv, dst_pitch, src_dev_ptr[2], src_pitch[2], coded_width_ * byte_per_pixel_, chroma_height_, hipMemcpyDeviceToDevice, hip_stream_));
+                        HIP_API_CALL(hipMemcpy2DAsync(p_frame_v, dst_pitch, p_src_ptr_v, src_pitch[2], dst_pitch, chroma_height_, hipMemcpyDeviceToDevice, hip_stream_));
                     }
                 } else
-                    HIP_API_CALL(hipMemcpy2DAsync(p_frame_uv, dst_pitch, src_dev_ptr[2], src_pitch[2], coded_width_ * byte_per_pixel_, chroma_height_, hipMemcpyDeviceToHost, hip_stream_));
+                    HIP_API_CALL(hipMemcpy2DAsync(p_frame_v, dst_pitch, p_src_ptr_v, src_pitch[2], dst_pitch, chroma_height_, hipMemcpyDeviceToHost, hip_stream_));
             }
 
             HIP_API_CALL(hipStreamSynchronize(hip_stream_));
@@ -811,68 +810,57 @@ int pyRocVideoDecoder::GetSEIMessage(RocdecSeiMessageInfo *pSEIMessageInfo) {
     }
     return 1;
 }
- 
-int pyRocVideoDecoder::DecodeFrame(int pkt_flags) {
 
-    const uint8_t *data = demuxer->current_video_packet;
-    uint32_t size = demuxer->current_video_packet_size;
-    int64_t pts = demuxer->current_pts;
 
+
+int pyRocVideoDecoder::DecodeFrame(uint64_t frame_adrs, int64_t frame_size, int pkt_flags, int64_t pts_in) {
     decoded_frame_cnt_ = 0, decoded_frame_cnt_ret_ = 0;
-    RocdecSourceDataPacket packet = { 0 };
-    packet.payload = data;
-    packet.payload_size = size;
+    RocdecSourceDataPacket packet = { 0 }; 
+    packet.payload = (u_int8_t*) frame_adrs;
+    packet.payload_size = (uint32_t) frame_size;
     packet.flags = pkt_flags | ROCDEC_PKT_TIMESTAMP;
-    packet.pts = pts;
-    if (!data || size == 0) {
+    packet.pts = (RocdecTimeStamp) pts_in;
+    if (!packet.payload || packet.payload_size == 0) {
         packet.flags |= ROCDEC_PKT_ENDOFSTREAM;
     }
     ROCDEC_API_CALL(rocDecParseVideoData(rocdec_parser_, &packet));
 
     return decoded_frame_cnt_;
 }
-
-// for pyhton binding
-py::object pyRocVideoDecoder::wrapper_DecodeFrame(py::object& pkt_flags_in) {   
-    auto p_pkt_flags = (int *) ctypes_void_ptr(pkt_flags_in);
-    int pkt_flags = *p_pkt_flags; 
-    int ret = pyRocVideoDecoder::DecodeFrame(pkt_flags);
-    return py::cast(ret);
-}
-
+ 
 uint8_t* pyRocVideoDecoder::GetFrame(int64_t *pts) {
     if (decoded_frame_cnt_ > 0) {
         std::lock_guard<std::mutex> lock(mtx_vp_frame_);
         decoded_frame_cnt_--;
         if (out_mem_type_ == OUT_SURFACE_MEM_DEV_INTERNAL && !vp_frames_q_.empty()) {
             DecFrameBuffer *fb = &vp_frames_q_.front();
-            if (pts) {
-                *pts = fb->pts;
-            }
-            current_frame_ptr = fb->frame_ptr; //essam: save it internally for latter use with other func calls
+            if (pts) *pts = fb->pts;
             return fb->frame_ptr;
-        } else {
-            if (pts) {
-                 *pts = vp_frames_[decoded_frame_cnt_ret_].pts;
-            }
-            current_frame_ptr = vp_frames_[decoded_frame_cnt_ret_].frame_ptr; //essam: save it internally for latter use with other func calls
-            decoded_frame_cnt_ret_++;
-            return vp_frames_[decoded_frame_cnt_ret_-1].frame_ptr;
+        } else if (vp_frames_.size() > 0){
+            if (pts) *pts = vp_frames_[decoded_frame_cnt_ret_].pts;
+            return vp_frames_[decoded_frame_cnt_ret_++].frame_ptr;
         }
     }
     return nullptr;
 }
 
 // for pyhton binding
-py::object pyRocVideoDecoder::wrapper_GetFrame(py::object& pts_in) {
-    auto p_pts = ctypes_void_ptr(pts_in); 
-    int64_t pts = *(int *)p_pts;
-    uint8_t* ret = GetFrame(&pts);    
-    *(int*)p_pts = pts;
+py::object pyRocVideoDecoder::wrapper_GetFrameAddress(py::array_t<int64_t>& pts_in, py::array_t<uint64_t>& frame_mem_adrs) {
+   
+    int64_t pts = 0;
+    uint8_t* ret_frame_address = GetFrame(&pts); 
+
+    // copy the adrs itself, not the content of the frame: Essam
+    frame_mem_adrs.resize({sizeof(uint64_t)}, false);
+    memcpy(frame_mem_adrs.mutable_data(), &ret_frame_address, sizeof(uint64_t));
+ 
+    pts_in.resize({sizeof(int64_t)}, false);
+    memcpy(pts_in.mutable_data(), &pts, sizeof(int64_t));
+ 
     return py::cast(pts);
 }
 
-// for pyhton binding (can not move it to header for py)
+// for python binding (can not move it to header for py)
 py::object pyRocVideoDecoder::wrapper_GetNumOfFlushedFrames() { 
     int32_t ret = num_frames_flushed_during_reconfig_;
     return py::cast(ret);
@@ -883,7 +871,7 @@ py::object pyRocVideoDecoder::wrapper_GetNumOfFlushedFrames() {
  * 
  * @param pTimestamp - timestamp of the frame to be released (unmapped)
  * @return true      - success
- * @return false     - falied
+ * @return false     - failed
  */
 
 bool pyRocVideoDecoder::ReleaseFrame(int64_t pTimestamp, bool b_flushing) {
@@ -917,11 +905,12 @@ bool pyRocVideoDecoder::ReleaseFrame(int64_t pTimestamp, bool b_flushing) {
 }
 
 // for pyhton binding
-py::object pyRocVideoDecoder::wrapper_ReleaseFrame(py::object& pTimestamp_in, py::object& b_flushing_in) {
-    auto p_pTimestamp = ctypes_void_ptr(pTimestamp_in);
-    auto p_b_flushing = ctypes_void_ptr(b_flushing_in);
-    int pTimestamp = *(int*)p_pTimestamp ;
-    bool b_flushing = *(bool*)p_b_flushing;
+py::object pyRocVideoDecoder::wrapper_ReleaseFrame(py::array_t<int64_t>& pTimestamp_in, py::array_t<bool>& b_flushing_in) {
+  
+    int64_t pTimestamp = 0;
+    bool b_flushing = false;
+    memcpy( &pTimestamp, pTimestamp_in.mutable_data(), sizeof(int64_t));
+    memcpy( &b_flushing, b_flushing_in.mutable_data(), sizeof(bool));
     bool ret = ReleaseFrame(pTimestamp, b_flushing);     
     return py::cast(ret);
 }
@@ -930,7 +919,7 @@ py::object pyRocVideoDecoder::wrapper_ReleaseFrame(py::object& pTimestamp_in, py
  * @brief function to release all internal frames and clear the q (used with reconfigure): Only used with "OUT_SURFACE_MEM_DEV_INTERNAL"
  * 
  * @return true      - success
- * @return false     - falied
+ * @return false     - failed
  */
 bool pyRocVideoDecoder::ReleaseInternalFrames() {
     if (out_mem_type_ != OUT_SURFACE_MEM_DEV_INTERNAL || out_mem_type_ == OUT_SURFACE_MEM_NOT_MAPPED)
@@ -945,21 +934,14 @@ bool pyRocVideoDecoder::ReleaseInternalFrames() {
 }
 
   
-void pyRocVideoDecoder::SaveFrameToFile(std::string output_file_name) {
+void pyRocVideoDecoder::SaveFrameToFile(std::string output_file_name, void *surf_mem, OutputSurfaceInfo *surf_info) {
     uint8_t *hst_ptr = nullptr;
-    OutputSurfaceInfo *surf_info = &output_surface_info_; // Essam Added for simplicity
     uint64_t output_image_size = surf_info->output_surface_size_in_bytes;
-
-    uint8_t *surf_mem = current_frame_ptr; // Essam: added for simplicity
-
     if (surf_info->mem_type == OUT_SURFACE_MEM_DEV_INTERNAL || surf_info->mem_type == OUT_SURFACE_MEM_DEV_COPIED) {
         if (hst_ptr == nullptr) {
             hst_ptr = new uint8_t [output_image_size];
         }
         hipError_t hip_status = hipSuccess;
-
-        //std::cout << "hst_ptr: " << (long)hst_ptr << " surf_mem: " << (long)surf_mem << " output_image_size: " << (long)output_image_size << "\n";
-        
         hip_status = hipMemcpyDtoH((void *)hst_ptr, surf_mem, output_image_size);
         if (hip_status != hipSuccess) {
             std::cerr << "ERROR: hipMemcpyDtoH failed! (" << hipGetErrorName(hip_status) << ")" << std::endl;
@@ -969,9 +951,11 @@ void pyRocVideoDecoder::SaveFrameToFile(std::string output_file_name) {
     } else
         hst_ptr = static_cast<uint8_t *> (surf_mem);
 
-
     uint8_t *tmp_hst_ptr = hst_ptr;
-
+    if (surf_info->mem_type == OUT_SURFACE_MEM_DEV_INTERNAL && (crop_rect_.l | crop_rect_.t)) {
+        tmp_hst_ptr += (crop_rect_.t * surf_info->output_pitch) + crop_rect_.l * surf_info->bytes_per_pixel;
+    }
+    
     if (current_output_filename.empty()) {
         current_output_filename = output_file_name;
     }
@@ -1008,45 +992,33 @@ void pyRocVideoDecoder::SaveFrameToFile(std::string output_file_name) {
         if (img_width * surf_info->bytes_per_pixel == output_stride && img_height == surf_info->output_vstride) {
             fwrite(hst_ptr, 1, output_image_size, fp_out_);
         } else {
-            uint32_t width = surf_info->output_width;
-            if (surf_info->bit_depth == 8) {
+            uint32_t width = surf_info->output_width * surf_info->bytes_per_pixel;
+            if (surf_info->bit_depth <= 16) {
                 for (int i = 0; i < surf_info->output_height; i++) {
                     fwrite(tmp_hst_ptr, 1, width, fp_out_);
                     tmp_hst_ptr += output_stride;
                 }
                 // dump chroma
                 uint8_t *uv_hst_ptr = hst_ptr + output_stride * surf_info->output_vstride;
+                if (surf_info->mem_type == OUT_SURFACE_MEM_DEV_INTERNAL) {
+                    uv_hst_ptr += (num_chroma_planes_ == 1) ? ((crop_rect_.t >> 1) * surf_info->output_pitch) + (crop_rect_.l * surf_info->bytes_per_pixel):
+                                                            (crop_rect_.t * surf_info->output_pitch) + (crop_rect_.l * surf_info->bytes_per_pixel);
+                }
                 for (int i = 0; i < chroma_height_; i++) {
                     fwrite(uv_hst_ptr, 1, width, fp_out_);
                     uv_hst_ptr += output_stride;
                 }
                 if (num_chroma_planes_ == 2) {
-                    uint8_t *v_hst_ptr = hst_ptr + output_stride * (surf_info->output_vstride + chroma_vstride_);
+                    uv_hst_ptr = hst_ptr + output_stride * (surf_info->output_vstride + chroma_vstride_);
+                    if (surf_info->mem_type == OUT_SURFACE_MEM_DEV_INTERNAL) {
+                        uv_hst_ptr += (crop_rect_.t * surf_info->output_pitch) + (crop_rect_.l * surf_info->bytes_per_pixel);
+                    }
                     for (int i = 0; i < chroma_height_; i++) {
                         fwrite(uv_hst_ptr, 1, width, fp_out_);
-                        v_hst_ptr += output_stride;
+                        uv_hst_ptr += output_stride;
                     }
                 }
-
-            } else if (surf_info->bit_depth > 8 &&  surf_info->bit_depth <= 16 ) {
-                for (int i = 0; i < img_height; i++) {
-                    fwrite(tmp_hst_ptr, 1, width * surf_info->bytes_per_pixel, fp_out_);
-                    tmp_hst_ptr += output_stride;
-                }
-                // dump chroma
-                uint8_t *uv_hst_ptr = hst_ptr + output_stride * surf_info->output_vstride;
-                for (int i = 0; i < chroma_height_; i++) {
-                    fwrite(uv_hst_ptr, 1, width * surf_info->bytes_per_pixel, fp_out_);
-                    uv_hst_ptr += output_stride;
-                }
-                if (num_chroma_planes_ == 2) {
-                    uint8_t *v_hst_ptr = hst_ptr + output_stride * (surf_info->output_vstride + chroma_vstride_);
-                    for (int i = 0; i < chroma_height_; i++) {
-                        fwrite(uv_hst_ptr, 1, width, fp_out_);
-                        v_hst_ptr += output_stride;
-                    }
-                }
-            }
+            } 
         }
     }
 
@@ -1056,15 +1028,22 @@ void pyRocVideoDecoder::SaveFrameToFile(std::string output_file_name) {
 }
 
 // for pyhton binding
-py::object pyRocVideoDecoder::wrapper_SaveFrameToFile(py::object& output_file_name_in) {
+py::object pyRocVideoDecoder::wrapper_SaveFrameToFile(py::object& output_file_name_in,py::array_t<uint64_t>& surf_mem_adrs, py::array_t<uint8_t>& surface_info_adrs) {
     auto p_ptr = ctypes_void_ptr(output_file_name_in);
     int sizeofW = wcslen((wchar_t *) p_ptr);
-    char ptr[sizeofW]; // file path shouldn't exeed 256
-    memset(ptr,0,sizeofW);
-    size_t t = wcstombs(ptr,(wchar_t *) p_ptr, sizeofW-1); // safe copy with exact size
+    char ptr[sizeofW+4]; // file path shouldn't exeed 256
+    memset(ptr,0,sizeofW+4);
+    size_t t = wcstombs(ptr,(wchar_t *) p_ptr, sizeofW); // safe copy with exact size
     std::string tmp(ptr);
-    std::string output_file_name(tmp);    
-    SaveFrameToFile(output_file_name);
+    std::string output_file_name(tmp);   
+    uint64_t surf_mem;
+    OutputSurfaceInfo surf_info;
+
+    memcpy(&surf_mem, surf_mem_adrs.mutable_data(), sizeof(uint64_t)); 
+    memcpy(&surf_info, surface_info_adrs.mutable_data(), sizeof(OutputSurfaceInfo)); 
+    
+    SaveFrameToFile(output_file_name, (void *)surf_mem, &surf_info);
+    
     return py::cast<py::none>(Py_None);
 }
 
@@ -1079,22 +1058,16 @@ py::object pyRocVideoDecoder::wrapper_InitMd5() {
     return py::cast<py::none>(Py_None);
 }
 
-void pyRocVideoDecoder::UpdateMd5ForFrame() {
+void pyRocVideoDecoder::UpdateMd5ForFrame(void *surf_mem, OutputSurfaceInfo *surf_info) {
+
     int i;
     uint8_t *hst_ptr = nullptr;
-    OutputSurfaceInfo *surf_info = &output_surface_info_; // Essam Added for simplicity
-    
-    uint8_t *surf_mem = current_frame_ptr; //Essam: added for simplicity 
-
     uint64_t output_image_size = surf_info->output_surface_size_in_bytes;
     if (surf_info->mem_type == OUT_SURFACE_MEM_DEV_INTERNAL || surf_info->mem_type == OUT_SURFACE_MEM_DEV_COPIED) {
         if (hst_ptr == nullptr) {
             hst_ptr = new uint8_t [output_image_size];
         }
         hipError_t hip_status = hipSuccess;
-
-        //std::cout << "hst_ptr: " << (long)hst_ptr << " surf_mem: " << (long)surf_mem << " output_image_size: " << (long)output_image_size << "\n";
-
         hip_status = hipMemcpyDtoH((void *)hst_ptr, surf_mem, output_image_size);
         if (hip_status != hipSuccess) {
             std::cerr << "ERROR: hipMemcpyDtoH failed! (" << hip_status << ")" << std::endl;
@@ -1163,8 +1136,15 @@ void pyRocVideoDecoder::UpdateMd5ForFrame() {
 }
 
 // for pyhton binding
-py::object pyRocVideoDecoder::wrapper_UpdateMd5ForFrame() {
-    UpdateMd5ForFrame();
+py::object pyRocVideoDecoder::wrapper_UpdateMd5ForFrame(py::array_t<uint64_t>& surf_mem_adrs, py::array_t<uint8_t>& surface_info_adrs) {
+    
+    uint64_t surf_mem;
+    OutputSurfaceInfo surf_info;
+
+    memcpy(&surf_mem, surf_mem_adrs.mutable_data(), sizeof(uint64_t)); 
+    memcpy(&surf_info, surface_info_adrs.mutable_data(), sizeof(OutputSurfaceInfo));     
+    UpdateMd5ForFrame((void *)surf_mem, &surf_info);
+    
     return py::cast<py::none>(Py_None);
 }
 
@@ -1206,17 +1186,32 @@ py::object pyRocVideoDecoder::wrapper_GetDeviceinfo(py::object &device_name, py:
     return py::cast<py::none>(Py_None); 
 }
 
-bool pyRocVideoDecoder::GetOutputSurfaceInfo() {
+bool pyRocVideoDecoder::GetOutputSurfaceInfo(OutputSurfaceInfo **surface_info) {
     if (!disp_width_ || !disp_height_) {
-        std::cerr << "ERROR: RocVideoDecoder is not intialized" << std::endl;
+        std::cerr << "ERROR: RocVideoDecoder is not initialized" << std::endl;
         return false;
     }
+    *surface_info = &output_surface_info_;
+ 
     return true;
 }
 
+
 // for pyhton binding
-py::object pyRocVideoDecoder::wrapper_GetOutputSurfaceInfo() {
-    bool ret = GetOutputSurfaceInfo();
+py::object pyRocVideoDecoder::wrapper_GetOutputSurfaceInfoAdrs(py::array_t<uint8_t>& surface_info_adrs) {
+    
+    bool ret = true;
+
+    if (!disp_width_ || !disp_height_) {
+        std::cerr << "ERROR: RocVideoDecoder is not initialized" << std::endl;
+        ret = false;
+    }
+    else {
+        // copy whole structure in our own mem
+        surface_info_adrs.resize({sizeof(OutputSurfaceInfo)}, false);
+        memcpy(surface_info_adrs.mutable_data(), &output_surface_info_, sizeof(OutputSurfaceInfo)); 
+    }
+    
     return py::cast(ret);
 }
 
@@ -1248,10 +1243,11 @@ int GetEnvVar(const char *name, int &dev_count) {
 int pyRocVideoDecoder::ReconfigureFlushCallback() 
 {
     int n_frames_flushed = 0; 
+    OutputSurfaceInfo *surf_info=nullptr;
 
-    std::cout << "Essam: ReconfigureFlushCallback is called:\n";// << ""
+    std::cout << "Info: ReconfigureFlushCallback is called:\n";// << ""
 
-    if (!GetOutputSurfaceInfo()) {
+    if (!GetOutputSurfaceInfo(&surf_info)) {
         std::cerr << "Error: Failed to get Output Surface Info!" << std::endl;
         return n_frames_flushed;
     }
@@ -1263,10 +1259,10 @@ int pyRocVideoDecoder::ReconfigureFlushCallback()
             if (p_reconfig_params_->reconfig_flush_mode == RECONFIG_FLUSH_MODE_DUMP_TO_FILE) {
                  
                 if (p_reconfig_params_->b_dump_frames_to_file) {
-                    SaveFrameToFile(p_reconfig_params_->output_file_name);
+                    SaveFrameToFile(p_reconfig_params_->output_file_name,pframe,surf_info);
                 }
             } else if (p_reconfig_params_->reconfig_flush_mode == RECONFIG_FLUSH_MODE_CALCULATE_MD5) {
-                UpdateMd5ForFrame();
+                UpdateMd5ForFrame(pframe,surf_info);
             }
         }
         // release and flush frame
