@@ -1198,7 +1198,7 @@ bool pyRocVideoDecoder::GetOutputSurfaceInfo(OutputSurfaceInfo **surface_info) {
 
 
 // for pyhton binding
-py::object pyRocVideoDecoder::wrapper_GetOutputSurfaceInfoAdrs(py::array_t<uint8_t>& surface_info_adrs) {
+py::object pyRocVideoDecoder::wrapper_GetOutputSurfaceInfoAdrs(OutputSurfaceInfo& surface_adrs, py::array_t<uint8_t>& surface_info_adrs) {
     
     bool ret = true;
 
@@ -1210,6 +1210,7 @@ py::object pyRocVideoDecoder::wrapper_GetOutputSurfaceInfoAdrs(py::array_t<uint8
         // copy whole structure in our own mem
         surface_info_adrs.resize({sizeof(OutputSurfaceInfo)}, false);
         memcpy(surface_info_adrs.mutable_data(), &output_surface_info_, sizeof(OutputSurfaceInfo)); 
+		surface_adrs  = output_surface_info_;
     }
     
     return py::cast(ret);

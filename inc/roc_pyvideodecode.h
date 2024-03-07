@@ -268,7 +268,7 @@ class pyRocVideoDecoder {
         bool GetOutputSurfaceInfo(OutputSurfaceInfo **surface_info);
 
         // for pyhton binding
-        py::object wrapper_GetOutputSurfaceInfoAdrs(py::array_t<uint8_t>& surface_info_adrs);
+        py::object wrapper_GetOutputSurfaceInfoAdrs(OutputSurfaceInfo& surface_adrs, py::array_t<uint8_t>& surface_info_adrs);
 
         /**
          * @brief Function to set the Reconfig Params object

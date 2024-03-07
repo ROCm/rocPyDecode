@@ -170,11 +170,13 @@ b_t = np.ndarray(shape=(1), dtype=np.uint8)
 n_frame = int(0)
 total_dec_time = float(0.0)
 
-frame_adrs = np.ndarray(shape=(0), dtype=np.uint64) # just one uint64 storage (an address)
-frame_size = np.ndarray(shape=(0), dtype=np.int64)  # just one uint64 storage (int value)
-frame_pts  = np.ndarray(shape=(0), dtype=np.int64)  # just one uint64 storage (int value)
+frame_adrs = np.ndarray(shape=(0), dtype=np.uint64) # one uint64 storage (carries address)
+frame_size = np.ndarray(shape=(0), dtype=np.int64)  # one int64  storage (carries int value)
+frame_pts  = np.ndarray(shape=(0), dtype=np.int64)  # one int64  storage (carries int value)
 
-surface_info_structure_mem = np.ndarray(shape=(0), dtype=np.uint8)
+surface_info_struct = rocpydec.OutputSurfaceInfo() 
+surface_info_adrs   = np.ndarray(shape=(0), dtype=np.uint8)
+print_surface_info = True
 
 # go until no more to decode
 while True:           
@@ -189,7 +191,22 @@ while True:
     n_frame_returned = viddec.DecodeFrame(frame_adrs[0], frame_size[0], pkg_flags, frame_pts[0])
 
     # OutputSurfaceInfo **surface_info_adrs  
-    b_ret_info = viddec.GetOutputSurfaceInfoAdrs(surface_info_structure_mem) 
+    b_ret_info = viddec.GetOutputSurfaceInfoAdrs(surface_info_struct, surface_info_adrs) 
+
+    # print ONE time only
+    if print_surface_info:
+        print_surface_info = False
+        print ( "output_width: \t\t",    surface_info_struct.output_width)
+        print ( "output_height: \t\t",   surface_info_struct.output_height)
+        print ( "output_pitch: \t\t",    surface_info_struct.output_pitch)
+        print ( "vertical stride: \t",   surface_info_struct.output_vstride)	   
+        print ( "bytes_per_pixel: \t",   surface_info_struct.bytes_per_pixel)
+        print ( "bit_depth: \t\t",       surface_info_struct.bit_depth)	               
+        print ( "num_chroma_planes: \t", surface_info_struct.num_chroma_planes)	
+        print ( "out surface bytes: \t", surface_info_struct.output_surface_size_in_bytes)
+        print ( "surface_format: \t",    surface_info_struct.surface_format)			
+        print ( "mem_type: \t\t",        surface_info_struct.mem_type)
+        print ("\n")			
 
     if (n_frame==0 and b_ret_info==False):
         print("Error: Failed to get Output Surface Info!\n")
@@ -199,10 +216,10 @@ while True:
         viddec.GetFrameAddress(frame_pts, frame_adrs)        
 
         if b_generate_md5:
-            viddec.UpdateMd5ForFrame(frame_adrs[0], surface_info_structure_mem)
+            viddec.UpdateMd5ForFrame(frame_adrs[0], surface_info_adrs)
 
         if b_dump_output_frames: 
-            viddec.SaveFrameToFile( output_name_ptr, frame_adrs[0], surface_info_structure_mem )
+            viddec.SaveFrameToFile( output_name_ptr, frame_adrs[0], surface_info_adrs )
 
         # release frame        
         viddec.ReleaseFrame(frame_pts, b_t)
