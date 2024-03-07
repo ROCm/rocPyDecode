@@ -1,4 +1,4 @@
-
+ 
 import rocPyDecode as rocpydec   # rocPyDecode main module
 import rocPyDecode.types as roctypes
 import ctypes 
@@ -7,6 +7,8 @@ import datetime
 import sys
 import argparse
 import os.path
+
+# from amd.rocdecode.types import *
 
 # empty init
 input_file_path = ""
@@ -196,6 +198,7 @@ while True:
     # print ONE time only
     if print_surface_info:
         print_surface_info = False
+        print ("Surface Info:\n--------------")
         print ( "output_width: \t\t",    surface_info_struct.output_width)
         print ( "output_height: \t\t",   surface_info_struct.output_height)
         print ( "output_pitch: \t\t",    surface_info_struct.output_pitch)

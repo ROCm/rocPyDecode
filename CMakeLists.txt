@@ -22,8 +22,20 @@
 ################################################################################
 
 cmake_minimum_required (VERSION 3.5)
-project(rocPyDecode)
+set(VERSION "1.0.0")
+
+# Set Project Version and Language
+project(rocPyDecode VERSION ${VERSION} LANGUAGES CXX)
+
 set(TARGET_NAME rocPyDecode)
+
+set(CMAKE_INSTALL_LIBDIR "lib" CACHE STRING "Library install directory")
+include(GNUInstallDirs)
+
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR})
+ 
 set(CMAKE_CXX_STANDARD 17)
 
 # ROCM Path
@@ -103,10 +115,11 @@ if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
     include_directories (${ROCPYDECODE_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/inc)
     set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${ROCPYDECODE_LIBRARY})
 
+    file(GLOB_RECURSE pyfiles amd/*.py)
     file(GLOB_RECURSE include inc/*.cpp)
     file(GLOB_RECURSE sources src/*.cpp)
 
-    pybind11_add_module(rocPyDecode MODULE ${sources} ${include})
+    pybind11_add_module(rocPyDecode MODULE ${sources} ${include} ${pyfiles})
     
     target_link_libraries(rocPyDecode PRIVATE ${LINK_LIBRARY_LIST})
     message("-- ${White}rocPyDecode -- Link Libraries: ${LINK_LIBRARY_LIST}${ColourReset}")
@@ -118,6 +131,9 @@ if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}")
     set(TARGET_PYMODULE_NAME "${PYTHON_MODULE_PREFIX}rocPyDecode${PYTHON_MODULE_EXTENSION}")
 
+    CONFIGURE_FILE(amd/__init__.py
+                ${CMAKE_BINARY_DIR}/amd/__init__.py @ONLY
+                )    
     CONFIGURE_FILE(setup.py
                 ${CMAKE_BINARY_DIR}/setup.py @ONLY
                 )

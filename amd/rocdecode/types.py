@@ -17,7 +17,9 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
-
+ 
+ 
+ 
 # Surface Memory Types
 from rocPyDecode.types import OUT_SURFACE_MEM_DEV_INTERNAL
 from rocPyDecode.types import OUT_SURFACE_MEM_DEV_COPIED
@@ -82,3 +84,9 @@ def data_type_function(dtype):
         return ret
     else:
         raise RuntimeError(str(dtype) + " does not correspond to a known type.")
+    
+
+class TestingImportClass(object):
+   def __init__(self, test=1):
+       if True:
+        print ("I could reach the TestingImportClass class")

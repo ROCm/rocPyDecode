@@ -17,4 +17,4 @@ def wheel_name(**kwargs):
     tag = '-'.join(bdist_wheel_cmd.get_tag())
     return f'{distname}-{tag}.whl'
 
-print(wheel_name(name='amd-rocpydecode', version='1.0.0'), end='')
+print(wheel_name(name='rocpydecode', version='1.0.0'), end='')
