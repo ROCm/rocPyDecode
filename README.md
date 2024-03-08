@@ -12,7 +12,7 @@ The rocDecode Python Binding is a tool that allows users to access rocDecode API
 ## rocpydecode install
 
 ```
-sudo cmake --build . --target PyPackageInstall
+sudo pip3 install .
 ```
 
 #### Prerequisites install to run test scripts
@@ -25,4 +25,4 @@ sudo cmake --build . --target PyPackageInstall
 * Install `CuPy` for `ROCm` - `https://github.com/ROCmSoftwarePlatform/cupy`
 
 #### Run Test Scripts
-* Test scripts and instructions to run them can be found [here](examples/)
+* Test scripts and instructions to run them can be found [here](samples/)
