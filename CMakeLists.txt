@@ -92,8 +92,7 @@ if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
     # HIP
     set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} hip::host)
     # FFMPEG
-    include_directories(${AVUTIL_INCLUDE_DIR} ${AVCODEC_INCLUDE_DIR}
-                        ${AVFORMAT_INCLUDE_DIR})
+    include_directories(${AVUTIL_INCLUDE_DIR} ${AVCODEC_INCLUDE_DIR} ${AVFORMAT_INCLUDE_DIR})
     set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${FFMPEG_LIBRARIES})
     # rocDecode
     include_directories (${ROCDECODE_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/..)
@@ -118,19 +117,10 @@ if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
         SUFFIX "${PYTHON_MODULE_EXTENSION}"
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}")
     set(TARGET_PYMODULE_NAME "${PYTHON_MODULE_PREFIX}rocpydecode${PYTHON_MODULE_EXTENSION}")
-
-    CONFIGURE_FILE(amd/__init__.py
-                ${CMAKE_BINARY_DIR}/${TARGET_NAME}/__init__.py @ONLY
-                )
-    CONFIGURE_FILE(amd/rocpydecode/__init__.py
-                 ${CMAKE_BINARY_DIR}/${TARGET_NAME}/__init__.py @ONLY
-                 )                    
+                  
     CONFIGURE_FILE(setup.py
                 ${CMAKE_BINARY_DIR}/setup.py @ONLY
                 )
-    # CONFIGURE_FILE(getrocdecodewheelname.py
-    #             ${CMAKE_BINARY_DIR}/get_rocdecode_wheelname.py @ONLY
-    #             )
     CONFIGURE_FILE(src/roc_pydecode.cpp
                 ${CMAKE_BINARY_DIR}/roc_pydecode.cpp @ONLY
                 )
@@ -148,27 +138,7 @@ if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
         message(STATUS "Copying ${filename} to ${TARGET_NAME}/${ITEM_PATH_REL}")
         configure_file("${filename}" "${CMAKE_BINARY_DIR}/${TARGET_NAME}/${ITEM_PATH_REL}" COPYONLY)
     endforeach (filename)
-
-    # execute_process(COMMAND "${Python3_EXECUTABLE}" get_rocdecode_wheelname.py OUTPUT_VARIABLE PY_WHEELFILE
-    #     WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
-    # message(STATUS "Detected rocpydecode Python wheel filename ${PY_WHEELFILE}")
-        
-    # add_custom_target(PyPackageBuild
-    #     COMMAND "${Python3_EXECUTABLE}" -m pip wheel .
-    #     WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
-    #     COMMENT "Building python wheel package"
-    #     )
-
-    # add_dependencies(PyPackageBuild rocpydecode)
-
-    # set_target_properties(PyPackageBuild PROPERTIES Package_Name ${PY_WHEELFILE})
-    # add_custom_target(PyPackageInstall
-    #         COMMAND "${Python3_EXECUTABLE}" -m pip install --upgrade --force-reinstall --no-deps "${PY_WHEELFILE}"
-    #         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
-    #         COMMENT "Installing wheel file"
-    #         )
-    #add_dependencies(PyPackageInstall PyPackageBuild)
-        
+       
     #install rocpydecode pybind libs
     install(FILES ${CMAKE_BINARY_DIR}/${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}/${TARGET_PYMODULE_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX_PYTHON})
     message("-- ${Green}Radeon Decode Library Python Binding - rocpydecode module added ${ColourReset}")

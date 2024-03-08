@@ -44,18 +44,19 @@ setup(
       version='1.0.0',
       author='AMD',
       license='MIT License',
-      packages= ['amd/rocpydecode'], # find_packages(where='@TARGET_NAME@'),   # ['amd/rocpydecode'],   #   
+      packages= ['amd/rocpydecode'],  
       package_dir={'amd':'@TARGET_NAME@/amd'},
+      package_data={"amd": ["__init__.pyi"]},
       include_package_data=True,
       ext_modules=[Extension('rocpydecode', 
-                             sources=['src/roc_pydecode.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp'], 
-                             include_dirs=['/opt/rocm/include/', '@pybind11_INCLUDE_DIRS@', '../rocDecode/api','/opt/rocm/include'], 
-                             extra_compile_args=['-D__HIP_PLATFORM_AMD__'], 
-                              library_dirs=['/opt/rocm/lib/', '/usr/local/lib/'],
-                              libraries=['rocdecode','avcodec','avformat','avfilter','avformat','avutil']
+                            sources=['src/roc_pydecode.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp'], 
+                            include_dirs=['/opt/rocm/include/', '@pybind11_INCLUDE_DIRS@', '../rocDecode/api','/opt/rocm/include'], 
+                            extra_compile_args=['-D__HIP_PLATFORM_AMD__'], 
+                            library_dirs=['/opt/rocm/lib/', '/usr/local/lib/'],
+                            libraries=['rocdecode','avcodec','avformat','avfilter','avformat','avutil']
                              )],
       distclass=BinaryDistribution
       )
 
-# package_data={"amd": ["__init__.pyi"]},
+# 
  
