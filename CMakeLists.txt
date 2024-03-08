@@ -22,20 +22,8 @@
 ################################################################################
 
 cmake_minimum_required (VERSION 3.5)
-set(VERSION "1.0.0")
-
-# Set Project Version and Language
-project(rocPyDecode VERSION ${VERSION} LANGUAGES CXX)
-
-set(TARGET_NAME rocPyDecode)
-
-set(CMAKE_INSTALL_LIBDIR "lib" CACHE STRING "Library install directory")
-include(GNUInstallDirs)
-
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR})
- 
+project(rocpydecode)
+set(TARGET_NAME rocpydecode)
 set(CMAKE_CXX_STANDARD 17)
 
 # ROCM Path
@@ -96,8 +84,8 @@ if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
 
     # avoid setting the default installation path to /usr/local
     if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)	
-        message("-- ${Green}NOTE: rocPyDecode PyBind default installation path -- ${Python3_STDARCH} ${ColourReset}")	
-        set(CMAKE_INSTALL_PREFIX_PYTHON ${Python3_STDARCH} CACHE PATH "rocPyDecode PyBind default installation path" FORCE)	
+        message("-- ${Green}NOTE: rocpydecode PyBind default installation path -- ${Python3_STDARCH} ${ColourReset}")	
+        set(CMAKE_INSTALL_PREFIX_PYTHON ${Python3_STDARCH} CACHE PATH "rocpydecode PyBind default installation path" FORCE)	
     endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)	
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 	
@@ -111,35 +99,38 @@ if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
     include_directories (${ROCDECODE_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/..)
     set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${ROCDECODE_LIBRARY})
 
-    # rocPyDecode include
-    include_directories (${ROCPYDECODE_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/inc)
-    set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${ROCPYDECODE_LIBRARY})
+    # rocpydecode include
+    include_directories (${rocpydecode_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/inc)
+    set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${rocpydecode_LIBRARY})
 
-    file(GLOB_RECURSE pyfiles amd/*.py)
+    file(GLOB_RECURSE pyfiles amd/*.py amd/rocpydecode/*.py)
     file(GLOB_RECURSE include inc/*.cpp)
     file(GLOB_RECURSE sources src/*.cpp)
 
-    pybind11_add_module(rocPyDecode MODULE ${sources} ${include} ${pyfiles})
+    pybind11_add_module(rocpydecode MODULE ${sources})
     
-    target_link_libraries(rocPyDecode PRIVATE ${LINK_LIBRARY_LIST})
-    message("-- ${White}rocPyDecode -- Link Libraries: ${LINK_LIBRARY_LIST}${ColourReset}")
-    message("-- ${White}rocPyDecode -- CMAKE_CXX_FLAGS:${CMAKE_CXX_FLAGS}${ColourReset}")
+    target_link_libraries(rocpydecode PRIVATE ${LINK_LIBRARY_LIST})
+    message("-- ${White}rocpydecode -- Link Libraries: ${LINK_LIBRARY_LIST}${ColourReset}")
+    message("-- ${White}rocpydecode -- CMAKE_CXX_FLAGS:${CMAKE_CXX_FLAGS}${ColourReset}")
  
-    set_target_properties(rocPyDecode PROPERTIES
+    set_target_properties(rocpydecode PROPERTIES
         PREFIX "${PYTHON_MODULE_PREFIX}"
         SUFFIX "${PYTHON_MODULE_EXTENSION}"
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}")
-    set(TARGET_PYMODULE_NAME "${PYTHON_MODULE_PREFIX}rocPyDecode${PYTHON_MODULE_EXTENSION}")
+    set(TARGET_PYMODULE_NAME "${PYTHON_MODULE_PREFIX}rocpydecode${PYTHON_MODULE_EXTENSION}")
 
     CONFIGURE_FILE(amd/__init__.py
-                ${CMAKE_BINARY_DIR}/amd/__init__.py @ONLY
-                )    
+                ${CMAKE_BINARY_DIR}/${TARGET_NAME}/__init__.py @ONLY
+                )
+    CONFIGURE_FILE(amd/rocpydecode/__init__.py
+                 ${CMAKE_BINARY_DIR}/${TARGET_NAME}/__init__.py @ONLY
+                 )                    
     CONFIGURE_FILE(setup.py
                 ${CMAKE_BINARY_DIR}/setup.py @ONLY
                 )
-    CONFIGURE_FILE(get_rocdecode_wheelname.py
-                ${CMAKE_BINARY_DIR}/get_rocdecode_wheelname.py @ONLY
-                )
+    # CONFIGURE_FILE(getrocdecodewheelname.py
+    #             ${CMAKE_BINARY_DIR}/get_rocdecode_wheelname.py @ONLY
+    #             )
     CONFIGURE_FILE(src/roc_pydecode.cpp
                 ${CMAKE_BINARY_DIR}/roc_pydecode.cpp @ONLY
                 )
@@ -158,29 +149,29 @@ if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
         configure_file("${filename}" "${CMAKE_BINARY_DIR}/${TARGET_NAME}/${ITEM_PATH_REL}" COPYONLY)
     endforeach (filename)
 
-    execute_process(COMMAND "${Python3_EXECUTABLE}" get_rocdecode_wheelname.py OUTPUT_VARIABLE PY_WHEELFILE
-        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
-    message(STATUS "Detected rocPyDecode Python wheel filename ${PY_WHEELFILE}")
+    # execute_process(COMMAND "${Python3_EXECUTABLE}" get_rocdecode_wheelname.py OUTPUT_VARIABLE PY_WHEELFILE
+    #     WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
+    # message(STATUS "Detected rocpydecode Python wheel filename ${PY_WHEELFILE}")
         
-    add_custom_target(PyPackageBuild
-        COMMAND "${Python3_EXECUTABLE}" -m pip wheel .
-        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
-        COMMENT "Building python wheel package"
-        )
+    # add_custom_target(PyPackageBuild
+    #     COMMAND "${Python3_EXECUTABLE}" -m pip wheel .
+    #     WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    #     COMMENT "Building python wheel package"
+    #     )
 
-    add_dependencies(PyPackageBuild rocPyDecode)
+    # add_dependencies(PyPackageBuild rocpydecode)
 
-    set_target_properties(PyPackageBuild PROPERTIES Package_Name ${PY_WHEELFILE})
-    add_custom_target(PyPackageInstall
-            COMMAND "${Python3_EXECUTABLE}" -m pip install --upgrade --force-reinstall --no-deps "${PY_WHEELFILE}"
-            WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
-            COMMENT "Installing wheel file"
-            )
-    add_dependencies(PyPackageInstall PyPackageBuild)
+    # set_target_properties(PyPackageBuild PROPERTIES Package_Name ${PY_WHEELFILE})
+    # add_custom_target(PyPackageInstall
+    #         COMMAND "${Python3_EXECUTABLE}" -m pip install --upgrade --force-reinstall --no-deps "${PY_WHEELFILE}"
+    #         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    #         COMMENT "Installing wheel file"
+    #         )
+    #add_dependencies(PyPackageInstall PyPackageBuild)
         
-    #install rocPyDecode pybind libs
+    #install rocpydecode pybind libs
     install(FILES ${CMAKE_BINARY_DIR}/${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}/${TARGET_PYMODULE_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX_PYTHON})
-    message("-- ${Green}Radeon Decode Library Python Binding - rocPyDecode module added ${ColourReset}")
+    message("-- ${Green}Radeon Decode Library Python Binding - rocpydecode module added ${ColourReset}")
 else()
     message("-- ${Red}WARNING: Decode PyBind Module excluded - Dependency Failure${ColourReset}")
 endif()

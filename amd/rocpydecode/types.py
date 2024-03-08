@@ -18,36 +18,34 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
  
- 
- 
 # Surface Memory Types
-from rocPyDecode.types import OUT_SURFACE_MEM_DEV_INTERNAL
-from rocPyDecode.types import OUT_SURFACE_MEM_DEV_COPIED
-from rocPyDecode.types import OUT_SURFACE_MEM_HOST_COPIED
+from rocpydecode.Ctypes import OUT_SURFACE_MEM_DEV_INTERNAL
+from rocpydecode.Ctypes import OUT_SURFACE_MEM_DEV_COPIED
+from rocpydecode.Ctypes import OUT_SURFACE_MEM_HOST_COPIED
 
 # Video Packet Flags
-from rocPyDecode.types import ROCDEC_PKT_ENDOFSTREAM
-from rocPyDecode.types import ROCDEC_PKT_TIMESTAMP
-from rocPyDecode.types import ROCDEC_PKT_DISCONTINUITY
-from rocPyDecode.types import ROCDEC_PKT_ENDOFPICTURE
-from rocPyDecode.types import ROCDEC_PKT_NOTIFY_EOS
+from rocpydecode.Ctypes import ROCDEC_PKT_ENDOFSTREAM
+from rocpydecode.Ctypes import ROCDEC_PKT_TIMESTAMP
+from rocpydecode.Ctypes import ROCDEC_PKT_DISCONTINUITY
+from rocpydecode.Ctypes import ROCDEC_PKT_ENDOFPICTURE
+from rocpydecode.Ctypes import ROCDEC_PKT_NOTIFY_EOS
 
 # Video Codecs
-from rocPyDecode.types import rocDecVideoCodec_MPEG1
-from rocPyDecode.types import rocDecVideoCodec_MPEG2
-from rocPyDecode.types import rocDecVideoCodec_MPEG4
-from rocPyDecode.types import rocDecVideoCodec_AVC
-from rocPyDecode.types import rocDecVideoCodec_HEVC
-from rocPyDecode.types import rocDecVideoCodec_AV1
-from rocPyDecode.types import rocDecVideoCodec_VP8
-from rocPyDecode.types import rocDecVideoCodec_VP9
-from rocPyDecode.types import rocDecVideoCodec_JPEG
-from rocPyDecode.types import rocDecVideoCodec_NumCodecs
-from rocPyDecode.types import rocDecVideoCodec_YUV420
-from rocPyDecode.types import rocDecVideoCodec_YV12
-from rocPyDecode.types import rocDecVideoCodec_NV12
-from rocPyDecode.types import rocDecVideoCodec_YUYV
-from rocPyDecode.types import rocDecVideoCodec_UYVY
+from rocpydecode.Ctypes import rocDecVideoCodec_MPEG1
+from rocpydecode.Ctypes import rocDecVideoCodec_MPEG2
+from rocpydecode.Ctypes import rocDecVideoCodec_MPEG4
+from rocpydecode.Ctypes import rocDecVideoCodec_AVC
+from rocpydecode.Ctypes import rocDecVideoCodec_HEVC
+from rocpydecode.Ctypes import rocDecVideoCodec_AV1
+from rocpydecode.Ctypes import rocDecVideoCodec_VP8
+from rocpydecode.Ctypes import rocDecVideoCodec_VP9
+from rocpydecode.Ctypes import rocDecVideoCodec_JPEG
+from rocpydecode.Ctypes import rocDecVideoCodec_NumCodecs
+from rocpydecode.Ctypes import rocDecVideoCodec_YUV420
+from rocpydecode.Ctypes import rocDecVideoCodec_YV12
+from rocpydecode.Ctypes import rocDecVideoCodec_NV12
+from rocpydecode.Ctypes import rocDecVideoCodec_YUYV
+from rocpydecode.Ctypes import rocDecVideoCodec_UYVY
 
 _known_types = {
 
@@ -89,4 +87,4 @@ def data_type_function(dtype):
 class TestingImportClass(object):
    def __init__(self, test=1):
        if True:
-        print ("I could reach the TestingImportClass class")
+        print ("\nTesting: I can reach the TestingImportClass class\n") # to be removed: Essam

@@ -19,4 +19,3 @@
 # THE SOFTWARE.
 
 from __future__ import absolute_import
-from amd.rocdecode import absolute_import

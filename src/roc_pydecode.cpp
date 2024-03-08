@@ -25,7 +25,7 @@ THE SOFTWARE.
 using namespace std;
 namespace py = pybind11;
 
-PYBIND11_MODULE(rocPyDecode, m) {
+PYBIND11_MODULE(rocpydecode, m) {
  
     m.doc() = "Python bindings for the C++ portions of rocDecode ..";
 
@@ -35,7 +35,7 @@ PYBIND11_MODULE(rocPyDecode, m) {
     // ------
     // Types:
     // ------
-    py::module types_m = m.def_submodule("types");
+    py::module types_m = m.def_submodule("Ctypes");
     types_m.doc() = "Datatypes and options used by rocdecode";
 
     py::enum_<AVCodecID>(types_m, "AVCodecID")

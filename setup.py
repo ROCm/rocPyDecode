@@ -23,13 +23,13 @@ from setuptools.dist import Distribution
 import sys
 import os
 
-ROCM_PATH = '/opt/rocm'
-if "ROCM_PATH" in os.environ:
-    ROCM_PATH = os.environ.get('ROCM_PATH')
-print("\nROCm PATH set to -- "+ROCM_PATH+"\n")
+# ROCM_PATH = '/opt/rocm'
+# if "ROCM_PATH" in os.environ:
+#     ROCM_PATH = os.environ.get('ROCM_PATH')
+# print("\nROCm PATH set to -- "+ROCM_PATH+"\n")
 
 if sys.version_info < (3, 0):
-    sys.exit('rocPyDecode Python Package requires Python > 3.0')
+    sys.exit('rocpydecode Python Package requires Python > 3.0')
 
 class BinaryDistribution(Distribution):
     """Distribution which always forces a binary package with platform name"""
@@ -38,16 +38,22 @@ class BinaryDistribution(Distribution):
         return True
  
 setup(
-      name='rocpydecode',
+      name='amd-rocpydecode',
       description='AMD ROCm Video Decoder Library',
       url='https://github.com/ROCm/rocPyDecode',
       version='1.0.0',
       author='AMD',
       license='MIT License',
-      packages=find_packages(where='@TARGET_NAME@'),      
+      packages= ['amd/rocpydecode'], # find_packages(where='@TARGET_NAME@'),   # ['amd/rocpydecode'],   #   
       package_dir={'amd':'@TARGET_NAME@/amd'},
       include_package_data=True,
-      ext_modules=[Extension('rocpydecode', sources=['src/roc_pydecode.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp'], include_dirs=[ROCM_PATH+'/include', '@pybind11_INCLUDE_DIRS@', '../rocDecode/api','/opt/rocm/include'], extra_compile_args=['-D__HIP_PLATFORM_AMD__'])],
+      ext_modules=[Extension('rocpydecode', 
+                             sources=['src/roc_pydecode.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp'], 
+                             include_dirs=['/opt/rocm/include/', '@pybind11_INCLUDE_DIRS@', '../rocDecode/api','/opt/rocm/include'], 
+                             extra_compile_args=['-D__HIP_PLATFORM_AMD__'], 
+                              library_dirs=['/opt/rocm/lib/', '/usr/local/lib/'],
+                              libraries=['rocdecode','avcodec','avformat','avfilter','avformat','avutil']
+                             )],
       distclass=BinaryDistribution
       )
 

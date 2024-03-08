@@ -1,6 +1,6 @@
  
-import rocPyDecode as rocpydec   # rocPyDecode main module
-import rocPyDecode.types as roctypes
+import rocpydecode as rocpydec   # rocpydecode main module
+import rocpydecode.Ctypes as roctypes
 import ctypes 
 import numpy as np
 import datetime
@@ -8,7 +8,10 @@ import sys
 import argparse
 import os.path
 
-# from amd.rocdecode.types import *
+# # testing access API
+# from amd.rocpydecode.types import TestingImportClass
+# xx = TestingImportClass()
+# print(xx)
 
 # empty init
 input_file_path = ""
@@ -29,6 +32,9 @@ gcn_arch_name = np.zeros(100,str)
 pci_bus_id = np.array(1)
 pci_domain_id = np.array(1)
 pci_device_id = np.array(1)
+
+
+
 
 # accept arguments for: input_file_path, output_file_path, gpu_device_id, force_zero_latency_flag, extract_sei_messages_flag, generate_md5_message_digest_flag, input_md5_file_path, crop_rectangle_4_values, and output_surface_memory_type
 parser = argparse.ArgumentParser(description='PyRocDecode Video Decode Arguments')
