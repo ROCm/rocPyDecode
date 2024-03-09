@@ -21,12 +21,6 @@
 from setuptools import setup, find_packages, Extension
 from setuptools.dist import Distribution
 import sys
-import os
-
-# ROCM_PATH = '/opt/rocm'
-# if "ROCM_PATH" in os.environ:
-#     ROCM_PATH = os.environ.get('ROCM_PATH')
-# print("\nROCm PATH set to -- "+ROCM_PATH+"\n")
 
 if sys.version_info < (3, 0):
     sys.exit('rocpydecode Python Package requires Python > 3.0')
@@ -50,9 +44,9 @@ setup(
       include_package_data=True,
       ext_modules=[Extension('rocpydecode', 
                             sources=['src/roc_pydecode.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp'], 
-                            include_dirs=['/opt/rocm/include/', '@pybind11_INCLUDE_DIRS@', '../rocDecode/api','/opt/rocm/include'], 
+                            include_dirs=['@ROCM_PATH@/include/', '@pybind11_INCLUDE_DIRS@', '@ROCM_PATH@/include/rocdecode/'], 
                             extra_compile_args=['-D__HIP_PLATFORM_AMD__'], 
-                            library_dirs=['/opt/rocm/lib/', '/usr/local/lib/'],
+                            library_dirs=['@ROCM_PATH@/lib/', '/usr/local/lib/'],
                             libraries=['rocdecode','avcodec','avformat','avfilter','avformat','avutil']
                              )],
       distclass=BinaryDistribution

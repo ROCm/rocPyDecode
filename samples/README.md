@@ -17,13 +17,13 @@ To run this python sample script, you need to provide input video file full path
 * -d DEVICE, --device DEVICE
 *       GPU device ID - optional, default 0
 * -z ZERO_LATENCY, --zero_latency ZERO_LATENCY
-*       Force zero latency - [optios: yes,no], default: no
+*       Force zero latency - [options: yes,no], default: no
 * -sei EXTRACT_SEI, --extract_sei EXTRACT_SEI
-*       Extract SEI messages - [optios: yes,no], default: no
+*       Extract SEI messages - [options: yes,no], default: no
 * -md5 GENERATE_MD5, --generate_md5 GENERATE_MD5
-*       Generate MD5 message digest - [optios: yes,no], default: no
+*       Generate MD5 message digest - [options: yes,no], default: no
 * -md5_check INPUT_MD5, --input_md5 INPUT_MD5
-*       Input MD5 File Path, optional, if passed then -md5 set to yes
+*       Input MD5 File Path, optional, if passed then -md5 is set to 'yes'
 * -crop CROP_RECT [CROP_RECT ...], --crop_rect CROP_RECT [CROP_RECT ...]
 *       Crop rectangle (left, top, right, bottom), optional, default: no cropping
 * -m MEM_TYPE, --mem_type MEM_TYPE

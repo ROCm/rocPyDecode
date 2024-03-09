@@ -18,6 +18,13 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
  
+# rocDecVideoSurfaceFormat
+from rocpydecode.Ctypes import rocDecVideoSurfaceFormat_NV12         
+from rocpydecode.Ctypes import rocDecVideoSurfaceFormat_P016          
+from rocpydecode.Ctypes import rocDecVideoSurfaceFormat_YUV444       
+from rocpydecode.Ctypes import rocDecVideoSurfaceFormat_YUV444_16Bit 
+
+
 # Surface Memory Types
 from rocpydecode.Ctypes import OUT_SURFACE_MEM_DEV_INTERNAL
 from rocpydecode.Ctypes import OUT_SURFACE_MEM_DEV_COPIED

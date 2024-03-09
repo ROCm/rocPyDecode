@@ -9,9 +9,12 @@ import argparse
 import os.path
 
 # # testing access API
-# from amd.rocpydecode.types import TestingImportClass
-# xx = TestingImportClass()
- 
+# import amd.rocpydecode.types as cty
+# from  amd.rocpydecode.types import TestingImportClass
+# xx = TestingImportClass()                   # test class
+# print( cty.rocDecVideoCodec_AV1, "\n")      # test types
+# print( cty.ROCDEC_PKT_ENDOFPICTURE, "\n")   # test types
+
 
 # empty init
 input_file_path = ""
