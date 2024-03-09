@@ -24,7 +24,6 @@ from rocpydecode.Ctypes import rocDecVideoSurfaceFormat_P016
 from rocpydecode.Ctypes import rocDecVideoSurfaceFormat_YUV444       
 from rocpydecode.Ctypes import rocDecVideoSurfaceFormat_YUV444_16Bit 
 
-
 # Surface Memory Types
 from rocpydecode.Ctypes import OUT_SURFACE_MEM_DEV_INTERNAL
 from rocpydecode.Ctypes import OUT_SURFACE_MEM_DEV_COPIED
@@ -55,6 +54,11 @@ from rocpydecode.Ctypes import rocDecVideoCodec_YUYV
 from rocpydecode.Ctypes import rocDecVideoCodec_UYVY
 
 _known_types = {
+
+    rocDecVideoSurfaceFormat_NV12: ("rocDecVideoSurfaceFormat_NV12", rocDecVideoSurfaceFormat_NV12),
+    rocDecVideoSurfaceFormat_P016: ("rocDecVideoSurfaceFormat_P016", rocDecVideoSurfaceFormat_P016),
+    rocDecVideoSurfaceFormat_YUV444: ("rocDecVideoSurfaceFormat_YUV444", rocDecVideoSurfaceFormat_YUV444),
+    rocDecVideoSurfaceFormat_YUV444_16Bit: ("rocDecVideoSurfaceFormat_YUV444_16Bit", rocDecVideoSurfaceFormat_YUV444_16Bit),
 
     OUT_SURFACE_MEM_DEV_INTERNAL: ("OUT_SURFACE_MEM_DEV_INTERNAL", OUT_SURFACE_MEM_DEV_INTERNAL),
     OUT_SURFACE_MEM_DEV_COPIED: ("OUT_SURFACE_MEM_DEV_COPIED", OUT_SURFACE_MEM_DEV_COPIED),
