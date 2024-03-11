@@ -32,25 +32,22 @@ class BinaryDistribution(Distribution):
         return True
  
 setup(
-      name='amd-rocpydecode',
+      name='rocPyDecode',
       description='AMD ROCm Video Decoder Library',
       url='https://github.com/ROCm/rocPyDecode',
       version='1.0.0',
       author='AMD',
       license='MIT License',
-      packages= ['amd/rocpydecode'],  
-      package_dir={'amd':'@TARGET_NAME@/amd'},
+      packages= ['amd'],  
+      package_dir={'amd':'amd', 'rocdecode':'amd/rocdecode'},
       package_data={"amd": ["__init__.pyi"]},
       include_package_data=True,
-      ext_modules=[Extension('rocpydecode', 
+      ext_modules=[Extension('rocPyDecode', 
                             sources=['src/roc_pydecode.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp'], 
-                            include_dirs=['@ROCM_PATH@/include/', '@pybind11_INCLUDE_DIRS@', '@ROCM_PATH@/include/rocdecode/'], 
+                            include_dirs=['/opt/rocm/include/', '@pybind11_INCLUDE_DIRS@', '/opt/rocm/include/rocdecode/'], 
                             extra_compile_args=['-D__HIP_PLATFORM_AMD__'], 
-                            library_dirs=['@ROCM_PATH@/lib/', '/usr/local/lib/'],
+                            library_dirs=['/opt/rocm/lib/', '/usr/local/lib/'],
                             libraries=['rocdecode','avcodec','avformat','avfilter','avformat','avutil']
                              )],
       distclass=BinaryDistribution
       )
-
-# 
- 

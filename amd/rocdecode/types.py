@@ -19,39 +19,39 @@
 # THE SOFTWARE.
  
 # rocDecVideoSurfaceFormat
-from rocpydecode.Ctypes import rocDecVideoSurfaceFormat_NV12         
-from rocpydecode.Ctypes import rocDecVideoSurfaceFormat_P016          
-from rocpydecode.Ctypes import rocDecVideoSurfaceFormat_YUV444       
-from rocpydecode.Ctypes import rocDecVideoSurfaceFormat_YUV444_16Bit 
+from rocPyDecode.decTypes import rocDecVideoSurfaceFormat_NV12         
+from rocPyDecode.decTypes import rocDecVideoSurfaceFormat_P016          
+from rocPyDecode.decTypes import rocDecVideoSurfaceFormat_YUV444       
+from rocPyDecode.decTypes import rocDecVideoSurfaceFormat_YUV444_16Bit 
 
 # Surface Memory Types
-from rocpydecode.Ctypes import OUT_SURFACE_MEM_DEV_INTERNAL
-from rocpydecode.Ctypes import OUT_SURFACE_MEM_DEV_COPIED
-from rocpydecode.Ctypes import OUT_SURFACE_MEM_HOST_COPIED
+from rocPyDecode.decTypes import OUT_SURFACE_MEM_DEV_INTERNAL
+from rocPyDecode.decTypes import OUT_SURFACE_MEM_DEV_COPIED
+from rocPyDecode.decTypes import OUT_SURFACE_MEM_HOST_COPIED
 
 # Video Packet Flags
-from rocpydecode.Ctypes import ROCDEC_PKT_ENDOFSTREAM
-from rocpydecode.Ctypes import ROCDEC_PKT_TIMESTAMP
-from rocpydecode.Ctypes import ROCDEC_PKT_DISCONTINUITY
-from rocpydecode.Ctypes import ROCDEC_PKT_ENDOFPICTURE
-from rocpydecode.Ctypes import ROCDEC_PKT_NOTIFY_EOS
+from rocPyDecode.decTypes import ROCDEC_PKT_ENDOFSTREAM
+from rocPyDecode.decTypes import ROCDEC_PKT_TIMESTAMP
+from rocPyDecode.decTypes import ROCDEC_PKT_DISCONTINUITY
+from rocPyDecode.decTypes import ROCDEC_PKT_ENDOFPICTURE
+from rocPyDecode.decTypes import ROCDEC_PKT_NOTIFY_EOS
 
 # Video Codecs
-from rocpydecode.Ctypes import rocDecVideoCodec_MPEG1
-from rocpydecode.Ctypes import rocDecVideoCodec_MPEG2
-from rocpydecode.Ctypes import rocDecVideoCodec_MPEG4
-from rocpydecode.Ctypes import rocDecVideoCodec_AVC
-from rocpydecode.Ctypes import rocDecVideoCodec_HEVC
-from rocpydecode.Ctypes import rocDecVideoCodec_AV1
-from rocpydecode.Ctypes import rocDecVideoCodec_VP8
-from rocpydecode.Ctypes import rocDecVideoCodec_VP9
-from rocpydecode.Ctypes import rocDecVideoCodec_JPEG
-from rocpydecode.Ctypes import rocDecVideoCodec_NumCodecs
-from rocpydecode.Ctypes import rocDecVideoCodec_YUV420
-from rocpydecode.Ctypes import rocDecVideoCodec_YV12
-from rocpydecode.Ctypes import rocDecVideoCodec_NV12
-from rocpydecode.Ctypes import rocDecVideoCodec_YUYV
-from rocpydecode.Ctypes import rocDecVideoCodec_UYVY
+from rocPyDecode.decTypes import rocDecVideoCodec_MPEG1
+from rocPyDecode.decTypes import rocDecVideoCodec_MPEG2
+from rocPyDecode.decTypes import rocDecVideoCodec_MPEG4
+from rocPyDecode.decTypes import rocDecVideoCodec_AVC
+from rocPyDecode.decTypes import rocDecVideoCodec_HEVC
+from rocPyDecode.decTypes import rocDecVideoCodec_AV1
+from rocPyDecode.decTypes import rocDecVideoCodec_VP8
+from rocPyDecode.decTypes import rocDecVideoCodec_VP9
+from rocPyDecode.decTypes import rocDecVideoCodec_JPEG
+from rocPyDecode.decTypes import rocDecVideoCodec_NumCodecs
+from rocPyDecode.decTypes import rocDecVideoCodec_YUV420
+from rocPyDecode.decTypes import rocDecVideoCodec_YV12
+from rocPyDecode.decTypes import rocDecVideoCodec_NV12
+from rocPyDecode.decTypes import rocDecVideoCodec_YUYV
+from rocPyDecode.decTypes import rocDecVideoCodec_UYVY
 
 _known_types = {
 

@@ -1,4 +1,4 @@
-# Copyright (c) 2018 - 2023 Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (c) 2024 Advanced Micro Devices, Inc. All rights reserved.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -17,3 +17,21 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
+
+import rocPyDecode as rocpydec              # rocpydecode main module 
+# import rocPyDecode.decTypes as roctypes
+# import ctypes 
+# import numpy as np    
+
+
+class demuxer(object):
+    def __init__(self, input_file_path: str):
+        print ("\rocPyDemuxer Constructor..\n") # to be removed: Essam
+        
+        self.vidmux = rocpydec.usrVideoDemuxer(input_file_path)
+
+    def GetCodec_ID(self):
+        self.vidmux.GetCodec_ID()
+
+    def DemuxFrame(self, frame_adrs, frame_size, frame_pts):
+        self.vidmux.DemuxFrame(frame_adrs, frame_size, frame_pts)
