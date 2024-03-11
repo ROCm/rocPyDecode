@@ -19,9 +19,9 @@
 # THE SOFTWARE.
 
 import rocPyDecode as rocpydec              # rocpydecode main module 
-# import rocPyDecode.decTypes as roctypes
+import rocPyDecode.decTypes as roctypes
 # import ctypes 
-# import numpy as np    
+import numpy as np    
 
 
 class demuxer(object):
@@ -30,8 +30,11 @@ class demuxer(object):
         
         self.vidmux = rocpydec.usrVideoDemuxer(input_file_path)
 
-    def GetCodec_ID(self):
-        self.vidmux.GetCodec_ID()
+    def GetCodec_ID(self)-> roctypes.AVCodecID:
+        return self.vidmux.GetCodec_ID() 
 
-    def DemuxFrame(self, frame_adrs, frame_size, frame_pts):
-        self.vidmux.DemuxFrame(frame_adrs, frame_size, frame_pts)
+    def DemuxFrame(self):
+        frame_adrs = np.ndarray(shape=(0), dtype=np.uint64) # one uint64 storage (carries address)
+        frame_size = np.ndarray(shape=(0), dtype=np.int64)  # one int64  storage (carries int value)
+        frame_pts  = np.ndarray(shape=(0), dtype=np.int64)  # one int64  storage (carries int value)
+        return [self.vidmux.DemuxFrame(frame_adrs, frame_size, frame_pts), frame_adrs, frame_size, frame_pts]

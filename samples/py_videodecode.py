@@ -126,7 +126,7 @@ if (output_file_path==None):
 else:
     output_file_path = np.array(output_file_path)
 
-output_name_ptr = ctypes.c_void_p(output_file_path.ctypes.data) 
+output_file_name = ctypes.c_void_p(output_file_path.ctypes.data) 
 
 # instantiate demuxer instance 
 demuxer = dex.demuxer(input_file_path)
@@ -154,42 +154,34 @@ cfg_dump = np.array([b_dump_output_frames],dtype=bool)
 if b_generate_md5:
       viddec.InitMd5()
       
-viddec.SetReconfigurationParams( cfg_flush, cfg_dump, output_name_ptr)
+viddec.SetReconfigurationParams( cfg_flush, cfg_dump, output_file_name)
  
 # -------------------------------------
 # prepare params for the decoding loop 
 # -------------------------------------
  
 pkg_flags = int(0)                              
-n_frame_returned = 0
- 
-b_t = np.ndarray(shape=(1), dtype=np.uint8)
 
 n_frame = int(0)
 total_dec_time = float(0.0)
 
-frame_adrs = np.ndarray(shape=(0), dtype=np.uint64) # one uint64 storage (carries address)
-frame_size = np.ndarray(shape=(0), dtype=np.int64)  # one int64  storage (carries int value)
-frame_pts  = np.ndarray(shape=(0), dtype=np.int64)  # one int64  storage (carries int value)
-
 surface_info_struct = rocpydec.OutputSurfaceInfo() 
-surface_info_adrs   = np.ndarray(shape=(0), dtype=np.uint8)
 print_surface_info = True
 
 # go until no more to decode
 while True:           
     start_time = datetime.datetime.now()
     
-    b_ret = demuxer.DemuxFrame(frame_adrs, frame_size, frame_pts)
+    [b_ret, frame_adrs, frame_size, frame_pts] = demuxer.DemuxFrame()
 
     # Treat False ret as end of stream indicator
     if (b_ret == False):
         pkg_flags = pkg_flags | int(roctypes.ROCDEC_PKT_ENDOFSTREAM)
 
-    n_frame_returned = viddec.DecodeFrame(frame_adrs[0], frame_size[0], pkg_flags, frame_pts[0])
+    n_frame_returned = viddec.DecodeFrame(frame_adrs, frame_size, pkg_flags, frame_pts)
 
     # OutputSurfaceInfo **surface_info_adrs  
-    b_ret_info = viddec.GetOutputSurfaceInfoAdrs(surface_info_struct, surface_info_adrs) 
+    [b_ret_info, surface_info_adrs] = viddec.GetOutputSurfaceInfoAdrs(surface_info_struct) 
 
     # print ONE time only
     if print_surface_info:
@@ -215,13 +207,13 @@ while True:
         viddec.GetFrameAddress(frame_pts, frame_adrs)        
 
         if b_generate_md5:
-            viddec.UpdateMd5ForFrame(frame_adrs[0], surface_info_adrs)
+            viddec.UpdateMd5ForFrame(frame_adrs, surface_info_adrs)
 
         if b_dump_output_frames: 
-            viddec.SaveFrameToFile( output_name_ptr, frame_adrs[0], surface_info_adrs )
+            viddec.SaveFrameToFile( output_file_name, frame_adrs[0], surface_info_adrs )
 
         # release frame        
-        viddec.ReleaseFrame(frame_pts, b_t)
+        viddec.ReleaseFrame(frame_pts, False)
 
     # measure after completing a whole frame
     end_time = datetime.datetime.now()
@@ -246,9 +238,8 @@ if b_dump_output_frames==False:
         print( "info: frame count= ", n_frame )
       
 if b_generate_md5:
-    digest = np.zeros(16,np.uint8)
-    str_digest = ""
-    viddec.FinalizeMd5(ctypes.c_void_p(digest.ctypes.data))
+    digest = viddec.FinalizeMd5()
+    str_digest = ""    
     print("MD5 message digest: ",end = " ")
     for i in range(16):
         str_digest = str_digest + str(format('%02x' % int(digest[i])))

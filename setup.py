@@ -38,7 +38,7 @@ setup(
       version='1.0.0',
       author='AMD',
       license='MIT License',
-      packages= ['amd'],  
+      packages= ['amd', 'amd/rocdecode'],  
       package_dir={'amd':'amd', 'rocdecode':'amd/rocdecode'},
       package_data={"amd": ["__init__.pyi"]},
       include_package_data=True,

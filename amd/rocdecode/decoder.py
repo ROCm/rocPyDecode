@@ -21,7 +21,7 @@
 import rocPyDecode as rocpydec              # rocpydecode main module 
 import rocPyDecode.decTypes as roctypes
 import ctypes 
-# import numpy as np    
+import numpy as np    
 
 
 class decoder(object):
@@ -39,3 +39,32 @@ class decoder(object):
 
     def InitMd5(self):
         self.viddec.InitMd5()
+
+    def DecodeFrame(self, frame_adrs: np.uint64, frame_size: np.int64, pkg_flags: int, frame_pts: np.int64)->int:
+        return self.viddec.DecodeFrame(frame_adrs[0], frame_size[0], pkg_flags, frame_pts[0])
+
+    def GetFrameAddress(self, frame_pts:  np.int64, frame_adrs: np.uint64):
+        self.viddec.GetFrameAddress(frame_pts, frame_adrs)    
+
+    def GetOutputSurfaceInfoAdrs(self, surface_info_struct):
+        surface_info_adrs = np.ndarray(shape=(0), dtype=np.uint8)
+        ret = self.viddec.GetOutputSurfaceInfoAdrs(surface_info_struct, surface_info_adrs)
+        return [ret, surface_info_adrs]
+
+    def UpdateMd5ForFrame(self, frame_adrs: np.uint64, surface_info_adrs: np.uint8):
+        self.viddec.UpdateMd5ForFrame(frame_adrs[0], surface_info_adrs)
+
+    def SaveFrameToFile(self, output_file_name, frame_adrs: np.uint64, surface_info_adrs: np.uint8 ):
+        return self.viddec.SaveFrameToFile( output_file_name, frame_adrs, surface_info_adrs)
+    
+    def ReleaseFrame(self, frame_pts: np.int64, b_flush: bool):
+        # b_t = np.ndarray(shape=(1), dtype=np.uint8)
+        self.viddec.ReleaseFrame(frame_pts, b_flush)
+
+    def GetNumOfFlushedFrames(self):
+        return self.viddec.GetNumOfFlushedFrames()
+    
+    def FinalizeMd5(self):
+        digest = np.zeros(16,np.uint8)
+        self.viddec.FinalizeMd5(ctypes.c_void_p(digest.ctypes.data))
+        return digest
