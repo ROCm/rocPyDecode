@@ -182,9 +182,6 @@ class pyRocVideoDecoder {
        * @param force_zero_latency 
        */
 
-        // added to create local instance of the demuxer within, to access its ptrs
-        usrVideoDemuxer *demuxer; // a pyVideoDemuxer instance pointer to be allocated
-
         pyRocVideoDecoder(int device_id,  OutputSurfaceMemoryType out_mem_type, rocDecVideoCodec codec, bool force_zero_latency = false,
                           const Rect *p_crop_rect = nullptr, bool extract_user_SEI_Message = false, int max_width = 0, int max_height = 0,
                           uint32_t clk_rate = 1000);
@@ -530,3 +527,20 @@ static rocDecVideoCodec AVCodec2RocDecVideoCodec(AVCodecID av_codec) {
     default                     : return rocDecVideoCodec_NumCodecs;
     }
 }
+
+
+//
+// User defined Decoder Process
+//
+class usrVideoDecoder : public pyRocVideoDecoder {
+
+    public: 
+
+        usrVideoDecoder(int device_id,  OutputSurfaceMemoryType out_mem_type, rocDecVideoCodec codec, bool force_zero_latency = false,
+                          const Rect *p_crop_rect = nullptr, bool extract_user_SEI_Message = false, int max_width = 0, int max_height = 0,
+                          uint32_t clk_rate = 1000) : pyRocVideoDecoder(device_id, out_mem_type, codec, force_zero_latency,
+                          p_crop_rect, extract_user_SEI_Message, max_width, max_height,
+                          clk_rate){};
+        ~usrVideoDecoder(){};
+
+};

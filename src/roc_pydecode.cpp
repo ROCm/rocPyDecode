@@ -596,7 +596,6 @@ PYBIND11_MODULE(rocPyDecode, m) {
         .def("GetDeviceinfo",&pyRocVideoDecoder::wrapper_GetDeviceinfo)
         .def("InitMd5",&pyRocVideoDecoder::wrapper_InitMd5)
         .def("SetReconfigParams",&pyRocVideoDecoder::wrapper_SetReconfigParams)
-        .def_readwrite("demuxer",&pyRocVideoDecoder::demuxer)
         .def("DecodeFrame",&pyRocVideoDecoder::DecodeFrame) 
         .def("GetFrameAddress",&pyRocVideoDecoder::wrapper_GetFrameAddress)
         .def("GetFrame",&pyRocVideoDecoder::GetFrame)
