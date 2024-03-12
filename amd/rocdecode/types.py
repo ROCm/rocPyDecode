@@ -93,9 +93,3 @@ def data_type_function(dtype):
         return ret
     else:
         raise RuntimeError(str(dtype) + " does not correspond to a known type.")
-    
-
-class TestingImportClass(object):
-   def __init__(self, test=1):
-       if True:
-        print ("\nTesting: I can reach the TestingImportClass class\n") # to be removed: Essam

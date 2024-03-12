@@ -1,31 +1,15 @@
  
 import rocPyDecode as rocpydec   # rocpydecode main module
 import rocPyDecode.decTypes as roctypes
-import ctypes 
 import numpy as np
 import datetime
 import sys
 import argparse
 import os.path
 
-# testing access API
-import amd.rocdecode.types as cty
-from   amd.rocdecode.types import TestingImportClass
-
 import amd.rocdecode.decoder as dec
 import amd.rocdecode.demuxer as dex
 
-
-xx = TestingImportClass()                   # test class
-print( cty.rocDecVideoCodec_AV1, "\n")      # test types
-print( cty.ROCDEC_PKT_ENDOFPICTURE, "\n")   # test types
-
-
-# empty init
-input_file_path = ""
-output_file_path = np.array("")
-ref_md5_file = ""
- 
 # init for decoding
 b_dump_output_frames = False     # set if "Output File Path" is passed as arg
 b_generate_md5 = False           # set if "Input MD5 File Path" is passed as arg
@@ -35,13 +19,8 @@ b_md5_check = False              # set if "generate_md5" is passed as arg
 b_extract_sei_messages = False
 b_force_zero_latency = False
 p_crop_rect = None
-device_name =  np.zeros(100,str)
-gcn_arch_name = np.zeros(100,str)
-pci_bus_id = np.array(1)
-pci_domain_id = np.array(1)
-pci_device_id = np.array(1)
- 
-# accept arguments for: input_file_path, output_file_path, gpu_device_id, force_zero_latency_flag, extract_sei_messages_flag, generate_md5_message_digest_flag, input_md5_file_path, crop_rectangle_4_values, and output_surface_memory_type
+
+# get passed arguments for: input_file_path, output_file_path, gpu_device_id, force_zero_latency_flag, extract_sei_messages_flag, generate_md5_message_digest_flag, input_md5_file_path, crop_rectangle_4_values, and output_surface_memory_type
 parser = argparse.ArgumentParser(description='PyRocDecode Video Decode Arguments')
 parser.add_argument('-i', '--input', type=str, help='Input File Path - required')
 parser.add_argument('-o', '--output', type=str, help='Output File Path - optional')
@@ -126,8 +105,6 @@ if (output_file_path==None):
 else:
     output_file_path = np.array(output_file_path)
 
-output_file_name = ctypes.c_void_p(output_file_path.ctypes.data) 
-
 # instantiate demuxer instance 
 demuxer = dex.demuxer(input_file_path)
 
@@ -135,40 +112,42 @@ demuxer = dex.demuxer(input_file_path)
 coded_id = rocpydec.AVCodec2RocDecVideoCodec(demuxer.GetCodec_ID())
  
 # instantiate decoder instance 
-viddec = dec.decoder( device_id, mem_type, coded_id, b_force_zero_latency, p_crop_rect, b_extract_sei_messages,0,0,0)
+viddec = dec.decoder(device_id, mem_type, coded_id, b_force_zero_latency, p_crop_rect, b_extract_sei_messages, 0, 0, 0)
 
 # Get GPU device information
-viddec.Get_GPU_Info(device_name,gcn_arch_name,pci_bus_id,pci_domain_id,pci_device_id)
+[device_name,gcn_arch_name,pci_bus_id,pci_domain_id,pci_device_id] = viddec.Get_GPU_Info()
 
 #  print some info out  
 d = np.string_(device_name).decode("utf-8")      
 g = np.string_(gcn_arch_name).decode("utf-8")
 print("\ninfo: Input file: " + input_file_path + '\n' +
-      "info: Using GPU device " + str(device_id) + " - " + d + "[" + g + "] on PCI bus " + str(pci_bus_id) + ":" + str(pci_domain_id) + "." + str(pci_device_id) )
+      "info: Using GPU device " + 
+      str(device_id) + " - " + d + "[" + g + "] on PCI bus " + str(pci_bus_id) + ":" + 
+      str(pci_domain_id) + "." + str(pci_device_id) )
 print("info: decoding started, please wait! \n")
  
 # initialize reconfigure params: 
 cfg_flush = np.array([0],dtype=int)
 cfg_dump = np.array([b_dump_output_frames],dtype=bool)
- 
+
+# init MD5 if requested 
 if b_generate_md5:
       viddec.InitMd5()
       
-viddec.SetReconfigurationParams( cfg_flush, cfg_dump, output_file_name)
+# Set config options      
+output_file_name = viddec.SetReconfigurationParams( cfg_flush, cfg_dump, output_file_path)
  
 # -------------------------------------
 # prepare params for the decoding loop 
 # -------------------------------------
  
 pkg_flags = int(0)                              
-
 n_frame = int(0)
 total_dec_time = float(0.0)
-
 surface_info_struct = rocpydec.OutputSurfaceInfo() 
 print_surface_info = True
 
-# go until no more to decode
+# Do until no more to decode
 while True:           
     start_time = datetime.datetime.now()
     
@@ -210,7 +189,7 @@ while True:
             viddec.UpdateMd5ForFrame(frame_adrs, surface_info_adrs)
 
         if b_dump_output_frames: 
-            viddec.SaveFrameToFile( output_file_name, frame_adrs[0], surface_info_adrs )
+            viddec.SaveFrameToFile( output_file_name, frame_adrs, surface_info_adrs )
 
         # release frame        
         viddec.ReleaseFrame(frame_pts, False)
@@ -220,6 +199,7 @@ while True:
     time_per_frame = end_time - start_time
     total_dec_time = total_dec_time + time_per_frame.total_seconds()
 
+    # increament frames counter
     n_frame += n_frame_returned
 
     if (b_ret==False): # no more to decode?
@@ -231,12 +211,13 @@ n_frame += viddec.GetNumOfFlushedFrames()
 print("info: Total frame decoded: " + str(n_frame))
 
 if b_dump_output_frames==False:
-    if(n_frame>0):
+    if(n_frame>0 and total_dec_time>0):
         print("info: avg decoding time per frame: " + str((total_dec_time / n_frame)*1000) + " ms")
         print("info: avg FPS: " + str(n_frame / total_dec_time) + "\n")
     else:
         print( "info: frame count= ", n_frame )
-      
+
+# if MD5 check requested      
 if b_generate_md5:
     digest = viddec.FinalizeMd5()
     str_digest = ""    
@@ -258,8 +239,6 @@ print("\n") # end
 
 
 # examples of command line :
-# (1) python3 ../samples/py_videodecode.py -i /opt/rocm/share/rocdecode/video/AMD_driving_virtual_20-H265.mp4
-# (2) python3 ../samples/py_videodecode.py -i ../AMP_A_Samsung_4.bit -md5_check ../AMP_A_Samsung_4.md5 -o TEST.raw -m 1
-# To debug in vscode, add this [example arg list] to your debugger launch.json:
-# "args": ["-i","/opt/rocm/share/rocdecode/video/AMD_driving_virtual_20-H265.mp4","-o","test_frames_out.RAW","-m","1", "-d","0","-z","yes","-sei","yes","-md5","yes","-md5_check","input_md5_file_name.txt","-crop","0","0","100","200"]
+# python3 ../samples/py_videodecode.py -i /opt/rocm/share/rocdecode/video/AMD_driving_virtual_20-H265.mp4
+# python3 ../samples/py_videodecode.py -i ../AMP_A_Samsung_4.bit -md5_check ../AMP_A_Samsung_4.md5 -o TEST.raw -m 1
 

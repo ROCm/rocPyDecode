@@ -25,9 +25,7 @@ import numpy as np
 
 
 class demuxer(object):
-    def __init__(self, input_file_path: str):
-        print ("\rocPyDemuxer Constructor..\n") # to be removed: Essam
-        
+    def __init__(self, input_file_path: str):                
         self.vidmux = rocpydec.usrVideoDemuxer(input_file_path)
 
     def GetCodec_ID(self)-> roctypes.AVCodecID:

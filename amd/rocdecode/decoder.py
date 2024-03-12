@@ -27,15 +27,25 @@ import numpy as np
 class decoder(object):
     def __init__(self, device_id: int, out_mem_type: roctypes.OutputSurfaceMemoryType, codec: roctypes.rocDecVideoCodec, b_force_zero_latency: bool, 
                  p_crop_rect: rocpydec.Rect, b_extract_sei_messages=False, max_width=0, max_height=0, clk_rate=0):
-        print ("\rocPyDecode Constructor..\n") # to be removed: Essam
-        
-        self.viddec = rocpydec.pyRocVideoDecoder( device_id, out_mem_type, codec, b_force_zero_latency, p_crop_rect, b_extract_sei_messages,max_width, max_height, clk_rate)
+         self.viddec = rocpydec.pyRocVideoDecoder( device_id, out_mem_type, codec, b_force_zero_latency, p_crop_rect, b_extract_sei_messages,max_width, max_height, clk_rate)
 
-    def Get_GPU_Info(self, device_name, gcn_arch_name, pci_bus_id, pci_domain_id, pci_device_id):
-        self.viddec.GetDeviceinfo(ctypes.c_void_p(device_name.ctypes.data), ctypes.c_void_p(gcn_arch_name.ctypes.data), ctypes.c_void_p(pci_bus_id.ctypes.data), ctypes.c_void_p(pci_domain_id.ctypes.data), ctypes.c_void_p(pci_device_id.ctypes.data))
+    def Get_GPU_Info(self):
+        self.device_name =  np.zeros(100,str)
+        self.gcn_arch_name = np.zeros(100,str)
+        self.pci_bus_id = np.array(1)
+        self.pci_domain_id = np.array(1)
+        self.pci_device_id = np.array(1)
+        self.viddec.GetDeviceinfo(ctypes.c_void_p(self.device_name.ctypes.data), 
+                                  ctypes.c_void_p(self.gcn_arch_name.ctypes.data), 
+                                  ctypes.c_void_p(self.pci_bus_id.ctypes.data), 
+                                  ctypes.c_void_p(self.pci_domain_id.ctypes.data), 
+                                  ctypes.c_void_p(self.pci_device_id.ctypes.data))
+        return [self.device_name, self.gcn_arch_name, self.pci_bus_id, self.pci_domain_id, self.pci_device_id]
 
-    def SetReconfigurationParams(self, b_flush, b_dump_output_frames, output_file_name):
+    def SetReconfigurationParams(self, b_flush, b_dump_output_frames, output_file_path):
+        output_file_name = ctypes.c_void_p(output_file_path.ctypes.data) 
         self.viddec.SetReconfigParams( ctypes.c_void_p(b_flush.ctypes.data), ctypes.c_void_p(b_dump_output_frames.ctypes.data), output_file_name)
+        return output_file_name
 
     def InitMd5(self):
         self.viddec.InitMd5()
