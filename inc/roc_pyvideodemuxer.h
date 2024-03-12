@@ -119,6 +119,7 @@ class usrVideoDemuxer : public pyVideoDemuxer {
     public: 
 
         usrVideoDemuxer(const char *input_file_path) : pyVideoDemuxer(input_file_path){};
+        usrVideoDemuxer(StreamProvider *stream_provider) : pyVideoDemuxer(stream_provider){};
         ~usrVideoDemuxer(){};
 
         bool DemuxFrame(py::array_t<uint64_t>& frame_adrs, py::array_t<int64_t>& frame_size, py::array_t<int64_t>& pts_in) override;
