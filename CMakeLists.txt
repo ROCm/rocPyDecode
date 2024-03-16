@@ -21,10 +21,14 @@
 #
 ################################################################################
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 cmake_minimum_required (VERSION 3.5)
 project(rocPyDecode)
 set(TARGET_NAME rocPyDecode)
 set(CMAKE_CXX_STANDARD 17)
+
+add_subdirectory(src)
 
 # ROCM Path
 if(DEFINED ENV{ROCM_PATH})
@@ -56,11 +60,8 @@ else()
   # -fPIC     -- Generate position-independent code if possible
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -DNDEBUG -fPIC")
 endif()
-
-set(Python3_FIND_VIRTUALENV FIRST)	
-find_package(Python3 QUIET COMPONENTS Interpreter Development)
-
-find_package(pybind11 QUIET CONFIG)
+ 
+# find_package(pybind11 REQUIRED)
 find_package(HIP QUIET)
 find_package(FFmpeg QUIET)
 
