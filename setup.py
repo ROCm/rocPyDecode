@@ -47,7 +47,7 @@ setup(
                             include_dirs=['/opt/rocm/include/', '@pybind11_INCLUDE_DIRS@', '/opt/rocm/include/rocdecode/'], 
                             extra_compile_args=['-D__HIP_PLATFORM_AMD__'], 
                             library_dirs=['/opt/rocm/lib/', '/usr/local/lib/'],
-                            libraries=['rocdecode','avcodec','avformat','avfilter','avformat','avutil']
+                            libraries=['rocdecode','avcodec','avformat','avutil']
                              )],
       distclass=BinaryDistribution
       )

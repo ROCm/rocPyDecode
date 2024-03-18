@@ -61,7 +61,8 @@ else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -DNDEBUG -fPIC")
 endif()
  
-# find_package(pybind11 REQUIRED)
+find_package(pybind11 REQUIRED)
+
 find_package(HIP QUIET)
 find_package(FFmpeg QUIET)
 
