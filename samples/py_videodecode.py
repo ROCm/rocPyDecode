@@ -58,10 +58,10 @@ mem_type = roctypes.OutputSurfaceMemoryType(args.mem_type)
 if (args.crop_rect != None):
     if (args.crop_rect != [0,0,0,0]):
         p_crop_rect = rocpydec.Rect()
-        p_crop_rect.l = crop_rect[0]
-        p_crop_rect.t = crop_rect[1]
-        p_crop_rect.r = crop_rect[2]
-        p_crop_rect.b = crop_rect[3]
+        p_crop_rect.left = crop_rect[0]
+        p_crop_rect.top = crop_rect[1]
+        p_crop_rect.right = crop_rect[2]
+        p_crop_rect.bottom = crop_rect[3]
     
 # Input file name (must)
 valid_input = False

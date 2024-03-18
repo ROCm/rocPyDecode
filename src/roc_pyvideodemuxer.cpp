@@ -24,6 +24,9 @@ THE SOFTWARE.
 extern "C" {
     #include <libavcodec/avcodec.h>
     #include <libavformat/avformat.h>
+    #if USE_AVCODEC_GREATER_THAN_58_134
+        #include <libavcodec/bsf.h>
+    #endif
 }
 
 #include "rocdecode.h"
@@ -153,7 +156,6 @@ bool pyVideoDemuxer::Demux(uint8_t **video, int *video_size, int64_t *pts) {
                 *pts = (int64_t)(packet_->pts * default_time_scale_ * time_base_);
     }
     frame_count_++;
- 
     return true;
 }
  

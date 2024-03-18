@@ -20,12 +20,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#pragma once 
+#pragma once
 
 #include <iostream>
 extern "C" {
     #include <libavcodec/avcodec.h>
     #include <libavformat/avformat.h>
+    #if USE_AVCODEC_GREATER_THAN_58_134
+        #include <libavcodec/bsf.h>
+    #endif
 }
 
 #include "rocdecode.h"

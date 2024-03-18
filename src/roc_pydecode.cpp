@@ -627,10 +627,10 @@ PYBIND11_MODULE(rocPyDecode, m) {
     // Rect
     py::class_<Rect>(m, "Rect")
         .def(py::init<>())
-        .def_readwrite("l",&Rect::l)
-        .def_readwrite("t",&Rect::t)
-        .def_readwrite("r",&Rect::r)
-        .def_readwrite("b",&Rect::b);
+        .def_readwrite("left",&Rect::left)
+        .def_readwrite("top",&Rect::top)
+        .def_readwrite("right",&Rect::right)
+        .def_readwrite("bottom",&Rect::bottom);
 
 }
 

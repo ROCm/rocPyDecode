@@ -127,7 +127,14 @@ private:
 
 
 struct Rect {
-    int l, t, r, b;
+    int left;
+    int top;
+    int right;
+    int bottom;
+};
+
+struct Dim {
+    int w, h;
 };
 
 static inline int align(int value, int alignment) {
@@ -190,7 +197,7 @@ class pyRocVideoDecoder {
         rocDecVideoCodec GetCodecId() { return codec_id_; }
 
         hipStream_t GetStream() {return hip_stream_;}
- 
+
         /**
          * @brief Get the output frame width
          */
@@ -472,7 +479,6 @@ class pyRocVideoDecoder {
         rocDecVideoCodec codec_id_ = rocDecVideoCodec_NumCodecs;
         rocDecVideoChromaFormat video_chroma_format_ = rocDecVideoChromaFormat_420;
         rocDecVideoSurfaceFormat video_surface_format_ = rocDecVideoSurfaceFormat_NV12;
-        RocdecVideoFormat video_format_ = {};
         RocdecSeiMessageInfo *curr_sei_message_ptr_ = nullptr;
         RocdecSeiMessageInfo sei_message_display_q_[MAX_FRAME_NUM];
         int decoded_frame_cnt_ = 0, decoded_frame_cnt_ret_ = 0;
@@ -485,6 +491,8 @@ class pyRocVideoDecoder {
         uint32_t disp_width_ = 0;
         uint32_t coded_height_ = 0;
         uint32_t disp_height_ = 0;
+        uint32_t target_width_ = 0;
+        uint32_t target_height_ = 0;
         int max_width_ = 0, max_height_ = 0;
         uint32_t chroma_height_ = 0;
         uint32_t num_chroma_planes_ = 0;
@@ -496,8 +504,8 @@ class pyRocVideoDecoder {
         std::mutex mtx_vp_frame_;
         std::vector<DecFrameBuffer> vp_frames_;      // vector of decoded frames
         std::queue<DecFrameBuffer> vp_frames_q_;
-        Rect disp_rect_ = {};
-        Rect crop_rect_ = {};
+        Rect disp_rect_ = {}; // displayable area specified in the bitstream
+        Rect crop_rect_ = {}; // user specified region of interest within diplayable area disp_rect_
         FILE *fp_sei_ = NULL;
         FILE *fp_out_ = NULL;
         struct AVMD5 *md5_ctx_;
