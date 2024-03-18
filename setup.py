@@ -17,20 +17,44 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
-
-from setuptools import setup, find_packages, Extension
-from setuptools.dist import Distribution
-import sys
-
-if sys.version_info < (3, 0):
-    sys.exit('rocpydecode Python Package requires Python > 3.0')
-
-class BinaryDistribution(Distribution):
-    """Distribution which always forces a binary package with platform name"""
-    @classmethod
-    def has_ext_modules(self):
-        return True
  
+from setuptools import setup, Extension
+from setuptools.command.install import install
+import subprocess
+import os
+
+# Custom install command to run cmake before installation
+class CustomInstall(install):
+    def run(self):
+        self.build_and_install()
+        install.run(self)
+
+    def build_and_install(self):
+        # Set the build directory relative to the setup.py file
+        build_temp = os.path.join(os.path.dirname(os.path.abspath(__file__)), "build")
+        
+        # Run cmake
+        cmake_args = ["cmake", "."]
+        subprocess.check_call(cmake_args + ["-B" + build_temp], cwd=os.getcwd())
+
+        # Run cmake --build to compile
+        subprocess.check_call(["cmake", "--build", build_temp, "--target", "install"], cwd=build_temp)
+
+# Define the extension module
+ext_modules = [
+    Extension(
+        'rocPyDecode', 
+        sources=['src/roc_pydecode.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp'], 
+        include_dirs=['/opt/rocm/include/', '@pybind11_INCLUDE_DIRS@', '/opt/rocm/include/rocdecode/'], 
+        extra_compile_args=['-D__HIP_PLATFORM_AMD__'], 
+        library_dirs=['/opt/rocm/lib/', '/usr/local/lib/'],
+        libraries=['rocdecode','avcodec','avformat','avutil'],
+        runtime_library_dirs=[],
+        extra_link_args=[],
+    )
+]
+
+# Setup
 setup(
       name='rocPyDecode',
       description='AMD ROCm Video Decoder Library',
@@ -38,16 +62,10 @@ setup(
       version='1.0.0',
       author='AMD',
       license='MIT License',
+      ext_modules=ext_modules,
+      cmdclass={'install': CustomInstall},
       packages= ['amd', 'amd/rocdecode'],  
       package_dir={'amd':'amd', 'rocdecode':'amd/rocdecode'},
       package_data={"amd": ["__init__.pyi"]},
-      include_package_data=True,
-      ext_modules=[Extension('rocPyDecode', 
-                            sources=['src/roc_pydecode.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp'], 
-                            include_dirs=['/opt/rocm/include/', '@pybind11_INCLUDE_DIRS@', '/opt/rocm/include/rocdecode/'], 
-                            extra_compile_args=['-D__HIP_PLATFORM_AMD__'], 
-                            library_dirs=['/opt/rocm/lib/', '/usr/local/lib/'],
-                            libraries=['rocdecode','avcodec','avformat','avutil']
-                             )],
-      distclass=BinaryDistribution
+      include_package_data=True,       
       )

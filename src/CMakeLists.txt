@@ -1,7 +1,7 @@
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 cmake_minimum_required (VERSION 3.5)
-project(rocPyDecode VERSION 1.0)
+project(rocPyDecode VERSION 1.0.0)
 
 set(Python3_FIND_VIRTUALENV FIRST)	
 find_package(Python3 QUIET COMPONENTS Interpreter Development)
