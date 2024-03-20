@@ -23,14 +23,13 @@ THE SOFTWARE.
 #include "../inc/roc_pyvideodecode.h"
 
 using namespace std;
-namespace py = pybind11;
 
 PYBIND11_MODULE(rocPyDecode, m) {
  
     m.doc() = "Python bindings for the C++ portions of rocDecode ..";
 
     // convert betweeen demuxer & decoder
-    m.def("AVCodec2RocDecVideoCodec", &AVCodec2RocDecVideoCodec, "Convert AVCodecID to rocDecVideoCodec ID");
+    m.def("AVCodec2RocDecVideoCodec", &ConvertAVCodec2RocDecVideoCodec, "Convert AVCodecID to rocDecVideoCodec ID");
 
     // ------
     // Types:
@@ -95,31 +94,12 @@ PYBIND11_MODULE(rocPyDecode, m) {
     // -------------------------------
     // USER Demuxer 'usrVideoDemuxer'
     // -------------------------------
-    py::class_<pyVideoDemuxer, usrVideoDemuxer, std::shared_ptr<pyVideoDemuxer>> (m, "usrVideoDemuxer")
-        .def(py::init<const char*>())
-        .def("GetCodec_ID",&pyVideoDemuxer::GetCodec_ID,"Get Codec ID")
-        .def("DemuxFrame",&pyVideoDemuxer::DemuxFrame);
+    Init_pyVideoDemuxer(m);
 
     // --------------------------------------
     // AMD Video Decoder 'pyRocVideoDecoder'
     // --------------------------------------
-    py::class_<pyRocVideoDecoder> (m, "pyRocVideoDecoder")
-        .def(py::init<int,OutputSurfaceMemoryType,rocDecVideoCodec,bool,const Rect *,bool,int,int,uint32_t>(),
-                    py::arg("device_id"), py::arg("out_mem_type"), py::arg("codec"),
-                    py::arg("force_zero_latency"), py::arg("p_crop_rect"), py::arg("extract_user_SEI_Message"),
-                    py::arg("max_width"), py::arg("max_height"), py::arg("clk_rate"))
-        .def("GetDeviceinfo",&pyRocVideoDecoder::wrapper_GetDeviceinfo)
-        .def("InitMd5",&pyRocVideoDecoder::wrapper_InitMd5)
-        .def("SetReconfigParams",&pyRocVideoDecoder::wrapper_SetReconfigParams)
-        .def("DecodeFrame",&pyRocVideoDecoder::DecodeFrame) 
-        .def("GetFrameAddress",&pyRocVideoDecoder::wrapper_GetFrameAddress)
-        .def("GetFrame",&pyRocVideoDecoder::GetFrame)
-        .def("SaveFrameToFile",&pyRocVideoDecoder::wrapper_SaveFrameToFile)
-        .def("ReleaseFrame",&pyRocVideoDecoder::wrapper_ReleaseFrame)
-        .def("GetOutputSurfaceInfoAdrs",&pyRocVideoDecoder::wrapper_GetOutputSurfaceInfoAdrs)
-        .def("FinalizeMd5",&pyRocVideoDecoder::wrapper_FinalizeMd5)
-        .def("GetNumOfFlushedFrames",&pyRocVideoDecoder::wrapper_GetNumOfFlushedFrames)
-        .def("UpdateMd5ForFrame",&pyRocVideoDecoder::wrapper_UpdateMd5ForFrame);
+    Init_pyRocVideoDecoder(m);
 
     // ----------------
     // Structures:

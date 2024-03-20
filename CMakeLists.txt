@@ -86,8 +86,8 @@ if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
 
     # avoid setting the default installation path to /usr/local
     if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)	
-        message("-- ${Green}NOTE: rocpydecode PyBind default installation path -- ${Python3_STDARCH} ${ColourReset}")	
-        set(CMAKE_INSTALL_PREFIX_PYTHON ${Python3_STDARCH} CACHE PATH "rocpydecode PyBind default installation path" FORCE)	
+        message("-- ${Green}NOTE: rocPyDecode PyBind default installation path -- ${Python3_STDARCH} ${ColourReset}")	
+        set(CMAKE_INSTALL_PREFIX_PYTHON ${Python3_STDARCH} CACHE PATH "rocPyDecode PyBind default installation path" FORCE)	
     endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)	
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 	
@@ -100,19 +100,20 @@ if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
     include_directories (${ROCDECODE_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/..)
     set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${ROCDECODE_LIBRARY})
 
-    # rocpydecode include
-    include_directories (${rocpydecode_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/inc)
-    set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${rocpydecode_LIBRARY})
+    # rocPyDecode include
+    include_directories (${rocPyDecode_INCLUDE_DIR} /inc)
+    set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${rocPyDecode_LIBRARY})
+    
 
     file(GLOB_RECURSE pyfiles amd/*.py amd/*.pyi amd/rocdecode/*.py)
-    file(GLOB_RECURSE include inc/*.cpp)
-    file(GLOB_RECURSE sources src/*.cpp)
+    file(GLOB_RECURSE include inc/*.h)
+    file(GLOB_RECURSE sources src/*.cpp  ${ROCM_PATH}/share/rocdecode/utils/rocvideodecode/*.cpp)
 
     pybind11_add_module(${TARGET_NAME} MODULE ${sources})
     
     target_link_libraries(${TARGET_NAME} PRIVATE ${LINK_LIBRARY_LIST})
-    message("-- ${White}rocpydecode -- Link Libraries: ${LINK_LIBRARY_LIST}${ColourReset}")
-    message("-- ${White}rocpydecode -- CMAKE_CXX_FLAGS:${CMAKE_CXX_FLAGS}${ColourReset}")
+    message("-- ${White}rocPyDecode -- Link Libraries: ${LINK_LIBRARY_LIST}${ColourReset}")
+    message("-- ${White}rocPyDecode -- CMAKE_CXX_FLAGS:${CMAKE_CXX_FLAGS}${ColourReset}")
  
     set_target_properties(${TARGET_NAME} PROPERTIES
         PREFIX "${PYTHON_MODULE_PREFIX}"
@@ -141,10 +142,10 @@ if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
         configure_file("${filename}" "${CMAKE_BINARY_DIR}/${TARGET_NAME}/${ITEM_PATH_REL}" COPYONLY)
     endforeach (filename)
        
-    #install rocpydecode pybind libs
+    #install rocPyDecode pybind libs
     install(FILES ${CMAKE_BINARY_DIR}/${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}/${TARGET_PYMODULE_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX_PYTHON})
 
-    message("-- ${Green}Radeon Decode Library Python Binding - rocpydecode module added ${ColourReset}")
+    message("-- ${Green}Radeon Decode Library Python Binding - rocPyDecode module added ${ColourReset}")
 else()
     message("-- ${Red}WARNING: Decode PyBind Module excluded - Dependency Failure${ColourReset}")
 endif()

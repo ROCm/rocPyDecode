@@ -21,26 +21,31 @@ THE SOFTWARE.
 */
 
 #pragma once
- 
-#include "video_demuxer.h"
-#include "roc_pydecode.h"
- 
-// include here: /opt/rocm/include/rocdecode                        [rocdecode.h rocparser.h roc_video_dec.h video_demuxer.h << CLASS demux inside]
-// CPP here:     /opt/rocm/share/rocdecode/utils/rocvideodecode/    [roc_video_dec.cpp roc_video_dec.h << CLASS in cpp]
- 
-//
-// AMD Video Demuxer Python Interface class
-//
-class pyVideoDemuxer : public VideoDemuxer {
-    public:
-        pyVideoDemuxer(const char *input_file_path) : VideoDemuxer(input_file_path) {}
-        pyVideoDemuxer(VideoDemuxer::StreamProvider *stream_provider) : VideoDemuxer(stream_provider) {}
-        				
-        // for python binding
-        virtual bool DemuxFrame(py::array_t<uint64_t>& frame_adrs, py::array_t<int64_t>& frame_size, py::array_t<int64_t>& pts_in);
-        virtual AVCodecID GetCodec_ID();
-     	
-};
 
- 
+#include <iostream>
+extern "C" {
+    #include <libavcodec/avcodec.h>
+    #include <libavformat/avformat.h>
+    #if USE_AVCODEC_GREATER_THAN_58_134
+        #include <libavcodec/bsf.h>
+    #endif
+}
+  
+#include <pybind11/pybind11.h>	// Necessary from pybind11
 
+#include <pybind11/functional.h>
+#include <pybind11/stl.h>
+#include <pybind11/numpy.h>
+#include <iostream>
+#include <pybind11/embed.h>
+#include <pybind11/eval.h>
+
+namespace py = pybind11;
+
+
+// defined in roc_pyvideodemuxer.cpp
+void Init_pyVideoDemuxer(py::module& m);
+rocDecVideoCodec ConvertAVCodec2RocDecVideoCodec(AVCodecID av_codec);
+
+// defined in roc_pyvideodecoder.cpp
+void Init_pyRocVideoDecoder(py::module& m);

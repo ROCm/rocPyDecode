@@ -45,7 +45,7 @@ ext_modules = [
     Extension(
         'rocPyDecode', 
         sources=['src/roc_pydecode.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp'], 
-        include_dirs=['/opt/rocm/include/', '@pybind11_INCLUDE_DIRS@', '/opt/rocm/include/rocdecode/'], 
+        include_dirs=['inc','/opt/rocm/include/', '@pybind11_INCLUDE_DIRS@', '/opt/rocm/include/rocdecode/'], 
         extra_compile_args=['-D__HIP_PLATFORM_AMD__'], 
         library_dirs=['/opt/rocm/lib/', '/usr/local/lib/'],
         libraries=['rocdecode','avcodec','avformat','avutil'],
