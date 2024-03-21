@@ -18,16 +18,32 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import rocPyDecode as rocpydec              # rocpydecode main module 
-import rocPyDecode.decTypes as roctypes
+import rocPyDecode as rocpydec                  # rocPyDecode main module 
+import rocPyDecode.decTypes as dectypes         # rocPyDecode decode types 
 import ctypes 
 import numpy as np    
 
+def GetRocDecCodecID(codec_id)-> dectypes.rocDecVideoCodec:
+    rocCodecId = rocpydec.AVCodec2RocDecVideoCodec(codec_id)
+    return rocCodecId
+
+def GetRectangle()-> rocpydec.Rect:
+    Rect = rocpydec.Rect()
+    return Rect
+
+def GetOutputSurfaceInfo():
+    surf_info_struct = rocpydec.OutputSurfaceInfo() 
+    return surf_info_struct
+            
+def EndOfStream(packet_flags: int):
+    packet_flags = packet_flags | int(dectypes.ROCDEC_PKT_ENDOFSTREAM)
+    return packet_flags
+
 
 class decoder(object):
-    def __init__(self, device_id: int, out_mem_type: roctypes.OutputSurfaceMemoryType, codec: roctypes.rocDecVideoCodec, b_force_zero_latency: bool, 
-                 p_crop_rect: rocpydec.Rect, b_extract_sei_messages=False, max_width=0, max_height=0, clk_rate=0):
-         self.viddec = rocpydec.pyRocVideoDecoder( device_id, out_mem_type, codec, b_force_zero_latency, p_crop_rect, b_extract_sei_messages,max_width, max_height, clk_rate)
+    def __init__(self, device_id: int, codec: dectypes.rocDecVideoCodec, b_force_zero_latency: bool, 
+                 p_crop_rect: rocpydec.Rect, max_width=0, max_height=0, clk_rate=0):
+         self.viddec = rocpydec.pyRocVideoDecoder( device_id, codec, b_force_zero_latency, p_crop_rect, max_width, max_height, clk_rate)
 
     def Get_GPU_Info(self):
         self.device_name =  np.zeros(100,str)
@@ -42,14 +58,6 @@ class decoder(object):
                                   ctypes.c_void_p(self.pci_device_id.ctypes.data))
         return [self.device_name, self.gcn_arch_name, self.pci_bus_id, self.pci_domain_id, self.pci_device_id]
 
-    def SetReconfigurationParams(self, b_flush, b_dump_output_frames, output_file_path):
-        output_file_name = ctypes.c_void_p(output_file_path.ctypes.data) 
-        self.viddec.SetReconfigParams( ctypes.c_void_p(b_flush.ctypes.data), ctypes.c_void_p(b_dump_output_frames.ctypes.data), output_file_name)
-        return output_file_name
-
-    def InitMd5(self):
-        self.viddec.InitMd5()
-
     def DecodeFrame(self, frame_adrs: np.uint64, frame_size: np.int64, pkg_flags: int, frame_pts: np.int64)->int:
         return self.viddec.DecodeFrame(frame_adrs[0], frame_size[0], pkg_flags, frame_pts[0])
 
@@ -61,20 +69,15 @@ class decoder(object):
         ret = self.viddec.GetOutputSurfaceInfoAdrs(surface_info_struct, surface_info_adrs)
         return [ret, surface_info_adrs]
 
-    def UpdateMd5ForFrame(self, frame_adrs: np.uint64, surface_info_adrs: np.uint8):
-        self.viddec.UpdateMd5ForFrame(frame_adrs[0], surface_info_adrs)
-
-    def SaveFrameToFile(self, output_file_name, frame_adrs: np.uint64, surface_info_adrs: np.uint8 ):
+    def SaveFrameToFile(self, output_file_path, frame_adrs: np.uint64, surface_info_adrs: np.uint8 ):
+        output_file_name = ctypes.c_void_p(output_file_path.ctypes.data) 
         return self.viddec.SaveFrameToFile( output_file_name, frame_adrs, surface_info_adrs)
     
     def ReleaseFrame(self, frame_pts: np.int64, b_flush: bool):
         # b_t = np.ndarray(shape=(1), dtype=np.uint8)
         self.viddec.ReleaseFrame(frame_pts, b_flush)
+        return
 
     def GetNumOfFlushedFrames(self):
         return self.viddec.GetNumOfFlushedFrames()
-    
-    def FinalizeMd5(self):
-        digest = np.zeros(16,np.uint8)
-        self.viddec.FinalizeMd5(ctypes.c_void_p(digest.ctypes.data))
-        return digest
+

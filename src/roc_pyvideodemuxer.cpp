@@ -24,7 +24,7 @@ THE SOFTWARE.
 
 using namespace std;
 
-void Init_pyVideoDemuxer(py::module& m)
+void pyVideoDemuxerInitializer(py::module& m)
 {
         py::class_<pyVideoDemuxer, std::shared_ptr<pyVideoDemuxer>> (m, "usrVideoDemuxer")
         .def(py::init<const char*>())
@@ -42,9 +42,9 @@ bool pyVideoDemuxer::DemuxFrame(py::array_t<uint64_t>& frame_adrs, py::array_t<i
     uint8_t *video=nullptr;
     int video_size=0;
     int64_t pts=0;
-
+    
     bool ret = Demux(&video, &video_size, &pts); 
-  
+
     int64_t vd_size = video_size;
 
     frame_adrs.resize({sizeof(uint64_t)}, false);

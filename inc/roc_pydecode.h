@@ -44,8 +44,8 @@ namespace py = pybind11;
 
 
 // defined in roc_pyvideodemuxer.cpp
-void Init_pyVideoDemuxer(py::module& m);
+void pyVideoDemuxerInitializer(py::module& m);
 rocDecVideoCodec ConvertAVCodec2RocDecVideoCodec(AVCodecID av_codec);
 
 // defined in roc_pyvideodecoder.cpp
-void Init_pyRocVideoDecoder(py::module& m);
+void pyRocVideoDecoderInitializer(py::module& m);

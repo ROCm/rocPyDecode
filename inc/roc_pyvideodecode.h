@@ -28,38 +28,19 @@ THE SOFTWARE.
 // include here: /opt/rocm/include/rocdecode                        [rocdecode.h rocparser.h roc_video_dec.h video_demuxer.h << CLASS demux inside]
 // CPP here:     /opt/rocm/share/rocdecode/utils/rocvideodecode/    [roc_video_dec.cpp roc_video_dec.h << CLASS in cpp]
  
-typedef enum ReconfigFlushMode_enum {
-    RECONFIG_FLUSH_MODE_NONE = 0,               /**<  Just flush to get the frame count */
-    RECONFIG_FLUSH_MODE_DUMP_TO_FILE = 1,       /**<  The remaining frames will be dumped to file in this mode */
-    RECONFIG_FLUSH_MODE_CALCULATE_MD5 = 2,      /**<  Calculate the MD5 of the flushed frames */
-} ReconfigFlushMode;
-
-// this struct is used by videodecode and videodecodeMultiFiles to dump last frames to file
-typedef struct ReconfigDumpFileStruct_t {
-    bool b_dump_frames_to_file;
-    std::string output_file_name;
-} ReconfigDumpFileStruct;
-
-
-// this is internal shouldn't be exposed to Python
-int ReconfigureFlushCallback(void *p_viddec_obj, uint32_t flush_mode, void *p_user_struct);
-
 //
 // AMD Video Decoder Python Interface class
 //
 class pyRocVideoDecoder : public RocVideoDecoder {
     public:
-        pyRocVideoDecoder(int device_id,  OutputSurfaceMemoryType out_mem_type, rocDecVideoCodec codec, bool force_zero_latency = false,
-                          const Rect *p_crop_rect = nullptr, bool extract_user_SEI_Message = false, int max_width = 0, int max_height = 0,
-                          uint32_t clk_rate = 1000) : RocVideoDecoder(device_id,  out_mem_type, codec, force_zero_latency,
-                          p_crop_rect, extract_user_SEI_Message, max_width, max_height, clk_rate ){}
+        pyRocVideoDecoder(int device_id, rocDecVideoCodec codec, bool force_zero_latency = false,
+                          const Rect *p_crop_rect = nullptr, int max_width = 0, int max_height = 0,
+                          uint32_t clk_rate = 1000) : RocVideoDecoder(device_id, (OutputSurfaceMemoryType)0, codec, force_zero_latency,
+                          p_crop_rect, false, max_width, max_height, clk_rate ){}
          
         // for pyhton binding
         py::object wrapper_GetOutputSurfaceInfoAdrs(OutputSurfaceInfo& surface_adrs, py::array_t<uint8_t>& surface_info_adrs);
-
-        // for pyhton binding
-        py::object wrapper_SetReconfigParams(py::object& flush_in, py::object& dump_in, py::object& name);
-
+ 
         // for pyhton binding
         int wrapper_DecodeFrame(uint64_t frame_adrs, int64_t frame_size, int pkt_flags, int64_t pts_in);
     
@@ -88,9 +69,7 @@ class pyRocVideoDecoder : public RocVideoDecoder {
         py::object wrapper_GetNumOfFlushedFrames();
         
         // added for python binding     
-        ReconfigParams          py_reconfig_params;
-        ReconfigDumpFileStruct  py_dump_file_struct;
-        
+        ReconfigParams py_reconfig_params;         
 };
 
  

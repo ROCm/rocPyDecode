@@ -38,16 +38,8 @@ PYBIND11_MODULE(rocPyDecode, m) {
     types_m.doc() = "Datatypes and options used by rocdecode";
 
     py::enum_<AVCodecID>(types_m, "AVCodecID")
-        .value("AV_CODEC_ID_NONE",AV_CODEC_ID_NONE) 
-        .value("AV_CODEC_ID_MPEG1VIDEO",AV_CODEC_ID_MPEG1VIDEO) 
-        .value("AV_CODEC_ID_MPEG2VIDEO",AV_CODEC_ID_MPEG2VIDEO) 
-        .value("AV_CODEC_ID_MPEG4",AV_CODEC_ID_MPEG4) 
         .value("AV_CODEC_ID_H264",AV_CODEC_ID_H264) 
         .value("AV_CODEC_ID_HEVC",AV_CODEC_ID_HEVC) 
-        .value("AV_CODEC_ID_VP8",AV_CODEC_ID_VP8) 
-        .value("AV_CODEC_ID_VP9",AV_CODEC_ID_VP9) 
-        .value("AV_CODEC_ID_MJPEG",AV_CODEC_ID_MJPEG)
-        .value("AV_CODEC_ID_AV1",AV_CODEC_ID_AV1) 
         .export_values();              
         
     // rocDecVideoSurfaceFormat
@@ -58,12 +50,6 @@ PYBIND11_MODULE(rocPyDecode, m) {
         .value("rocDecVideoSurfaceFormat_YUV444_16Bit",rocDecVideoSurfaceFormat_YUV444_16Bit) 	// 16 bit Planar YUV
 		.export_values(); 
                 
-    py::enum_<OutputSurfaceMemoryType>(types_m, "OutputSurfaceMemoryType", "Surface Memory Types")
-        .value("OUT_SURFACE_MEM_DEV_INTERNAL",OUT_SURFACE_MEM_DEV_INTERNAL)
-        .value("OUT_SURFACE_MEM_DEV_COPIED",OUT_SURFACE_MEM_DEV_COPIED)
-        .value("OUT_SURFACE_MEM_HOST_COPIED",OUT_SURFACE_MEM_HOST_COPIED)
-        .export_values(); 
-
     py::enum_<RocdecVideoPacketFlags>(types_m,"RocdecVideoPacketFlags","Video Packet Flags")
         .value("ROCDEC_PKT_ENDOFSTREAM",ROCDEC_PKT_ENDOFSTREAM)
         .value("ROCDEC_PKT_TIMESTAMP",ROCDEC_PKT_TIMESTAMP)
@@ -73,33 +59,19 @@ PYBIND11_MODULE(rocPyDecode, m) {
         .export_values(); 
 
     py::enum_<rocDecVideoCodec>(types_m,"rocDecVideoCodec","Video Codec") 
-        .value("rocDecVideoCodec_MPEG1",rocDecVideoCodec_MPEG1)        /**<  MPEG1 */                  
-        .value("rocDecVideoCodec_MPEG2",rocDecVideoCodec_MPEG2)        /**<  MPEG2 */                  
-        .value("rocDecVideoCodec_MPEG4",rocDecVideoCodec_MPEG4)        /**<  MPEG4 */                  
         .value("rocDecVideoCodec_AVC",rocDecVideoCodec_AVC)            /**<  AVC/H264 */              
         .value("rocDecVideoCodec_HEVC",rocDecVideoCodec_HEVC)          /**<  HEVC */                
-        .value("rocDecVideoCodec_AV1",rocDecVideoCodec_AV1)            /**<  AV1 */              
-        .value("rocDecVideoCodec_VP8",rocDecVideoCodec_VP8)            /**<  VP8 */              
-        .value("rocDecVideoCodec_VP9",rocDecVideoCodec_VP9)            /**<  VP9 */              
-        .value("rocDecVideoCodec_JPEG",rocDecVideoCodec_JPEG)          /**<  JPEG */                
-        .value("rocDecVideoCodec_NumCodecs",rocDecVideoCodec_NumCodecs)/**<  Max codecs */                          
-        // Uncompressed YUV                                                                              
-        .value("rocDecVideoCodec_YUV420",rocDecVideoCodec_YUV420)      /**< Y,U,V (4:2:0)      */                    
-        .value("rocDecVideoCodec_YV12",rocDecVideoCodec_YV12)          /**< Y,V,U (4:2:0)      */                
-        .value("rocDecVideoCodec_NV12",rocDecVideoCodec_NV12)          /**< Y,UV  (4:2:0)      */                
-        .value("rocDecVideoCodec_YUYV",rocDecVideoCodec_YUYV)          /**< YUYV/YUY2 (4:2:2)  */                 
-        .value("rocDecVideoCodec_UYVY",rocDecVideoCodec_UYVY)          /**< UYVY (4:2:2)       */                
         .export_values(); 
         
     // -------------------------------
     // USER Demuxer 'usrVideoDemuxer'
     // -------------------------------
-    Init_pyVideoDemuxer(m);
+    pyVideoDemuxerInitializer(m);
 
     // --------------------------------------
     // AMD Video Decoder 'pyRocVideoDecoder'
     // --------------------------------------
-    Init_pyRocVideoDecoder(m);
+    pyRocVideoDecoderInitializer(m);
 
     // ----------------
     // Structures:

@@ -35,50 +35,21 @@ static void *ctypes_void_ptr(const py::object &object) {
     return ptr;
 } 
 
-void Init_pyRocVideoDecoder(py::module& m)
+void pyRocVideoDecoderInitializer(py::module& m)
 {
         py::class_<pyRocVideoDecoder> (m, "pyRocVideoDecoder")
-        .def(py::init<int,OutputSurfaceMemoryType,rocDecVideoCodec,bool,const Rect *,bool,int,int,uint32_t>(),
-                    py::arg("device_id"), py::arg("out_mem_type"), py::arg("codec"),
-                    py::arg("force_zero_latency"), py::arg("p_crop_rect"), py::arg("extract_user_SEI_Message"),
-                    py::arg("max_width"), py::arg("max_height"), py::arg("clk_rate"))
+        .def(py::init<int,rocDecVideoCodec,bool,const Rect *,int,int,uint32_t>(),
+                    py::arg("device_id"), py::arg("codec"), py::arg("force_zero_latency"), 
+                    py::arg("p_crop_rect"), py::arg("max_width"), py::arg("max_height"), py::arg("clk_rate"))
         .def("GetDeviceinfo",&pyRocVideoDecoder::wrapper_GetDeviceinfo)
-        .def("InitMd5",&pyRocVideoDecoder::wrapper_InitMd5)
-        .def("SetReconfigParams",&pyRocVideoDecoder::wrapper_SetReconfigParams)
         .def("DecodeFrame",&pyRocVideoDecoder::wrapper_DecodeFrame) 
         .def("GetFrameAddress",&pyRocVideoDecoder::wrapper_GetFrameAddress)
         .def("SaveFrameToFile",&pyRocVideoDecoder::wrapper_SaveFrameToFile)
         .def("ReleaseFrame",&pyRocVideoDecoder::wrapper_ReleaseFrame)
         .def("GetOutputSurfaceInfoAdrs",&pyRocVideoDecoder::wrapper_GetOutputSurfaceInfoAdrs)
-        .def("FinalizeMd5",&pyRocVideoDecoder::wrapper_FinalizeMd5)
-        .def("GetNumOfFlushedFrames",&pyRocVideoDecoder::wrapper_GetNumOfFlushedFrames)
-        .def("UpdateMd5ForFrame",&pyRocVideoDecoder::wrapper_UpdateMd5ForFrame);
+        .def("GetNumOfFlushedFrames",&pyRocVideoDecoder::wrapper_GetNumOfFlushedFrames);
 }
 
-
-// for pyhton binding
-py::object pyRocVideoDecoder::wrapper_SetReconfigParams(py::object& flush, py::object& dump,  py::object& output_file_name_in) {  
-    auto p_flush = ctypes_void_ptr(flush);
-    auto p_dump = ctypes_void_ptr(dump); 
-    auto p_name_ptr = ctypes_void_ptr(output_file_name_in);
-    int sizeofW = wcslen((wchar_t *) p_name_ptr);
-    char ptr[sizeofW]; // file name + path shouldn't exceed 256
-    memset(ptr,0,sizeofW);
-    wcstombs(ptr,(wchar_t *) p_name_ptr, sizeofW-1); // safe copy with exact size
-    std::string tmp(ptr);
-    std::string output_file_name(tmp);    
-    
-    py_dump_file_struct.b_dump_frames_to_file = *(bool*) p_dump;
-    py_dump_file_struct.output_file_name = output_file_name; 
-
-    py_reconfig_params.reconfig_flush_mode = *(int *)p_flush;
-    py_reconfig_params.p_reconfig_user_struct = (void *)((ReconfigDumpFileStruct *) &py_dump_file_struct);
-    py_reconfig_params.p_fn_reconfigure_flush = (PFNRECONFIGUEFLUSHCALLBACK) &ReconfigureFlushCallback;
-
-    SetReconfigParams((ReconfigParams*)&py_reconfig_params);   
-    
-    return py::cast<py::none>(Py_None);
-}
 
 int pyRocVideoDecoder::wrapper_DecodeFrame(uint64_t frame_adrs, int64_t frame_size, int pkt_flags, int64_t pts_in) {
 
@@ -120,12 +91,17 @@ py::object pyRocVideoDecoder::wrapper_ReleaseFrame(py::array_t<int64_t>& pTimest
 }
 
 // for pyhton binding
-py::object pyRocVideoDecoder::wrapper_SaveFrameToFile(py::object& output_file_name_in,py::array_t<uint64_t>& surf_mem_adrs, py::array_t<uint8_t>& surface_info_adrs) {
+py::object pyRocVideoDecoder::wrapper_SaveFrameToFile(py::object& output_file_name_in, py::array_t<uint64_t>& surf_mem_adrs, py::array_t<uint8_t>& surface_info_adrs) {
+    
     auto p_ptr = ctypes_void_ptr(output_file_name_in);
     int sizeofW = wcslen((wchar_t *) p_ptr);
-    char ptr[sizeofW+4]; // file path shouldn't exeed 256
-    memset(ptr,0,sizeofW+4);
-    size_t t = wcstombs(ptr,(wchar_t *) p_ptr, sizeofW); // safe copy with exact size
+    char ptr[sizeofW]; // file path shouldn't exceed 256   
+    size_t size_of_str = wcstombs(ptr,(wchar_t *) p_ptr, sizeofW+4); // safe copy with exact size
+    if(size_of_str<=sizeofW)
+        ptr[size_of_str]='\0';
+    else
+        ptr[sizeofW]='\0'; 
+
     std::string tmp(ptr);
     std::string output_file_name(tmp);   
     uint64_t surf_mem;
@@ -137,34 +113,6 @@ py::object pyRocVideoDecoder::wrapper_SaveFrameToFile(py::object& output_file_na
     SaveFrameToFile(output_file_name, (void *)surf_mem, &surf_info);
     
     return py::cast<py::none>(Py_None);
-}
-
-// for pyhton binding
-py::object pyRocVideoDecoder::wrapper_InitMd5() {
-    InitMd5();
-    return py::cast<py::none>(Py_None);
-}
-
-// for pyhton binding
-py::object pyRocVideoDecoder::wrapper_UpdateMd5ForFrame(py::array_t<uint64_t>& surf_mem_adrs, py::array_t<uint8_t>& surface_info_adrs) {
-    
-    uint64_t surf_mem;
-    OutputSurfaceInfo surf_info;
-
-    memcpy(&surf_mem, surf_mem_adrs.mutable_data(), sizeof(uint64_t)); 
-    memcpy(&surf_info, surface_info_adrs.mutable_data(), sizeof(OutputSurfaceInfo));     
-    UpdateMd5ForFrame((void *)surf_mem, &surf_info);
-    
-    return py::cast<py::none>(Py_None);
-}
-
-// for pyhton binding
-py::object pyRocVideoDecoder::wrapper_FinalizeMd5(py::object& digest) {    
-    auto p_digest = ctypes_void_ptr(digest);
-    uint8_t *to_digest;
-    FinalizeMd5(&to_digest);
-    memcpy(((uint8_t*)p_digest), to_digest,  sizeof(uint8_t)*16);
-    return py::cast<py::none>(Py_None); 
 }
 
 // for pyhton binding
@@ -190,7 +138,6 @@ py::object pyRocVideoDecoder::wrapper_GetDeviceinfo(py::object &device_name, py:
 // for pyhton binding
 py::object pyRocVideoDecoder::wrapper_GetOutputSurfaceInfoAdrs(OutputSurfaceInfo& surface_adrs, py::array_t<uint8_t>& surface_info_adrs) {
     
-    
     OutputSurfaceInfo *l_surface_info;
     bool ret = GetOutputSurfaceInfo(&l_surface_info);
 
@@ -203,39 +150,4 @@ py::object pyRocVideoDecoder::wrapper_GetOutputSurfaceInfoAdrs(OutputSurfaceInfo
     
     return py::cast(ret);
 }
-
  
-// callback function to flush last frames and save it to file when reconfigure happens
-int ReconfigureFlushCallback(void *p_viddec_obj, uint32_t flush_mode, void *p_user_struct) {
-    
-    int n_frames_flushed = 0;
-    if ((p_viddec_obj == nullptr) ||  (p_user_struct == nullptr)) return n_frames_flushed;
-
-    RocVideoDecoder *viddec = static_cast<RocVideoDecoder *> (p_viddec_obj);
-    OutputSurfaceInfo *surf_info;
-    if (!viddec->GetOutputSurfaceInfo(&surf_info)) {
-        std::cerr << "Error: Failed to get Output Surface Info!" << std::endl;
-        return n_frames_flushed;
-    }
-
-    uint8_t *pframe = nullptr;
-    int64_t pts;
-    while ((pframe = viddec->GetFrame(&pts))) {
-        if (flush_mode != RECONFIG_FLUSH_MODE_NONE) {
-            if (flush_mode == ReconfigFlushMode::RECONFIG_FLUSH_MODE_DUMP_TO_FILE) {
-                ReconfigDumpFileStruct *p_dump_file_struct = static_cast<ReconfigDumpFileStruct *>(p_user_struct);
-                if (p_dump_file_struct->b_dump_frames_to_file) {
-                    viddec->SaveFrameToFile(p_dump_file_struct->output_file_name, pframe, surf_info);
-                }
-            } else if (flush_mode == ReconfigFlushMode::RECONFIG_FLUSH_MODE_CALCULATE_MD5) {
-                viddec->UpdateMd5ForFrame(pframe, surf_info);
-            }
-        }
-        // release and flush frame
-        viddec->ReleaseFrame(pts, true);
-        n_frames_flushed ++;
-    }
-
-    return n_frames_flushed;
-}
-

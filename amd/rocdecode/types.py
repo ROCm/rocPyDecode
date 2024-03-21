@@ -24,11 +24,6 @@ from rocPyDecode.decTypes import rocDecVideoSurfaceFormat_P016
 from rocPyDecode.decTypes import rocDecVideoSurfaceFormat_YUV444       
 from rocPyDecode.decTypes import rocDecVideoSurfaceFormat_YUV444_16Bit 
 
-# Surface Memory Types
-from rocPyDecode.decTypes import OUT_SURFACE_MEM_DEV_INTERNAL
-from rocPyDecode.decTypes import OUT_SURFACE_MEM_DEV_COPIED
-from rocPyDecode.decTypes import OUT_SURFACE_MEM_HOST_COPIED
-
 # Video Packet Flags
 from rocPyDecode.decTypes import ROCDEC_PKT_ENDOFSTREAM
 from rocPyDecode.decTypes import ROCDEC_PKT_TIMESTAMP
@@ -36,22 +31,21 @@ from rocPyDecode.decTypes import ROCDEC_PKT_DISCONTINUITY
 from rocPyDecode.decTypes import ROCDEC_PKT_ENDOFPICTURE
 from rocPyDecode.decTypes import ROCDEC_PKT_NOTIFY_EOS
 
+
+# AVCodecID
+from rocPyDecode.decTypes import AV_CODEC_ID_H264
+from rocPyDecode.decTypes import AV_CODEC_ID_HEVC
+
 # Video Codecs
-from rocPyDecode.decTypes import rocDecVideoCodec_MPEG1
-from rocPyDecode.decTypes import rocDecVideoCodec_MPEG2
-from rocPyDecode.decTypes import rocDecVideoCodec_MPEG4
 from rocPyDecode.decTypes import rocDecVideoCodec_AVC
 from rocPyDecode.decTypes import rocDecVideoCodec_HEVC
-from rocPyDecode.decTypes import rocDecVideoCodec_AV1
-from rocPyDecode.decTypes import rocDecVideoCodec_VP8
-from rocPyDecode.decTypes import rocDecVideoCodec_VP9
-from rocPyDecode.decTypes import rocDecVideoCodec_JPEG
-from rocPyDecode.decTypes import rocDecVideoCodec_NumCodecs
-from rocPyDecode.decTypes import rocDecVideoCodec_YUV420
-from rocPyDecode.decTypes import rocDecVideoCodec_YV12
-from rocPyDecode.decTypes import rocDecVideoCodec_NV12
-from rocPyDecode.decTypes import rocDecVideoCodec_YUYV
-from rocPyDecode.decTypes import rocDecVideoCodec_UYVY
+
+# RocdecVideoPacketFlags
+from rocPyDecode.decTypes import ROCDEC_PKT_ENDOFSTREAM   
+from rocPyDecode.decTypes import ROCDEC_PKT_TIMESTAMP     
+from rocPyDecode.decTypes import ROCDEC_PKT_DISCONTINUITY 
+from rocPyDecode.decTypes import ROCDEC_PKT_ENDOFPICTURE  
+from rocPyDecode.decTypes import ROCDEC_PKT_NOTIFY_EOS    
 
 _known_types = {
 
@@ -59,10 +53,6 @@ _known_types = {
     rocDecVideoSurfaceFormat_P016: ("rocDecVideoSurfaceFormat_P016", rocDecVideoSurfaceFormat_P016),
     rocDecVideoSurfaceFormat_YUV444: ("rocDecVideoSurfaceFormat_YUV444", rocDecVideoSurfaceFormat_YUV444),
     rocDecVideoSurfaceFormat_YUV444_16Bit: ("rocDecVideoSurfaceFormat_YUV444_16Bit", rocDecVideoSurfaceFormat_YUV444_16Bit),
-
-    OUT_SURFACE_MEM_DEV_INTERNAL: ("OUT_SURFACE_MEM_DEV_INTERNAL", OUT_SURFACE_MEM_DEV_INTERNAL),
-    OUT_SURFACE_MEM_DEV_COPIED: ("OUT_SURFACE_MEM_DEV_COPIED", OUT_SURFACE_MEM_DEV_COPIED),
-    OUT_SURFACE_MEM_HOST_COPIED: ("OUT_SURFACE_MEM_HOST_COPIED", OUT_SURFACE_MEM_HOST_COPIED),
     
     ROCDEC_PKT_ENDOFSTREAM: ("ROCDEC_PKT_ENDOFSTREAM", ROCDEC_PKT_ENDOFSTREAM),
     ROCDEC_PKT_TIMESTAMP: ("ROCDEC_PKT_TIMESTAMP", ROCDEC_PKT_TIMESTAMP),
@@ -70,22 +60,19 @@ _known_types = {
     ROCDEC_PKT_ENDOFPICTURE: ("ROCDEC_PKT_ENDOFPICTURE", ROCDEC_PKT_ENDOFPICTURE),
     ROCDEC_PKT_NOTIFY_EOS: ("ROCDEC_PKT_NOTIFY_EOS", ROCDEC_PKT_NOTIFY_EOS),
 
-    rocDecVideoCodec_MPEG1: ("rocDecVideoCodec_MPEG1",rocDecVideoCodec_MPEG1),  
-    rocDecVideoCodec_MPEG2: ("rocDecVideoCodec_MPEG2",rocDecVideoCodec_MPEG2),
-    rocDecVideoCodec_MPEG4: ("rocDecVideoCodec_MPEG4",rocDecVideoCodec_MPEG4),
+    AV_CODEC_ID_H264:("AV_CODEC_ID_H264", AV_CODEC_ID_H264),
+    AV_CODEC_ID_HEVC:("AV_CODEC_ID_HEVC", AV_CODEC_ID_HEVC),
+
     rocDecVideoCodec_AVC: ("rocDecVideoCodec_AVC",rocDecVideoCodec_AVC),
     rocDecVideoCodec_HEVC: ("rocDecVideoCodec_HEVC",rocDecVideoCodec_HEVC),
-    rocDecVideoCodec_AV1: ("rocDecVideoCodec_AV1",rocDecVideoCodec_AV1),
-    rocDecVideoCodec_VP8: ("rocDecVideoCodec_VP8",rocDecVideoCodec_VP8),
-    rocDecVideoCodec_VP9: ("rocDecVideoCodec_VP9",rocDecVideoCodec_VP9),
-    rocDecVideoCodec_JPEG: ("rocDecVideoCodec_JPEG",rocDecVideoCodec_JPEG),
-    rocDecVideoCodec_NumCodecs: ("rocDecVideoCodec_NumCodecs",rocDecVideoCodec_NumCodecs),
-    rocDecVideoCodec_YUV420: ("rocDecVideoCodec_YUV420",rocDecVideoCodec_YUV420),
-    rocDecVideoCodec_YV12: ("rocDecVideoCodec_YV12",rocDecVideoCodec_YV12),
-    rocDecVideoCodec_NV12: ("rocDecVideoCodec_NV12",rocDecVideoCodec_NV12),
-    rocDecVideoCodec_YUYV: ("rocDecVideoCodec_YUYV",rocDecVideoCodec_YUYV),
-    rocDecVideoCodec_UYVY: ("rocDecVideoCodec_UYVY",rocDecVideoCodec_UYVY),
-}
+
+    ROCDEC_PKT_ENDOFSTREAM: ("ROCDEC_PKT_ENDOFSTREAM", ROCDEC_PKT_ENDOFSTREAM),     
+    ROCDEC_PKT_TIMESTAMP: ("ROCDEC_PKT_TIMESTAMP", ROCDEC_PKT_TIMESTAMP),     
+    ROCDEC_PKT_DISCONTINUITY: ("ROCDEC_PKT_DISCONTINUITY", ROCDEC_PKT_DISCONTINUITY),     
+    ROCDEC_PKT_ENDOFPICTURE: ("ROCDEC_PKT_ENDOFPICTURE", ROCDEC_PKT_ENDOFPICTURE),     
+    ROCDEC_PKT_NOTIFY_EOS: ("ROCDEC_PKT_NOTIFY_EOS", ROCDEC_PKT_NOTIFY_EOS),
+    
+    }
 
 def data_type_function(dtype):
     if dtype in _known_types:

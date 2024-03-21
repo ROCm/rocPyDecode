@@ -18,8 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import rocPyDecode as rocpydec              # rocpydecode main module 
-import rocPyDecode.decTypes as roctypes
+import rocPyDecode as rocpydec                  # rocPyDecode main module 
+import rocPyDecode.decTypes as dectypes         # rocPyDecode decode types 
 # import ctypes 
 import numpy as np    
 
@@ -28,7 +28,7 @@ class demuxer(object):
     def __init__(self, input_file_path: str):                
         self.vidmux = rocpydec.usrVideoDemuxer(input_file_path)
 
-    def GetCodec_ID(self)-> roctypes.AVCodecID:
+    def GetCodec_ID(self)-> dectypes.AVCodecID:
         return self.vidmux.GetCodec_ID() 
 
     def DemuxFrame(self):
