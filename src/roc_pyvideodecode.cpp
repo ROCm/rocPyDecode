@@ -96,11 +96,10 @@ py::object pyRocVideoDecoder::wrapper_SaveFrameToFile(py::object& output_file_na
     auto p_ptr = ctypes_void_ptr(output_file_name_in);
     int sizeofW = wcslen((wchar_t *) p_ptr);
     char ptr[sizeofW]; // file path shouldn't exceed 256   
-    size_t size_of_str = wcstombs(ptr,(wchar_t *) p_ptr, sizeofW+4); // safe copy with exact size
-    if(size_of_str<=sizeofW)
-        ptr[size_of_str]='\0';
-    else
-        ptr[sizeofW]='\0'; 
+    size_t size_of_str = wcstombs(ptr,(wchar_t *) p_ptr, sizeofW); // safe copy with exact size
+    if(size_of_str>(size_t)sizeofW)
+        size_of_str=(size_t)sizeofW;
+    ptr[size_of_str]='\0';
 
     std::string tmp(ptr);
     std::string output_file_name(tmp);   

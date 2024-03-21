@@ -105,7 +105,7 @@ if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
     set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${rocPyDecode_LIBRARY})
     
 
-    file(GLOB_RECURSE pyfiles amd/*.py amd/*.pyi amd/rocdecode/*.py)
+    file(GLOB_RECURSE pyfiles rocCodec/*.py rocCodec/*.pyi rocCodec/*.py)
     file(GLOB_RECURSE include inc/*.h)
     file(GLOB_RECURSE sources src/*.cpp  ${ROCM_PATH}/share/rocdecode/utils/rocvideodecode/*.cpp)
 

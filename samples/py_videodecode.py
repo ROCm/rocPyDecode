@@ -1,5 +1,5 @@
-import amd.rocdecode.decoder as dec
-import amd.rocdecode.demuxer as dex
+import rocCodec.decoder as dec
+import rocCodec.demuxer as dex
 import numpy as np
 import datetime
 import sys

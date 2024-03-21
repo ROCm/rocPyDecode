@@ -35,7 +35,7 @@ PYBIND11_MODULE(rocPyDecode, m) {
     // Types:
     // ------
     py::module types_m = m.def_submodule("decTypes");
-    types_m.doc() = "Datatypes and options used by rocdecode";
+    types_m.doc() = "Datatypes and options used by rocDecode";
 
     py::enum_<AVCodecID>(types_m, "AVCodecID")
         .value("AV_CODEC_ID_H264",AV_CODEC_ID_H264) 
