@@ -27,9 +27,14 @@ def GetRocDecCodecID(codec_id)-> dectypes.rocDecVideoCodec:
     rocCodecId = rocpydec.AVCodec2RocDecVideoCodec(codec_id)
     return rocCodecId
 
-def GetRectangle()-> rocpydec.Rect:
-    Rect = rocpydec.Rect()
-    return Rect
+def GetRectangle(crop_rect: dict)-> rocpydec.Rect:
+    p_crop_rect = rocpydec.Rect()
+    if(crop_rect != None):        
+        p_crop_rect.left = crop_rect[0]
+        p_crop_rect.top = crop_rect[1]
+        p_crop_rect.right = crop_rect[2]
+        p_crop_rect.bottom = crop_rect[3]
+    return p_crop_rect
 
 def GetOutputSurfaceInfo():
     surf_info_struct = rocpydec.OutputSurfaceInfo() 
@@ -43,17 +48,7 @@ class decoder(object):
          self.viddec = rocpydec.pyRocVideoDecoder( device_id, codec, b_force_zero_latency, p_crop_rect, max_width, max_height, clk_rate)
 
     def Get_GPU_Info(self):
-        self.device_name =  np.zeros(100,str)
-        self.gcn_arch_name = np.zeros(100,str)
-        self.pci_bus_id = np.array(1)
-        self.pci_domain_id = np.array(1)
-        self.pci_device_id = np.array(1)
-        self.viddec.GetDeviceinfo(ctypes.c_void_p(self.device_name.ctypes.data), 
-                                  ctypes.c_void_p(self.gcn_arch_name.ctypes.data), 
-                                  ctypes.c_void_p(self.pci_bus_id.ctypes.data), 
-                                  ctypes.c_void_p(self.pci_domain_id.ctypes.data), 
-                                  ctypes.c_void_p(self.pci_device_id.ctypes.data))
-        return [self.device_name, self.gcn_arch_name, self.pci_bus_id, self.pci_domain_id, self.pci_device_id]
+        return self.viddec.GetDeviceinfo()                           
 
     def DecodeFrame(self, packet)->int:
         # mark end of stream indicator
@@ -73,8 +68,8 @@ class decoder(object):
         return [ret, surface_info_adrs]
 
     def SaveFrameToFile(self, output_file_path, frame_adrs: np.uint64, surface_info_adrs: np.uint8 ):
-        output_file_name = ctypes.c_void_p(output_file_path.ctypes.data) 
-        return self.viddec.SaveFrameToFile( output_file_name, frame_adrs, surface_info_adrs)
+        # output_file_name = ctypes.c_void_p(output_file_path.ctypes.data) 
+        return self.viddec.SaveFrameToFile( output_file_path, frame_adrs, surface_info_adrs)
     
     def ReleaseFrame(self, packet, b_flush: bool):
         self.viddec.ReleaseFrame(packet, b_flush)

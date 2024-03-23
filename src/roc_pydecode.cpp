@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#include "../inc/roc_pyvideodecode.h"
+#include "roc_pyvideodecode.h"
 
 using namespace std;
 
@@ -106,7 +106,16 @@ PYBIND11_MODULE(rocPyDecode, m) {
         .def_readwrite("pkt_flags",     &PacketData::pkt_flags)
         .def_readwrite("frame_pts",     &PacketData::frame_pts)
         .def_readwrite("frame_size",    &PacketData::frame_size)
-        .def_readwrite("frame_adrs",    &PacketData::frame_adrs);        
+        .def_readwrite("frame_adrs",    &PacketData::frame_adrs);   
+
+    // ConfigInfo
+    py::class_<ConfigInfo, shared_ptr<ConfigInfo>>(m, "ConfigInfo", py::module_local())
+        .def(py::init<>())
+        .def_readwrite("device_name",   &ConfigInfo::device_name)
+        .def_readwrite("gcn_arch_name", &ConfigInfo::gcn_arch_name)
+        .def_readwrite("pci_bus_id",    &ConfigInfo::pci_bus_id)
+        .def_readwrite("pci_domain_id", &ConfigInfo::pci_domain_id)
+        .def_readwrite("pci_device_id", &ConfigInfo::pci_device_id);            
 
 }
  

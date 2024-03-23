@@ -6,20 +6,17 @@ import sys
 import argparse
 import os.path
 
-# init for decoding
-b_dump_output_frames = False     # set if "Output File Path" is passed as arg
-
-# init Params (set based on passed args)
+# init 
+b_dump_output_frames = False     
 b_force_zero_latency = False
-p_crop_rect = None
 
-# get passed arguments for: input_file_path, output_file_path, gpu_device_id, force_zero_latency_flag, crop_rectangle_4_values
+# get passed arguments  
 parser = argparse.ArgumentParser(description='PyRocDecode Video Decode Arguments')
 parser.add_argument('-i', '--input', type=str, help='Input File Path - required', required=True)
 parser.add_argument('-o', '--output', type=str, help='Output File Path - optional', required=False)
 parser.add_argument('-d', '--device', type=int, default=0, help='GPU device ID - optional, default 0', required=False)
 parser.add_argument('-z', '--zero_latency', type=str, help='Force zero latency - [optios: yes,no], default: no', required=False)
-parser.add_argument('-crop', '--crop_rect', nargs='+', type=int, help='Crop rectangle (left, top, right, bottom), optional, default: no cropping', required=False)
+parser.add_argument('-crop', '--crop_rect', nargs=4, type=int, help='Crop rectangle (left, top, right, bottom), optional, default: no cropping', required=False)
 
 try:
     args = parser.parse_args()  
@@ -34,28 +31,20 @@ force_zero_latency = args.zero_latency
 crop_rect = args.crop_rect
  
 # rect from user
-if(crop_rect != None):
-    p_crop_rect = dec.GetRectangle()
-    p_crop_rect.left = crop_rect[0]
-    p_crop_rect.top = crop_rect[1]
-    p_crop_rect.right = crop_rect[2]
-    p_crop_rect.bottom = crop_rect[3]
-     
+p_crop_rect = dec.GetRectangle(crop_rect)
+ 
 # Input file name (must exist)
 if (os.path.exists(input_file_path) == False):
     print("ERROR: input file doesn't exist.")
     exit()
 
-# Output file name (optional, & flag to dump frames out)  
+# Output file name (optional flag to dump out)  
 if (output_file_path!=None):
     b_dump_output_frames = True
 
 # force 0 latency
 if force_zero_latency =='yes':
     b_force_zero_latency = True
-
-# out file
-output_file_path = np.array(output_file_path)
 
 # instantiate demuxer instance 
 demuxer = dex.demuxer(input_file_path)
@@ -67,13 +56,11 @@ coded_id = dec.GetRocDecCodecID( demuxer.GetCodec_ID() )
 viddec = dec.decoder(device_id, coded_id, b_force_zero_latency, p_crop_rect, 0, 0, 0)
 
 # Get GPU device information
-[device_name,gcn_arch_name,pci_bus_id,pci_domain_id,pci_device_id] = viddec.Get_GPU_Info()
+cfg = viddec.Get_GPU_Info()
 
 #  print some info out  
-d = np.string_(device_name).decode("utf-8")      
-g = np.string_(gcn_arch_name).decode("utf-8")
-print("\ninfo: Input file: " + input_file_path + '\n' +"info: Using GPU device " + str(device_id) +
-      " - " + d + "[" + g + "] on PCI bus " + str(pci_bus_id) + ":" + str(pci_domain_id) + "." + str(pci_device_id) )
+#d = np.string_(cfg.device_name).decode("utf-8")      
+print("\ninfo: Input file: " + input_file_path + '\n' +"info: Using GPU device " + str(device_id) + " - " + cfg.device_name + "[" + cfg.gcn_arch_name + "] on PCI bus " + str(cfg.pci_bus_id) + ":" + str(cfg.pci_domain_id) + "." + str(cfg.pci_device_id) )
 print("info: decoding started, please wait! \n")
   
 # -------------------------------------
@@ -147,8 +134,3 @@ if b_dump_output_frames==False:
         print( "info: frame count= ", n_frame )
 
 print("\n") # end
-
-# examples of command line args:
-# python3 ../samples/py_videodecode.py -i /opt/rocm/share/rocdecode/video/AMD_driving_virtual_20-H265.mp4
-# python3 ../samples/py_videodecode.py -i ../AMP_A_Samsung_4.bit -o TEST.raw
-

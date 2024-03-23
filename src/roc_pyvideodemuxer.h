@@ -21,38 +21,30 @@ THE SOFTWARE.
 */
 
 #pragma once
+ 
+#include "video_demuxer.h"
+#include "roc_pydecode.h"
+ 
+// include here: /opt/rocm/include/rocdecode                        [rocdecode.h rocparser.h roc_video_dec.h video_demuxer.h << CLASS demux inside]
+// CPP here:     /opt/rocm/share/rocdecode/utils/rocvideodecode/    [roc_video_dec.cpp roc_video_dec.h << CLASS in cpp]
+ 
+//
+// AMD Video Demuxer Python Interface class
+//
+class pyVideoDemuxer : public VideoDemuxer {
 
-#include <iostream>
-extern "C" {
-    #include <libavcodec/avcodec.h>
-    #include <libavformat/avformat.h>
-    #if USE_AVCODEC_GREATER_THAN_58_134
-        #include <libavcodec/bsf.h>
-    #endif
-}
-  
-#include <pybind11/pybind11.h>	// Necessary from pybind11
+    protected:
+        std::shared_ptr <PacketData> currentPacket;
+        void initPacket();
 
-#include <pybind11/functional.h>
-#include <pybind11/stl.h>
-#include <pybind11/numpy.h>
-#include <iostream>
-#include <pybind11/embed.h>
-#include <pybind11/eval.h>
-
-namespace py = pybind11;
-
-struct PacketData {
-    bool      end_of_stream;
-    int       pkt_flags;
-    int64_t   frame_pts;
-    int64_t   frame_size;
-    uintptr_t frame_adrs;
+    public:
+        pyVideoDemuxer(const char *input_file_path) : VideoDemuxer(input_file_path) { initPacket(); }
+        pyVideoDemuxer(VideoDemuxer::StreamProvider *stream_provider) : VideoDemuxer(stream_provider) { initPacket(); }
+        				
+        // for python binding
+        std::shared_ptr<PacketData> DemuxFrame();
+        AVCodecID GetCodec_ID();
 };
 
-// defined in roc_pyvideodemuxer.cpp
-void pyVideoDemuxerInitializer(py::module& m);
-rocDecVideoCodec ConvertAVCodec2RocDecVideoCodec(AVCodecID av_codec);
+ 
 
-// defined in roc_pyvideodecoder.cpp
-void pyRocVideoDecoderInitializer(py::module& m);

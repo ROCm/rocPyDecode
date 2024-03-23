@@ -32,11 +32,12 @@ THE SOFTWARE.
 // AMD Video Decoder Python Interface class
 //
 class pyRocVideoDecoder : public RocVideoDecoder {
+
     public:
         pyRocVideoDecoder(int device_id, rocDecVideoCodec codec, bool force_zero_latency = false,
                           const Rect *p_crop_rect = nullptr, int max_width = 0, int max_height = 0,
                           uint32_t clk_rate = 1000) : RocVideoDecoder(device_id, (OutputSurfaceMemoryType)0, codec, force_zero_latency,
-                          p_crop_rect, false, max_width, max_height, clk_rate ){}
+                          p_crop_rect, false, max_width, max_height, clk_rate ){initConfigStructure();}
          
         // for pyhton binding
         int wrapper_DecodeFrame(PacketData& packet);
@@ -48,10 +49,10 @@ class pyRocVideoDecoder : public RocVideoDecoder {
         py::object wrapper_ReleaseFrame(PacketData& packet /*pts*/, py::array_t<bool>& b_flushing_in);
       
         // for pyhton binding
-        py::object wrapper_GetDeviceinfo(py::object &device_name_in, py::object &gcn_arch_name_in, py::object &pci_bus_id_in, py::object &pci_domain_id_in, py::object &pci_device_id_in);
+        std::shared_ptr<ConfigInfo> wrapper_GetDeviceinfo();
         
         // for pyhton binding
-        py::object wrapper_SaveFrameToFile(py::object& output_file_name_in,py::array_t<uint64_t>& surf_mem_adrs, py::array_t<uint8_t>& surface_info_adrs);
+        py::object wrapper_SaveFrameToFile(std::string& output_file_name_in, py::array_t<uint64_t>& surf_mem_adrs, py::array_t<uint8_t>& surface_info_adrs);
 
         // for pyhton binding
         py::object wrapper_GetOutputSurfaceInfoAdrs(OutputSurfaceInfo& surface_adrs, py::array_t<uint8_t>& surface_info_adrs);
@@ -61,6 +62,10 @@ class pyRocVideoDecoder : public RocVideoDecoder {
         
         // added for python binding     
         ReconfigParams py_reconfig_params;         
+
+    private:
+        std::shared_ptr <ConfigInfo> configInfo;
+        void initConfigStructure();
 };
 
  

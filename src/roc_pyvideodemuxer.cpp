@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
    
-#include "../inc/roc_pyvideodemuxer.h"
+#include "roc_pyvideodemuxer.h"
 
 using namespace std;
 

@@ -20,21 +20,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#include "../inc/roc_pyvideodecode.h"
+#include "roc_pyvideodecode.h"
  
 
 using namespace std;
-
-using namespace pybind11::literals; // NOLINT
-
-static void *ctypes_void_ptr(const py::object &object) {
-    auto ptr_as_int = getattr(object, "value", py::none());
-    if (ptr_as_int.is_none()) {
-        return nullptr;
-    }
-    void *ptr = PyLong_AsVoidPtr(ptr_as_int.ptr());
-    return ptr;
-} 
 
 void pyRocVideoDecoderInitializer(py::module& m)
 {
@@ -51,6 +40,14 @@ void pyRocVideoDecoderInitializer(py::module& m)
         .def("GetNumOfFlushedFrames",&pyRocVideoDecoder::wrapper_GetNumOfFlushedFrames);
 }
 
+void pyRocVideoDecoder::initConfigStructure() {
+    configInfo.reset(new ConfigInfo());    
+    configInfo.get()->device_name = std::string("");
+    configInfo.get()->gcn_arch_name = std::string("");
+    configInfo.get()->pci_bus_id = 0;
+    configInfo.get()->pci_domain_id = 0;
+    configInfo.get()->pci_device_id = 0;
+}
 
 int pyRocVideoDecoder::wrapper_DecodeFrame(PacketData& packet) {
 
@@ -80,47 +77,25 @@ py::object pyRocVideoDecoder::wrapper_ReleaseFrame(PacketData& packet, py::array
 }
 
 // for pyhton binding
-py::object pyRocVideoDecoder::wrapper_SaveFrameToFile(py::object& output_file_name_in, py::array_t<uint64_t>& surf_mem_adrs, py::array_t<uint8_t>& surface_info_adrs) {
-    
-    auto p_ptr = ctypes_void_ptr(output_file_name_in);
-    int sizeofW = wcslen((wchar_t *) p_ptr);
-    char ptr[sizeofW]; // file path shouldn't exceed 256   
-    size_t size_of_str = wcstombs(ptr,(wchar_t *) p_ptr, sizeofW); // safe copy with exact size
-    if(size_of_str>(size_t)sizeofW)
-        size_of_str=(size_t)sizeofW;
-    ptr[size_of_str]='\0';
-
-    std::string tmp(ptr);
-    std::string output_file_name(tmp);   
+py::object pyRocVideoDecoder::wrapper_SaveFrameToFile(std::string& output_file_name_in, py::array_t<uint64_t>& surf_mem_adrs, py::array_t<uint8_t>& surface_info_adrs) {
+ 
+     std::string output_file_name = output_file_name_in.c_str();
     uint64_t surf_mem;
     OutputSurfaceInfo surf_info;
-
     memcpy(&surf_mem, surf_mem_adrs.mutable_data(), sizeof(uint64_t)); 
     memcpy(&surf_info, surface_info_adrs.mutable_data(), sizeof(OutputSurfaceInfo)); 
     
     SaveFrameToFile(output_file_name, (void *)surf_mem, &surf_info);
-    
+
     return py::cast<py::none>(Py_None);
 }
+ 
 
 // for pyhton binding
-py::object pyRocVideoDecoder::wrapper_GetDeviceinfo(py::object &device_name, py::object &gcn_arch_name, py::object &pci_bus_id, py::object &pci_domain_id, py::object &pci_device_id) {
+std::shared_ptr<ConfigInfo> pyRocVideoDecoder::wrapper_GetDeviceinfo() {
 
-    std::string l_device_name; std::string l_gcn_arch_name; int l_pci_bus_id=0; int l_pci_domain_id=0; int l_pci_device_id=0;
-    GetDeviceinfo(l_device_name, l_gcn_arch_name, l_pci_bus_id, l_pci_domain_id, l_pci_device_id);
-
-    auto ptr_device_name = ctypes_void_ptr(device_name);
-    auto ptr_gcn_arch_name = ctypes_void_ptr(gcn_arch_name);
-    auto ptr_pci_bus_id = ctypes_void_ptr(pci_bus_id);
-    auto ptr_pci_domain_id = ctypes_void_ptr(pci_domain_id);
-    auto ptr_pci_device_id = ctypes_void_ptr(pci_device_id); 
-    memcpy( ptr_device_name, l_device_name.c_str(), strlen(l_device_name.c_str()));
-    memcpy( ptr_gcn_arch_name, l_gcn_arch_name.c_str(), strlen(l_gcn_arch_name.c_str()));
-    *(int*)ptr_pci_bus_id =  l_pci_bus_id;
-    *(int*)ptr_pci_domain_id = l_pci_domain_id;
-    *(int*)ptr_pci_device_id = l_pci_device_id;
-
-    return py::cast<py::none>(Py_None); 
+    GetDeviceinfo(configInfo.get()->device_name, configInfo.get()->gcn_arch_name, configInfo.get()->pci_bus_id, configInfo.get()->pci_domain_id, configInfo.get()->pci_device_id);
+    return configInfo; 
 }
 
 // for pyhton binding
@@ -130,7 +105,6 @@ py::object pyRocVideoDecoder::wrapper_GetOutputSurfaceInfoAdrs(OutputSurfaceInfo
     bool ret = GetOutputSurfaceInfo(&l_surface_info);
 
     if (ret){
-        // copy whole structure in our own mem
         surface_info_adrs.resize({sizeof(OutputSurfaceInfo)}, false);
         memcpy(surface_info_adrs.mutable_data(), l_surface_info, sizeof(OutputSurfaceInfo)); 
 		surface_adrs = *l_surface_info;
