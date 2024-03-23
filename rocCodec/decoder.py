@@ -35,9 +35,6 @@ def GetOutputSurfaceInfo():
     surf_info_struct = rocpydec.OutputSurfaceInfo() 
     return surf_info_struct
             
-def EndOfStream(packet_flags: int):
-    packet_flags = packet_flags | int(dectypes.ROCDEC_PKT_ENDOFSTREAM)
-    return packet_flags
 
 
 class decoder(object):
@@ -58,11 +55,17 @@ class decoder(object):
                                   ctypes.c_void_p(self.pci_device_id.ctypes.data))
         return [self.device_name, self.gcn_arch_name, self.pci_bus_id, self.pci_domain_id, self.pci_device_id]
 
-    def DecodeFrame(self, frame_adrs: np.uint64, frame_size: np.int64, pkg_flags: int, frame_pts: np.int64)->int:
-        return self.viddec.DecodeFrame(frame_adrs[0], frame_size[0], pkg_flags, frame_pts[0])
+    def DecodeFrame(self, packet)->int:
+        # mark end of stream indicator
+        if (packet.end_of_stream):
+            packet.pkt_flags =  packet.pkt_flags | int(dectypes.ROCDEC_PKT_ENDOFSTREAM)
+        frames_count = self.viddec.DecodeFrame(packet)
+        if(packet.frame_size<=0):
+            packet.end_of_stream=True
+        return frames_count
 
-    def GetFrameAddress(self, frame_pts:  np.int64, frame_adrs: np.uint64):
-        self.viddec.GetFrameAddress(frame_pts, frame_adrs)    
+    def GetFrame(self, packet):
+        self.viddec.GetFrame(packet)    
 
     def GetOutputSurfaceInfoAdrs(self, surface_info_struct):
         surface_info_adrs = np.ndarray(shape=(0), dtype=np.uint8)
@@ -73,9 +76,8 @@ class decoder(object):
         output_file_name = ctypes.c_void_p(output_file_path.ctypes.data) 
         return self.viddec.SaveFrameToFile( output_file_name, frame_adrs, surface_info_adrs)
     
-    def ReleaseFrame(self, frame_pts: np.int64, b_flush: bool):
-        # b_t = np.ndarray(shape=(1), dtype=np.uint8)
-        self.viddec.ReleaseFrame(frame_pts, b_flush)
+    def ReleaseFrame(self, packet, b_flush: bool):
+        self.viddec.ReleaseFrame(packet, b_flush)
         return
 
     def GetNumOfFlushedFrames(self):

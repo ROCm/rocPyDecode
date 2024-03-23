@@ -37,26 +37,35 @@ rocDecVideoCodec ConvertAVCodec2RocDecVideoCodec(AVCodecID av_codec)
     return AVCodec2RocDecVideoCodec(av_codec);
 }
 
-bool pyVideoDemuxer::DemuxFrame(py::array_t<uint64_t>& frame_adrs, py::array_t<int64_t>& frame_size, py::array_t<int64_t>& pts_in) {
+void pyVideoDemuxer::initPacket()
+{
+    currentPacket.reset(new PacketData());    
+    currentPacket.get()->frame_adrs = (uintptr_t)nullptr;
+    currentPacket.get()->frame_size = 0;
+    currentPacket.get()->frame_pts = 0;
+    currentPacket.get()->end_of_stream = false;
+}
 
-    uint8_t *video=nullptr;
+shared_ptr<PacketData> pyVideoDemuxer::DemuxFrame() {
+
+    uint8_t *pVideo=nullptr;
     int video_size=0;
     int64_t pts=0;
-    
-    bool ret = Demux(&video, &video_size, &pts); 
+        
+    if(Demux(&pVideo, &video_size, &pts))
+    {
+        if(video_size>0) {
+            currentPacket.get()->frame_adrs = (uintptr_t)pVideo;
+            currentPacket.get()->frame_size = video_size;
+            currentPacket.get()->frame_pts = pts;
+        }
+        else
+            currentPacket.get()->end_of_stream = true;        
+    }
+    else
+        currentPacket.get()->end_of_stream = true;
 
-    int64_t vd_size = video_size;
-
-    frame_adrs.resize({sizeof(uint64_t)}, false);
-    memcpy(frame_adrs.mutable_data(), (uint64_t*)&video, sizeof(uint64_t)); // copy the adrs, not the content: Essam
-
-    frame_size.resize({sizeof( int64_t)}, false);
-    memcpy(frame_size.mutable_data(), &vd_size, sizeof(int64_t));  
-
-    pts_in.resize({sizeof( int64_t)}, false);
-    memcpy(pts_in.mutable_data(), &pts, sizeof(int64_t));
-
-    return ret;
+    return currentPacket;
 }
 
 AVCodecID pyVideoDemuxer::GetCodec_ID() 

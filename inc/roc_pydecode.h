@@ -42,6 +42,13 @@ extern "C" {
 
 namespace py = pybind11;
 
+struct PacketData {
+    bool      end_of_stream;
+    int       pkt_flags;
+    int64_t   frame_pts;
+    int64_t   frame_size;
+    uintptr_t frame_adrs;
+};
 
 // defined in roc_pyvideodemuxer.cpp
 void pyVideoDemuxerInitializer(py::module& m);

@@ -20,7 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#include "../inc/roc_pyvideodecode.h" 
+#include "../inc/roc_pyvideodecode.h"
+ 
 
 using namespace std;
 
@@ -43,7 +44,7 @@ void pyRocVideoDecoderInitializer(py::module& m)
                     py::arg("p_crop_rect"), py::arg("max_width"), py::arg("max_height"), py::arg("clk_rate"))
         .def("GetDeviceinfo",&pyRocVideoDecoder::wrapper_GetDeviceinfo)
         .def("DecodeFrame",&pyRocVideoDecoder::wrapper_DecodeFrame) 
-        .def("GetFrameAddress",&pyRocVideoDecoder::wrapper_GetFrameAddress)
+        .def("GetFrame",&pyRocVideoDecoder::wrapper_GetFrame)
         .def("SaveFrameToFile",&pyRocVideoDecoder::wrapper_SaveFrameToFile)
         .def("ReleaseFrame",&pyRocVideoDecoder::wrapper_ReleaseFrame)
         .def("GetOutputSurfaceInfoAdrs",&pyRocVideoDecoder::wrapper_GetOutputSurfaceInfoAdrs)
@@ -51,26 +52,16 @@ void pyRocVideoDecoderInitializer(py::module& m)
 }
 
 
-int pyRocVideoDecoder::wrapper_DecodeFrame(uint64_t frame_adrs, int64_t frame_size, int pkt_flags, int64_t pts_in) {
+int pyRocVideoDecoder::wrapper_DecodeFrame(PacketData& packet) {
 
-    int ret = DecodeFrame((u_int8_t*) frame_adrs, (size_t) frame_size, pkt_flags, pts_in);
-    return ret;
+    return DecodeFrame((u_int8_t*) packet.frame_adrs, (size_t) packet.frame_size, packet.pkt_flags, packet.frame_pts);    
 }
-
+ 
 // for pyhton binding
-py::object pyRocVideoDecoder::wrapper_GetFrameAddress(py::array_t<int64_t>& pts_in, py::array_t<uint64_t>& frame_mem_adrs) {
+py::object pyRocVideoDecoder::wrapper_GetFrame(PacketData& packet) {
    
-    int64_t pts = 0;
-    uint8_t* ret_frame_address = GetFrame(&pts); 
-
-    // copy the adrs itself, not the content of the frame: Essam
-    frame_mem_adrs.resize({sizeof(uint64_t)}, false);
-    memcpy(frame_mem_adrs.mutable_data(), &ret_frame_address, sizeof(uint64_t));
- 
-    pts_in.resize({sizeof(int64_t)}, false);
-    memcpy(pts_in.mutable_data(), &pts, sizeof(int64_t));
- 
-    return py::cast(pts);
+    packet.frame_adrs = (uintptr_t) GetFrame(&packet.frame_pts);   
+    return py::cast(packet.frame_pts);
 }
 
 // for python binding (can not move it to header for py)
@@ -80,13 +71,11 @@ py::object pyRocVideoDecoder::wrapper_GetNumOfFlushedFrames() {
 }
 
 // for pyhton binding
-py::object pyRocVideoDecoder::wrapper_ReleaseFrame(py::array_t<int64_t>& pTimestamp_in, py::array_t<bool>& b_flushing_in) {
+py::object pyRocVideoDecoder::wrapper_ReleaseFrame(PacketData& packet, py::array_t<bool>& b_flushing_in) {
   
-    int64_t pTimestamp = 0;
     bool b_flushing = false;
-    memcpy( &pTimestamp, pTimestamp_in.mutable_data(), sizeof(int64_t));
     memcpy( &b_flushing, b_flushing_in.mutable_data(), sizeof(bool));
-    bool ret = ReleaseFrame(pTimestamp, b_flushing);     
+    bool ret = ReleaseFrame(packet.frame_pts, b_flushing);     
     return py::cast(ret);
 }
 

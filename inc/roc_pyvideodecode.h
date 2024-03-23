@@ -39,16 +39,13 @@ class pyRocVideoDecoder : public RocVideoDecoder {
                           p_crop_rect, false, max_width, max_height, clk_rate ){}
          
         // for pyhton binding
-        py::object wrapper_GetOutputSurfaceInfoAdrs(OutputSurfaceInfo& surface_adrs, py::array_t<uint8_t>& surface_info_adrs);
- 
-        // for pyhton binding
-        int wrapper_DecodeFrame(uint64_t frame_adrs, int64_t frame_size, int pkt_flags, int64_t pts_in);
+        int wrapper_DecodeFrame(PacketData& packet);
     
         // for pyhton binding
-        py::object wrapper_GetFrameAddress(py::array_t<int64_t>& pts_in, py::array_t<uint64_t>& frame_mem);
+        py::object wrapper_GetFrame(PacketData& packet);
 
         // for pyhton binding
-        py::object wrapper_ReleaseFrame(py::array_t<int64_t>& pTimestamp_in, py::array_t<bool>& b_flushing_in);
+        py::object wrapper_ReleaseFrame(PacketData& packet /*pts*/, py::array_t<bool>& b_flushing_in);
       
         // for pyhton binding
         py::object wrapper_GetDeviceinfo(py::object &device_name_in, py::object &gcn_arch_name_in, py::object &pci_bus_id_in, py::object &pci_domain_id_in, py::object &pci_device_id_in);
@@ -57,14 +54,8 @@ class pyRocVideoDecoder : public RocVideoDecoder {
         py::object wrapper_SaveFrameToFile(py::object& output_file_name_in,py::array_t<uint64_t>& surf_mem_adrs, py::array_t<uint8_t>& surface_info_adrs);
 
         // for pyhton binding
-        py::object wrapper_InitMd5();
-
-        // for pyhton binding
-        py::object wrapper_UpdateMd5ForFrame(py::array_t<uint64_t>& surf_mem_adrs, py::array_t<uint8_t>& surface_info_adrs);
-
-        // for pyhton binding
-        py::object wrapper_FinalizeMd5(py::object& digest);
-
+        py::object wrapper_GetOutputSurfaceInfoAdrs(OutputSurfaceInfo& surface_adrs, py::array_t<uint8_t>& surface_info_adrs);
+ 
         // for pyhton binding
         py::object wrapper_GetNumOfFlushedFrames();
         
