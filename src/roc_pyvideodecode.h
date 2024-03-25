@@ -55,10 +55,7 @@ class pyRocVideoDecoder : public RocVideoDecoder {
         uintptr_t wrapper_GetOutputSurfaceInfo();
  
         // for python binding
-        py::object wrapper_GetNumOfFlushedFrames();
-        
-        // added for python binding     
-        ReconfigParams py_reconfig_params;         
+        py::object wrapper_GetNumOfFlushedFrames();    
 
     private:
         std::shared_ptr <ConfigInfo> configInfo;

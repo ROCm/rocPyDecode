@@ -44,13 +44,12 @@ void pyVideoDemuxer::initPacket() {
 }
 
 shared_ptr<PacketData> pyVideoDemuxer::DemuxFrame() {
-
     uint8_t *pVideo=nullptr;
     int video_size=0;
     int64_t pts=0;
         
     if(Demux(&pVideo, &video_size, &pts)) {
-        if(video_size>0) {
+        if(video_size > 0) {
             currentPacket.get()->frame_adrs = (uintptr_t)pVideo;
             currentPacket.get()->frame_size = video_size;
             currentPacket.get()->frame_pts = pts;

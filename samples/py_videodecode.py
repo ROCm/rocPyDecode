@@ -39,11 +39,11 @@ if (os.path.exists(input_file_path) == False):
     exit()
 
 # Output file name (optional flag to dump out)  
-if (output_file_path!=None):
+if (output_file_path != None):
     b_dump_output_frames = True
 
 # force 0 latency
-if force_zero_latency =='yes':
+if (force_zero_latency == 'yes'):
     b_force_zero_latency = True
 
 # instantiate demuxer instance 

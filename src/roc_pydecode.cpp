@@ -59,8 +59,8 @@ PYBIND11_MODULE(rocPyDecode, m) {
         .export_values(); 
 
     py::enum_<rocDecVideoCodec>(types_m,"rocDecVideoCodec","Video Codec") 
-        .value("rocDecVideoCodec_AVC",rocDecVideoCodec_AVC)            /**<  AVC/H264 */              
-        .value("rocDecVideoCodec_HEVC",rocDecVideoCodec_HEVC)          /**<  HEVC */                
+        .value("rocDecVideoCodec_AVC",rocDecVideoCodec_AVC)            // AVC/H264
+        .value("rocDecVideoCodec_HEVC",rocDecVideoCodec_HEVC)          // HEVC
         .export_values(); 
         
     // -------------------------------
@@ -80,16 +80,16 @@ PYBIND11_MODULE(rocPyDecode, m) {
     // OutputSurfaceInfo
     py::class_<OutputSurfaceInfo>(m, "OutputSurfaceInfo")
         .def(py::init<>())
-        .def_readwrite("output_width",&OutputSurfaceInfo::output_width)	            /**< Output width of decoded surface*/
-        .def_readwrite("output_height",&OutputSurfaceInfo::output_height)	        /**< Output height of decoded surface*/
-        .def_readwrite("output_pitch",&OutputSurfaceInfo::output_pitch)	            /**< Output pitch in bytes of luma plane, chroma pitch can be inferred based on chromaFormat*/
-        .def_readwrite("output_vstride",&OutputSurfaceInfo::output_vstride)	        /**< Output vertical stride in case of using internal mem pointer **/
-        .def_readwrite("bytes_per_pixel",&OutputSurfaceInfo::bytes_per_pixel)	    /**< Output BytesPerPixel of decoded image*/
-        .def_readwrite("bit_depth",&OutputSurfaceInfo::bit_depth)	                /**< Output BitDepth of the image*/
-        .def_readwrite("num_chroma_planes",&OutputSurfaceInfo::num_chroma_planes)	/**< Output Chroma number of planes*/
-        .def_readwrite("output_surface_size_in_bytes",&OutputSurfaceInfo::output_surface_size_in_bytes)/**< Output Image Size in Bytes; including both luma and chroma planes*/ 
-        .def_readwrite("surface_format",&OutputSurfaceInfo::surface_format)			/**< Chroma format of the decoded image*/
-        .def_readwrite("mem_type",&OutputSurfaceInfo::mem_type);					/**< Output mem_type of the surface*/  
+        .def_readwrite("output_width",&OutputSurfaceInfo::output_width)	            	            	  // Output width of decoded surface          
+        .def_readwrite("output_height",&OutputSurfaceInfo::output_height)		            	          // Output height of decoded surface  	                    
+        .def_readwrite("output_pitch",&OutputSurfaceInfo::output_pitch)	     	            	          // Output pitch in bytes of luma plane, chroma pitch can be inferred based on chromaFormat  	                   
+        .def_readwrite("output_vstride",&OutputSurfaceInfo::output_vstride)	   	            	          // Output vertical stride in case of using internal mem pointer *  	                 
+        .def_readwrite("bytes_per_pixel",&OutputSurfaceInfo::bytes_per_pixel)		            	      // Output BytesPerPixel of decoded image      	                
+        .def_readwrite("bit_depth",&OutputSurfaceInfo::bit_depth)	           	            	          // Output BitDepth of the image  	                 
+        .def_readwrite("num_chroma_planes",&OutputSurfaceInfo::num_chroma_planes)	            	      // Output Chroma number of planes      	            
+        .def_readwrite("output_surface_size_in_bytes",&OutputSurfaceInfo::output_surface_size_in_bytes)   // Output Image Size in Bytes; including both luma and chroma planes 
+        .def_readwrite("surface_format",&OutputSurfaceInfo::surface_format)			            	      // Chroma format of the decoded image      	
+        .def_readwrite("mem_type",&OutputSurfaceInfo::mem_type);                                          // Output mem_type of the surface  		            	            	            	            				
   
     // Rect
     py::class_<Rect>(m, "Rect")

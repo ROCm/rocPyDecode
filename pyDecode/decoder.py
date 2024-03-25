@@ -28,7 +28,7 @@ def GetRocDecCodecID(codec_id)-> dectypes.rocDecVideoCodec:
 
 def GetRectangle(crop_rect: dict)-> rocpydec.Rect:
     p_crop_rect = rocpydec.Rect()
-    if(crop_rect != None):        
+    if (crop_rect != None):        
         p_crop_rect.left = crop_rect[0]
         p_crop_rect.top = crop_rect[1]
         p_crop_rect.right = crop_rect[2]
