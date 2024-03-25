@@ -104,7 +104,6 @@ if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
     include_directories (${rocPyDecode_INCLUDE_DIR} /src)
     set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${rocPyDecode_LIBRARY})
     
-
     file(GLOB_RECURSE pyfiles rocCodec/*.py rocCodec/*.pyi rocCodec/*.py)
     file(GLOB_RECURSE include src/*.h)
     file(GLOB_RECURSE sources src/*.cpp  ${ROCM_PATH}/share/rocdecode/utils/rocvideodecode/*.cpp)
@@ -145,7 +144,7 @@ if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
     #install rocPyDecode pybind libs
     install(FILES ${CMAKE_BINARY_DIR}/${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}/${TARGET_PYMODULE_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX_PYTHON})
 
-    message("-- ${Green}Radeon Decode Library Python Binding - rocPyDecode module added ${ColourReset}")
+    message("-- ${Green}ROCm Video Decode Library Python Binding - rocPyDecode module added ${ColourReset}")
 else()
-    message("-- ${Red}WARNING: Decode PyBind Module excluded - Dependency Failure${ColourReset}")
+    message("-- ${Red}WARNING: rocPyDecode module excluded - Dependency Failure${ColourReset}")
 endif()
