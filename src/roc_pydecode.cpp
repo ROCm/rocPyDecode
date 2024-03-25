@@ -116,6 +116,5 @@ PYBIND11_MODULE(rocPyDecode, m) {
         .def_readwrite("pci_bus_id",    &ConfigInfo::pci_bus_id)
         .def_readwrite("pci_domain_id", &ConfigInfo::pci_domain_id)
         .def_readwrite("pci_device_id", &ConfigInfo::pci_device_id);            
-
 }
  

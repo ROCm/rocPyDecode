@@ -25,9 +25,6 @@ THE SOFTWARE.
 #include "roc_video_dec.h"
 #include "roc_pydecode.h"
 
-// include here: /opt/rocm/include/rocdecode                        [rocdecode.h rocparser.h roc_video_dec.h video_demuxer.h << CLASS demux inside]
-// CPP here:     /opt/rocm/share/rocdecode/utils/rocvideodecode/    [roc_video_dec.cpp roc_video_dec.h << CLASS in cpp]
- 
 //
 // AMD Video Decoder Python Interface class
 //
@@ -39,25 +36,25 @@ class pyRocVideoDecoder : public RocVideoDecoder {
                           uint32_t clk_rate = 1000) : RocVideoDecoder(device_id, (OutputSurfaceMemoryType)0, codec, force_zero_latency,
                           p_crop_rect, false, max_width, max_height, clk_rate ){initConfigStructure();}
          
-        // for pyhton binding
+        // for python binding
         int wrapper_DecodeFrame(PacketData& packet);
     
-        // for pyhton binding
+        // for python binding
         py::object wrapper_GetFrame(PacketData& packet);
 
-        // for pyhton binding
-        py::object wrapper_ReleaseFrame(PacketData& packet /*pts*/, py::array_t<bool>& b_flushing_in);
+        // for python binding
+        py::object wrapper_ReleaseFrame(PacketData& packet, py::array_t<bool>& b_flushing_in);
       
-        // for pyhton binding
+        // for python binding
         std::shared_ptr<ConfigInfo> wrapper_GetDeviceinfo();
         
-        // for pyhton binding
-        py::object wrapper_SaveFrameToFile(std::string& output_file_name_in, py::array_t<uint64_t>& surf_mem_adrs, py::array_t<uint8_t>& surface_info_adrs);
+        // for python binding
+        py::object wrapper_SaveFrameToFile(std::string& output_file_name_in, uintptr_t& surf_mem, uintptr_t& surface_info);
 
-        // for pyhton binding
-        py::object wrapper_GetOutputSurfaceInfoAdrs(OutputSurfaceInfo& surface_adrs, py::array_t<uint8_t>& surface_info_adrs);
+        // for python binding
+        uintptr_t wrapper_GetOutputSurfaceInfo();
  
-        // for pyhton binding
+        // for python binding
         py::object wrapper_GetNumOfFlushedFrames();
         
         // added for python binding     

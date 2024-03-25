@@ -31,7 +31,6 @@ from rocPyDecode.decTypes import ROCDEC_PKT_DISCONTINUITY
 from rocPyDecode.decTypes import ROCDEC_PKT_ENDOFPICTURE
 from rocPyDecode.decTypes import ROCDEC_PKT_NOTIFY_EOS
 
-
 # AVCodecID
 from rocPyDecode.decTypes import AV_CODEC_ID_H264
 from rocPyDecode.decTypes import AV_CODEC_ID_HEVC
@@ -39,13 +38,6 @@ from rocPyDecode.decTypes import AV_CODEC_ID_HEVC
 # Video Codecs
 from rocPyDecode.decTypes import rocDecVideoCodec_AVC
 from rocPyDecode.decTypes import rocDecVideoCodec_HEVC
-
-# RocdecVideoPacketFlags
-from rocPyDecode.decTypes import ROCDEC_PKT_ENDOFSTREAM   
-from rocPyDecode.decTypes import ROCDEC_PKT_TIMESTAMP     
-from rocPyDecode.decTypes import ROCDEC_PKT_DISCONTINUITY 
-from rocPyDecode.decTypes import ROCDEC_PKT_ENDOFPICTURE  
-from rocPyDecode.decTypes import ROCDEC_PKT_NOTIFY_EOS    
 
 _known_types = {
 
@@ -65,13 +57,6 @@ _known_types = {
 
     rocDecVideoCodec_AVC: ("rocDecVideoCodec_AVC",rocDecVideoCodec_AVC),
     rocDecVideoCodec_HEVC: ("rocDecVideoCodec_HEVC",rocDecVideoCodec_HEVC),
-
-    ROCDEC_PKT_ENDOFSTREAM: ("ROCDEC_PKT_ENDOFSTREAM", ROCDEC_PKT_ENDOFSTREAM),     
-    ROCDEC_PKT_TIMESTAMP: ("ROCDEC_PKT_TIMESTAMP", ROCDEC_PKT_TIMESTAMP),     
-    ROCDEC_PKT_DISCONTINUITY: ("ROCDEC_PKT_DISCONTINUITY", ROCDEC_PKT_DISCONTINUITY),     
-    ROCDEC_PKT_ENDOFPICTURE: ("ROCDEC_PKT_ENDOFPICTURE", ROCDEC_PKT_ENDOFPICTURE),     
-    ROCDEC_PKT_NOTIFY_EOS: ("ROCDEC_PKT_NOTIFY_EOS", ROCDEC_PKT_NOTIFY_EOS),
-    
     }
 
 def data_type_function(dtype):

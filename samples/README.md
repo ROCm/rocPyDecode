@@ -8,9 +8,8 @@ The following are full list of arguments that can be passed to the sample:
 * [rocPyDecode](https://github.com/ROCm/rocPyDecode) installed, use pip3 install . on main folder
 
 ### Video Decode Sample 'py_videodecode.py' Arguments:
-
--h, --help            
-Show detail help message and exit
+- -h, --help            
+  - Show detail help message and exit
 - -i INPUT, --input INPUT
   - Input File Path - required
 - -o OUTPUT, --output OUTPUT

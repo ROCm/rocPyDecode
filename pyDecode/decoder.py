@@ -20,7 +20,6 @@
 
 import rocPyDecode as rocpydec                  # rocPyDecode main module 
 import rocPyDecode.decTypes as dectypes         # rocPyDecode decode types 
-import ctypes 
 import numpy as np    
 
 def GetRocDecCodecID(codec_id)-> dectypes.rocDecVideoCodec:
@@ -40,7 +39,6 @@ def GetOutputSurfaceInfo():
     surf_info_struct = rocpydec.OutputSurfaceInfo() 
     return surf_info_struct
             
-
 
 class decoder(object):
     def __init__(self, device_id: int, codec: dectypes.rocDecVideoCodec, b_force_zero_latency: bool, 
@@ -62,14 +60,11 @@ class decoder(object):
     def GetFrame(self, packet):
         self.viddec.GetFrame(packet)    
 
-    def GetOutputSurfaceInfoAdrs(self, surface_info_struct):
-        surface_info_adrs = np.ndarray(shape=(0), dtype=np.uint8)
-        ret = self.viddec.GetOutputSurfaceInfoAdrs(surface_info_struct, surface_info_adrs)
-        return [ret, surface_info_adrs]
+    def GetOutputSurfaceInfo(self):
+        return self.viddec.GetOutputSurfaceInfo()
 
-    def SaveFrameToFile(self, output_file_path, frame_adrs: np.uint64, surface_info_adrs: np.uint8 ):
-        # output_file_name = ctypes.c_void_p(output_file_path.ctypes.data) 
-        return self.viddec.SaveFrameToFile( output_file_path, frame_adrs, surface_info_adrs)
+    def SaveFrameToFile(self, output_file_path, frame_adrs: np.uint64, surface_info: np.uint8 ):
+        return self.viddec.SaveFrameToFile( output_file_path, frame_adrs, surface_info)
     
     def ReleaseFrame(self, packet, b_flush: bool):
         self.viddec.ReleaseFrame(packet, b_flush)

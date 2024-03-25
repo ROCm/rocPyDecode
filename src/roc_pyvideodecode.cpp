@@ -22,11 +22,9 @@ THE SOFTWARE.
 
 #include "roc_pyvideodecode.h"
  
-
 using namespace std;
 
-void pyRocVideoDecoderInitializer(py::module& m)
-{
+void pyRocVideoDecoderInitializer(py::module& m) {
         py::class_<pyRocVideoDecoder> (m, "pyRocVideoDecoder")
         .def(py::init<int,rocDecVideoCodec,bool,const Rect *,int,int,uint32_t>(),
                     py::arg("device_id"), py::arg("codec"), py::arg("force_zero_latency"), 
@@ -36,7 +34,7 @@ void pyRocVideoDecoderInitializer(py::module& m)
         .def("GetFrame",&pyRocVideoDecoder::wrapper_GetFrame)
         .def("SaveFrameToFile",&pyRocVideoDecoder::wrapper_SaveFrameToFile)
         .def("ReleaseFrame",&pyRocVideoDecoder::wrapper_ReleaseFrame)
-        .def("GetOutputSurfaceInfoAdrs",&pyRocVideoDecoder::wrapper_GetOutputSurfaceInfoAdrs)
+        .def("GetOutputSurfaceInfo",&pyRocVideoDecoder::wrapper_GetOutputSurfaceInfo)
         .def("GetNumOfFlushedFrames",&pyRocVideoDecoder::wrapper_GetNumOfFlushedFrames);
 }
 
@@ -54,7 +52,7 @@ int pyRocVideoDecoder::wrapper_DecodeFrame(PacketData& packet) {
     return DecodeFrame((u_int8_t*) packet.frame_adrs, (size_t) packet.frame_size, packet.pkt_flags, packet.frame_pts);    
 }
  
-// for pyhton binding
+// for python binding
 py::object pyRocVideoDecoder::wrapper_GetFrame(PacketData& packet) {
    
     packet.frame_adrs = (uintptr_t) GetFrame(&packet.frame_pts);   
@@ -67,7 +65,7 @@ py::object pyRocVideoDecoder::wrapper_GetNumOfFlushedFrames() {
     return py::cast(ret);
 }
 
-// for pyhton binding
+// for python binding
 py::object pyRocVideoDecoder::wrapper_ReleaseFrame(PacketData& packet, py::array_t<bool>& b_flushing_in) {
   
     bool b_flushing = false;
@@ -76,40 +74,35 @@ py::object pyRocVideoDecoder::wrapper_ReleaseFrame(PacketData& packet, py::array
     return py::cast(ret);
 }
 
-// for pyhton binding
-py::object pyRocVideoDecoder::wrapper_SaveFrameToFile(std::string& output_file_name_in, py::array_t<uint64_t>& surf_mem_adrs, py::array_t<uint8_t>& surface_info_adrs) {
+// for python binding
+py::object pyRocVideoDecoder::wrapper_SaveFrameToFile(std::string& output_file_name_in, uintptr_t& surf_mem, uintptr_t& surface_info) {
  
-     std::string output_file_name = output_file_name_in.c_str();
-    uint64_t surf_mem;
-    OutputSurfaceInfo surf_info;
-    memcpy(&surf_mem, surf_mem_adrs.mutable_data(), sizeof(uint64_t)); 
-    memcpy(&surf_info, surface_info_adrs.mutable_data(), sizeof(OutputSurfaceInfo)); 
+    std::string output_file_name = output_file_name_in.c_str();   
     
-    SaveFrameToFile(output_file_name, (void *)surf_mem, &surf_info);
-
+    if(surf_mem && surface_info) {
+        SaveFrameToFile(output_file_name, (void *)surf_mem, (OutputSurfaceInfo *)surface_info);
+    }
+    
     return py::cast<py::none>(Py_None);
 }
  
-
-// for pyhton binding
+// for python binding
 std::shared_ptr<ConfigInfo> pyRocVideoDecoder::wrapper_GetDeviceinfo() {
 
     GetDeviceinfo(configInfo.get()->device_name, configInfo.get()->gcn_arch_name, configInfo.get()->pci_bus_id, configInfo.get()->pci_domain_id, configInfo.get()->pci_device_id);
     return configInfo; 
 }
 
-// for pyhton binding
-py::object pyRocVideoDecoder::wrapper_GetOutputSurfaceInfoAdrs(OutputSurfaceInfo& surface_adrs, py::array_t<uint8_t>& surface_info_adrs) {
+// for python binding
+uintptr_t pyRocVideoDecoder::wrapper_GetOutputSurfaceInfo() {
     
     OutputSurfaceInfo *l_surface_info;
     bool ret = GetOutputSurfaceInfo(&l_surface_info);
 
-    if (ret){
-        surface_info_adrs.resize({sizeof(OutputSurfaceInfo)}, false);
-        memcpy(surface_info_adrs.mutable_data(), l_surface_info, sizeof(OutputSurfaceInfo)); 
-		surface_adrs = *l_surface_info;
+    if (ret) {
+       return (uintptr_t) l_surface_info;
     }
     
-    return py::cast(ret);
+    return (uintptr_t) 0;
 }
  

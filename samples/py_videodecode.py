@@ -1,5 +1,5 @@
-import rocCodec.decoder as dec
-import rocCodec.demuxer as dex
+import pyDecode.decoder as dec
+import pyDecode.demuxer as dex
 import numpy as np
 import datetime
 import sys
@@ -58,8 +58,7 @@ viddec = dec.decoder(device_id, coded_id, b_force_zero_latency, p_crop_rect, 0, 
 # Get GPU device information
 cfg = viddec.Get_GPU_Info()
 
-#  print some info out  
-#d = np.string_(cfg.device_name).decode("utf-8")      
+#  print some info out        
 print("\ninfo: Input file: " + input_file_path + '\n' +"info: Using GPU device " + str(device_id) + " - " + cfg.device_name + "[" + cfg.gcn_arch_name + "] on PCI bus " + str(cfg.pci_bus_id) + ":" + str(cfg.pci_domain_id) + "." + str(cfg.pci_device_id) )
 print("info: decoding started, please wait! \n")
   
@@ -68,8 +67,6 @@ print("info: decoding started, please wait! \n")
 # -------------------------------------                         
 n_frame = int(0)
 total_dec_time = float(0.0)
-surface_info_struct = dec.GetOutputSurfaceInfo() 
-print_surface_info = True
 
 # Do until no more to decode
 while True:           
@@ -77,35 +74,17 @@ while True:
     
     packet = demuxer.DemuxFrame()
     
-    if(packet.end_of_stream): # packet.frame_size<=0):
+    if(packet.end_of_stream): 
         break
 
-    n_frame_returned = viddec.DecodeFrame(packet)
-    
-    # print ONE time only
-    if print_surface_info:
-        [b_ret_info, surface_info_adrs] = viddec.GetOutputSurfaceInfoAdrs(surface_info_struct) 
-        print_surface_info = False
-        if (n_frame==0 and b_ret_info==False):
-            print("Error: Failed to get Output Surface Info!\n")
-        else:
-            print ("Surface Info:\n--------------")
-            print ( "output_width: \t\t",    surface_info_struct.output_width)
-            print ( "output_height: \t\t",   surface_info_struct.output_height)
-            print ( "output_pitch: \t\t",    surface_info_struct.output_pitch)
-            print ( "vertical stride: \t",   surface_info_struct.output_vstride)	   
-            print ( "bytes_per_pixel: \t",   surface_info_struct.bytes_per_pixel)
-            print ( "bit_depth: \t\t",       surface_info_struct.bit_depth)	               
-            print ( "num_chroma_planes: \t", surface_info_struct.num_chroma_planes)	
-            print ( "out surface bytes: \t", surface_info_struct.output_surface_size_in_bytes)
-            print ( "surface_format: \t",    surface_info_struct.surface_format)			
-            print ("\n")			
+    n_frame_returned = viddec.DecodeFrame(packet)    
 
     for i in range(n_frame_returned): 
         viddec.GetFrame(packet)        
         
         if b_dump_output_frames: 
-            viddec.SaveFrameToFile( output_file_path, packet.frame_adrs, surface_info_adrs )
+            surface_info = viddec.GetOutputSurfaceInfo() 
+            viddec.SaveFrameToFile( output_file_path, packet.frame_adrs, surface_info)
             
         # release frame        
         viddec.ReleaseFrame(packet, False)
@@ -126,10 +105,12 @@ n_frame += viddec.GetNumOfFlushedFrames()
 
 print("info: Total frame decoded: " + str(n_frame))
 
-if b_dump_output_frames==False:
-    if(n_frame>0 and total_dec_time>0):
-        print("info: avg decoding time per frame: " + str((total_dec_time / n_frame)*1000) + " ms")
-        print("info: avg FPS: " + str(n_frame / total_dec_time) + "\n")
+if (b_dump_output_frames == False):
+    if(n_frame > 0 and total_dec_time > 0):
+        TPF = float((total_dec_time / n_frame)*1000)
+        FPS = float(n_frame / total_dec_time)
+        print("info: avg decoding time per frame: " + "{0:0.2f}".format(round(TPF, 2)) + " ms")
+        print("info: avg FPS: " + "{0:0.2f}".format(round(FPS, 2)) + "\n")
     else:
         print( "info: frame count= ", n_frame )
 

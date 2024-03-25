@@ -20,9 +20,6 @@
 
 import rocPyDecode as rocpydec                  # rocPyDecode main module 
 import rocPyDecode.decTypes as dectypes         # rocPyDecode decode types 
-# import ctypes 
-import numpy as np    
-
 
 class demuxer(object):
     def __init__(self, input_file_path: str):                

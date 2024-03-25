@@ -64,8 +64,8 @@ setup(
       license='MIT License',
       ext_modules=ext_modules,
       cmdclass={'install': CustomInstall},
-      packages= ['rocCodec'],  
-      package_dir={'rocCodec':'rocCodec'},
-      package_data={"rocCodec": ["__init__.pyi"]},
+      packages= ['pyDecode'],  
+      package_dir={'pyDecode':'pyDecode'},
+      package_data={"pyDecode": ["__init__.pyi"]},
       include_package_data=True,       
       )

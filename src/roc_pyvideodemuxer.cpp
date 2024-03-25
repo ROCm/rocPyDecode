@@ -24,21 +24,18 @@ THE SOFTWARE.
 
 using namespace std;
 
-void pyVideoDemuxerInitializer(py::module& m)
-{
+void pyVideoDemuxerInitializer(py::module& m) {
         py::class_<pyVideoDemuxer, std::shared_ptr<pyVideoDemuxer>> (m, "usrVideoDemuxer")
         .def(py::init<const char*>())
         .def("GetCodec_ID",&pyVideoDemuxer::GetCodec_ID,"Get Codec ID")
         .def("DemuxFrame",&pyVideoDemuxer::DemuxFrame);
 }
 
-rocDecVideoCodec ConvertAVCodec2RocDecVideoCodec(AVCodecID av_codec)
-{
+rocDecVideoCodec ConvertAVCodec2RocDecVideoCodec(AVCodecID av_codec) {
     return AVCodec2RocDecVideoCodec(av_codec);
 }
 
-void pyVideoDemuxer::initPacket()
-{
+void pyVideoDemuxer::initPacket() {
     currentPacket.reset(new PacketData());    
     currentPacket.get()->frame_adrs = (uintptr_t)nullptr;
     currentPacket.get()->frame_size = 0;
@@ -52,24 +49,22 @@ shared_ptr<PacketData> pyVideoDemuxer::DemuxFrame() {
     int video_size=0;
     int64_t pts=0;
         
-    if(Demux(&pVideo, &video_size, &pts))
-    {
+    if(Demux(&pVideo, &video_size, &pts)) {
         if(video_size>0) {
             currentPacket.get()->frame_adrs = (uintptr_t)pVideo;
             currentPacket.get()->frame_size = video_size;
             currentPacket.get()->frame_pts = pts;
-        }
-        else
+        } else {
             currentPacket.get()->end_of_stream = true;        
-    }
-    else
+        }
+    } else {
         currentPacket.get()->end_of_stream = true;
+    }
 
     return currentPacket;
 }
 
-AVCodecID pyVideoDemuxer::GetCodec_ID() 
-{
+AVCodecID pyVideoDemuxer::GetCodec_ID() {
     return GetCodecID();
 }
 

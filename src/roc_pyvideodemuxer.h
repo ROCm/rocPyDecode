@@ -25,9 +25,6 @@ THE SOFTWARE.
 #include "video_demuxer.h"
 #include "roc_pydecode.h"
  
-// include here: /opt/rocm/include/rocdecode                        [rocdecode.h rocparser.h roc_video_dec.h video_demuxer.h << CLASS demux inside]
-// CPP here:     /opt/rocm/share/rocdecode/utils/rocvideodecode/    [roc_video_dec.cpp roc_video_dec.h << CLASS in cpp]
- 
 //
 // AMD Video Demuxer Python Interface class
 //
