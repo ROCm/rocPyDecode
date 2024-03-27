@@ -15,7 +15,7 @@ parser = argparse.ArgumentParser(description='PyRocDecode Video Decode Arguments
 parser.add_argument('-i', '--input', type=str, help='Input File Path - required', required=True)
 parser.add_argument('-o', '--output', type=str, help='Output File Path - optional', required=False)
 parser.add_argument('-d', '--device', type=int, default=0, help='GPU device ID - optional, default 0', required=False)
-parser.add_argument('-z', '--zero_latency', type=str, help='Force zero latency - [optios: yes,no], default: no', required=False)
+parser.add_argument('-z', '--zero_latency', type=str, help='Force zero latency - [options: yes,no], default: no', required=False)
 parser.add_argument('-crop', '--crop_rect', nargs=4, type=int, help='Crop rectangle (left, top, right, bottom), optional, default: no cropping', required=False)
 
 try:
@@ -65,8 +65,8 @@ print("info: decoding started, please wait! \n")
 # -------------------------------------
 # the decoding loop 
 # -------------------------------------                         
-n_frame = int(0)
-total_dec_time = float(0.0)
+n_frame = 0
+total_dec_time = 0.0
 
 # Do until no more to decode
 while True:           
@@ -107,11 +107,11 @@ print("info: Total frame decoded: " + str(n_frame))
 
 if (b_dump_output_frames == False):
     if(n_frame > 0 and total_dec_time > 0):
-        TPF = float((total_dec_time / n_frame)*1000)
+        TPF = float((total_dec_time / n_frame) * 1000 )
         FPS = float(n_frame / total_dec_time)
         print("info: avg decoding time per frame: " + "{0:0.2f}".format(round(TPF, 2)) + " ms")
         print("info: avg FPS: " + "{0:0.2f}".format(round(FPS, 2)) + "\n")
     else:
-        print( "info: frame count= ", n_frame )
+        print("info: frame count= ", n_frame)
 
 print("\n") # end

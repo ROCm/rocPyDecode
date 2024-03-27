@@ -39,10 +39,10 @@ PYBIND11_MODULE(rocPyDecode, m) {
         
     // rocDecVideoSurfaceFormat
     py::enum_<rocDecVideoSurfaceFormat>(types_m, "rocDecVideoSurfaceFormat")
-        .value("rocDecVideoSurfaceFormat_NV12",rocDecVideoSurfaceFormat_NV12)					// Semi-Planar YUV
-        .value("rocDecVideoSurfaceFormat_P016",rocDecVideoSurfaceFormat_P016)					// 16 bit Semi-Planar YUV 
-        .value("rocDecVideoSurfaceFormat_YUV444",rocDecVideoSurfaceFormat_YUV444)				// Planar YUV 
-        .value("rocDecVideoSurfaceFormat_YUV444_16Bit",rocDecVideoSurfaceFormat_YUV444_16Bit) 	// 16 bit Planar YUV
+        .value("rocDecVideoSurfaceFormat_NV12",rocDecVideoSurfaceFormat_NV12)					
+        .value("rocDecVideoSurfaceFormat_P016",rocDecVideoSurfaceFormat_P016)					
+        .value("rocDecVideoSurfaceFormat_YUV444",rocDecVideoSurfaceFormat_YUV444)				
+        .value("rocDecVideoSurfaceFormat_YUV444_16Bit",rocDecVideoSurfaceFormat_YUV444_16Bit) 	
 		.export_values(); 
                 
     py::enum_<RocdecVideoPacketFlags>(types_m,"RocdecVideoPacketFlags","Video Packet Flags")
@@ -54,8 +54,8 @@ PYBIND11_MODULE(rocPyDecode, m) {
         .export_values(); 
 
     py::enum_<rocDecVideoCodec>(types_m,"rocDecVideoCodec","Video Codec") 
-        .value("rocDecVideoCodec_AVC",rocDecVideoCodec_AVC)            // AVC/H264
-        .value("rocDecVideoCodec_HEVC",rocDecVideoCodec_HEVC)          // HEVC
+        .value("rocDecVideoCodec_AVC",rocDecVideoCodec_AVC)            
+        .value("rocDecVideoCodec_HEVC",rocDecVideoCodec_HEVC)          
         .export_values(); 
         
     // -------------------------------
@@ -75,16 +75,16 @@ PYBIND11_MODULE(rocPyDecode, m) {
     // OutputSurfaceInfo
     py::class_<OutputSurfaceInfo>(m, "OutputSurfaceInfo")
         .def(py::init<>())
-        .def_readwrite("output_width",&OutputSurfaceInfo::output_width)	            	            	  // Output width of decoded surface          
-        .def_readwrite("output_height",&OutputSurfaceInfo::output_height)		            	          // Output height of decoded surface  	                    
-        .def_readwrite("output_pitch",&OutputSurfaceInfo::output_pitch)	     	            	          // Output pitch in bytes of luma plane, chroma pitch can be inferred based on chromaFormat  	                   
-        .def_readwrite("output_vstride",&OutputSurfaceInfo::output_vstride)	   	            	          // Output vertical stride in case of using internal mem pointer *  	                 
-        .def_readwrite("bytes_per_pixel",&OutputSurfaceInfo::bytes_per_pixel)		            	      // Output BytesPerPixel of decoded image      	                
-        .def_readwrite("bit_depth",&OutputSurfaceInfo::bit_depth)	           	            	          // Output BitDepth of the image  	                 
-        .def_readwrite("num_chroma_planes",&OutputSurfaceInfo::num_chroma_planes)	            	      // Output Chroma number of planes      	            
-        .def_readwrite("output_surface_size_in_bytes",&OutputSurfaceInfo::output_surface_size_in_bytes)   // Output Image Size in Bytes; including both luma and chroma planes 
-        .def_readwrite("surface_format",&OutputSurfaceInfo::surface_format)			            	      // Chroma format of the decoded image      	
-        .def_readwrite("mem_type",&OutputSurfaceInfo::mem_type);                                          // Output mem_type of the surface  		            	            	            	            				
+        .def_readwrite("output_width",&OutputSurfaceInfo::output_width)	            	            	  
+        .def_readwrite("output_height",&OutputSurfaceInfo::output_height)		            	          
+        .def_readwrite("output_pitch",&OutputSurfaceInfo::output_pitch)	     	            	                             
+        .def_readwrite("output_vstride",&OutputSurfaceInfo::output_vstride)	   	            	          
+        .def_readwrite("bytes_per_pixel",&OutputSurfaceInfo::bytes_per_pixel)		            	      
+        .def_readwrite("bit_depth",&OutputSurfaceInfo::bit_depth)	           	            	          
+        .def_readwrite("num_chroma_planes",&OutputSurfaceInfo::num_chroma_planes)	            	      
+        .def_readwrite("output_surface_size_in_bytes",&OutputSurfaceInfo::output_surface_size_in_bytes)   
+        .def_readwrite("surface_format",&OutputSurfaceInfo::surface_format)			            	      
+        .def_readwrite("mem_type",&OutputSurfaceInfo::mem_type);                                                  				
   
     // Rect
     py::class_<Rect>(m, "Rect")
@@ -112,4 +112,3 @@ PYBIND11_MODULE(rocPyDecode, m) {
         .def_readwrite("pci_domain_id", &ConfigInfo::pci_domain_id)
         .def_readwrite("pci_device_id", &ConfigInfo::pci_device_id);            
 }
- 
