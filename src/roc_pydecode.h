@@ -23,6 +23,7 @@ THE SOFTWARE.
 #pragma once
 
 #include <iostream>
+
 extern "C" {
     #include <libavcodec/avcodec.h>
     #include <libavformat/avformat.h>
@@ -60,7 +61,7 @@ struct ConfigInfo {
 
 // defined in roc_pyvideodemuxer.cpp
 void pyVideoDemuxerInitializer(py::module& m);
-rocDecVideoCodec ConvertAVCodec2RocDecVideoCodec(AVCodecID av_codec);
+rocDecVideoCodec ConvertAVCodec2RocDecVideoCodec(int av_codec);
 
 // defined in roc_pyvideodecoder.cpp
 void pyRocVideoDecoderInitializer(py::module& m);

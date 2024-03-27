@@ -31,8 +31,8 @@ void pyVideoDemuxerInitializer(py::module& m) {
         .def("DemuxFrame",&pyVideoDemuxer::DemuxFrame);
 }
 
-rocDecVideoCodec ConvertAVCodec2RocDecVideoCodec(AVCodecID av_codec) {
-    return AVCodec2RocDecVideoCodec(av_codec);
+rocDecVideoCodec ConvertAVCodec2RocDecVideoCodec(int av_codec) {
+    return AVCodec2RocDecVideoCodec((AVCodecID)av_codec);
 }
 
 void pyVideoDemuxer::initPacket() {
@@ -63,7 +63,7 @@ shared_ptr<PacketData> pyVideoDemuxer::DemuxFrame() {
     return currentPacket;
 }
 
-AVCodecID pyVideoDemuxer::GetCodec_ID() {
+int pyVideoDemuxer::GetCodec_ID() {
     return GetCodecID();
 }
 

@@ -31,10 +31,6 @@ from rocPyDecode.decTypes import ROCDEC_PKT_DISCONTINUITY
 from rocPyDecode.decTypes import ROCDEC_PKT_ENDOFPICTURE
 from rocPyDecode.decTypes import ROCDEC_PKT_NOTIFY_EOS
 
-# AVCodecID
-from rocPyDecode.decTypes import AV_CODEC_ID_H264
-from rocPyDecode.decTypes import AV_CODEC_ID_HEVC
-
 # Video Codecs
 from rocPyDecode.decTypes import rocDecVideoCodec_AVC
 from rocPyDecode.decTypes import rocDecVideoCodec_HEVC
@@ -51,9 +47,6 @@ _known_types = {
     ROCDEC_PKT_DISCONTINUITY: ("ROCDEC_PKT_DISCONTINUITY", ROCDEC_PKT_DISCONTINUITY),
     ROCDEC_PKT_ENDOFPICTURE: ("ROCDEC_PKT_ENDOFPICTURE", ROCDEC_PKT_ENDOFPICTURE),
     ROCDEC_PKT_NOTIFY_EOS: ("ROCDEC_PKT_NOTIFY_EOS", ROCDEC_PKT_NOTIFY_EOS),
-
-    AV_CODEC_ID_H264:("AV_CODEC_ID_H264", AV_CODEC_ID_H264),
-    AV_CODEC_ID_HEVC:("AV_CODEC_ID_HEVC", AV_CODEC_ID_HEVC),
 
     rocDecVideoCodec_AVC: ("rocDecVideoCodec_AVC",rocDecVideoCodec_AVC),
     rocDecVideoCodec_HEVC: ("rocDecVideoCodec_HEVC",rocDecVideoCodec_HEVC),

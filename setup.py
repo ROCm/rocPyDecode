@@ -23,6 +23,11 @@ from setuptools.command.install import install
 import subprocess
 import os
 
+ROCM_PATH = '/opt/rocm'
+if "ROCM_PATH" in os.environ:
+    ROCM_PATH = os.environ.get('ROCM_PATH')
+print("\nROCm PATH set to -- "+ROCM_PATH+"\n")
+
 # Custom install command to run cmake before installation
 class CustomInstall(install):
     def run(self):
@@ -45,9 +50,9 @@ ext_modules = [
     Extension(
         'rocPyDecode', 
         sources=['src/roc_pydecode.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp'], 
-        include_dirs=['src','/opt/rocm/include/', '/opt/rocm/include/rocdecode/'], 
+        include_dirs=['src',ROCM_PATH+'/include/', ROCM_PATH+'/include/rocdecode/', ROCM_PATH+'/share/rocdecode/utils', ROCM_PATH+'/share/rocdecode/utils/rocvideodecode'], 
         extra_compile_args=['-D__HIP_PLATFORM_AMD__'], 
-        library_dirs=['/opt/rocm/lib/', '/usr/local/lib/'],
+        library_dirs=[ROCM_PATH+'/lib/', '/usr/local/lib/', '/usr/lib/x86_64-linux-gnu/'],
         libraries=['rocdecode','avcodec','avformat','avutil'],
         runtime_library_dirs=[],
         extra_link_args=[],

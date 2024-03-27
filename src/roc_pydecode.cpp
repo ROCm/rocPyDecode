@@ -35,12 +35,7 @@ PYBIND11_MODULE(rocPyDecode, m) {
     // Types:
     // ------
     py::module types_m = m.def_submodule("decTypes");
-    types_m.doc() = "Datatypes and options used by rocDecode";
-
-    py::enum_<AVCodecID>(types_m, "AVCodecID")
-        .value("AV_CODEC_ID_H264",AV_CODEC_ID_H264) 
-        .value("AV_CODEC_ID_HEVC",AV_CODEC_ID_HEVC) 
-        .export_values();              
+    types_m.doc() = "Datatypes and options used by rocDecode";            
         
     // rocDecVideoSurfaceFormat
     py::enum_<rocDecVideoSurfaceFormat>(types_m, "rocDecVideoSurfaceFormat")
@@ -94,10 +89,10 @@ PYBIND11_MODULE(rocPyDecode, m) {
     // Rect
     py::class_<Rect>(m, "Rect")
         .def(py::init<>())
-        .def_readwrite("left",&Rect::left)
-        .def_readwrite("top",&Rect::top)
-        .def_readwrite("right",&Rect::right)
-        .def_readwrite("bottom",&Rect::bottom);
+        .def_readwrite("left",&Rect::l)
+        .def_readwrite("top",&Rect::t)
+        .def_readwrite("right",&Rect::r)
+        .def_readwrite("bottom",&Rect::b);
 
     // PacketData
     py::class_<PacketData, shared_ptr<PacketData>>(m, "PacketData", py::module_local())

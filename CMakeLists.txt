@@ -103,6 +103,7 @@ if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
     # rocPyDecode include
     include_directories (${rocPyDecode_INCLUDE_DIR} /src)
     set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${rocPyDecode_LIBRARY})
+    include_directories (${ROCM_PATH}/share/rocdecode/utils ${ROCM_PATH}/share/rocdecode/utils/rocvideodecode)
     
     file(GLOB_RECURSE pyfiles pyDecode/*.py pyDecode/*.pyi pyDecode/*.py)
     file(GLOB_RECURSE include src/*.h)

@@ -40,7 +40,7 @@ class pyVideoDemuxer : public VideoDemuxer {
         				
         // for python binding
         std::shared_ptr<PacketData> DemuxFrame();
-        AVCodecID GetCodec_ID();
+        int GetCodec_ID();
 };
 
  
