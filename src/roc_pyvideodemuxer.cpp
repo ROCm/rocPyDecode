@@ -24,7 +24,7 @@ THE SOFTWARE.
 
 using namespace std;
 
-void pyVideoDemuxerInitializer(py::module& m) {
+void PyVideoDemuxerInitializer(py::module& m) {
         py::class_<PyVideoDemuxer, std::shared_ptr<PyVideoDemuxer>> (m, "PyVideoDemuxer")
         .def(py::init<const char*>())
         .def("GetCodecId",&PyVideoDemuxer::GetCodecId,"Get Codec ID")
@@ -37,7 +37,7 @@ rocDecVideoCodec ConvertAVCodec2RocDecVideoCodec(int av_codec) {
 
 void PyVideoDemuxer::InitPacket() {
     currentPacket.reset(new PacketData());    
-    currentPacket.get()->frame_adrs = (uintptr_t)nullptr;
+    currentPacket.get()->frame_adrs = reinterpret_cast<std::uintptr_t>(nullptr);
     currentPacket.get()->frame_size = 0;
     currentPacket.get()->frame_pts = 0;
     currentPacket.get()->end_of_stream = false;
@@ -50,7 +50,7 @@ shared_ptr<PacketData> PyVideoDemuxer::DemuxFrame() {
         
     if(Demux(&pVideo, &video_size, &pts)) {
         if(video_size > 0) {
-            currentPacket.get()->frame_adrs = (uintptr_t)pVideo;
+            currentPacket.get()->frame_adrs = reinterpret_cast<std::uintptr_t>(pVideo);
             currentPacket.get()->frame_size = video_size;
             currentPacket.get()->frame_pts = pts;
         } else {

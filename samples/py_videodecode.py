@@ -59,7 +59,7 @@ viddec = dec.decoder(device_id, coded_id, b_force_zero_latency, p_crop_rect, 0, 
 cfg = viddec.GetGpuInfo()
 
 #  print some info out        
-print("\ninfo: Input file: " + input_file_path + '\n' +"info: Using GPU device " + str(device_id) + " - " + cfg.device_name + "[" + cfg.gcn_arch_name + "] on PCI bus " + str(cfg.pci_bus_id) + ":" + str(cfg.pci_domain_id) + "." + str(cfg.pci_device_id) )
+print("\ninfo: Input file: " + input_file_path + '\n' +"info: Using GPU device " + str(device_id) + " - " + cfg.device_name + "[" + cfg.gcn_arch_name + "] on PCI bus " + str(cfg.pci_bus_id) + ":" + str(cfg.pci_domain_id) + "." + str(cfg.pci_device_id))
 print("info: decoding started, please wait! \n")
   
 # -------------------------------------
@@ -113,5 +113,4 @@ if (b_dump_output_frames == False):
         print("info: avg FPS: " + "{0:0.2f}".format(round(FPS, 2)) + "\n")
     else:
         print("info: frame count= ", n_frame)
-
 print("\n") # end

@@ -61,12 +61,12 @@ PYBIND11_MODULE(rocPyDecode, m) {
     // -------------------------------
     // USER Demuxer 'PyVideoDemuxer'
     // -------------------------------
-    pyVideoDemuxerInitializer(m);
+    PyVideoDemuxerInitializer(m);
 
     // --------------------------------------
     // AMD Video Decoder 'PyRocVideoDecoder'
     // --------------------------------------
-    pyRocVideoDecoderInitializer(m);
+    PyRocVideoDecoderInitializer(m);
 
     // ----------------
     // Structures:
@@ -89,10 +89,10 @@ PYBIND11_MODULE(rocPyDecode, m) {
     // Rect
     py::class_<Rect>(m, "Rect")
         .def(py::init<>())
-        .def_readwrite("left",&Rect::l)
-        .def_readwrite("top",&Rect::t)
-        .def_readwrite("right",&Rect::r)
-        .def_readwrite("bottom",&Rect::b);
+        .def_readwrite("left",&Rect::left)
+        .def_readwrite("top",&Rect::top)
+        .def_readwrite("right",&Rect::right)
+        .def_readwrite("bottom",&Rect::bottom);
 
     // PacketData
     py::class_<PacketData, shared_ptr<PacketData>>(m, "PacketData", py::module_local())

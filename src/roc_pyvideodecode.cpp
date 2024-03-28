@@ -24,7 +24,7 @@ THE SOFTWARE.
  
 using namespace std;
 
-void pyRocVideoDecoderInitializer(py::module& m) {
+void PyRocVideoDecoderInitializer(py::module& m) {
         py::class_<PyRocVideoDecoder> (m, "PyRocVideoDecoder")
         .def(py::init<int,rocDecVideoCodec,bool,const Rect *,int,int,uint32_t>(),
                     py::arg("device_id"), py::arg("codec"), py::arg("force_zero_latency"), 
@@ -53,7 +53,7 @@ int PyRocVideoDecoder::PyDecodeFrame(PacketData& packet) {
  
 // for python binding
 py::object PyRocVideoDecoder::PyGetFrame(PacketData& packet) {
-    packet.frame_adrs = (uintptr_t) GetFrame(&packet.frame_pts);   
+    packet.frame_adrs = reinterpret_cast<std::uintptr_t>(GetFrame(&packet.frame_pts));   
     return py::cast(packet.frame_pts);
 }
 
@@ -74,11 +74,9 @@ py::object PyRocVideoDecoder::PyReleaseFrame(PacketData& packet, py::array_t<boo
 // for python binding
 py::object PyRocVideoDecoder::PySaveFrameToFile(std::string& output_file_name_in, uintptr_t& surf_mem, uintptr_t& surface_info) {
     std::string output_file_name = output_file_name_in.c_str();   
-    
     if(surf_mem && surface_info) {
         SaveFrameToFile(output_file_name, (void *)surf_mem, reinterpret_cast<OutputSurfaceInfo*>(surface_info));
     }
-    
     return py::cast<py::none>(Py_None);
 }
  
@@ -93,8 +91,8 @@ uintptr_t PyRocVideoDecoder::PyGetOutputSurfaceInfo() {
     OutputSurfaceInfo *l_surface_info;
     bool ret = GetOutputSurfaceInfo(&l_surface_info);
     if (ret) {
-       return (uintptr_t) l_surface_info;
+       return reinterpret_cast<std::uintptr_t>(l_surface_info);
     }
-    return (uintptr_t) 0;
+    return reinterpret_cast<std::uintptr_t>(nullptr);
 }
  
