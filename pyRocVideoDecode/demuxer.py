@@ -23,10 +23,10 @@ import rocPyDecode.decTypes as dectypes         # rocPyDecode decode types
 
 class demuxer(object):
     def __init__(self, input_file_path: str):                
-        self.vidmux = rocpydec.usrVideoDemuxer(input_file_path)
+        self.vidmux = rocpydec.PyVideoDemuxer(input_file_path)
 
-    def GetCodec_ID(self)-> int:
-        return self.vidmux.GetCodec_ID() 
+    def GetCodecId(self)-> int:
+        return self.vidmux.GetCodecId() 
 
     def DemuxFrame(self):
          return self.vidmux.DemuxFrame()

@@ -39,13 +39,13 @@ def GetOutputSurfaceInfo():
     surf_info_struct = rocpydec.OutputSurfaceInfo() 
     return surf_info_struct
             
-
+# Decoder Class
 class decoder(object):
     def __init__(self, device_id: int, codec: dectypes.rocDecVideoCodec, b_force_zero_latency: bool, 
                  p_crop_rect: rocpydec.Rect, max_width=0, max_height=0, clk_rate=0):
-         self.viddec = rocpydec.pyRocVideoDecoder( device_id, codec, b_force_zero_latency, p_crop_rect, max_width, max_height, clk_rate)
+         self.viddec = rocpydec.PyRocVideoDecoder(device_id, codec, b_force_zero_latency, p_crop_rect, max_width, max_height, clk_rate)
 
-    def Get_GPU_Info(self):
+    def GetGpuInfo(self):
         return self.viddec.GetDeviceinfo()                           
 
     def DecodeFrame(self, packet)->int:
@@ -53,7 +53,7 @@ class decoder(object):
         if (packet.end_of_stream):
             packet.pkt_flags =  packet.pkt_flags | int(dectypes.ROCDEC_PKT_ENDOFSTREAM)
         frames_count = self.viddec.DecodeFrame(packet)
-        if(packet.frame_size<=0):
+        if(packet.frame_size <= 0):
             packet.end_of_stream=True
         return frames_count
 
@@ -63,8 +63,8 @@ class decoder(object):
     def GetOutputSurfaceInfo(self):
         return self.viddec.GetOutputSurfaceInfo()
 
-    def SaveFrameToFile(self, output_file_path, frame_adrs: np.uint64, surface_info: np.uint8 ):
-        return self.viddec.SaveFrameToFile( output_file_path, frame_adrs, surface_info)
+    def SaveFrameToFile(self, output_file_path, frame_adrs: np.uint64, surface_info: np.uint8):
+        return self.viddec.SaveFrameToFile(output_file_path, frame_adrs, surface_info)
     
     def ReleaseFrame(self, packet, b_flush: bool):
         self.viddec.ReleaseFrame(packet, b_flush)
@@ -72,4 +72,3 @@ class decoder(object):
 
     def GetNumOfFlushedFrames(self):
         return self.viddec.GetNumOfFlushedFrames()
-

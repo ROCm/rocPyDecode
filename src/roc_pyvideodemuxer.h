@@ -28,19 +28,19 @@ THE SOFTWARE.
 //
 // AMD Video Demuxer Python Interface class
 //
-class pyVideoDemuxer : public VideoDemuxer {
+class PyVideoDemuxer : public VideoDemuxer {
 
     protected:
         std::shared_ptr <PacketData> currentPacket;
-        void initPacket();
+        void InitPacket();
 
     public:
-        pyVideoDemuxer(const char *input_file_path) : VideoDemuxer(input_file_path) { initPacket(); }
-        pyVideoDemuxer(VideoDemuxer::StreamProvider *stream_provider) : VideoDemuxer(stream_provider) { initPacket(); }
+        PyVideoDemuxer(const char *input_file_path) : VideoDemuxer(input_file_path) { InitPacket(); }
+        PyVideoDemuxer(VideoDemuxer::StreamProvider *stream_provider) : VideoDemuxer(stream_provider) { InitPacket(); }
         				
         // for python binding
         std::shared_ptr<PacketData> DemuxFrame();
-        int GetCodec_ID();
+        int GetCodecId();
 };
 
  

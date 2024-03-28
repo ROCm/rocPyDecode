@@ -25,20 +25,20 @@ THE SOFTWARE.
 using namespace std;
 
 void pyRocVideoDecoderInitializer(py::module& m) {
-        py::class_<pyRocVideoDecoder> (m, "pyRocVideoDecoder")
+        py::class_<PyRocVideoDecoder> (m, "PyRocVideoDecoder")
         .def(py::init<int,rocDecVideoCodec,bool,const Rect *,int,int,uint32_t>(),
                     py::arg("device_id"), py::arg("codec"), py::arg("force_zero_latency"), 
                     py::arg("p_crop_rect"), py::arg("max_width"), py::arg("max_height"), py::arg("clk_rate"))
-        .def("GetDeviceinfo",&pyRocVideoDecoder::wrapper_GetDeviceinfo)
-        .def("DecodeFrame",&pyRocVideoDecoder::wrapper_DecodeFrame) 
-        .def("GetFrame",&pyRocVideoDecoder::wrapper_GetFrame)
-        .def("SaveFrameToFile",&pyRocVideoDecoder::wrapper_SaveFrameToFile)
-        .def("ReleaseFrame",&pyRocVideoDecoder::wrapper_ReleaseFrame)
-        .def("GetOutputSurfaceInfo",&pyRocVideoDecoder::wrapper_GetOutputSurfaceInfo)
-        .def("GetNumOfFlushedFrames",&pyRocVideoDecoder::wrapper_GetNumOfFlushedFrames);
+        .def("GetDeviceinfo",&PyRocVideoDecoder::PyGetDeviceinfo)
+        .def("DecodeFrame",&PyRocVideoDecoder::PyDecodeFrame) 
+        .def("GetFrame",&PyRocVideoDecoder::PyGetFrame)
+        .def("SaveFrameToFile",&PyRocVideoDecoder::PySaveFrameToFile)
+        .def("ReleaseFrame",&PyRocVideoDecoder::PyReleaseFrame)
+        .def("GetOutputSurfaceInfo",&PyRocVideoDecoder::PyGetOutputSurfaceInfo)
+        .def("GetNumOfFlushedFrames",&PyRocVideoDecoder::PyGetNumOfFlushedFrames);
 }
 
-void pyRocVideoDecoder::initConfigStructure() {
+void PyRocVideoDecoder::InitConfigStructure() {
     configInfo.reset(new ConfigInfo());    
     configInfo.get()->device_name = std::string("");
     configInfo.get()->gcn_arch_name = std::string("");
@@ -47,26 +47,24 @@ void pyRocVideoDecoder::initConfigStructure() {
     configInfo.get()->pci_device_id = 0;
 }
 
-int pyRocVideoDecoder::wrapper_DecodeFrame(PacketData& packet) {
-
-    return DecodeFrame((u_int8_t*) packet.frame_adrs, (size_t) packet.frame_size, packet.pkt_flags, packet.frame_pts);    
+int PyRocVideoDecoder::PyDecodeFrame(PacketData& packet) {
+    return DecodeFrame((u_int8_t*) packet.frame_adrs, static_cast<size_t>(packet.frame_size), packet.pkt_flags, packet.frame_pts);    
 }
  
 // for python binding
-py::object pyRocVideoDecoder::wrapper_GetFrame(PacketData& packet) {
-   
+py::object PyRocVideoDecoder::PyGetFrame(PacketData& packet) {
     packet.frame_adrs = (uintptr_t) GetFrame(&packet.frame_pts);   
     return py::cast(packet.frame_pts);
 }
 
 // for python binding (can not move it to header for py)
-py::object pyRocVideoDecoder::wrapper_GetNumOfFlushedFrames() { 
+py::object PyRocVideoDecoder::PyGetNumOfFlushedFrames() { 
     int32_t ret = GetNumOfFlushedFrames();
     return py::cast(ret);
 }
 
 // for python binding
-py::object pyRocVideoDecoder::wrapper_ReleaseFrame(PacketData& packet, py::array_t<bool>& b_flushing_in) {  
+py::object PyRocVideoDecoder::PyReleaseFrame(PacketData& packet, py::array_t<bool>& b_flushing_in) {  
     bool b_flushing = false;
     memcpy( &b_flushing, b_flushing_in.mutable_data(), sizeof(bool));
     bool ret = ReleaseFrame(packet.frame_pts, b_flushing);     
@@ -74,24 +72,24 @@ py::object pyRocVideoDecoder::wrapper_ReleaseFrame(PacketData& packet, py::array
 }
 
 // for python binding
-py::object pyRocVideoDecoder::wrapper_SaveFrameToFile(std::string& output_file_name_in, uintptr_t& surf_mem, uintptr_t& surface_info) {
+py::object PyRocVideoDecoder::PySaveFrameToFile(std::string& output_file_name_in, uintptr_t& surf_mem, uintptr_t& surface_info) {
     std::string output_file_name = output_file_name_in.c_str();   
     
     if(surf_mem && surface_info) {
-        SaveFrameToFile(output_file_name, (void *)surf_mem, (OutputSurfaceInfo *)surface_info);
+        SaveFrameToFile(output_file_name, (void *)surf_mem, reinterpret_cast<OutputSurfaceInfo*>(surface_info));
     }
     
     return py::cast<py::none>(Py_None);
 }
  
 // for python binding
-std::shared_ptr<ConfigInfo> pyRocVideoDecoder::wrapper_GetDeviceinfo() {
+std::shared_ptr<ConfigInfo> PyRocVideoDecoder::PyGetDeviceinfo() {
     GetDeviceinfo(configInfo.get()->device_name, configInfo.get()->gcn_arch_name, configInfo.get()->pci_bus_id, configInfo.get()->pci_domain_id, configInfo.get()->pci_device_id);
     return configInfo; 
 }
 
 // for python binding
-uintptr_t pyRocVideoDecoder::wrapper_GetOutputSurfaceInfo() {
+uintptr_t PyRocVideoDecoder::PyGetOutputSurfaceInfo() {
     OutputSurfaceInfo *l_surface_info;
     bool ret = GetOutputSurfaceInfo(&l_surface_info);
     if (ret) {

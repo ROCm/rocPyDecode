@@ -1,5 +1,5 @@
-import pyDecode.decoder as dec
-import pyDecode.demuxer as dex
+import pyRocVideoDecode.decoder as dec
+import pyRocVideoDecode.demuxer as dex
 import numpy as np
 import datetime
 import sys
@@ -50,13 +50,13 @@ if (force_zero_latency == 'yes'):
 demuxer = dex.demuxer(input_file_path)
 
 # get the used coded id
-coded_id = dec.GetRocDecCodecID( demuxer.GetCodec_ID() )
+coded_id = dec.GetRocDecCodecID(demuxer.GetCodecId())
  
 # instantiate decoder instance 
 viddec = dec.decoder(device_id, coded_id, b_force_zero_latency, p_crop_rect, 0, 0, 0)
 
 # Get GPU device information
-cfg = viddec.Get_GPU_Info()
+cfg = viddec.GetGpuInfo()
 
 #  print some info out        
 print("\ninfo: Input file: " + input_file_path + '\n' +"info: Using GPU device " + str(device_id) + " - " + cfg.device_name + "[" + cfg.gcn_arch_name + "] on PCI bus " + str(cfg.pci_bus_id) + ":" + str(cfg.pci_domain_id) + "." + str(cfg.pci_device_id) )
@@ -84,7 +84,7 @@ while True:
         
         if b_dump_output_frames: 
             surface_info = viddec.GetOutputSurfaceInfo() 
-            viddec.SaveFrameToFile( output_file_path, packet.frame_adrs, surface_info)
+            viddec.SaveFrameToFile(output_file_path, packet.frame_adrs, surface_info)
             
         # release frame        
         viddec.ReleaseFrame(packet, False)

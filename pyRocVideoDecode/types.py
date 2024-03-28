@@ -36,7 +36,6 @@ from rocPyDecode.decTypes import rocDecVideoCodec_AVC
 from rocPyDecode.decTypes import rocDecVideoCodec_HEVC
 
 _known_types = {
-
     rocDecVideoSurfaceFormat_NV12: ("rocDecVideoSurfaceFormat_NV12", rocDecVideoSurfaceFormat_NV12),
     rocDecVideoSurfaceFormat_P016: ("rocDecVideoSurfaceFormat_P016", rocDecVideoSurfaceFormat_P016),
     rocDecVideoSurfaceFormat_YUV444: ("rocDecVideoSurfaceFormat_YUV444", rocDecVideoSurfaceFormat_YUV444),

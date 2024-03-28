@@ -28,38 +28,38 @@ THE SOFTWARE.
 //
 // AMD Video Decoder Python Interface class
 //
-class pyRocVideoDecoder : public RocVideoDecoder {
+class PyRocVideoDecoder : public RocVideoDecoder {
 
     public:
-        pyRocVideoDecoder(int device_id, rocDecVideoCodec codec, bool force_zero_latency = false,
+        PyRocVideoDecoder(int device_id, rocDecVideoCodec codec, bool force_zero_latency = false,
                           const Rect *p_crop_rect = nullptr, int max_width = 0, int max_height = 0,
                           uint32_t clk_rate = 1000) : RocVideoDecoder(device_id, (OutputSurfaceMemoryType)0, codec, force_zero_latency,
-                          p_crop_rect, false, max_width, max_height, clk_rate ){initConfigStructure();}
+                          p_crop_rect, false, max_width, max_height, clk_rate ){ InitConfigStructure(); }
          
         // for python binding
-        int wrapper_DecodeFrame(PacketData& packet);
+        int PyDecodeFrame(PacketData& packet);
     
         // for python binding
-        py::object wrapper_GetFrame(PacketData& packet);
+        py::object PyGetFrame(PacketData& packet);
 
         // for python binding
-        py::object wrapper_ReleaseFrame(PacketData& packet, py::array_t<bool>& b_flushing_in);
+        py::object PyReleaseFrame(PacketData& packet, py::array_t<bool>& b_flushing_in);
       
         // for python binding
-        std::shared_ptr<ConfigInfo> wrapper_GetDeviceinfo();
+        std::shared_ptr<ConfigInfo> PyGetDeviceinfo();
         
         // for python binding
-        py::object wrapper_SaveFrameToFile(std::string& output_file_name_in, uintptr_t& surf_mem, uintptr_t& surface_info);
+        py::object PySaveFrameToFile(std::string& output_file_name_in, uintptr_t& surf_mem, uintptr_t& surface_info);
 
         // for python binding
-        uintptr_t wrapper_GetOutputSurfaceInfo();
+        uintptr_t PyGetOutputSurfaceInfo();
  
         // for python binding
-        py::object wrapper_GetNumOfFlushedFrames();    
+        py::object PyGetNumOfFlushedFrames();    
 
     private:
         std::shared_ptr <ConfigInfo> configInfo;
-        void initConfigStructure();
+        void InitConfigStructure();
 };
 
  

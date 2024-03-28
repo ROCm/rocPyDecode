@@ -69,8 +69,8 @@ setup(
       license='MIT License',
       ext_modules=ext_modules,
       cmdclass={'install': CustomInstall},
-      packages= ['pyDecode'],  
-      package_dir={'pyDecode':'pyDecode'},
-      package_data={"pyDecode": ["__init__.pyi"]},
+      packages= ['pyRocVideoDecode'],  
+      package_dir={'pyRocVideoDecode':'pyRocVideoDecode'},
+      package_data={"pyRocVideoDecode": ["__init__.pyi"]},
       include_package_data=True,       
       )
