@@ -20,7 +20,6 @@
 
 from typing import Any, ClassVar, Dict
 from typing import overload
-import numpy
 
 # AMD Video Decoder
 class PyRocVideoDecoder:
@@ -35,7 +34,7 @@ class PyRocVideoDecoder:
     def GetOutputSurfaceInfo(self) -> None: ...
     def GetNumOfFlushedFrames(self) -> None: ...
 
-# USER defined demuxer
+# USER demuxer
 class PyVideoDemuxer:
     @overload
     def __init__(self) -> None: ...
