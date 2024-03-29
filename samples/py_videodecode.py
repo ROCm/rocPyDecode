@@ -99,4 +99,3 @@ if (output_file_path == None):
         print("info: avg FPS: " + "{0:0.2f}".format(round(FPS, 2)) + "\n")
     else:
         print("info: frame count= ", n_frame)
-print("\n") # end
