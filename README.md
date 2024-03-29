@@ -9,7 +9,7 @@ The rocDecode Python Binding is a tool that allows users to access rocDecode API
 * PIP3
 * [DLPack](https://pypi.org/project/dlpack/)
 
-## rocpydecode install
+## rocPyDecode install
 
 ```
 sudo pip3 install .
