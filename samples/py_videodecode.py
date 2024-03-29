@@ -1,6 +1,5 @@
 import pyRocVideoDecode.decoder as dec
 import pyRocVideoDecode.demuxer as dex
-import numpy as np
 import datetime
 import sys
 import argparse
