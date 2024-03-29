@@ -19,10 +19,10 @@
 # THE SOFTWARE.
  
 # rocDecVideoSurfaceFormat
-from rocPyDecode.decTypes import rocDecVideoSurfaceFormat_NV12         
-from rocPyDecode.decTypes import rocDecVideoSurfaceFormat_P016          
-from rocPyDecode.decTypes import rocDecVideoSurfaceFormat_YUV444       
-from rocPyDecode.decTypes import rocDecVideoSurfaceFormat_YUV444_16Bit 
+from rocPyDecode.decTypes import rocDecVideoSurfaceFormat_NV12
+from rocPyDecode.decTypes import rocDecVideoSurfaceFormat_P016
+from rocPyDecode.decTypes import rocDecVideoSurfaceFormat_YUV444
+from rocPyDecode.decTypes import rocDecVideoSurfaceFormat_YUV444_16Bit
 
 # Video Packet Flags
 from rocPyDecode.decTypes import ROCDEC_PKT_ENDOFSTREAM

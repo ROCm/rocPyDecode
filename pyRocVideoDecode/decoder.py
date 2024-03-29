@@ -18,9 +18,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import rocPyDecode as rocpydec                  # rocPyDecode main module 
-import rocPyDecode.decTypes as dectypes         # rocPyDecode decode types 
-import numpy as np    
+import rocPyDecode as rocpydec
+import rocPyDecode.decTypes as dectypes
+import numpy as np
 
 def GetRocDecCodecID(codec_id)-> dectypes.rocDecVideoCodec:
     rocCodecId = rocpydec.AVCodec2RocDecVideoCodec(codec_id)
@@ -28,7 +28,7 @@ def GetRocDecCodecID(codec_id)-> dectypes.rocDecVideoCodec:
 
 def GetRectangle(crop_rect: dict)-> rocpydec.Rect:
     p_crop_rect = rocpydec.Rect()
-    if (crop_rect != None):        
+    if (crop_rect != None):
         p_crop_rect.left = crop_rect[0]
         p_crop_rect.top = crop_rect[1]
         p_crop_rect.right = crop_rect[2]
@@ -46,19 +46,19 @@ class decoder(object):
          self.viddec = rocpydec.PyRocVideoDecoder(device_id, codec, b_force_zero_latency, p_crop_rect, max_width, max_height, clk_rate)
 
     def GetGpuInfo(self):
-        return self.viddec.GetDeviceinfo()                           
+        return self.viddec.GetDeviceinfo()
 
     def DecodeFrame(self, packet)->int:
         # mark end of stream indicator
         if (packet.end_of_stream):
-            packet.pkt_flags =  packet.pkt_flags | int(dectypes.ROCDEC_PKT_ENDOFSTREAM)
+            packet.pkt_flags = packet.pkt_flags | int(dectypes.ROCDEC_PKT_ENDOFSTREAM)
         frames_count = self.viddec.DecodeFrame(packet)
         if(packet.frame_size <= 0):
             packet.end_of_stream=True
         return frames_count
 
     def GetFrame(self, packet):
-        self.viddec.GetFrame(packet)    
+        self.viddec.GetFrame(packet)
 
     def GetOutputSurfaceInfo(self):
         return self.viddec.GetOutputSurfaceInfo()

@@ -28,7 +28,7 @@ if "ROCM_PATH" in os.environ:
     ROCM_PATH = os.environ.get('ROCM_PATH')
 print("\nROCm PATH set to -- "+ROCM_PATH+"\n")
 
-# Custom install command to run cmake before installation
+# Custom install to run cmake before installation
 class CustomInstall(install):
     def run(self):
         self.build_and_install()
@@ -36,23 +36,23 @@ class CustomInstall(install):
 
     def build_and_install(self):
         # Set the build directory relative to the setup.py file
-        build_temp = os.path.join(os.path.dirname(os.path.abspath(__file__)), "build")
+        build_temp=os.path.join(os.path.dirname(os.path.abspath(__file__)),"build")
         
         # Run cmake
-        cmake_args = ["cmake", "."]
-        subprocess.check_call(cmake_args + ["-B" + build_temp], cwd=os.getcwd())
+        cmake_args=["cmake","."]
+        subprocess.check_call(cmake_args+["-B"+build_temp],cwd=os.getcwd())
 
         # Run cmake --build to compile
-        subprocess.check_call(["cmake", "--build", build_temp, "--target", "install"], cwd=build_temp)
+        subprocess.check_call(["cmake","--build",build_temp,"--target","install"],cwd=build_temp)
 
 # Define the extension module
 ext_modules = [
     Extension(
         'rocPyDecode', 
         sources=['src/roc_pydecode.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp'], 
-        include_dirs=['src',ROCM_PATH+'/include/', ROCM_PATH+'/include/rocdecode/', ROCM_PATH+'/share/rocdecode/utils', ROCM_PATH+'/share/rocdecode/utils/rocvideodecode'], 
-        extra_compile_args=['-D__HIP_PLATFORM_AMD__'], 
-        library_dirs=[ROCM_PATH+'/lib/', '/usr/local/lib/', '/usr/lib/x86_64-linux-gnu/'],
+        include_dirs=['src',ROCM_PATH+'/include/', ROCM_PATH+'/include/rocdecode/',ROCM_PATH+'/share/rocdecode/utils',ROCM_PATH+'/share/rocdecode/utils/rocvideodecode'],
+        extra_compile_args=['-D__HIP_PLATFORM_AMD__'],
+        library_dirs=[ROCM_PATH+'/lib/','/usr/local/lib/','/usr/lib/x86_64-linux-gnu/'],
         libraries=['rocdecode','avcodec','avformat','avutil'],
         runtime_library_dirs=[],
         extra_link_args=[],
@@ -68,9 +68,9 @@ setup(
       author='AMD',
       license='MIT License',
       ext_modules=ext_modules,
-      cmdclass={'install': CustomInstall},
-      packages= ['pyRocVideoDecode'],  
+      cmdclass={'install':CustomInstall},
+      packages=['pyRocVideoDecode'],
       package_dir={'pyRocVideoDecode':'pyRocVideoDecode'},
-      package_data={"pyRocVideoDecode": ["__init__.pyi"]},
-      include_package_data=True,       
+      package_data={"pyRocVideoDecode":["__init__.pyi"]},
+      include_package_data=True,
       )

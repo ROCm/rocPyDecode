@@ -18,11 +18,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import rocPyDecode as rocpydec                  # rocPyDecode main module 
-import rocPyDecode.decTypes as dectypes         # rocPyDecode decode types 
+import rocPyDecode as rocpydec
 
 class demuxer(object):
-    def __init__(self, input_file_path: str):                
+    def __init__(self, input_file_path: str):
         self.vidmux = rocpydec.PyVideoDemuxer(input_file_path)
 
     def GetCodecId(self)-> int:
