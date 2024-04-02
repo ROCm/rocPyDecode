@@ -3,11 +3,13 @@
 ## Prerequisites
 * [rocDecode C/C++ Library](https://github.com/ROCm/rocDecode)
 * [rocPyDecode installed](../README.md#rocpydecode-install)
-* [HIP Python](https://rocm.docs.amd.com/projects/hip-python/en/latest/index.html) - `python3 -m pip install -i https://test.pypi.org/simple hip-python`
+* [HIP Python](https://rocm.docs.amd.com/projects/hip-python/en/latest/index.html)
+```python3 -m pip install --upgrade pip
+python3 -m pip install -i https://test.pypi.org/simple hip-python```
 
 ## videodecode.py
 
-This sample demuxes & decode frames from a video file, and optionally saves the frames to a file. 
+This sample demuxes & decode frames from a video file, and optionally saves the frames to a file. \
 To run this python sample script, you need to provide input video file full path name, other arguments are optional.
 
 ### Arguments
@@ -23,7 +25,7 @@ The following are full list of arguments that can be passed to the sample.
 
 ## videodecodeperf.py
 
-This sample demuxes & decode frames from a video file on multiple parallel threads. The number of threads is a user given argument, defaulted to 4 threads
+This sample demuxes & decode frames from a video file on multiple parallel threads. The number of threads is a user given argument, defaulted to 4 threads. \
 To run this python sample script, you need to provide input video file full path name, other arguments are optional.
 
 ### Arguments
