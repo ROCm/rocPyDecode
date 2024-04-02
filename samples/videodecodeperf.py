@@ -55,8 +55,9 @@ if __name__ =="__main__":
 
     # HIP Python calls to find number of VCNs per device
     props = hip.hipDeviceProp_t()
-    HipCheck(hip.hipGetDeviceProperties(props,0))
+    HipCheck(hip.hipGetDeviceProperties(props, device_id))
     gcn_arch_name = props.gcnArchName.decode('UTF-8')
+    gcn_arch_name = gcn_arch_name.split(':', 1)[0]
     num_devices = HipCheck(hip.hipGetDeviceCount())
     if (num_devices < 1):
         print("ERROR: no GPUs found")
