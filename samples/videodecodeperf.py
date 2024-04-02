@@ -12,6 +12,8 @@ def DecProc(viddec, demuxer, frame_ret, fps_ret):
     start_time = datetime.datetime.now()
     while True:
         packet = demuxer.DemuxFrame()
+        if(packet.end_of_stream):
+            break
         n_frame_returned = viddec.DecodeFrame(packet)
         n_frame += 1
         if (packet.end_of_stream): # no more to decode?
@@ -28,7 +30,7 @@ if __name__ =="__main__":
     # get passed arguments
     parser = argparse.ArgumentParser(description='PyRocDecode Video Decode Arguments')
     parser.add_argument('-i', '--input', type=str, help='Input File Path - required', required=True)
-    parser.add_argument('-t', '--thread', type=int, choices=range(1, 64), default=4, help='Number of threads - optional', required=False)
+    parser.add_argument('-t', '--thread', type=int, choices=range(1, 65), default=4, help='Number of threads - optional', required=False)
     parser.add_argument('-d', '--device', type=int, default=0, help='GPU device ID - optional, default 0', required=False)
 
     try:

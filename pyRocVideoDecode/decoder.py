@@ -49,12 +49,7 @@ class decoder(object):
         return self.viddec.GetDeviceinfo()
 
     def DecodeFrame(self, packet)->int:
-        # mark end of stream indicator
-        if (packet.end_of_stream):
-            packet.pkt_flags = packet.pkt_flags | int(dectypes.ROCDEC_PKT_ENDOFSTREAM)
         frames_count = self.viddec.DecodeFrame(packet)
-        if(packet.frame_size <= 0):
-            packet.end_of_stream=True
         return frames_count
 
     def GetFrame(self, packet):
