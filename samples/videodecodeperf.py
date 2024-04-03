@@ -53,6 +53,11 @@ if __name__ =="__main__":
     device_id = args.device
     sd = 0
 
+    # Input file (must exist)
+    if (os.path.exists(input_file_path) == False):
+        print("ERROR: input file doesn't exist.")
+        exit()
+
     # HIP Python calls to find number of VCNs per device
     props = hip.hipDeviceProp_t()
     HipCheck(hip.hipGetDeviceProperties(props, device_id))

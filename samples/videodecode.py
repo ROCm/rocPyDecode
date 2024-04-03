@@ -22,7 +22,12 @@ output_file_path = args.output
 device_id = args.device
 b_force_zero_latency = args.zero_latency
 crop_rect = args.crop_rect
- 
+
+# Input file (must exist)
+if (os.path.exists(input_file_path) == False):
+    print("ERROR: input file doesn't exist.")
+    exit()
+
 # rect from user
 p_crop_rect = dec.GetRectangle(crop_rect)
 
