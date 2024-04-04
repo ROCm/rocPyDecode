@@ -3,6 +3,7 @@ import pyRocVideoDecode.demuxer as dmx
 import datetime
 import sys
 import argparse
+import os
 
 # get passed arguments  
 parser = argparse.ArgumentParser(description='PyRocDecode Video Decode Arguments')
