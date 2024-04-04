@@ -5,6 +5,7 @@ import sys
 import argparse
 from threading import Thread
 from hip import hip
+import os
 
 def HipCheck(call_result):
     err = call_result[0]
