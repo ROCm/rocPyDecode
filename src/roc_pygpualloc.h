@@ -22,50 +22,13 @@ THE SOFTWARE.
 
 #pragma once
 
-#include <iostream>
+#include "roc_pydecode.h"
+#include "hip/hip_runtime_api.h"
 
-extern "C" {
-    #include <libavcodec/avcodec.h>
-    #include <libavformat/avformat.h>
-    #if USE_AVCODEC_GREATER_THAN_58_134
-        #include <libavcodec/bsf.h>
-    #endif
-}
+#define HIP_ERROR_CHECK_STATUS(call) { hipError_t err = (call); if(err != hipSuccess){ THROW("ERROR: Hip call failed with status " + TOSTR(err))}}
 
-#include "roc_video_dec.h"
-  
-#include <pybind11/pybind11.h>	 
-#include <pybind11/functional.h>
-#include <pybind11/stl.h>
-#include <pybind11/numpy.h>
-#include <iostream>
-#include <pybind11/embed.h>
-#include <pybind11/eval.h>
+class PyGpuAlloc {
 
-namespace py = pybind11;
-
-struct PacketData {
-    bool      end_of_stream;
-    int       pkt_flags;
-    int64_t   frame_pts;
-    int64_t   frame_size;
-    uintptr_t frame_adrs;
+    public:
+        PyGpuAlloc();
 };
-
-struct ConfigInfo {
-    std::string device_name;
-    std::string gcn_arch_name;
-    int         pci_bus_id;
-    int         pci_domain_id;
-    int         pci_device_id;
-};
-
-// defined in roc_pyvideodemuxer.cpp
-void PyVideoDemuxerInitializer(py::module& m);
-rocDecVideoCodec ConvertAVCodec2RocDecVideoCodec(int av_codec);
-
-// defined in roc_pyvideodecoder.cpp
-void PyRocVideoDecoderInitializer(py::module& m);
-
-// defined in ExternalBuffer.cpp
-void PyExportInitializer(py::module& m);

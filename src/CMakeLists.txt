@@ -29,7 +29,8 @@ project(rocPyDecode VERSION 1.0.0)
 set(Python3_FIND_VIRTUALENV FIRST)	
 find_package(Python3 QUIET COMPONENTS Interpreter Development)
 
-option(FETCHCONTENT_QUIET OFF)
+option(FETCHCONTENT_QUIET ON)
+
 include(FetchContent)
 fetchcontent_declare(
     pybind11
@@ -38,3 +39,5 @@ fetchcontent_declare(
         SHA256=eacf582fa8f696227988d08cfc46121770823839fe9e301a20fbce67e7cd70ec
 )
 fetchcontent_makeavailable(pybind11)
+
+ 

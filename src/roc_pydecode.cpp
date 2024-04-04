@@ -57,15 +57,20 @@ PYBIND11_MODULE(rocPyDecode, m) {
         .value("rocDecVideoCodec_AVC",rocDecVideoCodec_AVC)            
         .value("rocDecVideoCodec_HEVC",rocDecVideoCodec_HEVC)          
         .export_values(); 
-        
-    // -------------------------------
-    // USER Demuxer 'PyVideoDemuxer'
-    // -------------------------------
+
+    // ---------
+    // PyExport
+    // ---------
+    PyExportInitializer(m);
+
+    // -----------------------------
+    // User Demuxer 'PyVideoDemuxer'
+    // -----------------------------
     PyVideoDemuxerInitializer(m);
 
-    // --------------------------------------
+    // -------------------------------------
     // AMD Video Decoder 'PyRocVideoDecoder'
-    // --------------------------------------
+    // -------------------------------------
     PyRocVideoDecoderInitializer(m);
 
     // ----------------

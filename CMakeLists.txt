@@ -82,6 +82,15 @@ if(ROCDECODE_LIBRARY AND ROCDECODE_INCLUDE_DIR)
     message("-- ${Green}${PROJECT_NAME}: Using rocDecode -- \n\tLibraries:${ROCDECODE_LIBRARY} \n\tIncludes:${ROCDECODE_INCLUDE_DIR}${ColourReset}")
 endif()
 
+include(FetchContent)
+FetchContent_Populate(
+  dlpack
+  URL        https://github.com/dmlc/dlpack/archive/refs/tags/v0.8.zip
+  SOURCE_DIR dlpack
+)
+message(STATUS " downloading dlpack library " "${dlpack_SOURCE_DIR}")
+# fetchcontent_makeavailable(dlpack)
+
 if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG_FOUND) 
 
     # avoid setting the default installation path to /usr/local
@@ -103,8 +112,8 @@ if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
     # rocPyDecode include
     include_directories (${rocPyDecode_INCLUDE_DIR} /src)
     set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${rocPyDecode_LIBRARY})
-    include_directories (${ROCM_PATH}/share/rocdecode/utils ${ROCM_PATH}/share/rocdecode/utils/rocvideodecode)
-    
+    include_directories (${ROCM_PATH}/share/rocdecode/utils ${ROCM_PATH}/share/rocdecode/utils/rocvideodecode "${dlpack_SOURCE_DIR}/include")
+     
     file(GLOB_RECURSE pyfiles pyRocVideoDecode/*.py pyRocVideoDecode/*.pyi)
     file(GLOB_RECURSE include src/*.h)
     file(GLOB_RECURSE sources src/*.cpp  ${ROCM_PATH}/share/rocdecode/utils/rocvideodecode/*.cpp)
