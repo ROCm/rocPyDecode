@@ -1,12 +1,14 @@
-import pyRocVideoDecode.decoder as dec
-import pyRocVideoDecode.demuxer as dmx
 import datetime
 import sys
 import argparse
 import os.path
 import torch
+import torch.utils.dlpack
 
-# print( "PyTorch Using: ", torch.cuda.get_device_name(0))
+import pyRocVideoDecode.decoder as dec
+import pyRocVideoDecode.demuxer as dmx
+
+print( "\nPyTorch Using: ", torch.cuda.get_device_name(0))
 
 def Decoder(
         input_file_path,
@@ -72,12 +74,13 @@ def Decoder(
             viddec.GetFrame(packet)
 
             # you can use tensor here
-            # torch.from_dlpack(packet.extBuf.__dlpack__())
+            src_tensor = torch.from_dlpack(packet.extBuf.__dlpack__())
+            tensor_data = src_tensor.untyped_storage().data_ptr()    
 
             if (output_file_path is not None):
                 surface_info = viddec.GetOutputSurfaceInfo()
-                viddec.SaveFrameToFile(
-                    output_file_path, packet.frame_adrs, surface_info)
+                viddec.SaveTensorToFile(
+                    output_file_path, tensor_data, surface_info)
 
             # release frame
             viddec.ReleaseFrame(packet, False)

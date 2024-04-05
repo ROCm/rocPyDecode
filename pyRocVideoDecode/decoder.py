@@ -66,6 +66,9 @@ class decoder(object):
     def SaveFrameToFile(self, output_file_path, frame_adrs: np.uint64, surface_info: np.uint8):
         return self.viddec.SaveFrameToFile(output_file_path, frame_adrs, surface_info)
     
+    def SaveTensorToFile(self, output_file_path, frame_adrs: np.uint64, surface_info: np.uint8):
+        return self.viddec.SaveTensorToFile(output_file_path, frame_adrs, surface_info)
+        
     def ReleaseFrame(self, packet, b_flush: bool):
         self.viddec.ReleaseFrame(packet, b_flush)
         return

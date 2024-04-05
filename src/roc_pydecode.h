@@ -52,6 +52,9 @@ struct PacketData {
     int64_t   frame_size;
     uintptr_t frame_adrs;
     std::shared_ptr<ExternalBuffer> extBuf;
+    PacketData(){
+        extBuf = std::make_shared<ExternalBuffer>();
+    }
 };
 
 struct ConfigInfo {

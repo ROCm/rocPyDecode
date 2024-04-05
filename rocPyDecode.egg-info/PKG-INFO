@@ -1,0 +1,12 @@
+Metadata-Version: 2.1
+Name: rocPyDecode
+Version: 1.0.0
+Summary: AMD ROCm Video Decoder Library
+Home-page: https://github.com/ROCm/rocPyDecode
+Author: AMD
+License: MIT License
+Platform: UNKNOWN
+License-File: LICENSE
+
+UNKNOWN
+

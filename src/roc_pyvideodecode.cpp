@@ -33,6 +33,7 @@ void PyRocVideoDecoderInitializer(py::module& m) {
         .def("DecodeFrame",&PyRocVideoDecoder::PyDecodeFrame) 
         .def("GetFrame",&PyRocVideoDecoder::PyGetFrame)
         .def("SaveFrameToFile",&PyRocVideoDecoder::PySaveFrameToFile)
+        .def("SaveTensorToFile",&PyRocVideoDecoder::PySaveTensorToFile)
         .def("ReleaseFrame",&PyRocVideoDecoder::PyReleaseFrame)
         .def("GetOutputSurfaceInfo",&PyRocVideoDecoder::PyGetOutputSurfaceInfo)
         .def("GetNumOfFlushedFrames",&PyRocVideoDecoder::PyGetNumOfFlushedFrames);
@@ -51,7 +52,7 @@ int PyRocVideoDecoder::PyDecodeFrame(PacketData& packet) {
     
     int retDec = DecodeFrame((u_int8_t*) packet.frame_adrs, static_cast<size_t>(packet.frame_size), packet.pkt_flags, packet.frame_pts);    
 
-    uint32_t width = GetWidth();
+    uint32_t width = GetDecodeWidth();
     uint32_t height = GetHeight();
 
     // Load DLPack Tensor
@@ -91,6 +92,20 @@ py::object PyRocVideoDecoder::PySaveFrameToFile(std::string& output_file_name_in
     return py::cast<py::none>(Py_None);
 }
  
+// for python binding
+py::object PyRocVideoDecoder::PySaveTensorToFile(std::string& output_file_name_in, uintptr_t& surf_mem, uintptr_t& surface_info) {
+    std::string output_file_name = output_file_name_in.c_str();   
+    if(surf_mem && surface_info) {
+
+        OutputSurfaceInfo *si =reinterpret_cast<OutputSurfaceInfo*>(surface_info);
+        si->mem_type = OUT_SURFACE_MEM_HOST_COPIED; // will not copy from D2H
+
+        SaveFrameToFile(output_file_name, (void *)surf_mem, reinterpret_cast<OutputSurfaceInfo*>(surface_info));
+
+    }
+    return py::cast<py::none>(Py_None);
+}
+
 // for python binding
 std::shared_ptr<ConfigInfo> PyRocVideoDecoder::PyGetDeviceinfo() {
     GetDeviceinfo(configInfo.get()->device_name, configInfo.get()->gcn_arch_name, configInfo.get()->pci_bus_id, configInfo.get()->pci_domain_id, configInfo.get()->pci_device_id);
