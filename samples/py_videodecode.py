@@ -4,7 +4,9 @@ import datetime
 import sys
 import argparse
 import os.path
+import torch
 
+# print( "PyTorch Using: ", torch.cuda.get_device_name(0))
 
 def Decoder(
         input_file_path,
@@ -68,6 +70,9 @@ def Decoder(
 
         for i in range(n_frame_returned):
             viddec.GetFrame(packet)
+
+            # you can use tensor here
+            # torch.from_dlpack(packet.extBuf.__dlpack__())
 
             if (output_file_path is not None):
                 surface_info = viddec.GetOutputSurfaceInfo()

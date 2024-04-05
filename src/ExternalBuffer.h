@@ -47,7 +47,7 @@ class ExternalBuffer final : public std::enable_shared_from_this<ExternalBuffer>
 
         ExternalBuffer() = default;
         py::capsule dlpack(py::object stream) const;
-        int LoadDLPack(std::vector<size_t> _shape, std::vector<size_t> _stride, std::string _typeStr, size_t _streamid, void * _data, bool _readOnly);
+        int LoadDLPack(std::vector<size_t> _shape, std::vector<size_t> _stride, std::string _typeStr, void * _data);
 
     private:
         friend py::detail::type_caster<ExternalBuffer>;

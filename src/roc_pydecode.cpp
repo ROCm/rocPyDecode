@@ -106,7 +106,30 @@ PYBIND11_MODULE(rocPyDecode, m) {
         .def_readwrite("pkt_flags",     &PacketData::pkt_flags)
         .def_readwrite("frame_pts",     &PacketData::frame_pts)
         .def_readwrite("frame_size",    &PacketData::frame_size)
-        .def_readwrite("frame_adrs",    &PacketData::frame_adrs);   
+        .def_readwrite("frame_adrs",    &PacketData::frame_adrs)
+        .def_readwrite("extBuf",        &PacketData::extBuf)
+        
+        // DL Pack Tensor
+        .def_property_readonly("shape", [](std::shared_ptr<PacketData>& self) {
+            return self->extBuf->shape();
+            }, "Get the shape of the buffer as an array")
+        .def_property_readonly("strides", [](std::shared_ptr<PacketData>& self) {
+                return self->extBuf->strides();
+            }, "Get the strides of the buffer")
+        .def_property_readonly("dtype", [](std::shared_ptr<PacketData>& self) {
+                return self->extBuf->dtype();
+            }, "Get the data type of the buffer")
+        .def("__dlpack__", [](std::shared_ptr<PacketData>& self, py::object stream) {
+            return self->extBuf->dlpack(stream);
+            }, py::arg("stream") = NULL, "Export the buffer as a DLPack tensor")
+        .def("__dlpack_device__", [](std::shared_ptr<PacketData>& self) {
+                //DLDevice ctx;
+                //ctx.device_type = DLDeviceType::kDLROCM;
+                //ctx.device_id = 0;
+                return py::make_tuple(py::int_(static_cast<int>(DLDeviceType::kDLROCM)),
+                        py::int_(static_cast<int>(0)));
+            }, "Get the device associated with the buffer")
+            ;   
 
     // ConfigInfo
     py::class_<ConfigInfo, shared_ptr<ConfigInfo>>(m, "ConfigInfo", py::module_local())

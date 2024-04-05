@@ -21,11 +21,14 @@ THE SOFTWARE.
 */
 
 #include "ExternalBuffer.h"
+#include <iostream>
 
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
 
-#include <functional> // for std::multiplies
+//#include <functional> // for std::multiplies
+
+using namespace std;
 
 using namespace py::literals;
 
@@ -133,7 +136,8 @@ void PyExportInitializer(py::module& m) {
     ExternalBuffer::Export(m);
 }
 
-int ExternalBuffer::LoadDLPack( std::vector<size_t> _shape, std::vector<size_t> _stride, std::string _typeStr, size_t _streamid, void* _data, bool _readOnly) {
+int ExternalBuffer::LoadDLPack( std::vector<size_t> _shape, std::vector<size_t> _stride, std::string _typeStr, void* _data) {
+    
     m_dlTensor->byte_offset = 0;
 
     // TODO: infer the device type from the memory buffer
@@ -153,7 +157,7 @@ int ExternalBuffer::LoadDLPack( std::vector<size_t> _shape, std::vector<size_t> 
         return -1;
     }
     int itemSizeDT = sizeof(uint8_t);// dt.itemsize() 
-
+    
     m_dlTensor->dtype.code = kDLUInt;
     m_dlTensor->dtype.bits = 8;
     m_dlTensor->dtype.lanes = 1;
@@ -166,7 +170,7 @@ int ExternalBuffer::LoadDLPack( std::vector<size_t> _shape, std::vector<size_t> 
     for (int i = 0; i < m_dlTensor->ndim; ++i) {
         m_dlTensor->shape[i] = _shape[i];
     }
-
+    
     // Convert strides
     m_dlTensor->strides = new int64_t[m_dlTensor->ndim];
     for (int i = 0; i < m_dlTensor->ndim; ++i) {
@@ -176,6 +180,6 @@ int ExternalBuffer::LoadDLPack( std::vector<size_t> _shape, std::vector<size_t> 
             return -1;
         }
         m_dlTensor->strides[i] /= itemSizeDT;
-    }
+    }    
     return 0;
 }

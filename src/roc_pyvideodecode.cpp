@@ -48,7 +48,18 @@ void PyRocVideoDecoder::InitConfigStructure() {
 }
 
 int PyRocVideoDecoder::PyDecodeFrame(PacketData& packet) {
-    return DecodeFrame((u_int8_t*) packet.frame_adrs, static_cast<size_t>(packet.frame_size), packet.pkt_flags, packet.frame_pts);    
+    
+    int retDec = DecodeFrame((u_int8_t*) packet.frame_adrs, static_cast<size_t>(packet.frame_size), packet.pkt_flags, packet.frame_pts);    
+
+    uint32_t width = GetWidth();
+    uint32_t height = GetHeight();
+
+    // Load DLPack Tensor
+    std::vector<size_t> shape{ (size_t)(height * 1.5), width};
+    std::vector<size_t> stride{ size_t(width), 1};
+    int returntype = packet.extBuf->LoadDLPack( shape, stride, "|u1", (void *)packet.frame_adrs );
+
+    return retDec;
 }
  
 // for python binding

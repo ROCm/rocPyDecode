@@ -33,6 +33,7 @@ extern "C" {
 }
 
 #include "roc_video_dec.h"
+#include "ExternalBuffer.h"
   
 #include <pybind11/pybind11.h>	 
 #include <pybind11/functional.h>
@@ -50,6 +51,7 @@ struct PacketData {
     int64_t   frame_pts;
     int64_t   frame_size;
     uintptr_t frame_adrs;
+    std::shared_ptr<ExternalBuffer> extBuf;
 };
 
 struct ConfigInfo {
