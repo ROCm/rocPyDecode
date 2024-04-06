@@ -41,7 +41,7 @@ void PyVideoDemuxer::InitPacket() {
     currentPacket.get()->frame_size = 0;
     currentPacket.get()->frame_pts = 0;
     currentPacket.get()->end_of_stream = false;
-    currentPacket->extBuf.reset( new ExternalBuffer());
+    currentPacket->extBuf.reset(new ExternalBuffer());
 }
 
 shared_ptr<PacketData> PyVideoDemuxer::DemuxFrame() {
@@ -49,17 +49,12 @@ shared_ptr<PacketData> PyVideoDemuxer::DemuxFrame() {
     int video_size=0;
     int64_t pts=0;
         
-    if(Demux(&pVideo, &video_size, &pts)) {
-        if(video_size > 0) {
-            currentPacket.get()->frame_adrs = reinterpret_cast<std::uintptr_t>(pVideo);
-            currentPacket.get()->frame_size = video_size;
-            currentPacket.get()->frame_pts = pts;
-        } else {
-            currentPacket.get()->end_of_stream = true;        
-        }
-    } else {
-        currentPacket.get()->end_of_stream = true;
-    }
+    bool ret = Demux(&pVideo, &video_size, &pts);
+
+    currentPacket.get()->frame_adrs = (uintptr_t)pVideo;
+    currentPacket.get()->frame_size = video_size;
+    currentPacket.get()->frame_pts = pts;
+    currentPacket.get()->end_of_stream = !ret;
 
     return currentPacket;
 }

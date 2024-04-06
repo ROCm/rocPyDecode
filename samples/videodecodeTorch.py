@@ -77,13 +77,12 @@ def Decoder(
             src_tensor = torch.from_dlpack(packet.extBuf.__dlpack__())
             tensor_data = src_tensor.untyped_storage().data_ptr()    
 
-            if (output_file_path is not None):
-                surface_info = viddec.GetOutputSurfaceInfo()
-                viddec.SaveTensorToFile(
-                    output_file_path, tensor_data, surface_info)
+            if (output_file_path is not None): 
+                surface_info = viddec.GetOutputSurfaceInfo() 
+                viddec.SaveTensorToFile(output_file_path, tensor_data, surface_info)
 
             # release frame
-            viddec.ReleaseFrame(packet, False)
+            viddec.ReleaseFrame(packet)
 
         # measure after completing a whole frame
         end_time = datetime.datetime.now()

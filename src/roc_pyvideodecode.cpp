@@ -27,8 +27,8 @@ using namespace std;
 void PyRocVideoDecoderInitializer(py::module& m) {
         py::class_<PyRocVideoDecoder> (m, "PyRocVideoDecoder")
         .def(py::init<int,rocDecVideoCodec,bool,const Rect *,int,int,uint32_t>(),
-                    py::arg("device_id"), py::arg("codec"), py::arg("force_zero_latency"), 
-                    py::arg("p_crop_rect"), py::arg("max_width"), py::arg("max_height"), py::arg("clk_rate"))
+                    py::arg("device_id")=0, py::arg("codec")=rocDecVideoCodec_HEVC, py::arg("force_zero_latency")=false, 
+                    py::arg("p_crop_rect")=nullptr, py::arg("max_width")=0, py::arg("max_height")=0, py::arg("clk_rate")=0)
         .def("GetDeviceinfo",&PyRocVideoDecoder::PyGetDeviceinfo)
         .def("DecodeFrame",&PyRocVideoDecoder::PyDecodeFrame) 
         .def("GetFrame",&PyRocVideoDecoder::PyGetFrame)
@@ -36,7 +36,11 @@ void PyRocVideoDecoderInitializer(py::module& m) {
         .def("SaveTensorToFile",&PyRocVideoDecoder::PySaveTensorToFile)
         .def("ReleaseFrame",&PyRocVideoDecoder::PyReleaseFrame)
         .def("GetOutputSurfaceInfo",&PyRocVideoDecoder::PyGetOutputSurfaceInfo)
-        .def("GetNumOfFlushedFrames",&PyRocVideoDecoder::PyGetNumOfFlushedFrames);
+        .def("GetNumOfFlushedFrames",&PyRocVideoDecoder::PyGetNumOfFlushedFrames)
+        .def("InitMd5",&PyRocVideoDecoder::PyInitMd5)
+        .def("FinalizeMd5",&PyRocVideoDecoder::PyFinalizeMd5)
+        .def("UpdateMd5ForFrame",&PyRocVideoDecoder::PyUpdateMd5ForFrame)
+        ;
 }
 
 void PyRocVideoDecoder::InitConfigStructure() {
@@ -49,23 +53,25 @@ void PyRocVideoDecoder::InitConfigStructure() {
 }
 
 int PyRocVideoDecoder::PyDecodeFrame(PacketData& packet) {
-    
-    int retDec = DecodeFrame((u_int8_t*) packet.frame_adrs, static_cast<size_t>(packet.frame_size), packet.pkt_flags, packet.frame_pts);    
+ 
+    int decoded_frame_count = DecodeFrame((u_int8_t*) packet.frame_adrs, static_cast<size_t>(packet.frame_size), packet.pkt_flags, packet.frame_pts);    
 
-    uint32_t width = GetDecodeWidth();
+    uint32_t width = GetWidth();
     uint32_t height = GetHeight();
 
     // Load DLPack Tensor
     std::vector<size_t> shape{ (size_t)(height * 1.5), width};
     std::vector<size_t> stride{ size_t(width), 1};
-    int returntype = packet.extBuf->LoadDLPack( shape, stride, "|u1", (void *)packet.frame_adrs );
+    packet.extBuf->LoadDLPack( shape, stride, "|u1", (void *)packet.frame_adrs );
 
-    return retDec;
+    return decoded_frame_count;
 }
  
 // for python binding
 py::object PyRocVideoDecoder::PyGetFrame(PacketData& packet) {
-    packet.frame_adrs = reinterpret_cast<std::uintptr_t>(GetFrame(&packet.frame_pts));   
+    int64_t pts = packet.frame_pts;
+    packet.frame_adrs = reinterpret_cast<std::uintptr_t>(GetFrame(&pts));   
+    packet.frame_pts = pts;
     return py::cast(packet.frame_pts);
 }
 
@@ -76,15 +82,13 @@ py::object PyRocVideoDecoder::PyGetNumOfFlushedFrames() {
 }
 
 // for python binding
-py::object PyRocVideoDecoder::PyReleaseFrame(PacketData& packet, py::array_t<bool>& b_flushing_in) {  
-    bool b_flushing = false;
-    memcpy( &b_flushing, b_flushing_in.mutable_data(), sizeof(bool));
-    bool ret = ReleaseFrame(packet.frame_pts, b_flushing);     
+py::object PyRocVideoDecoder::PyReleaseFrame(PacketData& packet) {  
+    bool ret = ReleaseFrame(packet.frame_pts, true);     
     return py::cast(ret);
 }
 
 // for python binding
-py::object PyRocVideoDecoder::PySaveFrameToFile(std::string& output_file_name_in, uintptr_t& surf_mem, uintptr_t& surface_info) {
+py::object PyRocVideoDecoder::PySaveFrameToFile(std::string& output_file_name_in, uintptr_t& surf_mem, uintptr_t& surface_info) {     
     std::string output_file_name = output_file_name_in.c_str();   
     if(surf_mem && surface_info) {
         SaveFrameToFile(output_file_name, (void *)surf_mem, reinterpret_cast<OutputSurfaceInfo*>(surface_info));
@@ -94,14 +98,14 @@ py::object PyRocVideoDecoder::PySaveFrameToFile(std::string& output_file_name_in
  
 // for python binding
 py::object PyRocVideoDecoder::PySaveTensorToFile(std::string& output_file_name_in, uintptr_t& surf_mem, uintptr_t& surface_info) {
+ 
     std::string output_file_name = output_file_name_in.c_str();   
     if(surf_mem && surface_info) {
 
-        OutputSurfaceInfo *si =reinterpret_cast<OutputSurfaceInfo*>(surface_info);
+        OutputSurfaceInfo* si = reinterpret_cast<OutputSurfaceInfo*>(surface_info);
         si->mem_type = OUT_SURFACE_MEM_HOST_COPIED; // will not copy from D2H
 
-        SaveFrameToFile(output_file_name, (void *)surf_mem, reinterpret_cast<OutputSurfaceInfo*>(surface_info));
-
+        SaveFrameToFile(output_file_name, (void *)surf_mem, si);
     }
     return py::cast<py::none>(Py_None);
 }
@@ -122,3 +126,26 @@ uintptr_t PyRocVideoDecoder::PyGetOutputSurfaceInfo() {
     return reinterpret_cast<std::uintptr_t>(nullptr);
 }
  
+// for pyhton binding
+py::object PyRocVideoDecoder::PyInitMd5() {
+    InitMd5();
+    return py::cast<py::none>(Py_None);
+}
+
+// for pyhton binding
+py::object PyRocVideoDecoder::PyUpdateMd5ForFrame(uintptr_t& surf_mem, uintptr_t& surface_info) {  
+  
+    if(surface_info && surf_mem)
+        UpdateMd5ForFrame((void *)surf_mem, reinterpret_cast<OutputSurfaceInfo*>(surface_info));
+        
+    return py::cast<py::none>(Py_None);
+}
+
+// for pyhton binding
+py::object PyRocVideoDecoder::PyFinalizeMd5(uintptr_t& digest_back) {    
+    uint8_t * digest;
+    FinalizeMd5(&digest);
+    memcpy((uint8_t*)digest_back, digest,  sizeof(uint8_t)*16);
+    return py::cast<py::none>(Py_None);
+}
+

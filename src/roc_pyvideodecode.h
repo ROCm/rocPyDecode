@@ -33,7 +33,7 @@ class PyRocVideoDecoder : public RocVideoDecoder {
     public:
         PyRocVideoDecoder(int device_id, rocDecVideoCodec codec, bool force_zero_latency = false,
                           const Rect *p_crop_rect = nullptr, int max_width = 0, int max_height = 0,
-                          uint32_t clk_rate = 1000) : RocVideoDecoder(device_id, (OutputSurfaceMemoryType)0, codec, force_zero_latency,
+                          uint32_t clk_rate = 0) : RocVideoDecoder(device_id, (OutputSurfaceMemoryType)0, codec, force_zero_latency,
                           p_crop_rect, false, max_width, max_height, clk_rate){ InitConfigStructure(); }
          
         // for python binding
@@ -43,7 +43,7 @@ class PyRocVideoDecoder : public RocVideoDecoder {
         py::object PyGetFrame(PacketData& packet);
 
         // for python binding
-        py::object PyReleaseFrame(PacketData& packet, py::array_t<bool>& b_flushing_in);
+        py::object PyReleaseFrame(PacketData& packet);
       
         // for python binding
         std::shared_ptr<ConfigInfo> PyGetDeviceinfo();
@@ -59,6 +59,15 @@ class PyRocVideoDecoder : public RocVideoDecoder {
  
         // for python binding
         py::object PyGetNumOfFlushedFrames();    
+
+        // for pyhton binding
+        py::object PyInitMd5();
+
+        // for pyhton binding
+        py::object PyUpdateMd5ForFrame(uintptr_t& surf_mem, uintptr_t& surface_info);
+
+        // for pyhton binding
+        py::object PyFinalizeMd5(uintptr_t& digest_back);
 
     private:
         std::shared_ptr <ConfigInfo> configInfo;
