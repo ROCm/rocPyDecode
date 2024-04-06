@@ -147,7 +147,7 @@ int ExternalBuffer::LoadDLPack( std::vector<size_t> _shape, std::vector<size_t> 
     m_dlTensor->device.device_id = 0;
 
     // Convert data
-    void* ptr = reinterpret_cast<void*>(_data);
+    void* ptr = _data; // reinterpret_cast<void*>(_data);
     CheckValidBuffer(ptr);
     m_dlTensor->data = ptr;
 

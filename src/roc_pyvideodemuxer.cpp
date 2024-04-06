@@ -37,11 +37,11 @@ rocDecVideoCodec ConvertAVCodec2RocDecVideoCodec(int av_codec) {
 
 void PyVideoDemuxer::InitPacket() {
     currentPacket.reset(new PacketData());    
-    currentPacket.get()->frame_adrs = reinterpret_cast<std::uintptr_t>(nullptr);
+    currentPacket.get()->frame_adrs = 0;
     currentPacket.get()->frame_size = 0;
     currentPacket.get()->frame_pts = 0;
     currentPacket.get()->end_of_stream = false;
-    currentPacket->extBuf.reset(new ExternalBuffer());
+    currentPacket.get()->extBuf.reset(new ExternalBuffer());
 }
 
 shared_ptr<PacketData> PyVideoDemuxer::DemuxFrame() {

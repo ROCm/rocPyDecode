@@ -80,6 +80,7 @@ def Decoder(
             if (output_file_path is not None): 
                 surface_info = viddec.GetOutputSurfaceInfo() 
                 viddec.SaveTensorToFile(output_file_path, tensor_data, surface_info)
+                break
 
             # release frame
             viddec.ReleaseFrame(packet)

@@ -74,8 +74,8 @@ def Decoder(
         
         packet = demuxer.DemuxFrame()
 
-        if (packet.end_of_stream):
-            break 
+        # if (packet.end_of_stream):
+        #     break 
 
         n_frame_returned = viddec.DecodeFrame(packet)   
 
