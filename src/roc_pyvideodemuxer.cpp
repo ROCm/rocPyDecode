@@ -50,12 +50,10 @@ shared_ptr<PacketData> PyVideoDemuxer::DemuxFrame() {
     int64_t pts=0;
         
     bool ret = Demux(&pVideo, &video_size, &pts);
-
     currentPacket.get()->frame_adrs = (uintptr_t)pVideo;
     currentPacket.get()->frame_size = video_size;
     currentPacket.get()->frame_pts = pts;
     currentPacket.get()->end_of_stream = !ret;
-
     return currentPacket;
 }
 

@@ -8,7 +8,8 @@ import torch.utils.dlpack
 import pyRocVideoDecode.decoder as dec
 import pyRocVideoDecode.demuxer as dmx
 
-print( "\nPyTorch Using: ", torch.cuda.get_device_name(0))
+print("\nPyTorch Using: ", torch.cuda.get_device_name(0))
+
 
 def Decoder(
         input_file_path,
@@ -75,11 +76,12 @@ def Decoder(
 
             # you can use tensor here
             src_tensor = torch.from_dlpack(packet.extBuf.__dlpack__())
-            tensor_data = src_tensor.untyped_storage().data_ptr()    
+            tensor_data = src_tensor.untyped_storage().data_ptr()
 
-            if (output_file_path is not None): 
-                surface_info = viddec.GetOutputSurfaceInfo() 
-                viddec.SaveTensorToFile(output_file_path, tensor_data, surface_info)
+            if (output_file_path is not None):
+                surface_info = viddec.GetOutputSurfaceInfo()
+                viddec.SaveTensorToFile(
+                    output_file_path, tensor_data, surface_info)
                 break
 
             # release frame

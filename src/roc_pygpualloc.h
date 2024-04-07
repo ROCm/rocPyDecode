@@ -28,7 +28,6 @@ THE SOFTWARE.
 #define HIP_ERROR_CHECK_STATUS(call) { hipError_t err = (call); if(err != hipSuccess){ THROW("ERROR: Hip call failed with status " + TOSTR(err))}}
 
 class PyGpuAlloc {
-
     public:
         PyGpuAlloc();
 };

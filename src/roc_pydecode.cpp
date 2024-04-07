@@ -128,8 +128,7 @@ PYBIND11_MODULE(rocPyDecode, m) {
                 //ctx.device_id = 0;
                 return py::make_tuple(py::int_(static_cast<int>(DLDeviceType::kDLROCM)),
                         py::int_(static_cast<int>(0)));
-            }, "Get the device associated with the buffer")
-            ;   
+            }, "Get the device associated with the buffer");   
 
     // ConfigInfo
     py::class_<ConfigInfo, shared_ptr<ConfigInfo>>(m, "ConfigInfo", py::module_local())

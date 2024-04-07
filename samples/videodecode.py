@@ -71,13 +71,10 @@ def Decoder(
 
     while True:
         start_time = datetime.datetime.now()
-        
+
         packet = demuxer.DemuxFrame()
 
-        # if (packet.end_of_stream):
-        #     break 
-
-        n_frame_returned = viddec.DecodeFrame(packet)   
+        n_frame_returned = viddec.DecodeFrame(packet)
 
         if (n_frame_returned == 0):
             print("n_frame_returned: ", n_frame_returned)
@@ -86,13 +83,14 @@ def Decoder(
 
             viddec.GetFrame(packet)
 
-            if (b_generate_md5):    
-                surface_info = viddec.GetOutputSurfaceInfo()             
+            if (b_generate_md5):
+                surface_info = viddec.GetOutputSurfaceInfo()
                 viddec.UpdateMd5ForFrame(packet.frame_adrs, surface_info)
 
             if (output_file_path is not None):
-                surface_info = viddec.GetOutputSurfaceInfo() 
-                viddec.SaveFrameToFile(output_file_path, packet.frame_adrs, surface_info)
+                surface_info = viddec.GetOutputSurfaceInfo()
+                viddec.SaveFrameToFile(
+                    output_file_path, packet.frame_adrs, surface_info)
 
             # release frame
             viddec.ReleaseFrame(packet)
@@ -106,7 +104,7 @@ def Decoder(
         n_frame += n_frame_returned
 
         if (packet.frame_size <= 0):
-            break 
+            break
 
     # beyond the decoding loop
     n_frame += viddec.GetNumOfFlushedFrames()
@@ -143,7 +141,6 @@ def Decoder(
                     "MD5 digest does not match the reference MD5 digest: ",
                     md5_from_file)
 
- 
 
 if __name__ == "__main__":
 
@@ -223,7 +220,7 @@ if __name__ == "__main__":
     if (os.path.exists(input_file_path) == False):
         print("ERROR: input file doesn't exist.")
         exit()
- 
+
     Decoder(
         input_file_path,
         output_file_path,

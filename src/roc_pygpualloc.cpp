@@ -23,18 +23,15 @@ THE SOFTWARE.
 #include "roc_pygpualloc.h"
 
 using namespace std;
-
 namespace py = pybind11;
 
-static void* do_allocate(void* ctx, size_t bytes, size_t alignment)
-{
+static void* do_allocate(void* ctx, size_t bytes, size_t alignment) {
     std::cout << "external malloc called" << std::endl;
     void* pFrame = NULL;
     HIP_ERROR_CHECK_STATUS(hipMalloc(&pFrame, bytes));
     return pFrame;
 }
-static int do_deallocate(void* ctx, void* pFrame, size_t bytes, size_t alignment)
-{
+static int do_deallocate(void* ctx, void* pFrame, size_t bytes, size_t alignment) {
     HIP_ERROR_CHECK_STATUS(hipFree(pFrame));
     return 0;
 }
@@ -42,12 +39,10 @@ static int do_deallocate(void* ctx, void* pFrame, size_t bytes, size_t alignment
 typedef void* (*do_allocate_pfn)(void* ctx, size_t bytes, size_t alignment);
 typedef int (*do_deallocate_pfn)(void* ctx, void* pFrame, size_t bytes, size_t alignment);
 
-PyGpuAlloc::PyGpuAlloc()
-{
+PyGpuAlloc::PyGpuAlloc() {
 }
 
-PYBIND11_MODULE(_PyGpuAlloc, m)
-{
+PYBIND11_MODULE(_PyGpuAlloc, m) {
     do_allocate_pfn do_allocate_v1 = (do_allocate);
     do_deallocate_pfn do_deallocate_v1 = (do_deallocate);
     using do_allocate_v2 = std::function<void* (void*, size_t, size_t)>;
@@ -64,5 +59,4 @@ PYBIND11_MODULE(_PyGpuAlloc, m)
     m.def("do_allocate_test", [=]() {
         return do_allocate_v2(do_allocate_v1);
     });
-    
 }

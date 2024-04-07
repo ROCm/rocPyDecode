@@ -26,10 +26,7 @@ THE SOFTWARE.
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
 
-//#include <functional> // for std::multiplies
-
 using namespace std;
-
 using namespace py::literals;
 
 static void CheckValidBuffer(const void *ptr) {
@@ -138,13 +135,9 @@ void PyExportInitializer(py::module& m) {
 
 int ExternalBuffer::LoadDLPack( std::vector<size_t> _shape, std::vector<size_t> _stride, std::string _typeStr, void* _data) {
     
-    m_dlTensor->byte_offset = 0;
-
-    // TODO: infer the device type from the memory buffer
-    m_dlTensor->device.device_type = kDLROCM;
-
-    // TODO: infer the device from the memory buffer
-    m_dlTensor->device.device_id = 0;
+    m_dlTensor->byte_offset = 0;    
+    m_dlTensor->device.device_type = kDLROCM;// TODO: infer the device type from the memory buffer    
+    m_dlTensor->device.device_id = 0;// TODO: infer the device from the memory buffer
 
     // Convert data
     void* ptr = _data; // reinterpret_cast<void*>(_data);

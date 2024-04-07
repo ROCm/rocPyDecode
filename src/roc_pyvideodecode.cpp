@@ -99,13 +99,10 @@ py::object PyRocVideoDecoder::PySaveFrameToFile(std::string& output_file_name_in
  
 // for python binding
 py::object PyRocVideoDecoder::PySaveTensorToFile(std::string& output_file_name_in, uintptr_t& surf_mem, uintptr_t& surface_info) {
- 
     std::string output_file_name = output_file_name_in.c_str();   
     if(surf_mem && surface_info) {
-
         OutputSurfaceInfo* si = reinterpret_cast<OutputSurfaceInfo*>(surface_info);
         si->mem_type = OUT_SURFACE_MEM_HOST_COPIED; // will not copy from D2H
-
         SaveFrameToFile(output_file_name, (void *)surf_mem, si);
     }
     return py::cast<py::none>(Py_None);
@@ -135,10 +132,8 @@ py::object PyRocVideoDecoder::PyInitMd5() {
 
 // for pyhton binding
 py::object PyRocVideoDecoder::PyUpdateMd5ForFrame(uintptr_t& surf_mem, uintptr_t& surface_info) {  
-  
     if(surface_info && surf_mem)
         UpdateMd5ForFrame((void *)surf_mem, reinterpret_cast<OutputSurfaceInfo*>(surface_info));
-        
     return py::cast<py::none>(Py_None);
 }
 

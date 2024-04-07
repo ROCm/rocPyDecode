@@ -24,7 +24,6 @@ THE SOFTWARE.
 #define EXT_BUFFER_HEADER
 
 #include "DLPackUtils.h"
-
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -59,7 +58,6 @@ class ExternalBuffer final : public std::enable_shared_from_this<ExternalBuffer>
         // __dlpack_device__ implementation
         py::tuple dlpackDevice() const;
 };
-
 
 
 #endif // EXT_BUFFER_HEADER

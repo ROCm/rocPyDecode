@@ -27,7 +27,6 @@ THE SOFTWARE.
 namespace py = pybind11;
 #include "DLPackUtils.h"
 
-
 static std::string ProcessBufferInfoFormat(const std::string& fmt) {
     // pybind11 (as of v2.6.2) doesn't recognize formats 'l' and 'L',
     // which according to https://docs.python.org/3/library/struct.html#format-characters
@@ -72,12 +71,10 @@ DLPackTensor::DLPackTensor(const DLTensor &tensor) : DLPackTensor(DLManagedTenso
 DLPackTensor::DLPackTensor(const py::buffer_info &info, const DLDevice &dev) : m_tensor{} {
     DLTensor &dlTensor = m_tensor.dl_tensor;
     dlTensor.data      = info.ptr;
-
     //TBD dtype
     dlTensor.dtype.code = kDLInt;
     dlTensor.dtype.bits = 8;
     dlTensor.dtype.lanes = 1;
-
     dlTensor.ndim        = info.ndim;
     dlTensor.device      = dev;
     dlTensor.byte_offset = 0;
@@ -85,7 +82,6 @@ DLPackTensor::DLPackTensor(const py::buffer_info &info, const DLDevice &dev) : m
     m_tensor.deleter = [](DLManagedTensor *self) {
         delete[] self->dl_tensor.shape;
         self->dl_tensor.shape = nullptr;
-
         delete[] self->dl_tensor.strides;
         self->dl_tensor.strides = nullptr;
     };
