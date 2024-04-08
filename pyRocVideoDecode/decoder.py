@@ -53,7 +53,17 @@ class decoder(object):
         return self.viddec.DecodeFrame(packet)
 
     def GetFrame(self, packet):
-        self.viddec.GetFrame(packet)
+        pts = self.viddec.GetFrame(packet)
+        return pts
+
+    def GetWidth(self)->int:
+        return self.viddec.GetWidth()        
+
+    def GetHeight(self)->int:
+        return self.viddec.GetHeight()
+
+    def GetFrameSize(self)->int:
+        return self.viddec.GetFrameSize()
 
     def GetOutputSurfaceInfo(self):
         return self.viddec.GetOutputSurfaceInfo()

@@ -7,6 +7,7 @@ The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access
 * CMake Version `3.5` or higher
 * Python Version `3`
 * PIP3
+* [HIP Python](https://rocm.docs.amd.com/projects/hip-python/en/latest/index.html)
 * [DLPack](https://pypi.org/project/dlpack/)
 
 ## rocPyDecode install

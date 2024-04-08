@@ -76,9 +76,6 @@ def Decoder(
 
         n_frame_returned = viddec.DecodeFrame(packet)
 
-        if (n_frame_returned == 0):
-            print("n_frame_returned: ", n_frame_returned)
-
         for i in range(n_frame_returned):
 
             viddec.GetFrame(packet)

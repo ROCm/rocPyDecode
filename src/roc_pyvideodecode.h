@@ -69,6 +69,15 @@ class PyRocVideoDecoder : public RocVideoDecoder {
         // for pyhton binding
         py::object PyFinalizeMd5(uintptr_t& digest_back);
 
+        // for pyhton binding
+        py::int_ PyGetWidth();
+
+        // for pyhton binding
+        py::int_ PyGetHeight();
+
+        // for pyhton binding
+        py::int_ PyGetFrameSize();
+        
     private:
         std::shared_ptr <ConfigInfo> configInfo;
         void InitConfigStructure();

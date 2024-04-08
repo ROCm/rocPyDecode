@@ -32,6 +32,9 @@ void PyRocVideoDecoderInitializer(py::module& m) {
         .def("GetDeviceinfo",&PyRocVideoDecoder::PyGetDeviceinfo)
         .def("DecodeFrame",&PyRocVideoDecoder::PyDecodeFrame) 
         .def("GetFrame",&PyRocVideoDecoder::PyGetFrame)
+        .def("GetWidth",&PyRocVideoDecoder::PyGetWidth)
+        .def("GetHeight",&PyRocVideoDecoder::PyGetHeight)
+        .def("GetFrameSize",&PyRocVideoDecoder::PyGetFrameSize)
         .def("SaveFrameToFile",&PyRocVideoDecoder::PySaveFrameToFile)
         .def("SaveTensorToFile",&PyRocVideoDecoder::PySaveTensorToFile)
         .def("ReleaseFrame",&PyRocVideoDecoder::PyReleaseFrame)
@@ -59,7 +62,7 @@ int PyRocVideoDecoder::PyDecodeFrame(PacketData& packet) {
     // Load DLPack Tensor
     if(packet.frame_adrs && decoded_frame_count) {
         uint32_t width = GetWidth();
-        uint32_t height = GetHeight();        
+        uint32_t height = GetHeight();    
         std::vector<size_t> shape{ (size_t)(height * 1.5), width};
         std::vector<size_t> stride{ size_t(width), 1};        
         packet.extBuf.get()->LoadDLPack(shape, stride, "|u1", (void *)packet.frame_adrs );
@@ -145,3 +148,17 @@ py::object PyRocVideoDecoder::PyFinalizeMd5(uintptr_t& digest_back) {
     return py::cast<py::none>(Py_None);
 }
 
+// for pyhton binding
+py::int_ PyRocVideoDecoder::PyGetWidth() {    
+    return py::int_(static_cast<int>(GetWidth()));
+}
+
+// for pyhton binding
+py::int_ PyRocVideoDecoder::PyGetHeight() {    
+    return py::int_(static_cast<int>(GetHeight()));
+}
+
+// for pyhton binding
+py::int_ PyRocVideoDecoder::PyGetFrameSize() {    
+    return py::int_(static_cast<int>(GetFrameSize()));
+}
