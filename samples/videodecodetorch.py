@@ -6,11 +6,8 @@ import torch
 import torch.utils.dlpack
 import hip
 import numpy as np
-
 import pyRocVideoDecode.decoder as dec
 import pyRocVideoDecode.demuxer as dmx
-
-print("\nPyTorch Using: ", torch.cuda.get_device_name(0))
 
 
 def Decoder(
@@ -76,7 +73,7 @@ def Decoder(
         for i in range(n_frame_returned):
             viddec.GetFrame(packet)
 
-            # you can use torch tensor here
+            # using torch tensor
             src_tensor = torch.from_dlpack(packet.extBuf.__dlpack__())
             tensor_data = src_tensor.untyped_storage().data_ptr()
 
@@ -182,9 +179,11 @@ if __name__ == "__main__":
     p_crop_rect = dec.GetRectangle(crop_rect)
 
     # Input file (must exist)
-    if (os.path.exists(input_file_path) == False):
+    if not os.path.exists(input_file_path):
         print("ERROR: input file doesn't exist.")
         exit()
+
+    print("\nPyTorch Using: ", torch.cuda.get_device_name(0))
 
     Decoder(
         input_file_path,

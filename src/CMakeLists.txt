@@ -37,7 +37,6 @@ fetchcontent_declare(
     URL https://github.com/pybind/pybind11/archive/v2.10.0.tar.gz
     URL_HASH
         SHA256=eacf582fa8f696227988d08cfc46121770823839fe9e301a20fbce67e7cd70ec
+    SOURCE_DIR pybind11
 )
 fetchcontent_makeavailable(pybind11)
-
- 

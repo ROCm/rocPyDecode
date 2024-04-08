@@ -28,7 +28,7 @@ The following are full list of arguments that can be passed to the sample.
 -crop CROP_RECT, --crop_rect CROP_RECT        : Crop rectangle (left, top, right, bottom) - optional, default: None (no cropping)
 ```
 
-## videodecodeTorch.py
+## videodecodetorch.py
 
 This sample demuxes & decode frames from a video file, and convert it to pytorch tensor via DLPack. Optionally you can save it to a file. \
 To run this python sample script, you need to provide input video file full path name, other arguments are optional.
@@ -54,18 +54,4 @@ The following are full list of arguments that can be passed to the sample.
 ```
 -h, --help                                    : Show detail help message and exit
 -i INPUT, --input INPUT                       : Input File Path - required
-```
-
-## videodecodeperf.py
-
-This sample demuxes & decode frames from a video file on multiple parallel threads. The number of threads is a user given argument, defaulted to 4 threads. \
-To run this python sample script, you need to provide input video file full path name, other arguments are optional.
-
-### Arguments
-The following are full list of arguments that can be passed to the sample.
-```
--h, --help                           : Show detail help message and exit
--i INPUT, --input INPUT              : Input File Path - required
--t NUM_THREADS, --thread NUM_THREADS : Number of threads - optional, default - 0, range - [1,64]
--d DEVICE, --device DEVICE           : GPU device ID - optional, default - 0
 ```

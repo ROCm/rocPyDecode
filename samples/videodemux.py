@@ -10,11 +10,6 @@ def Demuxer(
         input_file_path,
         seek_pos
 ):
-    bUseSeek = False
-    if (seek_pos > -1):
-        bUseSeek = True
-        print("Seeking to timestamp = ", seek_pos)
-
     # demuxer instance
     demuxer = dmx.demuxer(input_file_path)
     cnt = 0
@@ -24,16 +19,8 @@ def Demuxer(
     total_dec_time = 0.0
     while True:
         start_time = datetime.datetime.now()
-
-        if bUseSeek:
-            if cnt > seek_pos:
-                # demuxer.Seek(seek_pos) # should be uncommented when Seek is
-                # implemented
-                bUseSeek = False
         cnt = cnt + 1
-
         packet = demuxer.DemuxFrame()
-
         if (packet.end_of_stream):
             break
 
