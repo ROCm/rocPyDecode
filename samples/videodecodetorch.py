@@ -4,7 +4,6 @@ import argparse
 import os.path
 import torch
 import torch.utils.dlpack
-import hip
 import numpy as np
 import pyRocVideoDecode.decoder as dec
 import pyRocVideoDecode.demuxer as dmx
@@ -77,11 +76,7 @@ def Decoder(
             src_tensor = torch.from_dlpack(packet.extBuf.__dlpack__())
             tensor_data = src_tensor.untyped_storage().data_ptr()
 
-            # print torch sensor
-            fSize = viddec.GetFrameSize()
-            host_tensor = np.ndarray(shape=(fSize))
-            hip.hip.hipMemcpyDtoH(host_tensor, tensor_data, fSize)
-            # print( host_tensor )
+            # TODO: some tensor work
 
             if (output_file_path is not None):
                 surface_info = viddec.GetOutputSurfaceInfo()
