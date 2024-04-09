@@ -110,11 +110,11 @@ def Decoder(
 
     if (output_file_path is None):
         if (n_frame > 0 and total_dec_time > 0):
-            TPF = float((total_dec_time / n_frame) * 1000)
-            FPS = float(n_frame / total_dec_time)
+            time_per_frame = float((total_dec_time / n_frame) * 1000)
+            frame_per_second = float(n_frame / total_dec_time)
             print("info: avg decoding time per frame: " +
-                  "{0:0.2f}".format(round(TPF, 2)) + " ms")
-            print("info: avg FPS: " + "{0:0.2f}".format(round(FPS, 2)) + "\n")
+                  "{0:0.2f}".format(round(time_per_frame, 2)) + " ms")
+            print("info: avg frame per second: " + "{0:0.2f}".format(round(frame_per_second, 2)) + "\n")
         else:
             print("info: frame count= ", n_frame)
 
