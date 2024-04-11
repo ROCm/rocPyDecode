@@ -132,20 +132,20 @@ uintptr_t PyRocVideoDecoder::PyGetOutputSurfaceInfo() {
     return reinterpret_cast<std::uintptr_t>(nullptr);
 }
  
-// for pyhton binding
+// for python binding
 py::object PyRocVideoDecoder::PyInitMd5() {
     InitMd5();
     return py::cast<py::none>(Py_None);
 }
 
-// for pyhton binding
+// for python binding
 py::object PyRocVideoDecoder::PyUpdateMd5ForFrame(uintptr_t& surf_mem, uintptr_t& surface_info) {  
     if(surface_info && surf_mem)
         UpdateMd5ForFrame((void *)surf_mem, reinterpret_cast<OutputSurfaceInfo*>(surface_info));
     return py::cast<py::none>(Py_None);
 }
 
-// for pyhton binding
+// for python binding
 py::object PyRocVideoDecoder::PyFinalizeMd5(uintptr_t& digest_back) {    
     uint8_t * digest;
     FinalizeMd5(&digest);
@@ -153,17 +153,17 @@ py::object PyRocVideoDecoder::PyFinalizeMd5(uintptr_t& digest_back) {
     return py::cast<py::none>(Py_None);
 }
 
-// for pyhton binding
+// for python binding
 py::int_ PyRocVideoDecoder::PyGetWidth() {    
     return py::int_(static_cast<int>(GetWidth()));
 }
 
-// for pyhton binding
+// for python binding
 py::int_ PyRocVideoDecoder::PyGetHeight() {    
     return py::int_(static_cast<int>(GetHeight()));
 }
 
-// for pyhton binding
+// for python binding
 py::int_ PyRocVideoDecoder::PyGetFrameSize() {    
     return py::int_(static_cast<int>(GetFrameSize()));
 }
