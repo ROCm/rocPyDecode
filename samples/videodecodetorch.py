@@ -3,7 +3,6 @@ import sys
 import argparse
 import os.path
 import torch
-import torch.utils.dlpack
 import numpy as np
 import pyRocVideoDecode.decoder as dec
 import pyRocVideoDecode.demuxer as dmx
@@ -73,15 +72,15 @@ def Decoder(
             viddec.GetFrame(packet)
 
             # using torch tensor
-            src_tensor = torch.from_dlpack(packet.extBuf.__dlpack__())
-            tensor_data = src_tensor.untyped_storage().data_ptr()
+            src_tensor = torch.from_dlpack(packet.extBuf.__dlpack__(packet))
+            # print(src_tensor)
 
             # TODO: some tensor work
 
             if (output_file_path is not None):
                 surface_info = viddec.GetOutputSurfaceInfo()
                 viddec.SaveTensorToFile(
-                    output_file_path, tensor_data, surface_info)
+                    output_file_path, src_tensor.data_ptr(), surface_info)
                 break
 
             # release frame
@@ -93,7 +92,7 @@ def Decoder(
         total_dec_time = total_dec_time + time_per_frame.total_seconds()
 
         # increament frames counter
-        n_frame += 1
+        n_frame += n_frame_returned
 
         if (packet.end_of_stream):  # no more to decode?
             break
@@ -105,13 +104,13 @@ def Decoder(
 
     if (output_file_path is None):
         if (n_frame > 0 and total_dec_time > 0):
-            TPF = float((total_dec_time / n_frame) * 1000)
-            FPS = float(n_frame / total_dec_time)
+            time_per_frame = (total_dec_time / n_frame) * 1000
+            frame_per_second = n_frame / total_dec_time
             print("info: avg decoding time per frame: " +
-                  "{0:0.2f}".format(round(TPF, 2)) + " ms")
-            print("info: avg FPS: " + "{0:0.2f}".format(round(FPS, 2)) + "\n")
+                  "{0:0.2f}".format(round(time_per_frame, 2)) + " ms")
+            print("info: avg frame per second: " + "{0:0.2f}".format(round(frame_per_second, 2)) + "\n")
         else:
-            print("info: frame count= ", n_frame, "\n")
+            print("info: frame count= ", n_frame)
 
     # print tensor details
     print("Tensor Shape:   ", packet.extBuf.shape)

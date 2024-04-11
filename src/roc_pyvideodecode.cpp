@@ -59,13 +59,18 @@ int PyRocVideoDecoder::PyDecodeFrame(PacketData& packet) {
  
     int decoded_frame_count = DecodeFrame((u_int8_t*) packet.frame_adrs, static_cast<size_t>(packet.frame_size), packet.pkt_flags, packet.frame_pts);    
 
+    // allocate device memory
+    u_int8_t *frame_ptr;
+    HIP_API_CALL(hipMalloc((void **)&frame_ptr, GetFrameSize()));
+    HIP_API_CALL(hipMemcpy(frame_ptr,(void *)packet.frame_adrs,GetFrameSize(), hipMemcpyDeviceToDevice));
+
     // Load DLPack Tensor
     if(packet.frame_adrs && decoded_frame_count) {
         uint32_t width = GetWidth();
         uint32_t height = GetHeight();    
-        std::vector<size_t> shape{ (size_t)(height * 1.5), width};
+        std::vector<size_t> shape{ (size_t)(height * 1.5), width}; // NV12: 4:2:0 -> is it height or (height*1.5)? TBD
         std::vector<size_t> stride{ size_t(width), 1};        
-        packet.extBuf.get()->LoadDLPack(shape, stride, "|u1", (void *)packet.frame_adrs );
+        packet.extBuf.get()->LoadDLPack(shape, stride, "|u1", (void *)frame_ptr );
     }
 
     return decoded_frame_count;

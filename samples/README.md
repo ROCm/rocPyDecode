@@ -8,7 +8,6 @@
 
 ```
 python3 -m pip install --upgrade pip
-python3 -m pip install -i https://test.pypi.org/simple hip-python
 python3 -m pip install dlpack
 ```
 

@@ -92,8 +92,7 @@ py::capsule ExternalBuffer::dlpack(py::object stream) const {
     ctx->extBuffer = this->shared_from_this();
 
     // Creates the python capsule with the DLManagedTensor instance we're returning.
-    py::capsule cap(&ctx->tensor, "dltensor", [](PyObject *ptr)
-                    {
+    py::capsule cap(&ctx->tensor, "dltensor", [](PyObject *ptr) {
                         if(PyCapsule_IsValid(ptr, "dltensor")) {
                             // If consumer didn't delete the tensor,
                             if(auto *dlTensor = static_cast<DLManagedTensor *>(PyCapsule_GetPointer(ptr, "dltensor"))) {
@@ -136,8 +135,8 @@ void PyExportInitializer(py::module& m) {
 int ExternalBuffer::LoadDLPack( std::vector<size_t> _shape, std::vector<size_t> _stride, std::string _typeStr, void* _data) {
     
     m_dlTensor->byte_offset = 0;    
-    m_dlTensor->device.device_type = kDLROCM;// TODO: infer the device type from the memory buffer    
-    m_dlTensor->device.device_id = 0;// TODO: infer the device from the memory buffer
+    m_dlTensor->device.device_type = kDLROCM;   // TODO: infer the device type from the memory buffer    
+    m_dlTensor->device.device_id = 0;           // TODO: infer the device id   from the memory buffer
 
     // Convert data
     void* ptr = _data; // reinterpret_cast<void*>(_data);
@@ -149,7 +148,7 @@ int ExternalBuffer::LoadDLPack( std::vector<size_t> _shape, std::vector<size_t> 
         throw std::runtime_error("Could not create DL Pack tensor! Invalid typstr: " + _typeStr);
         return -1;
     }
-    int itemSizeDT = sizeof(uint8_t);// dt.itemsize() 
+    int itemSizeDT = sizeof(uint8_t); 
     
     m_dlTensor->dtype.code = kDLUInt;
     m_dlTensor->dtype.bits = 8;

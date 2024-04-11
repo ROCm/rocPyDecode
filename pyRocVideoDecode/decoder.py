@@ -21,7 +21,6 @@
 import rocPyDecode as rocpydec
 import rocPyDecode.decTypes as dectypes
 import numpy as np
-# import ctypes
 
 
 def GetRocDecCodecID(codec_id) -> dectypes.rocDecVideoCodec:

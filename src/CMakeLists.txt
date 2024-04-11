@@ -29,6 +29,13 @@ project(rocPyDecode VERSION 1.0.0)
 set(Python3_FIND_VIRTUALENV FIRST)	
 find_package(Python3 QUIET COMPONENTS Interpreter Development)
 
+if (PYTHONVERSION)
+    find_package(Python3 "${PYTHONVERSION}" EXACT QUIET COMPONENTS Interpreter Development)
+else()
+    set(Python3_FIND_VIRTUALENV FIRST)
+    find_package(Python3 QUIET COMPONENTS Interpreter Development)
+endif()
+
 option(FETCHCONTENT_QUIET ON)
 
 include(FetchContent)

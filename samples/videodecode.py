@@ -110,8 +110,8 @@ def Decoder(
 
     if (output_file_path is None):
         if (n_frame > 0 and total_dec_time > 0):
-            time_per_frame = float((total_dec_time / n_frame) * 1000)
-            frame_per_second = float(n_frame / total_dec_time)
+            time_per_frame = (total_dec_time / n_frame) * 1000
+            frame_per_second = n_frame / total_dec_time
             print("info: avg decoding time per frame: " +
                   "{0:0.2f}".format(round(time_per_frame, 2)) + " ms")
             print("info: avg frame per second: " + "{0:0.2f}".format(round(frame_per_second, 2)) + "\n")
@@ -178,7 +178,6 @@ if __name__ == "__main__":
         type=int,
         help='Crop rectangle (left, top, right, bottom), optional, default: no cropping',
         required=False)
-
     parser.add_argument(
         '-md5',
         '--generate_md5',
@@ -186,7 +185,6 @@ if __name__ == "__main__":
         default='no',
         choices=['yes', 'no'],
         help='Generate MD5 message digest')
-
     parser.add_argument(
         '-md5_check',
         '--input_md5',
@@ -214,7 +212,7 @@ if __name__ == "__main__":
     p_crop_rect = dec.GetRectangle(crop_rect)
 
     # Input file (must exist)
-    if (os.path.exists(input_file_path) == False):
+    if not os.path.exists(input_file_path):
         print("ERROR: input file doesn't exist.")
         exit()
 

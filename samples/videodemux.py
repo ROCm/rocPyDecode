@@ -38,7 +38,6 @@ if __name__ == "__main__":
         type=str,
         help='Input File Path - required',
         required=True)
-
     parser.add_argument(
         "-s",
         "--seek_pos",
@@ -57,7 +56,7 @@ if __name__ == "__main__":
     seek_pos = args.seek_pos
 
     # Input file (must exist)
-    if (os.path.exists(input_file_path) == False):
+    if not os.path.exists(input_file_path):
         print("ERROR: input file doesn't exist.")
         exit()
 
