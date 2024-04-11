@@ -12,19 +12,19 @@ def Demuxer(
 ):
     # demuxer instance
     demuxer = dmx.demuxer(input_file_path)
-    cnt = 0
+    frames_counter = 0
 
     # Demuxing loop
     n_frame = 0
     total_dec_time = 0.0
     while True:
         start_time = datetime.datetime.now()
-        cnt = cnt + 1
+        frames_counter = frames_counter + 1
         packet = demuxer.DemuxFrame()
         if (packet.end_of_stream):
             break
 
-    print("Total frames = ", cnt - 1)
+    print("Total frames = ", frames_counter - 1)
     print("Demuxing has ended")
 
 
