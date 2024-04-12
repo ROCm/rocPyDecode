@@ -114,7 +114,7 @@ commonPackages = [
 
 # Debian packages
 coreDebianPackages = [
-    'python3-pip'
+    'python3-pip',
     'rocdecode',
     'rocdecode-dev',
     'rocdecode-test',
