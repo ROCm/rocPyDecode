@@ -7,7 +7,6 @@ import numpy as np
 import pyRocVideoDecode.decoder as dec
 import pyRocVideoDecode.demuxer as dmx
 
-
 def Decoder(
         input_file_path,
         output_file_path,

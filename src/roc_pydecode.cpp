@@ -99,30 +99,30 @@ PYBIND11_MODULE(rocPyDecode, m) {
         .def_readwrite("right",&Rect::right)
         .def_readwrite("bottom",&Rect::bottom);
 
-    // PacketData
-    py::class_<PacketData, shared_ptr<PacketData>>(m, "PacketData", py::module_local())
+    // PyPacketData
+    py::class_<PyPacketData, shared_ptr<PyPacketData>>(m, "PyPacketData", py::module_local())
         .def(py::init<>())
-        .def_readwrite("end_of_stream", &PacketData::end_of_stream)
-        .def_readwrite("pkt_flags",     &PacketData::pkt_flags)
-        .def_readwrite("frame_pts",     &PacketData::frame_pts)
-        .def_readwrite("frame_size",    &PacketData::frame_size)
-        .def_readwrite("frame_adrs",    &PacketData::frame_adrs)
-        .def_readwrite("extBuf",        &PacketData::extBuf)
+        .def_readwrite("end_of_stream", &PyPacketData::end_of_stream)
+        .def_readwrite("pkt_flags",     &PyPacketData::pkt_flags)
+        .def_readwrite("frame_pts",     &PyPacketData::frame_pts)
+        .def_readwrite("frame_size",    &PyPacketData::frame_size)
+        .def_readwrite("frame_adrs",    &PyPacketData::frame_adrs)
+        .def_readwrite("extBuf",        &PyPacketData::extBuf)
         
         // DL Pack Tensor
-        .def_property_readonly("shape", [](std::shared_ptr<PacketData>& self) {
+        .def_property_readonly("shape", [](std::shared_ptr<PyPacketData>& self) {
             return self->extBuf->shape();
             }, "Get the shape of the buffer as an array")
-        .def_property_readonly("strides", [](std::shared_ptr<PacketData>& self) {
+        .def_property_readonly("strides", [](std::shared_ptr<PyPacketData>& self) {
                 return self->extBuf->strides();
             }, "Get the strides of the buffer")
-        .def_property_readonly("dtype", [](std::shared_ptr<PacketData>& self) {
+        .def_property_readonly("dtype", [](std::shared_ptr<PyPacketData>& self) {
                 return self->extBuf->dtype();
             }, "Get the data type of the buffer")
-        .def("__dlpack__", [](std::shared_ptr<PacketData>& self, py::object stream) {
+        .def("__dlpack__", [](std::shared_ptr<PyPacketData>& self, py::object stream) {
             return self->extBuf->dlpack(stream);
             }, py::arg("stream") = NULL, "Export the buffer as a DLPack tensor")
-        .def("__dlpack_device__", [](std::shared_ptr<PacketData>& self) {
+        .def("__dlpack_device__", [](std::shared_ptr<PyPacketData>& self) {
                 //DLDevice ctx;
                 //ctx.device_type = DLDeviceType::kDLROCM;
                 //ctx.device_id = 0;

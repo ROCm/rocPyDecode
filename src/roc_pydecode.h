@@ -45,14 +45,14 @@ extern "C" {
 
 namespace py = pybind11;
 
-struct PacketData {
+struct PyPacketData {
     bool      end_of_stream;
     int       pkt_flags;
     int64_t   frame_pts;
     int64_t   frame_size;
     uintptr_t frame_adrs;
     std::shared_ptr<ExternalBuffer> extBuf;
-    PacketData(){
+    PyPacketData(){
         extBuf = std::make_shared<ExternalBuffer>();
     }
 };
