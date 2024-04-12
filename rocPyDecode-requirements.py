@@ -118,7 +118,6 @@ coreDebianPackages = [
     'rocdecode',
     'rocdecode-dev',
     'rocdecode-test',
-    'dlpack'
 ]
 
 # FFMPEG packages
