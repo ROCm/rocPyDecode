@@ -7,6 +7,7 @@ import numpy as np
 import pyRocVideoDecode.decoder as dec
 import pyRocVideoDecode.demuxer as dmx
 
+
 def Decoder(
         input_file_path,
         output_file_path,
@@ -72,7 +73,7 @@ def Decoder(
 
             # using torch tensor
             src_tensor = torch.from_dlpack(packet.extBuf.__dlpack__(packet))
-            # print(src_tensor)
+            print(src_tensor)
 
             # TODO: some tensor work
 

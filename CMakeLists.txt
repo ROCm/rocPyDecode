@@ -28,7 +28,23 @@ project(rocPyDecode)
 set(TARGET_NAME rocPyDecode)
 set(CMAKE_CXX_STANDARD 17)
 
-add_subdirectory(src)
+option(FETCHCONTENT_QUIET OFF)
+include(FetchContent)
+fetchcontent_declare(
+    pybind11
+    URL https://github.com/pybind/pybind11/archive/v2.10.0.tar.gz
+    URL_HASH
+        SHA256=eacf582fa8f696227988d08cfc46121770823839fe9e301a20fbce67e7cd70ec
+    SOURCE_DIR pybind11
+)
+fetchcontent_makeavailable(pybind11)
+
+include(FetchContent)
+FetchContent_Populate(
+  dlpack
+  URL        https://github.com/dmlc/dlpack/archive/refs/tags/v0.8.zip
+  SOURCE_DIR dlpack
+)
 
 # ROCM Path
 if(DEFINED ENV{ROCM_PATH})
@@ -61,17 +77,10 @@ else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -DNDEBUG -fPIC")
 endif()
  
-find_package(pybind11 REQUIRED)
-
+find_package(pybind11 COMPONENTS REQUIRED)
 find_package(HIP QUIET)
 find_package(FFmpeg QUIET)
-
-if (PYTHONVERSION)
-    find_package(Python3 "${PYTHONVERSION}" EXACT QUIET COMPONENTS Interpreter Development)
-else()
-    set(Python3_FIND_VIRTUALENV FIRST)
-    find_package(Python3 QUIET COMPONENTS Interpreter Development)
-endif()
+find_package(Python3 COMPONENTS Interpreter Development)
 
 # find rocDecode
 find_library(ROCDECODE_LIBRARY NAMES rocdecode HINTS ${ROCM_PATH}/lib)
@@ -81,14 +90,6 @@ if(ROCDECODE_LIBRARY AND ROCDECODE_INCLUDE_DIR)
     set(ROCDECODE_FOUND TRUE)
     message("-- ${Green}${PROJECT_NAME}: Using rocDecode -- \n\tLibraries:${ROCDECODE_LIBRARY} \n\tIncludes:${ROCDECODE_INCLUDE_DIR}${ColourReset}")
 endif()
-
-include(FetchContent)
-FetchContent_Populate(
-  dlpack
-  URL        https://github.com/dmlc/dlpack/archive/refs/tags/v0.8.zip
-  SOURCE_DIR dlpack
-)
-message(STATUS " downloading dlpack library " "${dlpack_SOURCE_DIR}")
 
 if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG_FOUND) 
 
@@ -141,6 +142,17 @@ if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
     CONFIGURE_FILE(src/roc_pyvideodemuxer.cpp
                 ${CMAKE_BINARY_DIR}/roc_pyvideodemuxer.cpp @ONLY
                 )
+    CONFIGURE_FILE(src/roc_pybuffer.cpp
+                ${CMAKE_BINARY_DIR}/roc_pybuffer.cpp @ONLY
+                )                
+    CONFIGURE_FILE(src/roc_pydlpack.cpp
+                ${CMAKE_BINARY_DIR}/roc_pydlpack.cpp @ONLY
+                )                
+
+
+
+
+
 
     foreach (filename ${pyfiles})
         get_filename_component(target "${filename}" REALPATH)

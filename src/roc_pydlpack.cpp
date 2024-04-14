@@ -20,17 +20,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#include <pybind11/stl.h>
+//#include <pybind11/stl.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 
 namespace py = pybind11;
-#include "DLPackUtils.h"
+#include "roc_pydlpack.h"
 
 static std::string ProcessBufferInfoFormat(const std::string& fmt) {
-    // pybind11 (as of v2.6.2) doesn't recognize formats 'l' and 'L',
-    // which according to https://docs.python.org/3/library/struct.html#format-characters
-    // are equal to 'i' and 'I', respectively.
+    // pybind11 (as of v2.6.2) doesn't recognize formats 'l' and 'L', which according to 
+    // https://docs.python.org/3/library/struct.html#format-characters are equal to 'i' and 'I', respectively.
     if (fmt == "l") {
         return "i";
     } else if (fmt == "L") {
@@ -58,17 +57,17 @@ py::dtype ToDType(const std::string& fmt) {
     return ToDType(buf);
 }
 
-DLPackTensor::DLPackTensor() noexcept : m_tensor{} {
+DLPackPyTensor::DLPackPyTensor() noexcept : m_tensor{} {
 }
 
-DLPackTensor::DLPackTensor(DLManagedTensor &&managedTensor) : m_tensor{std::move(managedTensor)} {
+DLPackPyTensor::DLPackPyTensor(DLManagedTensor &&managedTensor) : m_tensor{std::move(managedTensor)} {
     managedTensor = {};
 }
 
-DLPackTensor::DLPackTensor(const DLTensor &tensor) : DLPackTensor(DLManagedTensor{tensor}) {
+DLPackPyTensor::DLPackPyTensor(const DLTensor &tensor) : DLPackPyTensor(DLManagedTensor{tensor}) {
 }
 
-DLPackTensor::DLPackTensor(const py::buffer_info &info, const DLDevice &dev) : m_tensor{} {
+DLPackPyTensor::DLPackPyTensor(const py::buffer_info &info, const DLDevice &dev) : m_tensor{} {
     DLTensor &dlTensor = m_tensor.dl_tensor;
     dlTensor.data      = info.ptr;
     //TBD dtype
@@ -104,17 +103,17 @@ DLPackTensor::DLPackTensor(const py::buffer_info &info, const DLDevice &dev) : m
     }
 }
 
-DLPackTensor::DLPackTensor(DLPackTensor &&that) noexcept : m_tensor{std::move(that.m_tensor)} {
+DLPackPyTensor::DLPackPyTensor(DLPackPyTensor &&that) noexcept : m_tensor{std::move(that.m_tensor)} {
     that.m_tensor = {};
 }
 
-DLPackTensor::~DLPackTensor() {
+DLPackPyTensor::~DLPackPyTensor() {
     if (m_tensor.deleter) {
         m_tensor.deleter(&m_tensor);
     }
 }
 
-DLPackTensor &DLPackTensor::operator=(DLPackTensor &&that) noexcept {
+DLPackPyTensor &DLPackPyTensor::operator=(DLPackPyTensor &&that) noexcept {
     if (this != &that) {
         if (m_tensor.deleter) {
             m_tensor.deleter(&m_tensor);
@@ -125,18 +124,18 @@ DLPackTensor &DLPackTensor::operator=(DLPackTensor &&that) noexcept {
     return *this;
 }
 
-const DLTensor *DLPackTensor::operator->() const {
+const DLTensor *DLPackPyTensor::operator->() const {
     return &m_tensor.dl_tensor;
 }
 
-DLTensor *DLPackTensor::operator->() {
+DLTensor *DLPackPyTensor::operator->() {
     return &m_tensor.dl_tensor;
 }
 
-const DLTensor &DLPackTensor::operator*() const {
+const DLTensor &DLPackPyTensor::operator*() const {
     return m_tensor.dl_tensor;
 }
 
-DLTensor &DLPackTensor::operator*() {
+DLTensor &DLPackPyTensor::operator*() {
     return m_tensor.dl_tensor;
 }

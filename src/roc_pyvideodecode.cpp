@@ -42,8 +42,7 @@ void PyRocVideoDecoderInitializer(py::module& m) {
         .def("GetNumOfFlushedFrames",&PyRocVideoDecoder::PyGetNumOfFlushedFrames)
         .def("InitMd5",&PyRocVideoDecoder::PyInitMd5)
         .def("FinalizeMd5",&PyRocVideoDecoder::PyFinalizeMd5)
-        .def("UpdateMd5ForFrame",&PyRocVideoDecoder::PyUpdateMd5ForFrame)
-        ;
+        .def("UpdateMd5ForFrame",&PyRocVideoDecoder::PyUpdateMd5ForFrame);
 }
 
 void PyRocVideoDecoder::InitConfigStructure() {
@@ -55,22 +54,41 @@ void PyRocVideoDecoder::InitConfigStructure() {
     configInfo.get()->pci_device_id = 0;
 }
 
+PyRocVideoDecoder::~PyRocVideoDecoder()
+{
+    // de-allocate device memory if was allocated
+    if (frame_ptr != nullptr) {
+        hipError_t hip_status = hipFree(frame_ptr);
+        if (hip_status != hipSuccess) {
+            std::cerr << "ERROR: hipFree failed! (" << hip_status << ")" << std::endl;
+        }
+    }
+}
+
 int PyRocVideoDecoder::PyDecodeFrame(PyPacketData& packet) {
  
     int decoded_frame_count = DecodeFrame((u_int8_t*) packet.frame_adrs, static_cast<size_t>(packet.frame_size), packet.pkt_flags, packet.frame_pts);    
 
-    // allocate device memory
-    u_int8_t *frame_ptr;
-    HIP_API_CALL(hipMalloc((void **)&frame_ptr, GetFrameSize()));
-    HIP_API_CALL(hipMemcpy(frame_ptr,(void *)packet.frame_adrs,GetFrameSize(), hipMemcpyDeviceToDevice));
-
     // Load DLPack Tensor
     if(packet.frame_adrs && decoded_frame_count) {
+
+        int frame_size = GetFrameSize();
+
+        // allocate device memory if wasn't 
+        if(frame_ptr==nullptr) {
+            HIP_API_CALL(hipMalloc((void **)&frame_ptr, frame_size));
+        }
+        // copy D2D
+        HIP_API_CALL(hipMemcpy(frame_ptr,(void *)packet.frame_adrs, frame_size, hipMemcpyDeviceToDevice));
+
         uint32_t width = GetWidth();
         uint32_t height = GetHeight();    
+        std::string typeStr((const char*)"|u1");
         std::vector<size_t> shape{ (size_t)(height * 1.5), width}; // NV12: 4:2:0 -> is it height or (height*1.5)? TBD
         std::vector<size_t> stride{ size_t(width), 1};        
-        packet.extBuf.get()->LoadDLPack(shape, stride, "|u1", (void *)frame_ptr );
+        packet.extBuf.get()->LoadDLPack(shape, stride, typeStr, (void *)frame_ptr);
+
+        std::cout << "Frame: " << (long)frame_ptr << " Size: " << frame_size << std::endl;
     }
 
     return decoded_frame_count;

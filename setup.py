@@ -49,8 +49,8 @@ class CustomInstall(install):
 ext_modules = [
     Extension(
         'rocPyDecode', 
-        sources=['src/roc_pydecode.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp'], 
-        include_dirs=['build/dlpack/include/',ROCM_PATH+'/include/', ROCM_PATH+'/include/rocdecode/',ROCM_PATH+'/share/rocdecode/utils',ROCM_PATH+'/share/rocdecode/utils/rocvideodecode', 'src' ],
+        sources=['src/roc_pydecode.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp','src/roc_pybuffer.cpp','src/roc_pydlpack.cpp'], 
+        include_dirs=['build/pybind11/include','build/dlpack/include/',ROCM_PATH+'/include/', ROCM_PATH+'/include/rocdecode/',ROCM_PATH+'/share/rocdecode/utils',ROCM_PATH+'/share/rocdecode/utils/rocvideodecode', 'src' ],
         extra_compile_args=['-D__HIP_PLATFORM_AMD__'],
         library_dirs=[ROCM_PATH+'/lib/','/usr/local/lib/','/usr/lib/x86_64-linux-gnu/'],
         libraries=['rocdecode','avcodec','avformat','avutil'],

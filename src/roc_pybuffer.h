@@ -20,34 +20,44 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#ifndef USE_DLPACK_HEADER
-#define USE_DLPACK_HEADER
+#ifndef EXT_BUFFER_HEADER
+#define EXT_BUFFER_HEADER
 
-#include <pybind11/buffer_info.h>
-#include <dlpack/dlpack.h>
+#include "roc_pydlpack.h"
+#include <pybind11/numpy.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 namespace py = pybind11;
 
-class DLPackTensor final {
+class BufferInterface final : public std::enable_shared_from_this<BufferInterface> {
     public:
-        DLPackTensor() noexcept;
-        explicit DLPackTensor(const DLTensor &tensor);
-        explicit DLPackTensor(DLManagedTensor &&tensor);
-        explicit DLPackTensor(const py::buffer_info &info, const DLDevice &dev);
+        static void Export(py::module &m);
 
-        DLPackTensor(DLPackTensor &&that) noexcept;
-        ~DLPackTensor();
+        const DLTensor &dlTensor() const;
 
-        DLPackTensor &operator=(DLPackTensor &&that) noexcept;
+        py::tuple  shape() const;
+        py::tuple  strides() const;
+        std::string dtype() const;
 
-        const DLTensor *operator->() const;
-        DLTensor       *operator->();
+        void *data() const;
 
-        const DLTensor &operator*() const;
-        DLTensor       &operator*();
+        explicit BufferInterface(DLPackPyTensor&& dlTensor);
+
+        BufferInterface() = default;
+        py::capsule dlpack(py::object stream) const;
+        int LoadDLPack(std::vector<size_t> _shape, std::vector<size_t> _stride, std::string _typeStr, void * _data);
 
     private:
-        DLManagedTensor m_tensor;
+        friend py::detail::type_caster<BufferInterface>;
+
+        DLPackPyTensor    m_dlTensor;
+
+        // __dlpack__ implementation
+        
+        // __dlpack_device__ implementation
+        py::tuple dlpackDevice() const;
 };
- 
-#endif // USE_DLPACK_HEADER
+
+
+#endif // EXT_BUFFER_HEADER

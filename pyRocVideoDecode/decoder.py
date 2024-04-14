@@ -42,8 +42,6 @@ def GetOutputSurfaceInfo():
     surf_info_struct = rocpydec.OutputSurfaceInfo()
     return surf_info_struct
 
-# Decoder Class
-
 
 class decoder(object):
     def __init__(

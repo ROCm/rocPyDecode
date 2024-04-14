@@ -1,9 +1,9 @@
+import pyRocVideoDecode.decoder as dec
+import pyRocVideoDecode.demuxer as dmx
 import datetime
 import sys
 import argparse
 import os.path
-import pyRocVideoDecode.decoder as dec
-import pyRocVideoDecode.demuxer as dmx
 
 
 def Decoder(

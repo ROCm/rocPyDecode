@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#include "ExternalBuffer.h"
+#include "roc_pybuffer.h"
 #include <iostream>
 
 #include <pybind11/numpy.h>
@@ -35,14 +35,14 @@ static void CheckValidBuffer(const void *ptr) {
     }
 }
 
-ExternalBuffer::ExternalBuffer(DLPackTensor &&dlTensor) {
+BufferInterface::BufferInterface(DLPackPyTensor &&dlTensor) {
     if (dlTensor->data != nullptr) {
         CheckValidBuffer(dlTensor->data);
     }
     m_dlTensor = std::move(dlTensor);
 }
 
-py::tuple ExternalBuffer::shape() const {
+py::tuple BufferInterface::shape() const {
     py::tuple shape(m_dlTensor->ndim);
     for (size_t i = 0; i < shape.size(); ++i) {
         shape[i] = m_dlTensor->shape[i];
@@ -50,7 +50,7 @@ py::tuple ExternalBuffer::shape() const {
     return shape;
 }
 
-py::tuple ExternalBuffer::strides() const {
+py::tuple BufferInterface::strides() const {
     py::tuple strides(m_dlTensor->ndim);
 
     for (size_t i = 0; i < strides.size(); ++i) {
@@ -59,20 +59,20 @@ py::tuple ExternalBuffer::strides() const {
     return strides;
 }
 
-std::string ExternalBuffer::dtype() const {
+std::string BufferInterface::dtype() const {
     return std::string("|u1");
     //return (m_dlTensor->dtype);
 }
 
-void *ExternalBuffer::data() const {
+void *BufferInterface::data() const {
     return m_dlTensor->data;
 }
 
-py::capsule ExternalBuffer::dlpack(py::object stream) const {
+py::capsule BufferInterface::dlpack(py::object stream) const {
     
     struct ManagerCtx {
         DLManagedTensor tensor;
-        std::shared_ptr<const ExternalBuffer> extBuffer;
+        std::shared_ptr<const BufferInterface> extBuffer;
     };
 
     auto ctx = std::make_unique<ManagerCtx>();
@@ -110,36 +110,36 @@ py::capsule ExternalBuffer::dlpack(py::object stream) const {
     return cap;
 }
 
-py::tuple ExternalBuffer::dlpackDevice() const {
+py::tuple BufferInterface::dlpackDevice() const {
     return py::make_tuple(py::int_(static_cast<int>(m_dlTensor->device.device_type)),
                           py::int_(static_cast<int>(m_dlTensor->device.device_id)));
 }
 
-const DLTensor &ExternalBuffer::dlTensor() const {
+const DLTensor &BufferInterface::dlTensor() const {
     return *m_dlTensor;
 }
 
-void ExternalBuffer::Export(py::module &m) {
-    py::class_<ExternalBuffer, std::shared_ptr<ExternalBuffer>>(m, "ExternalBuffer", py::dynamic_attr())
-        .def_property_readonly("shape", &ExternalBuffer::shape, "Get the shape of the buffer as an array")
-        .def_property_readonly("strides", &ExternalBuffer::strides, "Get the strides of the buffer")
-        .def_property_readonly("dtype", &ExternalBuffer::dtype, "Get the data type of the buffer")
-        .def("__dlpack__", &ExternalBuffer::dlpack, "stream"_a=1, "Export the buffer as a DLPack tensor")
-        .def("__dlpack_device__", &ExternalBuffer::dlpackDevice, "Get the device associated with the buffer");
+void BufferInterface::Export(py::module &m) {
+    py::class_<BufferInterface, std::shared_ptr<BufferInterface>>(m, "BufferInterface", py::dynamic_attr())
+        .def_property_readonly("shape", &BufferInterface::shape, "Get the shape of the buffer as an array")
+        .def_property_readonly("strides", &BufferInterface::strides, "Get the strides of the buffer")
+        .def_property_readonly("dtype", &BufferInterface::dtype, "Get the data type of the buffer")
+        .def("__dlpack__", &BufferInterface::dlpack, "stream"_a=1, "Export the buffer as a DLPack tensor")
+        .def("__dlpack_device__", &BufferInterface::dlpackDevice, "Get the device associated with the buffer");
 }
 
 void PyExportInitializer(py::module& m) {  
-    ExternalBuffer::Export(m);
+    BufferInterface::Export(m);
 }
 
-int ExternalBuffer::LoadDLPack( std::vector<size_t> _shape, std::vector<size_t> _stride, std::string _typeStr, void* _data) {
+int BufferInterface::LoadDLPack( std::vector<size_t> _shape, std::vector<size_t>_stride, std::string _typeStr, void* _data) {
     
     m_dlTensor->byte_offset = 0;    
     m_dlTensor->device.device_type = kDLROCM;   // TODO: infer the device type from the memory buffer    
     m_dlTensor->device.device_id = 0;           // TODO: infer the device id   from the memory buffer
 
     // Convert data
-    void* ptr = _data; // reinterpret_cast<void*>(_data);
+    void* ptr = _data; 
     CheckValidBuffer(ptr);
     m_dlTensor->data = ptr;
 
