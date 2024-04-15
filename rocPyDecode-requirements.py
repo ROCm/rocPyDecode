@@ -138,7 +138,7 @@ for i in range(len(commonPackages)):
 ERROR_CHECK(os.system('sudo -v'))
 if "Ubuntu" in platfromInfo:
     #pybind11 install
-    ERROR_CHECK(os.system('pip install pybind11'))
+    ERROR_CHECK(os.system('pip3 install pybind11'))
 
     # core debian packages
     for i in range(len(coreDebianPackages)):
