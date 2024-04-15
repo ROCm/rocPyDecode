@@ -29,7 +29,7 @@ ROCM_PATH = '/opt/rocm'
 if "ROCM_PATH" in os.environ:
     ROCM_PATH = os.environ.get('ROCM_PATH')
 print("\nROCm PATH set to -- " + ROCM_PATH + "\n")
-print("info: Using pip from -- ", pybind11.get_include())
+print("info: Using pip from -- ", str(pybind11.get_include()))
 
 # Custom install to run cmake before installation
 class CustomInstall(install):
@@ -40,10 +40,10 @@ class CustomInstall(install):
     def build_and_install(self):
         # Set the build directory relative to the setup.py file
         build_temp=os.path.join(os.path.dirname(os.path.abspath(__file__)),"build")
-        
+
         # Run cmake
-        cmake_args=["cmake","-DPYBIND_HEADER_HINT=", pybind11.get_include(),"."]
-        subprocess.check_call(cmake_args+["-B"+build_temp],cwd=os.getcwd())
+        cmake_args=["cmake", ".", "-B"+build_temp, "-Dpybind11_DIR="+pybind11.get_include()]
+        subprocess.check_call(cmake_args,cwd=os.getcwd())
 
         # Run cmake --build to compile
         subprocess.check_call(["cmake","--build",build_temp,"--target","install"],cwd=build_temp)
@@ -70,6 +70,7 @@ setup(
       version='1.0.0',
       author='AMD',
       license='MIT License',
+      setup_requires=["pybind11"],
       ext_modules=ext_modules,
       cmdclass={'install':CustomInstall},
       packages=['pyRocVideoDecode'],

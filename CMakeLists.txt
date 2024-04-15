@@ -21,7 +21,7 @@
 #
 ################################################################################
 
-cmake_minimum_required (VERSION 3.5)
+cmake_minimum_required (VERSION 3.15)
 
 set(VERSION "0.1.0")
 set(CMAKE_CXX_STANDARD 17)
@@ -42,7 +42,6 @@ endif()
 
 # rocPyDecode default options
 option(PYTHON_VERSION_SUGGESTED "Python version to build rocal" "")
-option(PYBIND_HEADER_HINT "Pybind11 include path hint for non-default versions" "")
 
 # rocPyDecode build type
 set(DEFAULT_BUILD_TYPE "Release")
@@ -81,7 +80,6 @@ else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -DNDEBUG -fPIC")
 endif()
 
-find_package(pybind11 REQUIRED HINTS PYBIND_HEADER_HINT)
 find_package(HIP QUIET)
 find_package(FFmpeg QUIET)
 find_package(rocDecode QUIET)
@@ -92,6 +90,10 @@ else()
     set(Python3_FIND_VIRTUALENV FIRST)
     find_package(Python3 QUIET COMPONENTS Interpreter Development)
 endif()
+message("-- ${Green}NOTE: rocPyDecode requires Python3, Found --  ${Python3_EXECUTABLE} ${ColourReset}")
+
+find_package(pybind11 CONFIG REQUIRED)
+message("-- ${Green}NOTE: rocPyDecode requires pybind11, Found --  ${pybind11_INCLUDE_DIRS} ${ColourReset}")
 
 if(HIP_FOUND AND rocDecode_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG_FOUND)
 
@@ -115,7 +117,6 @@ if(HIP_FOUND AND rocDecode_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
 
     # Python3
     include_directories(${Python3_INCLUDE_DIRS})
-    message("-- ${Green}NOTE: rocPyDecode pybind requires Python3, Found --  ${Python3_EXECUTABLE} ${ColourReset}")
     # PyBind11
     include_directories(${pybind11_INCLUDE_DIRS})
 
