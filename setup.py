@@ -20,6 +20,7 @@
  
 from setuptools import setup
 from pybind11.setup_helpers import Pybind11Extension
+from distutils.sysconfig import get_python_lib
 from setuptools.command.install import install
 import pybind11
 import subprocess
@@ -29,7 +30,6 @@ ROCM_PATH = '/opt/rocm'
 if "ROCM_PATH" in os.environ:
     ROCM_PATH = os.environ.get('ROCM_PATH')
 print("\nROCm PATH set to -- " + ROCM_PATH + "\n")
-print("info: Using pip from -- ", str(pybind11.get_include()))
 
 # Custom install to run cmake before installation
 class CustomInstall(install):
@@ -42,7 +42,7 @@ class CustomInstall(install):
         build_temp=os.path.join(os.path.dirname(os.path.abspath(__file__)),"build")
 
         # Run cmake
-        cmake_args=["cmake", ".", "-B"+build_temp, "-Dpybind11_DIR="+pybind11.get_include()]
+        cmake_args=["cmake", ".", "-B"+build_temp, "-Dpybind11_DIR="+get_python_lib()]
         subprocess.check_call(cmake_args,cwd=os.getcwd())
 
         # Run cmake --build to compile
