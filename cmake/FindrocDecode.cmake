@@ -22,7 +22,15 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 # 
+################################################################################################################################################################
+# - Try to find rocDecode libraries and headers
+# Once done this will define
+#
+# rocDecode_FOUND - system has rocDecode
+# rocDecode_INCLUDE_DIRS - the rocDecode include directory
+# rocDecode_LIBRARIES - Link these to use rocDecode
 ################################################################################
+
 find_path(rocDecode_INCLUDE_DIRS
     NAMES rocdecode.h rocparser.h
     HINTS

@@ -18,15 +18,18 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
  
-from setuptools import setup, Extension
+from setuptools import setup
+from pybind11.setup_helpers import Pybind11Extension
 from setuptools.command.install import install
+import pybind11
 import subprocess
 import os
 
 ROCM_PATH = '/opt/rocm'
 if "ROCM_PATH" in os.environ:
     ROCM_PATH = os.environ.get('ROCM_PATH')
-print("\nROCm PATH set to -- "+ROCM_PATH+"\n")
+print("\nROCm PATH set to -- " + ROCM_PATH + "\n")
+print("info: Using pip from -- ", pybind11.get_include())
 
 # Custom install to run cmake before installation
 class CustomInstall(install):
@@ -39,7 +42,7 @@ class CustomInstall(install):
         build_temp=os.path.join(os.path.dirname(os.path.abspath(__file__)),"build")
         
         # Run cmake
-        cmake_args=["cmake","."]
+        cmake_args=["cmake","-DPYBIND_HEADER_HINT=", pybind11.get_include(),"."]
         subprocess.check_call(cmake_args+["-B"+build_temp],cwd=os.getcwd())
 
         # Run cmake --build to compile
@@ -47,9 +50,9 @@ class CustomInstall(install):
 
 # Define the extension module
 ext_modules = [
-    Extension(
-        'rocPyDecode', 
-        sources=['src/roc_pydecode.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp'], 
+    Pybind11Extension(
+        'rocPyDecode',
+        sources=['src/roc_pydecode.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp'],
         include_dirs=['src',ROCM_PATH+'/include/', ROCM_PATH+'/include/rocdecode/',ROCM_PATH+'/share/rocdecode/utils',ROCM_PATH+'/share/rocdecode/utils/rocvideodecode'],
         extra_compile_args=['-D__HIP_PLATFORM_AMD__'],
         library_dirs=[ROCM_PATH+'/lib/','/usr/local/lib/','/usr/lib/x86_64-linux-gnu/'],

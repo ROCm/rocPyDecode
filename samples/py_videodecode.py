@@ -17,7 +17,7 @@ try:
     args = parser.parse_args()  
 except:
     print("ERROR: Incorrect arguments were passed.\n")
-    sys.exit()    
+    sys.exit()
 
 input_file_path = args.input
 output_file_path = args.output
