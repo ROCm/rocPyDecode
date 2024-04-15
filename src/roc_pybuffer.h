@@ -46,7 +46,7 @@ class BufferInterface final : public std::enable_shared_from_this<BufferInterfac
 
         BufferInterface() = default;
         py::capsule dlpack(py::object stream) const;
-        int LoadDLPack(std::vector<size_t> _shape, std::vector<size_t> _stride, std::string _typeStr, void * _data);
+        int LoadDLPack(std::vector<size_t>& _shape, std::vector<size_t>& _stride, std::string& _type_str, void* _data);
 
     private:
         friend py::detail::type_caster<BufferInterface>;

@@ -132,7 +132,7 @@ void PyExportInitializer(py::module& m) {
     BufferInterface::Export(m);
 }
 
-int BufferInterface::LoadDLPack( std::vector<size_t> _shape, std::vector<size_t>_stride, std::string _typeStr, void* _data) {
+int BufferInterface::LoadDLPack(std::vector<size_t>& _shape, std::vector<size_t>& _stride, std::string& _type_str, void* _data) {
     
     m_dlTensor->byte_offset = 0;    
     m_dlTensor->device.device_type = kDLROCM;   // TODO: infer the device type from the memory buffer    
@@ -144,8 +144,8 @@ int BufferInterface::LoadDLPack( std::vector<size_t> _shape, std::vector<size_t>
     m_dlTensor->data = ptr;
 
     // Convert DataType
-    if (_typeStr != "|u1" && _typeStr != "B") {  // TODO: can also be other letters
-        throw std::runtime_error("Could not create DL Pack tensor! Invalid typstr: " + _typeStr);
+    if (_type_str != "|u1" && _type_str != "B") {  // TODO: can also be other letters
+        throw std::runtime_error("Could not create DL Pack tensor! Invalid typstr: " + _type_str);
         return -1;
     }
     int itemSizeDT = sizeof(uint8_t); 
