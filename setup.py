@@ -19,7 +19,10 @@
 # THE SOFTWARE.
  
 from setuptools import setup, Extension
+from pybind11.setup_helpers import Pybind11Extension
+from distutils.sysconfig import get_python_lib
 from setuptools.command.install import install
+import pybind11
 import subprocess
 import os
 
@@ -28,6 +31,14 @@ if "ROCM_PATH" in os.environ:
     ROCM_PATH = os.environ.get('ROCM_PATH')
 print("\nROCm PATH set to -- "+ROCM_PATH+"\n")
 
+UTILS_PATH=ROCM_PATH+'/share/rocdecode/utils/'
+UTILS_DEC_PATH=ROCM_PATH+'/share/rocdecode/utils/rocvideodecode/'
+ROC_DEC_PATH=ROCM_PATH+'/include/rocdecode/'
+ROCM_H_PATH=ROCM_PATH+'/include/'
+gpu_list=['--offload-arch=gfx908','--offload-arch=gfx90a','--offload-arch=gfx940','--offload-arch=gfx941','--offload-arch=gfx942','--offload-arch=gfx1030','--offload-arch=gfx1031','--offload-arch=gfx1032','--offload-arch=gfx1100','--offload-arch=gfx1101','--offload-arch=gfx1102']
+os.environ["CC"] = ROCM_PATH+'/llvm/bin/clang++ -x hip'
+os.environ["CXX"] = ROCM_PATH+'/llvm/bin/clang++'
+ 
 # Custom install to run cmake before installation
 class CustomInstall(install):
     def run(self):
@@ -37,10 +48,10 @@ class CustomInstall(install):
     def build_and_install(self):
         # Set the build directory relative to the setup.py file
         build_temp=os.path.join(os.path.dirname(os.path.abspath(__file__)),"build")
-        
+
         # Run cmake
-        cmake_args=["cmake","."]
-        subprocess.check_call(cmake_args+["-B"+build_temp],cwd=os.getcwd())
+        cmake_args=["cmake", ".", "-B"+build_temp, "-Dpybind11_DIR="+get_python_lib()]
+        subprocess.check_call(cmake_args,cwd=os.getcwd())
 
         # Run cmake --build to compile
         subprocess.check_call(["cmake","--build",build_temp,"--target","install"],cwd=build_temp)
@@ -49,16 +60,16 @@ class CustomInstall(install):
 ext_modules = [
     Extension(
         'rocPyDecode', 
-        sources=['src/roc_pydecode.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp','src/roc_pybuffer.cpp','src/roc_pydlpack.cpp'], 
-        include_dirs=['build/pybind11/include','build/dlpack/include/',ROCM_PATH+'/include/', ROCM_PATH+'/include/rocdecode/',ROCM_PATH+'/share/rocdecode/utils',ROCM_PATH+'/share/rocdecode/utils/rocvideodecode', 'src' ],
-        extra_compile_args=['-D__HIP_PLATFORM_AMD__'],
+        sources=[UTILS_PATH+'colorspace_kernels.cpp', UTILS_DEC_PATH+'roc_video_dec.cpp','src/roc_pyresizeframe.cpp','src/roc_pycolorconversion.cpp','src/roc_pydecode.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp','src/roc_pybuffer.cpp','src/roc_pydlpack.cpp'], 
+        include_dirs=['build/pybind11/include/','build/dlpack/include/', ROCM_H_PATH, ROC_DEC_PATH, UTILS_PATH, UTILS_DEC_PATH, 'src' ],
+        extra_compile_args=gpu_list+['-D__HIP_PLATFORM_AMD__','-Wno-unused-private-field','-Wno-ignored-optimization-argument', '-Wno-missing-braces', '-Wno-sign-compare', '-Wno-sign-compare','-Wno-reorder','-Wno-int-in-bool-context', '-Wno-unused-variable'],
         library_dirs=[ROCM_PATH+'/lib/','/usr/local/lib/','/usr/lib/x86_64-linux-gnu/'],
-        libraries=['rocdecode','avcodec','avformat','avutil'],
+        libraries=['rocdecode','avcodec','avformat','avutil','amdhip64'],
         runtime_library_dirs=[],
         extra_link_args=[],
     )
 ]
-
+ 
 # Setup
 setup(
       name='rocPyDecode',
@@ -67,10 +78,10 @@ setup(
       version='1.0.0',
       author='AMD',
       license='MIT License',
+      setup_requires=["pybind11"],
       ext_modules=ext_modules,
       cmdclass={'install':CustomInstall},
       packages=['pyRocVideoDecode'],
       package_dir={'pyRocVideoDecode':'pyRocVideoDecode'},
       package_data={"pyRocVideoDecode":["__init__.pyi"]},
-      include_package_data=True,
       )

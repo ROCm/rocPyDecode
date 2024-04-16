@@ -21,14 +21,13 @@
 #
 ################################################################################
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-cmake_minimum_required (VERSION 3.5)
-project(rocPyDecode)
+cmake_minimum_required (VERSION 3.15)
+set(VERSION "0.1.0")
+project(rocPyDecode VERSION ${VERSION} LANGUAGES CXX)
 set(TARGET_NAME rocPyDecode)
 set(CMAKE_CXX_STANDARD 17)
 
-option(FETCHCONTENT_QUIET OFF)
+option(FETCHCONTENT_QUIET ON)
 include(FetchContent)
 fetchcontent_declare(
     pybind11
@@ -69,29 +68,36 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
   # -O0 -- Don't Optimize output file 
   # -gdwarf-4  -- generate debugging information, dwarf-4 for making valgrind work
   # -Og -- Optimize for debugging experience rather than speed or size
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -gdwarf-4 -Og")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -gdwarf-4 -Og -Wno-ignored-optimization-argument -Wno-missing-braces -Wno-sign-compare")
 else()
   # -O3       -- Optimize output file 
   # -DNDEBUG  -- turn off asserts 
   # -fPIC     -- Generate position-independent code if possible
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -DNDEBUG -fPIC")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -DNDEBUG -fPIC -Wno-ignored-optimization-argument -Wno-missing-braces -Wno-sign-compare")
 endif()
- 
-find_package(pybind11 COMPONENTS REQUIRED)
+
+# set amdgpu targets with vcn support
+set(DEFAULT_AMDGPU_TARGETS "gfx908;gfx90a;gfx940;gfx941;gfx942;gfx1030;gfx1031;gfx1032;gfx1100;gfx1101;gfx1102")
+set(AMDGPU_TARGETS "${DEFAULT_AMDGPU_TARGETS}" CACHE STRING "List of specific machine types for library to target")
+
+find_package(pybind11 CONFIG REQUIRED HINTS ${pybind11_DIR})
 find_package(HIP QUIET)
 find_package(FFmpeg QUIET)
-find_package(Python3 COMPONENTS Interpreter Development)
+find_package(rocDecode QUIET)
+
+set(Python3_FIND_VIRTUALENV FIRST)
+find_package(Python3 QUIET COMPONENTS Interpreter Development)
 
 # find rocDecode
-find_library(ROCDECODE_LIBRARY NAMES rocdecode HINTS ${ROCM_PATH}/lib)
-find_path(ROCDECODE_INCLUDE_DIR NAMES rocdecode.h PATHS /opt/rocm/include/rocdecode ${ROCM_PATH}/include/rocdecode)
+find_library(rocDecode_LIBRARY NAMES rocDecode HINTS ${ROCM_PATH}/lib)
+find_path(rocDecode_INCLUDE_DIR NAMES rocdecode.h PATHS /opt/rocm/include/rocdecode ${ROCM_PATH}/include/rocdecode)
 
-if(ROCDECODE_LIBRARY AND ROCDECODE_INCLUDE_DIR)
-    set(ROCDECODE_FOUND TRUE)
-    message("-- ${Green}${PROJECT_NAME}: Using rocDecode -- \n\tLibraries:${ROCDECODE_LIBRARY} \n\tIncludes:${ROCDECODE_INCLUDE_DIR}${ColourReset}")
+if(rocDecode_LIBRARY AND rocDecode_INCLUDE_DIR)
+    set(rocDecode_FOUND TRUE)
+    message("-- ${Green}${PROJECT_NAME}: Using rocDecode -- \n\tLibraries:${rocDecode_LIBRARY} \n\tIncludes:${rocDecode_INCLUDE_DIR}${ColourReset}")
 endif()
 
-if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG_FOUND) 
+if(HIP_FOUND AND rocDecode_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG_FOUND) 
 
     # avoid setting the default installation path to /usr/local
     if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)	
@@ -101,14 +107,22 @@ if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 	
     # HIP
-    set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} hip::host)
+    set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} hip::device)
     # FFMPEG
     include_directories(${AVUTIL_INCLUDE_DIR} ${AVCODEC_INCLUDE_DIR} ${AVFORMAT_INCLUDE_DIR})
     set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${FFMPEG_LIBRARIES})
     # rocDecode
-    include_directories (${ROCDECODE_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/..)
-    set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${ROCDECODE_LIBRARY})
-
+    include_directories (${rocDecode_INCLUDE_DIR} 
+                         ${CMAKE_CURRENT_SOURCE_DIR}/.. 
+			                   ${ROCM_PATH}/share/rocdecode/utils 
+                         ${ROCM_PATH}/share/rocdecode/utils/rocvideodecode)
+    set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${rocDecode_LIBRARIES})
+    # threads
+    set(THREADS_PREFER_PTHREAD_FLAG ON)
+    find_package(Threads REQUIRED)
+    set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} Threads::Threads)
+    # PyBind11
+    include_directories(${pybind11_INCLUDE_DIRS})   
     # rocPyDecode include
     include_directories (${rocPyDecode_INCLUDE_DIR} /src)
     set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${rocPyDecode_LIBRARY})
@@ -116,9 +130,21 @@ if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
      
     file(GLOB_RECURSE pyfiles pyRocVideoDecode/*.py pyRocVideoDecode/*.pyi)
     file(GLOB_RECURSE include src/*.h)
-    file(GLOB_RECURSE sources src/*.cpp  ${ROCM_PATH}/share/rocdecode/utils/rocvideodecode/*.cpp)
+    file(GLOB_RECURSE SOURCES src/*.cpp  ${ROCM_PATH}/share/rocdecode/utils/*.cpp ${ROCM_PATH}/share/rocdecode/utils/rocvideodecode/*.cpp)
 
-    pybind11_add_module(${TARGET_NAME} MODULE ${sources})
+    list(APPEND SOURCES ${ROCM_PATH}/share/rocdecode/utils/rocvideodecode/roc_video_dec.cpp 
+                        ${ROCM_PATH}/share/rocdecode/utils/colorspace_kernels.cpp 
+                        ${ROCM_PATH}/share/rocdecode/utils/resize_kernels.cpp
+                        src/roc_pydecode.cpp
+                        src/roc_pyvideodecode.cpp
+                        src/roc_pyvideodemuxer.cpp
+                        src/roc_pybuffer.cpp
+                        src/roc_pydlpack.cpp
+                        src/roc_pycolorconversion.cpp
+                        src/roc_pyresizeframe.cpp
+                        )
+
+    pybind11_add_module(${TARGET_NAME} MODULE ${SOURCES})
     
     target_link_libraries(${TARGET_NAME} PRIVATE ${LINK_LIBRARY_LIST})
     message("-- ${White}rocPyDecode -- Link Libraries: ${LINK_LIBRARY_LIST}${ColourReset}")
@@ -128,31 +154,7 @@ if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
         PREFIX "${PYTHON_MODULE_PREFIX}"
         SUFFIX "${PYTHON_MODULE_EXTENSION}"
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}")
-    set(TARGET_PYMODULE_NAME "${PYTHON_MODULE_PREFIX}${TARGET_NAME}${PYTHON_MODULE_EXTENSION}")
-                  
-    CONFIGURE_FILE(setup.py
-                ${CMAKE_BINARY_DIR}/setup.py @ONLY
-                )
-    CONFIGURE_FILE(src/roc_pydecode.cpp
-                ${CMAKE_BINARY_DIR}/roc_pydecode.cpp @ONLY
-                )
-    CONFIGURE_FILE(src/roc_pyvideodecode.cpp
-                ${CMAKE_BINARY_DIR}/roc_pyvideodecode.cpp @ONLY
-                )
-    CONFIGURE_FILE(src/roc_pyvideodemuxer.cpp
-                ${CMAKE_BINARY_DIR}/roc_pyvideodemuxer.cpp @ONLY
-                )
-    CONFIGURE_FILE(src/roc_pybuffer.cpp
-                ${CMAKE_BINARY_DIR}/roc_pybuffer.cpp @ONLY
-                )                
-    CONFIGURE_FILE(src/roc_pydlpack.cpp
-                ${CMAKE_BINARY_DIR}/roc_pydlpack.cpp @ONLY
-                )                
-
-
-
-
-
+    set(TARGET_PYMODULE_NAME "${PYTHON_MODULE_PREFIX}${TARGET_NAME}${PYTHON_MODULE_EXTENSION}")                                              
 
     foreach (filename ${pyfiles})
         get_filename_component(target "${filename}" REALPATH)
@@ -163,9 +165,23 @@ if(HIP_FOUND AND ROCDECODE_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
     endforeach (filename)
        
     #install rocPyDecode pybind libs
-    install(FILES ${CMAKE_BINARY_DIR}/${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}/${TARGET_PYMODULE_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX_PYTHON})
+    install(FILES ${CMAKE_BINARY_DIR}/${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}/${TARGET_PYMODULE_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX_PYTHON} COMPONENT runtime)
 
     message("-- ${Green}ROCm Video Decode Library Python Binding - rocPyDecode module added ${ColourReset}")
+    message("-- ${BoldBlue}rocPyDecode Version -- ${VERSION}${ColourReset}")
+    message("-- ${BoldBlue}rocPyDecode Install Path -- ${CMAKE_INSTALL_PREFIX_PYTHON}${ColourReset}")    
 else()
     message("-- ${Red}WARNING: rocPyDecode module excluded - Dependency Failure${ColourReset}")
+    # Python3
+    if(NOT Python3_FOUND)
+      message("-- ${Yellow}NOTE: rocPyDecode pybind requires Python3, Not Found${ColourReset}")
+    endif()
+    # PyBind11
+    if(NOT pybind11_FOUND)
+      message("-- ${Yellow}NOTE: rocPyDecode requires pybind11, Not Found${ColourReset}")	
+    endif()
+    # rocDecode
+    if(NOT rocDecode_FOUND)
+      message("-- ${Yellow}NOTE: rocPyDecode requires rocDecode, Not Found${ColourReset}")	
+    endif()
 endif()

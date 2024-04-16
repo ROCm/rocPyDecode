@@ -45,20 +45,6 @@ extern "C" {
 
 namespace py = pybind11;
 
-/*
-// #define PY_HIP_API_CALL( call )                                     \
-//     do {                                                            \
-//         hipError_t hip_status = call;                               \
-//         if (hip_status != hipSuccess) {                             \
-//             const char *sz_err_name = NULL;                         \
-//             sz_err_name = hipGetErrorName(hip_status);              \
-//             std::ostringstream error_log;                           \
-//             error_log << "hip API error " << sz_err_name ;          \
-//         }                                                           \
-//     }                                                               \
-//     while (0)
-*/
-
 struct PyPacketData {
     bool      end_of_stream;
     int       pkt_flags;
@@ -88,3 +74,9 @@ void PyRocVideoDecoderInitializer(py::module& m);
 
 // defined in BufferInterface.cpp
 void PyExportInitializer(py::module& m);
+
+// defined in roc_pyresize.cpp
+void PyResizeInitializer(py::module& m);
+
+// defined in roc_pycolorconversion.cpp
+void PyColorConversionInitializer(py::module& m);

@@ -29,4 +29,4 @@ class demuxer(object):
         return self.vidmux.GetCodecId()
 
     def DemuxFrame(self):
-        return self.vidmux.DemuxFrame()
+         return self.vidmux.DemuxFrame()
