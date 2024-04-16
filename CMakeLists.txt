@@ -40,9 +40,6 @@ else()
     set(ROCM_PATH /opt/rocm CACHE PATH "${White}${PROJECT_NAME}: Default ROCm installation path${ColourReset}")
 endif()
 
-# rocPyDecode default options
-option(PYTHON_VERSION_SUGGESTED "Python version to build rocal" "")
-
 # rocPyDecode build type
 set(DEFAULT_BUILD_TYPE "Release")
 set(ENHANCED_MESSAGE ON)
@@ -84,12 +81,8 @@ find_package(HIP QUIET)
 find_package(FFmpeg QUIET)
 find_package(rocDecode QUIET)
 
-if (PYTHON_VERSION_SUGGESTED)
-    find_package(Python3 "${PYTHON_VERSION_SUGGESTED}" EXACT QUIET COMPONENTS Interpreter Development)
-else()
-    set(Python3_FIND_VIRTUALENV FIRST)
-    find_package(Python3 QUIET COMPONENTS Interpreter Development)
-endif()
+set(Python3_FIND_VIRTUALENV FIRST)
+find_package(Python3 QUIET COMPONENTS Interpreter Development)
 message("-- ${Green}NOTE: rocPyDecode requires Python3, Found --  ${Python3_EXECUTABLE} ${ColourReset}")
 
 find_package(pybind11 CONFIG REQUIRED HINTS ${pybind11_DIR})
@@ -114,12 +107,10 @@ if(HIP_FOUND AND rocDecode_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
                         ${ROCM_PATH}/share/rocdecode/utils
                         ${ROCM_PATH}/share/rocdecode/utils/rocvideodecode)
     set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${rocDecode_LIBRARIES})
-
     # Python3
     include_directories(${Python3_INCLUDE_DIRS})
     # PyBind11
     include_directories(${pybind11_INCLUDE_DIRS})
-
     # rocPyDecode include
     include_directories (src)
 
