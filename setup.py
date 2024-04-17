@@ -20,11 +20,10 @@
  
 from setuptools import setup
 from pybind11.setup_helpers import Pybind11Extension
-from distutils.sysconfig import get_python_lib
 from setuptools.command.install import install
-import pybind11
 import subprocess
 import os
+import site
 
 ROCM_PATH = '/opt/rocm'
 if "ROCM_PATH" in os.environ:
@@ -41,8 +40,12 @@ class CustomInstall(install):
         # Set the build directory relative to the setup.py file
         build_temp=os.path.join(os.path.dirname(os.path.abspath(__file__)),"build")
 
+        #path to python pacakges like pybind11
+        python_site_package_path = site.getsitepackages()
+        python_site_package_path = ';'.join(python_site_package_path)
+
         # Run cmake
-        cmake_args=["cmake", ".", "-B"+build_temp, "-Dpybind11_DIR="+get_python_lib()]
+        cmake_args=["cmake", ".", "-B"+build_temp, "-Dpybind11_DIR="+python_site_package_path]
         subprocess.check_call(cmake_args,cwd=os.getcwd())
 
         # Run cmake --build to compile

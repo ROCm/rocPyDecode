@@ -15,7 +15,7 @@ The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access
 For your convenience, we provide the setup script, [rocPyDecode-requirements.py](rocPyDecode-requirements.py), which installs all required dependencies.Run this script only once.
 
 ```bash
-python3 rocPyDecode-requirements.oy
+python3 rocPyDecode-requirements.py
 ```
 
 ## rocPyDecode install
@@ -40,13 +40,18 @@ pip3 install .
 
 * Install PIP3
   + Ubuntu 20/22
-    ```
+
+    ```bash
     sudo apt install python3-pip
     ```
+
 * Install [dlpack](https://pypi.org/project/dlpack/)
   + Ubuntu 20/22
-    ```
+
+    ```bash
     apt install dlpack 
     ```
+
 #### Run Test Scripts
+
 * Test scripts and instructions to run them can be found [here](samples/)
