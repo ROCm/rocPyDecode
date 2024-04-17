@@ -1,7 +1,4 @@
-# rocPyDecode sample: videodecode.py
-
-This sample demux & decode frames from a video file, and optionally saves the frames to a file. 
-To run this python sample script, you need to provide input video file full path name, other arguments are optional.
+# rocPyDecode samples
 
 ## Prerequisites
 * [rocDecode C/C++ Library](https://github.com/ROCm/rocDecode)
