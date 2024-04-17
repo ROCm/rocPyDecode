@@ -41,16 +41,25 @@ def ERROR_CHECK(call):
 
 # Arguments
 parser = argparse.ArgumentParser()
-parser.add_argument('--rocm_path', 	type=str, default='/opt/rocm',
+parser.add_argument('--rocm_path', type=str, default='/opt/rocm',
                     help='ROCm Installation Path - optional (default:/opt/rocm) - ROCm Installation Required')
+parser.add_argument('--rocdecode', type=str, default='ON',
+                    help='rocDecode Installation - optional (default:ON) [options:ON/OFF]')
 
 args = parser.parse_args()
 
+rocdecodeInstall = args.rocdecode.upper()
 ROCM_PATH = args.rocm_path
 
 if "ROCM_PATH" in os.environ:
     ROCM_PATH = os.environ.get('ROCM_PATH')
 print("\nROCm PATH set to -- " + ROCM_PATH + "\n")
+
+if rocdecodeInstall not in ('OFF', 'ON'):
+    print(
+        "ERROR: rocDecode Install Option Not Supported - [Supported Options: OFF or ON]\n")
+    parser.print_help()
+    exit()
 
 # check ROCm installation
 if os.path.exists(ROCM_PATH):
@@ -82,7 +91,16 @@ linuxSystemInstall = ''
 linuxCMake = 'cmake'
 linuxSystemInstall_check = ''
 linuxFlag = ''
-if "Ubuntu" in platfromInfo or os.path.exists('/usr/bin/apt-get'):
+sudoValidateOption= '-v'
+if "redhat" in platfromInfo or os.path.exists('/usr/bin/yum'):
+    linuxSystemInstall = 'yum -y'
+    linuxSystemInstall_check = '--nogpgcheck'
+    if "redhat-7" in platfromInfo:
+        print("\nrocPyDecode Setup on "+platfromInfo+" is unsupported\n")
+        exit(-1)
+    if not "redhat" in platfromInfo:
+        platfromInfo = platfromInfo+'-redhat'
+elif "Ubuntu" in platfromInfo or os.path.exists('/usr/bin/apt-get'):
     linuxSystemInstall = 'apt-get -y'
     linuxSystemInstall_check = '--allow-unauthenticated'
     linuxFlag = '-S'
@@ -90,7 +108,7 @@ if "Ubuntu" in platfromInfo or os.path.exists('/usr/bin/apt-get'):
         platfromInfo = platfromInfo+'-Ubuntu'
 else:
     print("\nrocPyDecode Setup on "+platfromInfo+" is unsupported\n")
-    print("\nrocPyDecode Setup Supported on: Ubuntu 20/22\n")
+    print("\nrocPyDecode Setup Supported on: Ubuntu 20/22; RedHat 8/9\n")
     exit(-1)
 
 # rocPyDecode Setup
@@ -109,23 +127,15 @@ commonPackages = [
     'wget',
     'unzip',
     'pkg-config',
-    'inxi'
+    'inxi',
+    'python3-pip'
 ]
 
 # Debian packages
 coreDebianPackages = [
-    'python3-pip',
     'rocdecode',
     'rocdecode-dev',
     'rocdecode-test',
-]
-
-# FFMPEG packages
-ffmpegDebianPackages = [
-    'ffmpeg',
-    'libavcodec-dev',
-    'libavformat-dev',
-    'libavutil-dev'
 ]
 
 # common packages
@@ -141,14 +151,9 @@ if "Ubuntu" in platfromInfo:
     ERROR_CHECK(os.system('pip3 install pybind11'))
 
     # core debian packages
-    for i in range(len(coreDebianPackages)):
-        ERROR_CHECK(os.system('sudo '+linuxFlag+' '+linuxSystemInstall +
-                ' '+linuxSystemInstall_check+' install '+ coreDebianPackages[i]))
-
-    # ffmpeg packages
-    for i in range(len(ffmpegDebianPackages)):
-        ERROR_CHECK(os.system('sudo '+linuxFlag+' '+linuxSystemInstall +
-                ' '+linuxSystemInstall_check+' install '+ ffmpegDebianPackages[i]))
-
+    if rocdecodeInstall == 'ON':
+        for i in range(len(coreDebianPackages)):
+            ERROR_CHECK(os.system('sudo '+linuxFlag+' '+linuxSystemInstall +
+                    ' '+linuxSystemInstall_check+' install '+ coreDebianPackages[i]))
 
 print("\rocPyDecode Dependencies Installed with rocPyDecode-setup.py V-"+__version__+"\n")
