@@ -26,25 +26,7 @@ set(VERSION "0.1.0")
 project(rocPyDecode VERSION ${VERSION} LANGUAGES CXX)
 set(TARGET_NAME rocPyDecode)
 set(CMAKE_CXX_STANDARD 17)
-
-option(FETCHCONTENT_QUIET ON)
-include(FetchContent)
-fetchcontent_declare(
-    pybind11
-    URL https://github.com/pybind/pybind11/archive/v2.10.0.tar.gz
-    URL_HASH
-        SHA256=eacf582fa8f696227988d08cfc46121770823839fe9e301a20fbce67e7cd70ec
-    SOURCE_DIR pybind11
-)
-fetchcontent_makeavailable(pybind11)
-
-include(FetchContent)
-FetchContent_Populate(
-  dlpack
-  URL        https://github.com/dmlc/dlpack/archive/refs/tags/v0.8.zip
-  SOURCE_DIR dlpack
-)
-
+ 
 # ROCM Path
 if(DEFINED ENV{ROCM_PATH})
   set(ROCM_PATH $ENV{ROCM_PATH} CACHE PATH "${White}${PROJECT_NAME}: Default ROCm installation path${ColourReset}")

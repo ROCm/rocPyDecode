@@ -62,7 +62,7 @@ ext_modules = [
         'rocPyDecode', 
         sources=[UTILS_PATH+'colorspace_kernels.cpp', UTILS_DEC_PATH+'roc_video_dec.cpp','src/roc_pyresizeframe.cpp','src/roc_pycolorconversion.cpp','src/roc_pydecode.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp','src/roc_pybuffer.cpp','src/roc_pydlpack.cpp'], 
         include_dirs=['build/pybind11/include/','build/dlpack/include/', ROCM_H_PATH, ROC_DEC_PATH, UTILS_PATH, UTILS_DEC_PATH, 'src' ],
-        extra_compile_args=gpu_list+['-D__HIP_PLATFORM_AMD__','-Wno-unused-private-field','-Wno-ignored-optimization-argument', '-Wno-missing-braces', '-Wno-sign-compare', '-Wno-sign-compare','-Wno-reorder','-Wno-int-in-bool-context', '-Wno-unused-variable'],
+        extra_compile_args=['-D__HIP_PLATFORM_AMD__','-Wno-unused-private-field','-Wno-ignored-optimization-argument', '-Wno-missing-braces', '-Wno-sign-compare', '-Wno-sign-compare','-Wno-reorder','-Wno-int-in-bool-context', '-Wno-unused-variable'], # +gpu_list
         library_dirs=[ROCM_PATH+'/lib/','/usr/local/lib/','/usr/lib/x86_64-linux-gnu/'],
         libraries=['rocdecode','avcodec','avformat','avutil','amdhip64'],
         runtime_library_dirs=[],
