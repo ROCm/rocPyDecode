@@ -1,6 +1,7 @@
 # rocPyDecode samples
 
 ## Prerequisites
+
 * [rocDecode C/C++ Library](https://github.com/ROCm/rocDecode)
 * [rocPyDecode installed](../README.md#rocpydecode-install)
 
@@ -10,6 +11,7 @@ This sample demuxes & decode frames from a video file, and optionally saves the 
 To run this python sample script, you need to provide input video file full path name, other arguments are optional.
 
 ### Arguments
+
 The following are full list of arguments that can be passed to the sample.
 ```
 -h, --help                                    : Show detail help message and exit
