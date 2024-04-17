@@ -17,7 +17,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
- 
+
 # rocDecVideoSurfaceFormat
 from rocPyDecode.decTypes import rocDecVideoSurfaceFormat_NV12
 from rocPyDecode.decTypes import rocDecVideoSurfaceFormat_P016
@@ -40,20 +40,23 @@ _known_types = {
     rocDecVideoSurfaceFormat_P016: ("rocDecVideoSurfaceFormat_P016", rocDecVideoSurfaceFormat_P016),
     rocDecVideoSurfaceFormat_YUV444: ("rocDecVideoSurfaceFormat_YUV444", rocDecVideoSurfaceFormat_YUV444),
     rocDecVideoSurfaceFormat_YUV444_16Bit: ("rocDecVideoSurfaceFormat_YUV444_16Bit", rocDecVideoSurfaceFormat_YUV444_16Bit),
-    
+
     ROCDEC_PKT_ENDOFSTREAM: ("ROCDEC_PKT_ENDOFSTREAM", ROCDEC_PKT_ENDOFSTREAM),
     ROCDEC_PKT_TIMESTAMP: ("ROCDEC_PKT_TIMESTAMP", ROCDEC_PKT_TIMESTAMP),
     ROCDEC_PKT_DISCONTINUITY: ("ROCDEC_PKT_DISCONTINUITY", ROCDEC_PKT_DISCONTINUITY),
     ROCDEC_PKT_ENDOFPICTURE: ("ROCDEC_PKT_ENDOFPICTURE", ROCDEC_PKT_ENDOFPICTURE),
     ROCDEC_PKT_NOTIFY_EOS: ("ROCDEC_PKT_NOTIFY_EOS", ROCDEC_PKT_NOTIFY_EOS),
 
-    rocDecVideoCodec_AVC: ("rocDecVideoCodec_AVC",rocDecVideoCodec_AVC),
-    rocDecVideoCodec_HEVC: ("rocDecVideoCodec_HEVC",rocDecVideoCodec_HEVC),
-    }
+    rocDecVideoCodec_AVC: ("rocDecVideoCodec_AVC", rocDecVideoCodec_AVC),
+    rocDecVideoCodec_HEVC: ("rocDecVideoCodec_HEVC", rocDecVideoCodec_HEVC),
+}
+
 
 def data_type_function(dtype):
     if dtype in _known_types:
         ret = _known_types[dtype][0]
         return ret
     else:
-        raise RuntimeError(str(dtype) + " does not correspond to a known type.")
+        raise RuntimeError(
+            str(dtype) +
+            " does not correspond to a known type.")

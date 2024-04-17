@@ -31,6 +31,9 @@ extern "C" {
         #include <libavcodec/bsf.h>
     #endif
 }
+
+#include "roc_video_dec.h"
+#include "roc_pybuffer.h"
   
 #include <pybind11/pybind11.h>	 
 #include <pybind11/functional.h>
@@ -48,6 +51,10 @@ struct PyPacketData {
     int64_t   frame_pts;
     int64_t   frame_size;
     uintptr_t frame_adrs;
+    std::shared_ptr<BufferInterface> extBuf;
+    PyPacketData(){
+        extBuf = std::make_shared<BufferInterface>();
+    }
 };
 
 struct ConfigInfo {
@@ -64,3 +71,12 @@ rocDecVideoCodec ConvertAVCodec2RocDecVideoCodec(int av_codec);
 
 // defined in roc_pyvideodecoder.cpp
 void PyRocVideoDecoderInitializer(py::module& m);
+
+// defined in BufferInterface.cpp
+void PyExportInitializer(py::module& m);
+
+// defined in roc_pyresize.cpp
+void PyResizeInitializer(py::module& m);
+
+// defined in roc_pycolorconversion.cpp
+void PyColorConversionInitializer(py::module& m);
