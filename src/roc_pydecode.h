@@ -42,7 +42,7 @@ extern "C" {
 
 namespace py = pybind11;
 
-struct PacketData {
+struct PyPacketData {
     bool      end_of_stream;
     int       pkt_flags;
     int64_t   frame_pts;

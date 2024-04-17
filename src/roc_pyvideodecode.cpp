@@ -47,12 +47,12 @@ void PyRocVideoDecoder::InitConfigStructure() {
     configInfo.get()->pci_device_id = 0;
 }
 
-int PyRocVideoDecoder::PyDecodeFrame(PacketData& packet) {
+int PyRocVideoDecoder::PyDecodeFrame(PyPacketData& packet) {
     return DecodeFrame((u_int8_t*) packet.frame_adrs, static_cast<size_t>(packet.frame_size), packet.pkt_flags, packet.frame_pts);    
 }
  
 // for python binding
-py::object PyRocVideoDecoder::PyGetFrame(PacketData& packet) {
+py::object PyRocVideoDecoder::PyGetFrame(PyPacketData& packet) {
     packet.frame_adrs = reinterpret_cast<std::uintptr_t>(GetFrame(&packet.frame_pts));   
     return py::cast(packet.frame_pts);
 }
@@ -64,7 +64,7 @@ py::object PyRocVideoDecoder::PyGetNumOfFlushedFrames() {
 }
 
 // for python binding
-py::object PyRocVideoDecoder::PyReleaseFrame(PacketData& packet, py::array_t<bool>& b_flushing_in) {  
+py::object PyRocVideoDecoder::PyReleaseFrame(PyPacketData& packet, py::array_t<bool>& b_flushing_in) {  
     bool b_flushing = false;
     memcpy( &b_flushing, b_flushing_in.mutable_data(), sizeof(bool));
     bool ret = ReleaseFrame(packet.frame_pts, b_flushing);     

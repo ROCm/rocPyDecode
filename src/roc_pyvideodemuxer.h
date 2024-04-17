@@ -31,7 +31,7 @@ THE SOFTWARE.
 class PyVideoDemuxer : public VideoDemuxer {
 
     protected:
-        std::shared_ptr <PacketData> currentPacket;
+        std::shared_ptr <PyPacketData> currentPacket;
         void InitPacket();
 
     public:
@@ -39,7 +39,7 @@ class PyVideoDemuxer : public VideoDemuxer {
         PyVideoDemuxer(VideoDemuxer::StreamProvider *stream_provider) : VideoDemuxer(stream_provider) { InitPacket(); }
         				
         // for python binding
-        std::shared_ptr<PacketData> DemuxFrame();
+        std::shared_ptr<PyPacketData> DemuxFrame();
         int GetCodecId();
 };
 
