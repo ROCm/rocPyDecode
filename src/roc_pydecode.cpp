@@ -94,14 +94,14 @@ PYBIND11_MODULE(rocPyDecode, m) {
         .def_readwrite("right",&Rect::right)
         .def_readwrite("bottom",&Rect::bottom);
 
-    // PacketData
-    py::class_<PacketData, shared_ptr<PacketData>>(m, "PacketData", py::module_local())
+    // PyPacketData
+    py::class_<PyPacketData, shared_ptr<PyPacketData>>(m, "PyPacketData", py::module_local())
         .def(py::init<>())
-        .def_readwrite("end_of_stream", &PacketData::end_of_stream)
-        .def_readwrite("pkt_flags",     &PacketData::pkt_flags)
-        .def_readwrite("frame_pts",     &PacketData::frame_pts)
-        .def_readwrite("frame_size",    &PacketData::frame_size)
-        .def_readwrite("frame_adrs",    &PacketData::frame_adrs);   
+        .def_readwrite("end_of_stream", &PyPacketData::end_of_stream)
+        .def_readwrite("pkt_flags",     &PyPacketData::pkt_flags)
+        .def_readwrite("frame_pts",     &PyPacketData::frame_pts)
+        .def_readwrite("frame_size",    &PyPacketData::frame_size)
+        .def_readwrite("frame_adrs",    &PyPacketData::frame_adrs);   
 
     // ConfigInfo
     py::class_<ConfigInfo, shared_ptr<ConfigInfo>>(m, "ConfigInfo", py::module_local())

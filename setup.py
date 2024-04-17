@@ -18,15 +18,17 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
  
-from setuptools import setup, Extension
+from setuptools import setup
+from pybind11.setup_helpers import Pybind11Extension
 from setuptools.command.install import install
 import subprocess
 import os
+import site
 
 ROCM_PATH = '/opt/rocm'
 if "ROCM_PATH" in os.environ:
     ROCM_PATH = os.environ.get('ROCM_PATH')
-print("\nROCm PATH set to -- "+ROCM_PATH+"\n")
+print("\nROCm PATH set to -- " + ROCM_PATH + "\n")
 
 # Custom install to run cmake before installation
 class CustomInstall(install):
@@ -37,19 +39,23 @@ class CustomInstall(install):
     def build_and_install(self):
         # Set the build directory relative to the setup.py file
         build_temp=os.path.join(os.path.dirname(os.path.abspath(__file__)),"build")
-        
+
+        #path to python pacakges like pybind11
+        python_site_package_path = site.getsitepackages()
+        python_site_package_path = ';'.join(python_site_package_path)
+
         # Run cmake
-        cmake_args=["cmake","."]
-        subprocess.check_call(cmake_args+["-B"+build_temp],cwd=os.getcwd())
+        cmake_args=["cmake", ".", "-B"+build_temp, "-Dpybind11_DIR="+python_site_package_path]
+        subprocess.check_call(cmake_args,cwd=os.getcwd())
 
         # Run cmake --build to compile
         subprocess.check_call(["cmake","--build",build_temp,"--target","install"],cwd=build_temp)
 
 # Define the extension module
 ext_modules = [
-    Extension(
-        'rocPyDecode', 
-        sources=['src/roc_pydecode.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp'], 
+    Pybind11Extension(
+        'rocPyDecode',
+        sources=['src/roc_pydecode.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp'],
         include_dirs=['src',ROCM_PATH+'/include/', ROCM_PATH+'/include/rocdecode/',ROCM_PATH+'/share/rocdecode/utils',ROCM_PATH+'/share/rocdecode/utils/rocvideodecode'],
         extra_compile_args=['-D__HIP_PLATFORM_AMD__'],
         library_dirs=[ROCM_PATH+'/lib/','/usr/local/lib/','/usr/lib/x86_64-linux-gnu/'],
@@ -67,6 +73,7 @@ setup(
       version='1.0.0',
       author='AMD',
       license='MIT License',
+      setup_requires=["pybind11"],
       ext_modules=ext_modules,
       cmdclass={'install':CustomInstall},
       packages=['pyRocVideoDecode'],

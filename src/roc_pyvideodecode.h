@@ -37,13 +37,13 @@ class PyRocVideoDecoder : public RocVideoDecoder {
                           p_crop_rect, false, max_width, max_height, clk_rate){ InitConfigStructure(); }
          
         // for python binding
-        int PyDecodeFrame(PacketData& packet);
+        int PyDecodeFrame(PyPacketData& packet);
     
         // for python binding
-        py::object PyGetFrame(PacketData& packet);
+        py::object PyGetFrame(PyPacketData& packet);
 
         // for python binding
-        py::object PyReleaseFrame(PacketData& packet, py::array_t<bool>& b_flushing_in);
+        py::object PyReleaseFrame(PyPacketData& packet, py::array_t<bool>& b_flushing_in);
       
         // for python binding
         std::shared_ptr<ConfigInfo> PyGetDeviceinfo();
