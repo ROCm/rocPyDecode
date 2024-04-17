@@ -20,6 +20,7 @@
 
 import rocPyDecode as rocpydec
 
+
 class demuxer(object):
     def __init__(self, input_file_path: str):
         self.vidmux = rocpydec.PyVideoDemuxer(input_file_path)
