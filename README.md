@@ -22,21 +22,21 @@ The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access
 * CMake `3.5` or higher
   * Ubuntu 20/22
 
-  ```bash
-  sudo apt install cmake
-  ```
+    ```bash
+    sudo apt install cmake
+    ```
 
   * RHEL 8/9
-  ```bash
-  sudo yum install cmake
-  ```
+    ```bash
+    sudo yum install cmake
+    ```
 
 * Python `3`
   * Ubuntu 20/22
 
-  ```bash
-  sudo apt install python3
-  ```
+    ```bash
+    sudo apt install python3
+    ```
 
   * RHEL 8/9
 
