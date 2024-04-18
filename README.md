@@ -61,6 +61,8 @@ The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access
 
     ```bash
     sudo pip3 install dlpack
+    wget http://archive.ubuntu.com/ubuntu/pool/universe/d/dlpack/libdlpack-dev_0.6-1_amd64.deb
+    dpkg -i libdlpack-dev_0.6-1_amd64.deb    
     ```
 
 ## Prerequisites setup script
