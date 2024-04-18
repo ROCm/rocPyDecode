@@ -30,11 +30,12 @@ if "ROCM_PATH" in os.environ:
     ROCM_PATH = os.environ.get('ROCM_PATH')
 print("\nROCm PATH set to -- " + ROCM_PATH + "\n")
 
-UTILS_PATH=ROCM_PATH+'/share/rocdecode/utils/'
-UTILS_DEC_PATH=ROCM_PATH+'/share/rocdecode/utils/rocvideodecode/'
-ROC_DEC_PATH=ROCM_PATH+'/include/rocdecode/'
-ROCM_H_PATH=ROCM_PATH+'/include/'
-os.environ["CC"] = ROCM_PATH+'/llvm/bin/clang++ -x hip'
+# this block is NOT HARDCODED, it is relative to the environment os.environ.get('ROCM_PATH')
+UTILS_PATH = ROCM_PATH + '/share/rocdecode/utils/'
+UTILS_DEC_PATH = ROCM_PATH + '/share/rocdecode/utils/rocvideodecode/'
+ROC_DEC_PATH = ROCM_PATH + '/include/rocdecode/'
+ROCM_H_PATH = ROCM_PATH + '/include/'
+os.environ["CC"] = ROCM_PATH + '/llvm/bin/clang++ -x hip'
  
 # Custom install to run cmake before installation
 class CustomInstall(install):
