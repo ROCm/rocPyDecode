@@ -78,10 +78,6 @@ else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -DNDEBUG -fPIC")
 endif()
 
-# set amdgpu targets with vcn support
-set(DEFAULT_AMDGPU_TARGETS "gfx908;gfx90a;gfx940;gfx941;gfx942;gfx1030;gfx1031;gfx1032;gfx1100;gfx1101;gfx1102")
-set(AMDGPU_TARGETS "${DEFAULT_AMDGPU_TARGETS}" CACHE STRING "List of specific machine types for library to target")
-
 find_package(HIP QUIET)
 find_package(FFmpeg QUIET)
 find_package(rocDecode QUIET)
@@ -123,19 +119,7 @@ if(HIP_FOUND AND rocDecode_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
     file(GLOB_RECURSE include src/*.h)
     file(GLOB_RECURSE sources src/*.cpp  ${ROCM_PATH}/share/rocdecode/utils/*.cpp ${ROCM_PATH}/share/rocdecode/utils/rocvideodecode/*.cpp)
 
-    list(APPEND sources ${ROCM_PATH}/share/rocdecode/utils/rocvideodecode/roc_video_dec.cpp 
-                        ${ROCM_PATH}/share/rocdecode/utils/colorspace_kernels.cpp 
-                        ${ROCM_PATH}/share/rocdecode/utils/resize_kernels.cpp
-                        src/roc_pydecode.cpp
-                        src/roc_pyvideodecode.cpp
-                        src/roc_pyvideodemuxer.cpp
-                        src/roc_pybuffer.cpp
-                        src/roc_pydlpack.cpp
-                        src/roc_pycolorconversion.cpp
-                        src/roc_pyresizeframe.cpp
-                        )
-
-    pybind11_add_module(${TARGET_NAME} MODULE ${sources})
+     pybind11_add_module(${TARGET_NAME} MODULE ${sources})
 
     target_link_libraries(${TARGET_NAME} PRIVATE ${LINK_LIBRARY_LIST})
     message("-- ${White}rocPyDecode -- Link Libraries: ${LINK_LIBRARY_LIST}${ColourReset}")

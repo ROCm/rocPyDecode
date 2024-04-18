@@ -73,7 +73,6 @@ def Decoder(
 
             # using torch tensor
             src_tensor = torch.from_dlpack(packet.extBuf.__dlpack__(packet))
-            print(src_tensor)
 
             # TODO: some tensor work
 
