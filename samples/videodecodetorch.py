@@ -60,20 +60,16 @@ def Decoder(
 
     while True:
         start_time = datetime.datetime.now()
-
         packet = demuxer.DemuxFrame()
-
         if (packet.end_of_stream):
             break
-
         n_frame_returned = viddec.DecodeFrame(packet)
-
         for i in range(n_frame_returned):
             viddec.GetFrame(packet)
 
             # using torch tensor
             src_tensor = torch.from_dlpack(packet.extBuf.__dlpack__(packet))
-
+            
             # TODO: some tensor work
 
             if (output_file_path is not None):

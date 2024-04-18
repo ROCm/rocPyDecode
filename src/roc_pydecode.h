@@ -74,9 +74,3 @@ void PyRocVideoDecoderInitializer(py::module& m);
 
 // defined in BufferInterface.cpp
 void PyExportInitializer(py::module& m);
-
-// defined in roc_pyresize.cpp
-void PyResizeInitializer(py::module& m);
-
-// defined in roc_pycolorconversion.cpp
-void PyColorConversionInitializer(py::module& m);

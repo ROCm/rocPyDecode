@@ -63,16 +63,6 @@ PYBIND11_MODULE(rocPyDecode, m) {
     // ---------
     PyExportInitializer(m);
 
-    // ---------
-    // PyResize
-    // ---------
-    PyResizeInitializer(m);
-
-    // ---------
-    // PyColorConversion
-    // ---------
-    PyColorConversionInitializer(m);
-
     // -----------------------------
     // User Demuxer 'PyVideoDemuxer'
     // -----------------------------

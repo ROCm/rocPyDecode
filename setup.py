@@ -30,12 +30,12 @@ if "ROCM_PATH" in os.environ:
     ROCM_PATH = os.environ.get('ROCM_PATH')
 print("\nROCm PATH set to -- " + ROCM_PATH + "\n")
 
-# this block is NOT HARDCODED, it is relative to the environment os.environ.get('ROCM_PATH')
+# This block is NOT HARDCODED, it is relative to the environment os.environ.get('ROCM_PATH') if found
 UTILS_PATH = ROCM_PATH + '/share/rocdecode/utils/'
 UTILS_DEC_PATH = ROCM_PATH + '/share/rocdecode/utils/rocvideodecode/'
 ROC_DEC_PATH = ROCM_PATH + '/include/rocdecode/'
 ROCM_H_PATH = ROCM_PATH + '/include/'
-os.environ["CC"] = ROCM_PATH + '/llvm/bin/clang++ -x hip'
+os.environ["CC"] = ROCM_PATH + '/llvm/bin/clang++'
  
 # Custom install to run cmake before installation
 class CustomInstall(install):
@@ -62,11 +62,11 @@ class CustomInstall(install):
 ext_modules = [
     Pybind11Extension(
         'rocPyDecode', 
-        sources=[UTILS_PATH+'colorspace_kernels.cpp', UTILS_DEC_PATH+'roc_video_dec.cpp','src/roc_pyresizeframe.cpp','src/roc_pycolorconversion.cpp','src/roc_pydecode.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp','src/roc_pybuffer.cpp','src/roc_pydlpack.cpp'], 
+        sources=[UTILS_DEC_PATH+'roc_video_dec.cpp','src/roc_pydecode.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp','src/roc_pybuffer.cpp','src/roc_pydlpack.cpp'], 
         include_dirs=[ROCM_H_PATH, ROC_DEC_PATH, UTILS_PATH, UTILS_DEC_PATH, 'src' ],
         extra_compile_args=['-D__HIP_PLATFORM_AMD__','-Wno-unused-private-field','-Wno-ignored-optimization-argument', '-Wno-missing-braces', '-Wno-sign-compare', '-Wno-sign-compare','-Wno-reorder','-Wno-int-in-bool-context', '-Wno-unused-variable'],
         library_dirs=[ROCM_PATH+'/lib/','/usr/local/lib/','/usr/lib/x86_64-linux-gnu/'],
-        libraries=['rocdecode','avcodec','avformat','avutil','amdhip64'],
+        libraries=['rocdecode','avcodec','avformat','avutil'],
         runtime_library_dirs=[],
         extra_link_args=[],
     )

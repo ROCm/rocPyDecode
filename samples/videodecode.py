@@ -71,24 +71,17 @@ def Decoder(
 
     while True:
         start_time = datetime.datetime.now()
-
         packet = demuxer.DemuxFrame()
-
         n_frame_returned = viddec.DecodeFrame(packet)
-
         for i in range(n_frame_returned):
-
             viddec.GetFrame(packet)
-
             if (b_generate_md5):
                 surface_info = viddec.GetOutputSurfaceInfo()
                 viddec.UpdateMd5ForFrame(packet.frame_adrs, surface_info)
-
             if (output_file_path is not None):
                 surface_info = viddec.GetOutputSurfaceInfo()
                 viddec.SaveFrameToFile(
                     output_file_path, packet.frame_adrs, surface_info)
-
             # release frame
             viddec.ReleaseFrame(packet)
 
