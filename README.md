@@ -44,7 +44,7 @@ The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access
     sudo yum install python3
     ```
 
-* PIP3
+* Pip3 `10+`
   * Ubuntu 20/22
 
     ```bash
