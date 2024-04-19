@@ -24,6 +24,7 @@ from setuptools.command.install import install
 import subprocess
 import os
 import site
+from glob import glob
 
 ROCM_PATH = '/opt/rocm'
 if "ROCM_PATH" in os.environ:
@@ -62,7 +63,7 @@ class CustomInstall(install):
 ext_modules = [
     Pybind11Extension(
         'rocPyDecode', 
-        sources=[UTILS_DEC_PATH+'roc_video_dec.cpp','src/roc_pydecode.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp','src/roc_pybuffer.cpp','src/roc_pydlpack.cpp'], 
+        sources=sorted(glob("src/*.cpp"))+[UTILS_DEC_PATH+"roc_video_dec.cpp"],
         include_dirs=[ROCM_H_PATH, ROC_DEC_PATH, UTILS_PATH, UTILS_DEC_PATH, 'src' ],
         extra_compile_args=['-D__HIP_PLATFORM_AMD__','-Wno-unused-private-field','-Wno-ignored-optimization-argument', '-Wno-missing-braces', '-Wno-sign-compare', '-Wno-sign-compare','-Wno-reorder','-Wno-int-in-bool-context', '-Wno-unused-variable'],
         library_dirs=[ROCM_PATH+'/lib/','/usr/local/lib/','/usr/lib/x86_64-linux-gnu/'],
