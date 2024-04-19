@@ -123,9 +123,6 @@ PYBIND11_MODULE(rocPyDecode, m) {
             return self->extBuf->dlpack(stream);
             }, py::arg("stream") = NULL, "Export the buffer as a DLPack tensor")
         .def("__dlpack_device__", [](std::shared_ptr<PyPacketData>& self) {
-                //DLDevice ctx;
-                //ctx.device_type = DLDeviceType::kDLROCM;
-                //ctx.device_id = 0;
                 return py::make_tuple(py::int_(static_cast<int>(DLDeviceType::kDLROCM)),
                         py::int_(static_cast<int>(0)));
             }, "Get the device associated with the buffer");   

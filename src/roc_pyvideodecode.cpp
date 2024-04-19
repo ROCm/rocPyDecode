@@ -54,8 +54,7 @@ void PyRocVideoDecoder::InitConfigStructure() {
     configInfo.get()->pci_device_id = 0;
 }
 
-PyRocVideoDecoder::~PyRocVideoDecoder()
-{
+PyRocVideoDecoder::~PyRocVideoDecoder() {
     // de-allocate device memory if was allocated
     if (frame_ptr != nullptr) {
         hipError_t hip_status = hipFree(frame_ptr);
@@ -84,8 +83,8 @@ int PyRocVideoDecoder::PyDecodeFrame(PyPacketData& packet) {
         uint32_t width = GetWidth();
         uint32_t height = GetHeight();    
         std::string type_str((const char*)"|u1");
-        std::vector<size_t> shape{ (size_t)(height * 1.5), width}; // NV12: 4:2:0 -> is it height or (height*1.5)? TBD
-        std::vector<size_t> stride{ size_t(width), 1};        
+        std::vector<size_t> shape{ static_cast<size_t>(height * 1.5), width}; // NV12: 4:2:0 -> is it height or (height*1.5)? TBD
+        std::vector<size_t> stride{ static_cast<size_t>(width), 1};        
         packet.extBuf.get()->LoadDLPack(shape, stride, type_str, (void *)frame_ptr);
     }
 
@@ -165,7 +164,7 @@ py::object PyRocVideoDecoder::PyUpdateMd5ForFrame(uintptr_t& surf_mem, uintptr_t
 py::object PyRocVideoDecoder::PyFinalizeMd5(uintptr_t& digest_back) {    
     uint8_t * digest;
     FinalizeMd5(&digest);
-    memcpy((uint8_t*)digest_back, digest,  sizeof(uint8_t)*16);
+    memcpy(reinterpret_cast<uint8_t*>(digest_back), digest,  sizeof(uint8_t) * 16);
     return py::cast<py::none>(Py_None);
 }
 

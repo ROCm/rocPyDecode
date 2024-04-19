@@ -33,7 +33,7 @@ class PyRocVideoDecoder : public RocVideoDecoder {
     public:
         PyRocVideoDecoder(int device_id, rocDecVideoCodec codec, bool force_zero_latency = false,
                           const Rect *p_crop_rect = nullptr, int max_width = 0, int max_height = 0,
-                          uint32_t clk_rate = 0) : RocVideoDecoder(device_id, (OutputSurfaceMemoryType)0, codec, force_zero_latency,
+                          uint32_t clk_rate = 0) : RocVideoDecoder(device_id, OUT_SURFACE_MEM_DEV_INTERNAL, codec, force_zero_latency,
                           p_crop_rect, false, max_width, max_height, clk_rate) {
                             frame_ptr = nullptr; 
                             InitConfigStructure();

@@ -61,7 +61,6 @@ py::tuple BufferInterface::strides() const {
 
 std::string BufferInterface::dtype() const {
     return std::string("|u1");
-    //return (m_dlTensor->dtype);
 }
 
 void *BufferInterface::data() const {
