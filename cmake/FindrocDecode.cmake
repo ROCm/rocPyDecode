@@ -58,11 +58,11 @@ mark_as_advanced(rocDecode_LIBRARIES)
 find_path(rocDecode_LIBRARIES_DIRS
     NAMES rocdecode
     HINTS
-    $ENV{AMDRPP_PATH}/lib
-    $ENV{AMDRPP_PATH}/lib64
+    $ENV{rocDecode_PATH}/lib
+    $ENV{rocDecode_PATH}/lib64
     PATHS
-    ${AMDRPP_PATH}/lib
-    ${AMDRPP_PATH}/lib64
+    ${rocDecode_PATH}/lib
+    ${rocDecode_PATH}/lib64
     /usr/local/lib
     ${ROCM_PATH}/lib
 )
