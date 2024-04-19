@@ -24,12 +24,20 @@ from setuptools.command.install import install
 import subprocess
 import os
 import site
+from glob import glob
 
 ROCM_PATH = '/opt/rocm'
 if "ROCM_PATH" in os.environ:
     ROCM_PATH = os.environ.get('ROCM_PATH')
 print("\nROCm PATH set to -- " + ROCM_PATH + "\n")
 
+# This block is NOT HARDCODED, it is relative to the environment os.environ.get('ROCM_PATH') if found
+UTILS_PATH = ROCM_PATH + '/share/rocdecode/utils/'
+UTILS_DEC_PATH = ROCM_PATH + '/share/rocdecode/utils/rocvideodecode/'
+ROC_DEC_PATH = ROCM_PATH + '/include/rocdecode/'
+ROCM_H_PATH = ROCM_PATH + '/include/'
+os.environ["CC"] = ROCM_PATH + '/llvm/bin/clang++'
+ 
 # Custom install to run cmake before installation
 class CustomInstall(install):
     def run(self):
@@ -54,10 +62,10 @@ class CustomInstall(install):
 # Define the extension module
 ext_modules = [
     Pybind11Extension(
-        'rocPyDecode',
-        sources=['src/roc_pydecode.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp'],
-        include_dirs=['src',ROCM_PATH+'/include/', ROCM_PATH+'/include/rocdecode/',ROCM_PATH+'/share/rocdecode/utils',ROCM_PATH+'/share/rocdecode/utils/rocvideodecode'],
-        extra_compile_args=['-D__HIP_PLATFORM_AMD__'],
+        'rocPyDecode', 
+        sources=sorted(glob("src/*.cpp"))+[UTILS_DEC_PATH+"roc_video_dec.cpp"],
+        include_dirs=[ROCM_H_PATH, ROC_DEC_PATH, UTILS_PATH, UTILS_DEC_PATH, 'src' ],
+        extra_compile_args=['-D__HIP_PLATFORM_AMD__','-Wno-unused-private-field','-Wno-ignored-optimization-argument', '-Wno-missing-braces', '-Wno-sign-compare', '-Wno-sign-compare','-Wno-reorder','-Wno-int-in-bool-context', '-Wno-unused-variable'],
         library_dirs=[ROCM_PATH+'/lib/','/usr/local/lib/','/usr/lib/x86_64-linux-gnu/'],
         libraries=['rocdecode','avcodec','avformat','avutil'],
         runtime_library_dirs=[],
@@ -79,5 +87,4 @@ setup(
       packages=['pyRocVideoDecode'],
       package_dir={'pyRocVideoDecode':'pyRocVideoDecode'},
       package_data={"pyRocVideoDecode":["__init__.pyi"]},
-      include_package_data=True,
       )

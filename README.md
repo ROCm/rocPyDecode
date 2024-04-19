@@ -56,6 +56,15 @@ The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access
     sudo yum install python3-pip
     ```
 
+* [DLPack](https://pypi.org/project/dlpack/)
+  * Ubuntu 20/22
+
+    ```bash
+    sudo pip3 install dlpack
+    wget http://archive.ubuntu.com/ubuntu/pool/universe/d/dlpack/libdlpack-dev_0.6-1_amd64.deb
+    sudo dpkg -i libdlpack-dev_0.6-1_amd64.deb    
+    ```
+
 ## Prerequisites setup script
 
 For your convenience, we provide the setup script, [rocPyDecode-requirements.py](rocPyDecode-requirements.py), which installs all required dependencies.Run this script only once.

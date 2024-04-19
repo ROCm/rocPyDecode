@@ -1,9 +1,11 @@
-import pyRocVideoDecode.decoder as dec
-import pyRocVideoDecode.demuxer as dmx
 import datetime
 import sys
 import argparse
 import os.path
+import torch
+import numpy as np
+import pyRocVideoDecode.decoder as dec
+import pyRocVideoDecode.demuxer as dmx
 
 
 def Decoder(
@@ -11,20 +13,18 @@ def Decoder(
         output_file_path,
         device_id,
         b_force_zero_latency,
-        crop_rect,
-        b_generate_md5,
-        ref_md5_file):
+        crop_rect):
 
     # demuxer instance
     demuxer = dmx.demuxer(input_file_path)
 
     # get the used coded id
-    codec_id = dec.GetRocDecCodecID(demuxer.GetCodecId())
+    coded_id = dec.GetRocDecCodecID(demuxer.GetCodecId())
 
     # decoder instance
     viddec = dec.decoder(
         device_id,
-        codec_id,
+        coded_id,
         b_force_zero_latency,
         p_crop_rect,
         0,
@@ -52,17 +52,6 @@ def Decoder(
           str(cfg.pci_device_id))
     print("info: decoding started, please wait! \n")
 
-    # md5 file full path & md5 flag
-    b_md5_check = False
-    if (ref_md5_file is not None):
-        if os.path.exists(ref_md5_file):
-            b_generate_md5 = True
-            b_md5_check = True
-
-    # init MD5 if requested
-    if b_generate_md5:
-        viddec.InitMd5()
-
     # -----------------
     # The decoding loop
     # -----------------
@@ -72,16 +61,23 @@ def Decoder(
     while True:
         start_time = datetime.datetime.now()
         packet = demuxer.DemuxFrame()
+        if (packet.end_of_stream):
+            break
         n_frame_returned = viddec.DecodeFrame(packet)
         for i in range(n_frame_returned):
             viddec.GetFrame(packet)
-            if (b_generate_md5):
-                surface_info = viddec.GetOutputSurfaceInfo()
-                viddec.UpdateMd5ForFrame(packet.frame_adrs, surface_info)
+
+            # using torch tensor
+            src_tensor = torch.from_dlpack(packet.extBuf.__dlpack__(packet))
+            
+            # TODO: some tensor work
+
             if (output_file_path is not None):
                 surface_info = viddec.GetOutputSurfaceInfo()
-                viddec.SaveFrameToFile(
-                    output_file_path, packet.frame_adrs, surface_info)
+                viddec.SaveTensorToFile(
+                    output_file_path, src_tensor.data_ptr(), surface_info)
+                break
+
             # release frame
             viddec.ReleaseFrame(packet)
 
@@ -93,7 +89,7 @@ def Decoder(
         # increament frames counter
         n_frame += n_frame_returned
 
-        if (packet.frame_size <= 0):
+        if (packet.end_of_stream):  # no more to decode?
             break
 
     # beyond the decoding loop
@@ -111,25 +107,11 @@ def Decoder(
         else:
             print("info: frame count= ", n_frame)
 
-    # if MD5 check requested
-    if b_generate_md5:
-        digest = viddec.FinalizeMd5()
-        print("MD5 message digest: ", end=" ")
-        str_digest = ""
-        for i in range(16):
-            str_digest = str_digest + str(format('%02x' % int(digest[i])))
-        print(str_digest)
-
-        if (b_md5_check):
-            f = open(ref_md5_file)
-            md5_from_file = f.read(16 * 2)
-            b_match = (md5_from_file == str_digest)
-            if (b_match):
-                print("MD5 digest matches the reference MD5 digest.\n")
-            else:
-                print(
-                    "MD5 digest does not match the reference MD5 digest: ",
-                    md5_from_file)
+    # print tensor details
+    print("Tensor Shape:   ", packet.extBuf.shape)
+    print("Tensor Strides: ", packet.extBuf.strides)
+    print("Tensor dType:   ", packet.extBuf.dtype)
+    print("Tensor Device:  ", packet.extBuf.__dlpack_device__(), "\n")
 
 
 if __name__ == "__main__":
@@ -160,9 +142,8 @@ if __name__ == "__main__":
         '-z',
         '--zero_latency',
         type=str,
-        default='no',
-        choices=['yes', 'no'],
-        help='Force zero latency',
+        default=False,
+        help='Force zero latency - [options: yes,no], default: no',
         required=False)
     parser.add_argument(
         '-crop',
@@ -170,19 +151,6 @@ if __name__ == "__main__":
         nargs=4,
         type=int,
         help='Crop rectangle (left, top, right, bottom), optional, default: no cropping',
-        required=False)
-    parser.add_argument(
-        '-md5',
-        '--generate_md5',
-        type=str,
-        default='no',
-        choices=['yes', 'no'],
-        help='Generate MD5 message digest')
-    parser.add_argument(
-        '-md5_check',
-        '--input_md5',
-        type=str,
-        help='Input MD5 file path, optional',
         required=False)
 
     try:
@@ -195,11 +163,6 @@ if __name__ == "__main__":
     device_id = args.device
     b_force_zero_latency = args.zero_latency
     crop_rect = args.crop_rect
-    b_generate_md5 = args.generate_md5
-    ref_md5_file = args.input_md5
-
-    b_force_zero_latency = True if b_force_zero_latency == 'yes' else False
-    b_generate_md5 = True if b_generate_md5 == 'yes' else False
 
     # rect from user
     p_crop_rect = dec.GetRectangle(crop_rect)
@@ -209,11 +172,11 @@ if __name__ == "__main__":
         print("ERROR: input file doesn't exist.")
         exit()
 
+    print("\nPyTorch Using: ", torch.cuda.get_device_name(0))
+
     Decoder(
         input_file_path,
         output_file_path,
         device_id,
         b_force_zero_latency,
-        crop_rect,
-        b_generate_md5,
-        ref_md5_file)
+        crop_rect)

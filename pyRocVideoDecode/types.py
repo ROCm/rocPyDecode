@@ -51,9 +51,12 @@ _known_types = {
     rocDecVideoCodec_HEVC: ("rocDecVideoCodec_HEVC",rocDecVideoCodec_HEVC),
     }
 
+
 def data_type_function(dtype):
     if dtype in _known_types:
         ret = _known_types[dtype][0]
         return ret
     else:
-        raise RuntimeError(str(dtype) + " does not correspond to a known type.")
+        raise RuntimeError(
+            str(dtype) +
+            " does not correspond to a known type.")
