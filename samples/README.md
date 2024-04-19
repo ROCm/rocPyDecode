@@ -5,10 +5,18 @@
 * [rocPyDecode installed](../README.md#rocpydecode-install)
 * [DLPack](https://pypi.org/project/dlpack/)
 * [pytorch for ROCm](https://pytorch.org/get-started/locally/)
-    - The torch python sample requires pytorch for ROCm, which can be installed as follow:
+
+The torch python sample requires pytorch for ROCm, which can be installed as follow:
+
+- If using bare-metal, `sudo` access is needed.
 ```bash
     pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.0
     sudo reboot 
+```
+
+- If using a docker environment or any system with `root` access, no need for reboot.
+```bash
+    pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.0
 ```
 
 ## videodecode.py
