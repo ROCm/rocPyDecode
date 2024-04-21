@@ -26,7 +26,7 @@ To run this python sample script, you need to provide input video file full path
 
 ### Arguments
 The following are full list of arguments that can be passed to the sample.
-```
+```bash
 -h, --help                                    : Show detail help message and exit
 -i INPUT, --input INPUT                       : Input File Path - required
 -o OUTPUT, --output OUTPUT                    : Output File Path - optional
@@ -42,13 +42,27 @@ To run this python sample script, you need to provide input video file full path
 
 ### Arguments
 The following are full list of arguments that can be passed to the sample.
-```
+```bash
 -h, --help                                    : Show detail help message and exit
 -i INPUT, --input INPUT                       : Input File Path - required
 -o OUTPUT, --output OUTPUT                    : Output File Path - optional
 -d DEVICE, --device DEVICE                    : GPU device ID - optional, default - 0
 -z ZERO_LATENCY, --zero_latency ZERO_LATENCY  : Force zero latency - [options: yes,no], default: no
 -crop CROP_RECT, --crop_rect CROP_RECT        : Crop rectangle (left, top, right, bottom) - optional, default: None (no cropping)
+```
+
+## videodecodetorch_resnet50.py
+
+This sample demuxes & decode frames from a video file, converts each frame to pytorch tensor via DLPack. It resizes the frame to match resnet50 model, \
+and feed it to the model inference, printing out 5 possible predictions with precision ratio, for each frame it decodes.
+To run this python sample script, you need to provide input video file full path name, other argument is optional.
+
+### Arguments
+The following are full list of arguments that can be passed to the sample.
+```bash
+-h, --help                                    : Show detail help message and exit
+-i INPUT, --input INPUT                       : Input File Path - required
+-d DEVICE, --device DEVICE                    : GPU device ID - optional, default - 0
 ```
 
 ## videodedemux.py
@@ -58,7 +72,7 @@ To run this python sample script, you need to provide input video file full path
 
 ### Arguments
 The following are full list of arguments that can be passed to the sample.
-```
+```bash
 -h, --help                                    : Show detail help message and exit
 -i INPUT, --input INPUT                       : Input File Path - required
 ```
