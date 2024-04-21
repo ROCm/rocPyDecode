@@ -53,8 +53,8 @@ The following are full list of arguments that can be passed to the sample.
 
 ## videodecodetorch_resnet50.py
 
-This sample demuxes & decode frames from a video file, converts each frame to pytorch tensor via DLPack. It resizes the frame to match resnet50 model, \
-and feed it to the model inference, printing out 5 possible predictions with precision ratio, for each frame it decodes.
+This sample demuxes & decode frames from a video file, converts each frame to pytorch tensor via DLPack. \
+It resizes the frame to match resnet50 model, and feed it to the model inference, printing out 5 possible predictions with precision ratio, for each frame it decodes. \
 To run this python sample script, you need to provide input video file full path name, other argument is optional.
 
 ### Arguments
