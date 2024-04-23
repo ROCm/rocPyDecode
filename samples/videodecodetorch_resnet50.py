@@ -7,7 +7,7 @@ import torchvision
 import numpy as np
 import pyRocVideoDecode.decoder as dec
 import pyRocVideoDecode.demuxer as dmx
-import pyRocVideoDecode.catlabels as cat
+import pyRocVideoDecode.labels as cat
 
 
 def Decoder(input_file_path, device_id):
@@ -142,9 +142,7 @@ if __name__ == "__main__":
 
     input_file_path = args.input
     device_id = args.device
-
-    # clr.PrintTest(1)
-
+ 
     # Input file (must exist)
     if not os.path.exists(input_file_path):
         print("ERROR: input file doesn't exist.")
