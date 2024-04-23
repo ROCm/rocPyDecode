@@ -138,6 +138,13 @@ coreDebianPackages = [
     'rocdecode-test',
 ]
 
+# core RPM packages
+coreRPMPackages = [
+    'rocdecode',
+    'rocdecode-devel',
+    'rocdecode-test'
+]
+
 # common packages
 ERROR_CHECK(os.system('sudo -v'))
 for i in range(len(commonPackages)):
@@ -146,14 +153,30 @@ for i in range(len(commonPackages)):
 
 # rocPyDecode Requirements
 ERROR_CHECK(os.system('sudo -v'))
-if "Ubuntu" in platfromInfo:
-    #pybind11 install
-    ERROR_CHECK(os.system('pip3 install pybind11'))
 
+#pybind11 install for both Ubuntu and RHEL
+ERROR_CHECK(os.system('pip3 install pybind11'))
+
+if "Ubuntu" in platfromInfo:
     # core debian packages
     if rocdecodeInstall == 'ON':
         for i in range(len(coreDebianPackages)):
             ERROR_CHECK(os.system('sudo '+linuxFlag+' '+linuxSystemInstall +
                     ' '+linuxSystemInstall_check+' install '+ coreDebianPackages[i]))
+    #dlpack
+    ERROR_CHECK(os.system('pip3 install dlpack'))
+    ERROR_CHECK(os.system('wget http://archive.ubuntu.com/ubuntu/pool/universe/d/dlpack/libdlpack-dev_0.6-1_amd64.deb'))
+    ERROR_CHECK(os.system('sudo dpkg -i libdlpack-dev_0.6-1_amd64.deb'))
+
+elif "redhat" in platfromInfo:
+    # core RPM packages
+    if rocdecodeInstall == 'ON':
+        for i in range(len(coreRPMPackages)):
+            ERROR_CHECK(os.system('sudo '+linuxFlag+' '+linuxSystemInstall +
+                    ' '+linuxSystemInstall_check+' install '+ coreRPMPackages[i]))
+    
+    # dlpack
+    # TODO: check which .rpm package to use if available
+    ERROR_CHECK(os.system('pip3 install dlpack'))
 
 print("\rocPyDecode Dependencies Installed with rocPyDecode-setup.py V-"+__version__+"\n")
