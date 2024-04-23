@@ -85,7 +85,7 @@ set(Python3_FIND_VIRTUALENV FIRST)
 find_package(Python3 QUIET COMPONENTS Interpreter Development)
 message("-- ${Green}NOTE: rocPyDecode requires Python3, Found --  ${Python3_EXECUTABLE} ${ColourReset}")
 
-find_package(pybind11 CONFIG REQUIRED HINTS ${pybind11_DIR})
+find_package(pybind11 CONFIG REQUIRED)
 message("-- ${Green}NOTE: rocPyDecode requires pybind11, Found --  ${pybind11_INCLUDE_DIRS} ${ColourReset}")
 
 if(HIP_FOUND AND rocDecode_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG_FOUND)

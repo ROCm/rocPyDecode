@@ -40,7 +40,6 @@ setup(
       version='1.0.0',
       author='AMD',
       license='MIT License',
-      setup_requires=["pybind11"],
       packages=find_packages(),
       package_dir={'pyRocVideoDecode':'pyRocVideoDecode'},
       package_data={"pyRocVideoDecode":["__init__.pyi"]},
