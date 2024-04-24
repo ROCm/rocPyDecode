@@ -17,15 +17,21 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
- 
+
 import subprocess
 import os
+import site
 from setuptools import setup, find_packages
+
+# path to python pacakges like pybind11
+python_site_package_path = site.getsitepackages()
+python_site_package_path = ';'.join(python_site_package_path)
 
 # Call CMake to configure and build the project
 build_dir = os.path.join(os.getcwd(), 'build')
 os.makedirs(build_dir, exist_ok=True)
-subprocess.check_call(['cmake', '-B' + build_dir, '-H' + os.getcwd()])
+cmake_args=["cmake", ".", "-B"+build_dir, "-H"+os.getcwd(), "-Dpybind11_DIR="+python_site_package_path]
+subprocess.check_call(cmake_args,cwd=os.getcwd())
 
 # Invoke cmake --build to build the project
 subprocess.check_call(['cmake', '--build', build_dir, '--config', 'Release'])
@@ -40,7 +46,7 @@ setup(
       version='1.0.0',
       author='AMD',
       license='MIT License',
-      packages=find_packages(),
+      packages=['pyRocVideoDecode'],
       package_dir={'pyRocVideoDecode':'pyRocVideoDecode'},
       package_data={"pyRocVideoDecode":["__init__.pyi"]},
       )
