@@ -7,8 +7,6 @@ import torchvision
 import numpy as np
 import pyRocVideoDecode.decoder as dec
 import pyRocVideoDecode.demuxer as dmx
-import pyRocVideoDecode.labels as cat
-
 
 def Decoder(input_file_path, device_id):
 
@@ -17,7 +15,13 @@ def Decoder(input_file_path, device_id):
     model.eval()
     model.to("cuda")
 
-    # Resnet expects images to be 3 channel planar RGB of 224x244 size at least.
+    # get labels as list 
+    labels_file = open("data/labels.txt", "r") 
+    data = labels_file.read() 
+    categories = data.split("\n")
+    labels_file.close() 
+
+    # resnet expects images to be 3 channel planar RGB of 224x244 size at least.
     target_w, target_h = 224, 224
    
     # demuxer instance
@@ -90,7 +94,7 @@ def Decoder(input_file_path, device_id):
 
             top5_prob, top5_catid = torch.topk(probabilities, 5)
             for i in range(top5_prob.size(0)):
-                print(cat.categories[top5_catid[i]], top5_prob[i].item())
+                print(categories[top5_catid[i]], top5_prob[i].item())
             print()
 
             # release frame
@@ -114,7 +118,6 @@ def Decoder(input_file_path, device_id):
     print("info: frame count= ", n_frame)
     print()
  
-
 
 if __name__ == "__main__":
 
