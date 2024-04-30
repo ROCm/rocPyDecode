@@ -55,47 +55,29 @@ void PyRocVideoDecoder::InitConfigStructure() {
 }
 
 PyRocVideoDecoder::~PyRocVideoDecoder() {
-    // de-allocate device memory if was allocated
-    if (frame_ptr != nullptr) {
-        hipError_t hip_status = hipFree(frame_ptr);
-        if (hip_status != hipSuccess) {
-            std::cerr << "ERROR: hipFree failed! (" << hip_status << ")" << std::endl;
-        }
-    }
 }
 
 int PyRocVideoDecoder::PyDecodeFrame(PyPacketData& packet) {
  
     int decoded_frame_count = DecodeFrame((u_int8_t*) packet.frame_adrs, static_cast<size_t>(packet.frame_size), packet.pkt_flags, packet.frame_pts);    
-
-    // Load DLPack Tensor
-    if(packet.frame_adrs && decoded_frame_count) {
-
-        int frame_size = GetFrameSize();
-
-        // allocate device memory if wasn't 
-        if(frame_ptr == nullptr) {
-            HIP_API_CALL(hipMalloc((void **)&frame_ptr, frame_size));
-        }
-        // copy D2D
-        HIP_API_CALL(hipMemcpy(frame_ptr,(void *)packet.frame_adrs, frame_size, hipMemcpyDeviceToDevice));
-
-        uint32_t width = GetWidth();
-        uint32_t height = GetHeight();    
-        std::string type_str((const char*)"|u1");
-        std::vector<size_t> shape{ static_cast<size_t>(height * 1.5), width}; // NV12: 4:2:0 -> is it height or (height*1.5)? TBD
-        std::vector<size_t> stride{ static_cast<size_t>(width), 1};        
-        packet.extBuf.get()->LoadDLPack(shape, stride, type_str, (void *)frame_ptr);
-    }
-
     return decoded_frame_count;
 }
  
 // for python binding
 py::object PyRocVideoDecoder::PyGetFrame(PyPacketData& packet) {
+    int frame_size = GetFrameSize();
     int64_t pts = packet.frame_pts;
     packet.frame_adrs = reinterpret_cast<std::uintptr_t>(GetFrame(&pts));   
     packet.frame_pts = pts;
+    // Load DLPack Tensor
+    if(((uint8_t*) packet.frame_adrs != nullptr) && (frame_size > 0)) {
+        uint32_t width = GetDecodeWidth();
+        uint32_t height = GetDecodeHeight();
+        std::string type_str((const char*)"|u1");
+        std::vector<size_t> shape{ static_cast<size_t>(height * 1.5), width}; // NV12
+        std::vector<size_t> stride{ static_cast<size_t>(width), 1};
+        packet.extBuf->LoadDLPack(shape, stride, type_str, (void *)packet.frame_adrs);
+    }
     return py::cast(packet.frame_pts);
 }
 

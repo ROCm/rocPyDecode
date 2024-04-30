@@ -34,10 +34,7 @@ class PyRocVideoDecoder : public RocVideoDecoder {
         PyRocVideoDecoder(int device_id, rocDecVideoCodec codec, bool force_zero_latency = false,
                           const Rect *p_crop_rect = nullptr, int max_width = 0, int max_height = 0,
                           uint32_t clk_rate = 0) : RocVideoDecoder(device_id, OUT_SURFACE_MEM_DEV_INTERNAL, codec, force_zero_latency,
-                          p_crop_rect, false, max_width, max_height, clk_rate) {
-                            frame_ptr = nullptr; 
-                            InitConfigStructure();
-                            }
+                          p_crop_rect, false, max_width, max_height, clk_rate) { InitConfigStructure(); }
         ~PyRocVideoDecoder();                        
          
         // for python binding
@@ -84,9 +81,5 @@ class PyRocVideoDecoder : public RocVideoDecoder {
       
     private:
         std::shared_ptr <ConfigInfo> configInfo;
-        void InitConfigStructure();
-
-    protected:
-        // used in frame allocation
-        u_int8_t *frame_ptr = nullptr;      
+        void InitConfigStructure();     
 };
