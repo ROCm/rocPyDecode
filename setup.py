@@ -20,17 +20,12 @@
 
 import subprocess
 import os
-import site
 from setuptools import setup, find_packages
-
-# path to python pacakges like pybind11
-python_site_package_path = site.getsitepackages()
-python_site_package_path = ';'.join(python_site_package_path)
 
 # Call CMake to configure and build the project
 build_dir = os.path.join(os.getcwd(), 'build')
 os.makedirs(build_dir, exist_ok=True)
-cmake_args=["cmake", ".", "-B"+build_dir, "-H"+os.getcwd(), "-Dpybind11_DIR="+python_site_package_path]
+cmake_args=["cmake", ".", "-B"+build_dir, "-H"+os.getcwd()]
 subprocess.check_call(cmake_args,cwd=os.getcwd())
 
 # Invoke cmake --build to build the project
