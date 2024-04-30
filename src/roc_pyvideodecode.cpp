@@ -26,14 +26,15 @@ using namespace std;
 
 void PyRocVideoDecoderInitializer(py::module& m) {
         py::class_<PyRocVideoDecoder> (m, "PyRocVideoDecoder")
-        .def(py::init<int,rocDecVideoCodec,bool,const Rect *,int,int,uint32_t>(),
-                    py::arg("device_id") = 0, py::arg("codec") = rocDecVideoCodec_HEVC, py::arg("force_zero_latency") = false, 
-                    py::arg("p_crop_rect") = nullptr, py::arg("max_width") = 0, py::arg("max_height") = 0, py::arg("clk_rate") = 0)
+        .def(py::init<int,int,rocDecVideoCodec,bool,const Rect *,int,int,uint32_t>(),
+                    py::arg("device_id") = 0, py::arg("out_mem_type") = 0, py::arg("codec") = rocDecVideoCodec_HEVC, py::arg("force_zero_latency") = false, 
+                    py::arg("p_crop_rect") = nullptr, py::arg("max_width") = 0, py::arg("max_height") = 0, py::arg("clk_rate") = 1000)
         .def("GetDeviceinfo",&PyRocVideoDecoder::PyGetDeviceinfo)
         .def("DecodeFrame",&PyRocVideoDecoder::PyDecodeFrame) 
         .def("GetFrame",&PyRocVideoDecoder::PyGetFrame)
         .def("GetWidth",&PyRocVideoDecoder::PyGetWidth)
         .def("GetHeight",&PyRocVideoDecoder::PyGetHeight)
+        .def("GetStride",&PyRocVideoDecoder::PyGetStride)
         .def("GetFrameSize",&PyRocVideoDecoder::PyGetFrameSize)
         .def("SaveFrameToFile",&PyRocVideoDecoder::PySaveFrameToFile)
         .def("SaveTensorToFile",&PyRocVideoDecoder::PySaveTensorToFile)
@@ -54,38 +55,23 @@ void PyRocVideoDecoder::InitConfigStructure() {
     configInfo.get()->pci_device_id = 0;
 }
 
-PyRocVideoDecoder::~PyRocVideoDecoder() {
-    // de-allocate device memory if was allocated
-    if (frame_ptr != nullptr) {
-        hipError_t hip_status = hipFree(frame_ptr);
-        if (hip_status != hipSuccess) {
-            std::cerr << "ERROR: hipFree failed! (" << hip_status << ")" << std::endl;
-        }
-    }
-}
+PyRocVideoDecoder::~PyRocVideoDecoder() {}
 
 int PyRocVideoDecoder::PyDecodeFrame(PyPacketData& packet) {
  
-    int decoded_frame_count = DecodeFrame((u_int8_t*) packet.frame_adrs, static_cast<size_t>(packet.frame_size), packet.pkt_flags, packet.frame_pts);    
-
+    int decoded_frame_count = DecodeFrame((u_int8_t*) packet.frame_adrs, static_cast<size_t>(packet.frame_size), packet.pkt_flags, packet.frame_pts);
     // Load DLPack Tensor
     if(packet.frame_adrs && decoded_frame_count) {
-
-        int frame_size = GetFrameSize();
-
-        // allocate device memory if wasn't 
-        if(frame_ptr == nullptr) {
-            HIP_API_CALL(hipMalloc((void **)&frame_ptr, frame_size));
-        }
-        // copy D2D
-        HIP_API_CALL(hipMemcpy(frame_ptr,(void *)packet.frame_adrs, frame_size, hipMemcpyDeviceToDevice));
-
+#if 0
+        // todo:: move this code to PyGetFrame and fix the stride as below
         uint32_t width = GetWidth();
         uint32_t height = GetHeight();    
+        uint32_t stride = GetStride();    
         std::string type_str((const char*)"|u1");
         std::vector<size_t> shape{ static_cast<size_t>(height * 1.5), width}; // NV12: 4:2:0 -> is it height or (height*1.5)? TBD
-        std::vector<size_t> stride{ static_cast<size_t>(width), 1};        
-        packet.extBuf.get()->LoadDLPack(shape, stride, type_str, (void *)frame_ptr);
+        std::vector<size_t> stride{ static_cast<size_t>(stride), 1};        
+        packet.extBuf.get()->LoadDLPack(shape, stride, type_str, (void *)packet.frame_adrs);
+#endif        
     }
 
     return decoded_frame_count;
@@ -181,4 +167,9 @@ py::int_ PyRocVideoDecoder::PyGetHeight() {
 // for python binding
 py::int_ PyRocVideoDecoder::PyGetFrameSize() {    
     return py::int_(static_cast<int>(GetFrameSize()));
+}
+
+// for python binding
+py::int_ PyRocVideoDecoder::PyGetStride() {
+    return py::int_(static_cast<int>(GetSurfaceStride()));
 }
