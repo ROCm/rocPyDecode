@@ -47,6 +47,7 @@ class decoder(object):
     def __init__(
             self,
             device_id,
+            mem_type,
             codec,
             b_force_zero_latency,
             p_crop_rect,
@@ -55,6 +56,7 @@ class decoder(object):
             clk_rate):
         self.viddec = rocpydec.PyRocVideoDecoder(
             device_id,
+            mem_type,
             codec,
             b_force_zero_latency,
             p_crop_rect,
@@ -77,6 +79,9 @@ class decoder(object):
 
     def GetHeight(self) -> int:
         return self.viddec.GetHeight()
+
+    def GetStride(self) -> int:
+        return self.viddec.GetStride()
 
     def GetFrameSize(self) -> int:
         return self.viddec.GetFrameSize()
