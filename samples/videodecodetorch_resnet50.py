@@ -8,7 +8,7 @@ import numpy as np
 import pyRocVideoDecode.decoder as dec
 import pyRocVideoDecode.demuxer as dmx
 
-def Decoder(input_file_path, device_id):
+def Decoder(input_file_path, device_id, mem_type):
 
     # Init resnet
     model = torchvision.models.resnet50(weights=torchvision.models.ResNet50_Weights.DEFAULT)
@@ -31,7 +31,7 @@ def Decoder(input_file_path, device_id):
     coded_id = dec.GetRocDecCodecID(demuxer.GetCodecId())
 
     # decoder instance
-    viddec = dec.decoder(device_id, coded_id, False, None, 0, 0, 0)
+    viddec = dec.decoder(device_id, mem_type, coded_id, False, None, 0, 0, 0)
 
     # Get GPU device information
     cfg = viddec.GetGpuInfo()
@@ -137,6 +137,13 @@ if __name__ == "__main__":
         default=0,
         help='GPU device ID - optional, default 0',
         required=False)
+    parser.add_argument(
+        '-m',
+        '--mem_type',
+        type=int,
+        default=1,
+        help='mem_type of output surfce - 0: Internal 1: dev_copied 2: host_copied optional, default 1',
+        required=False)    
 
     try:
         args = parser.parse_args()
@@ -145,6 +152,7 @@ if __name__ == "__main__":
 
     input_file_path = args.input
     device_id = args.device
+    mem_type = args.mem_type
  
     # Input file (must exist)
     if not os.path.exists(input_file_path):
@@ -153,4 +161,4 @@ if __name__ == "__main__":
 
     print("\nPyTorch Using: ", torch.cuda.get_device_name(0))
 
-    Decoder(input_file_path, device_id)
+    Decoder(input_file_path, device_id, mem_type)

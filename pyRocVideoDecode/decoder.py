@@ -54,6 +54,8 @@ class decoder(object):
             max_width,
             max_height,
             clk_rate):
+        if (mem_type < 0 or mem_type > 2):
+            mem_type = 1
         self.viddec = rocpydec.PyRocVideoDecoder(
             device_id,
             mem_type,
