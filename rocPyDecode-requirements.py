@@ -155,7 +155,22 @@ for i in range(len(commonPackages)):
 ERROR_CHECK(os.system('sudo -v'))
 
 #pybind11 install for both Ubuntu and RHEL
+#pybind11
 ERROR_CHECK(os.system('pip3 install pybind11'))
+ERROR_CHECK(os.system('wget http://archive.ubuntu.com/ubuntu/pool/universe/p/pybind11/pybind11-dev_2.9.1-2_all.deb'))
+# install needed z package
+ERROR_CHECK(os.system('apt install zstd -y'))
+# Extract files from the archive
+ERROR_CHECK(os.system('ar x pybind11-dev_2.9.1-2_all.deb'))
+# Uncompress zstd files an re-compress them using xz
+ERROR_CHECK(os.system('zstd -d < control.tar.zst | xz > control.tar.xz'))
+ERROR_CHECK(os.system('zstd -d < data.tar.zst | xz > data.tar.xz'))
+# Re-create the Debian package in /tmp/
+ERROR_CHECK(os.system('ar -m -c -a sdsd /tmp/pybind11-dev_2.9.1-2_all.deb debian-binary control.tar.xz data.tar.xz'))
+# Clean up
+ERROR_CHECK(os.system('rm debian-binary control.tar.xz data.tar.xz control.tar.zst data.tar.zst'))
+# install the deb now
+ERROR_CHECK(os.system('dpkg -i /tmp/pybind11-dev_2.9.1-2_all.deb'))
 
 if "Ubuntu" in platfromInfo:
     # core debian packages
@@ -163,10 +178,23 @@ if "Ubuntu" in platfromInfo:
         for i in range(len(coreDebianPackages)):
             ERROR_CHECK(os.system('sudo '+linuxFlag+' '+linuxSystemInstall +
                     ' '+linuxSystemInstall_check+' install '+ coreDebianPackages[i]))
+
     #dlpack
     ERROR_CHECK(os.system('pip3 install dlpack'))
     ERROR_CHECK(os.system('wget http://archive.ubuntu.com/ubuntu/pool/universe/d/dlpack/libdlpack-dev_0.6-1_amd64.deb'))
-    ERROR_CHECK(os.system('sudo dpkg -i libdlpack-dev_0.6-1_amd64.deb'))
+    # install needed z package
+    ERROR_CHECK(os.system('apt install zstd -y'))
+    # Extract files from the archive
+    ERROR_CHECK(os.system('ar x libdlpack-dev_0.6-1_amd64.deb'))
+    # Uncompress zstd files an re-compress them using xz
+    ERROR_CHECK(os.system('zstd -d < control.tar.zst | xz > control.tar.xz'))
+    ERROR_CHECK(os.system('zstd -d < data.tar.zst | xz > data.tar.xz'))
+    # Re-create the Debian package in /tmp/
+    ERROR_CHECK(os.system('ar -m -c -a sdsd /tmp/libdlpack-dev_0.6-1_amd64.deb debian-binary control.tar.xz data.tar.xz'))
+    # Clean up
+    ERROR_CHECK(os.system('rm debian-binary control.tar.xz data.tar.xz control.tar.zst data.tar.zst'))
+    # install the deb now
+    ERROR_CHECK(os.system('dpkg -i /tmp/libdlpack-dev_0.6-1_amd64.deb'))
 
 elif "redhat" in platfromInfo:
     # core RPM packages
@@ -174,9 +202,22 @@ elif "redhat" in platfromInfo:
         for i in range(len(coreRPMPackages)):
             ERROR_CHECK(os.system('sudo '+linuxFlag+' '+linuxSystemInstall +
                     ' '+linuxSystemInstall_check+' install '+ coreRPMPackages[i]))
-    
-    # dlpack
-    # TODO: check which .rpm package to use if available
+
+    #dlpack
     ERROR_CHECK(os.system('pip3 install dlpack'))
+    ERROR_CHECK(os.system('wget http://archive.ubuntu.com/ubuntu/pool/universe/d/dlpack/libdlpack-dev_0.6-1_amd64.deb'))
+    # install needed z package
+    ERROR_CHECK(os.system('apt install zstd -y'))
+    # Extract files from the archive
+    ERROR_CHECK(os.system('ar x libdlpack-dev_0.6-1_amd64.deb'))
+    # Uncompress zstd files an re-compress them using xz
+    ERROR_CHECK(os.system('zstd -d < control.tar.zst | xz > control.tar.xz'))
+    ERROR_CHECK(os.system('zstd -d < data.tar.zst | xz > data.tar.xz'))
+    # Re-create the Debian package in /tmp/
+    ERROR_CHECK(os.system('ar -m -c -a sdsd /tmp/libdlpack-dev_0.6-1_amd64.deb debian-binary control.tar.xz data.tar.xz'))
+    # Clean up
+    ERROR_CHECK(os.system('rm debian-binary control.tar.xz data.tar.xz control.tar.zst data.tar.zst'))
+    # install the deb now
+    ERROR_CHECK(os.system('dpkg -i /tmp/libdlpack-dev_0.6-1_amd64.deb'))
 
 print("\rocPyDecode Dependencies Installed with rocPyDecode-setup.py V-"+__version__+"\n")

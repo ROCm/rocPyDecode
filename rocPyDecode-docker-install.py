@@ -22,6 +22,18 @@ import subprocess
 import platform
 import os
 
+def is_conda_installed():
+    try:
+        # get Conda version to check if Conda is installed
+        subprocess.run(['conda', '--version'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return True
+    except subprocess.CalledProcessError:
+        # Conda is not installed
+        return False
+    except FileNotFoundError:
+        # Conda is not installed
+        return False
+
 def get_python_version_platform():
     return platform.python_version()
 
@@ -42,29 +54,36 @@ def get_conda_python_version():
         print("An error occurred:", e)
     return "Python version not found"
 
-conda_python_version = get_conda_python_version()
-sys_python_version = get_python_version_platform()
+if (is_conda_installed() ):
+    conda_python_version = get_conda_python_version()
+    sys_python_version = get_python_version_platform()
 
-# for user
-print("\nPreparing for installation, please wait.\n")
+    # for user
+    print("\nPreparing for installation, please wait.\n")
 
-# temp: make both python versions the same
-subprocess.check_call(['conda','install', '-y', 'python='+sys_python_version], stdout=open(os.devnull, 'wb'))
+    # temp: make both python versions the same
+    subprocess.check_call(['conda','install', '-y', 'python='+sys_python_version], stdout=open(os.devnull, 'wb'))
 
-# install requirements
-subprocess.check_call(['python', 'rocPyDecode-requirements.py'])
-subprocess.check_call(['python', '-m', 'pip', 'install', "pybind11[global]"])
+    # install requirements
+    subprocess.check_call(['python', 'rocPyDecode-requirements.py'])
+    subprocess.check_call(['python', '-m', 'pip', 'install', "pybind11[global]"])
 
-# UN-INSTALL older rocPyDecode
-subprocess.check_call(['rm', '-rf', 'build'], stdout=open(os.devnull, 'wb'))
-subprocess.check_call(['rm', '-rf', 'rocPyDecode.egg-info'], stdout=open(os.devnull, 'wb'))
-subprocess.check_call(['python', '-m', 'pip', 'uninstall', 'rocPyDecode', '-y'], stdout=open(os.devnull, 'wb'))
+    # UN-INSTALL older rocPyDecode
+    subprocess.check_call(['rm', '-rf', 'build'], stdout=open(os.devnull, 'wb'))
+    subprocess.check_call(['rm', '-rf', 'rocPyDecode.egg-info'], stdout=open(os.devnull, 'wb'))
+    subprocess.check_call(['python', '-m', 'pip', 'uninstall', 'rocPyDecode', '-y'], stdout=open(os.devnull, 'wb'))
 
-# Install rocPyDecode
-subprocess.check_call(['python', '-m', 'pip', 'install', '.'])
+    # Install rocPyDecode
+    subprocess.check_call(['python', '-m', 'pip', 'install', '.'])
 
-# return the conda py version back
-subprocess.check_call(['conda','install', '-y', 'python='+conda_python_version], stdout=open(os.devnull, 'wb'))
+    # return the conda py version back
+    subprocess.check_call(['conda','install', '-y', 'python='+conda_python_version], stdout=open(os.devnull, 'wb'))
+else:
+    # install requirements
+    subprocess.check_call(['python', 'rocPyDecode-requirements.py'])
+    subprocess.check_call(['python', '-m', 'pip', 'install', "pybind11[global]"])
+    # install for all other dockers
+    os.system('python3 setup.py install')
 
 # how to test
 print("\nTo test rocPyDecode run the following command:\n","python3 samples/videodecode.py -i data/videos/AMD_driving_virtual_20-H265.mp4","\n")
