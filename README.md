@@ -67,7 +67,8 @@ The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access
 
 ## Prerequisites setup script
 
-For your convenience, we provide the setup script, [rocPyDecode-requirements.py](rocPyDecode-requirements.py), which installs all required dependencies.Run this script only once.
+For your convenience, we provide the setup script, [rocPyDecode-requirements.py](rocPyDecode-requirements.py), which installs all required dependencies.\
+Run this script only once on bare metal, if using docker please see below instructions.
 
 ```bash
 python3 rocPyDecode-requirements.py
@@ -88,7 +89,7 @@ sudo pip3 install .
 ```bash
 git clone https://github.com/ROCm/rocPyDecode.git
 cd rocPyDecode
-pip3 install .
+python rocPyDecode-docker-install.py 
 ```
 
 ## Run Sample Scripts

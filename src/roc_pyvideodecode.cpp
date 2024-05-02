@@ -58,30 +58,26 @@ void PyRocVideoDecoder::InitConfigStructure() {
 PyRocVideoDecoder::~PyRocVideoDecoder() {}
 
 int PyRocVideoDecoder::PyDecodeFrame(PyPacketData& packet) {
- 
     int decoded_frame_count = DecodeFrame((u_int8_t*) packet.frame_adrs, static_cast<size_t>(packet.frame_size), packet.pkt_flags, packet.frame_pts);
-    // Load DLPack Tensor
-    if(packet.frame_adrs && decoded_frame_count) {
-#if 0
-        // todo:: move this code to PyGetFrame and fix the stride as below
-        uint32_t width = GetWidth();
-        uint32_t height = GetHeight();    
-        uint32_t stride = GetStride();    
-        std::string type_str((const char*)"|u1");
-        std::vector<size_t> shape{ static_cast<size_t>(height * 1.5), width}; // NV12: 4:2:0 -> is it height or (height*1.5)? TBD
-        std::vector<size_t> stride{ static_cast<size_t>(stride), 1};        
-        packet.extBuf.get()->LoadDLPack(shape, stride, type_str, (void *)packet.frame_adrs);
-#endif        
-    }
-
     return decoded_frame_count;
 }
  
 // for python binding
 py::object PyRocVideoDecoder::PyGetFrame(PyPacketData& packet) {
+    int frame_size = GetFrameSize();
     int64_t pts = packet.frame_pts;
     packet.frame_adrs = reinterpret_cast<std::uintptr_t>(GetFrame(&pts));   
     packet.frame_pts = pts;
+    // Load DLPack Tensor
+    if(((uint8_t*) packet.frame_adrs != nullptr) && (frame_size > 0)) {
+        uint32_t width = GetWidth();
+        uint32_t height = GetHeight();    
+        uint32_t surf_stride = GetSurfaceStride(); 
+        std::string type_str((const char*)"|u1");
+        std::vector<size_t> shape{ static_cast<size_t>(height * 1.5), width}; // NV12
+        std::vector<size_t> stride{ static_cast<size_t>(surf_stride), 1};
+        packet.extBuf->LoadDLPack(shape, stride, type_str, (void *)packet.frame_adrs);
+    }
     return py::cast(packet.frame_pts);
 }
 

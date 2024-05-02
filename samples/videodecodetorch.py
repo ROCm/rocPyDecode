@@ -12,6 +12,7 @@ def Decoder(
         input_file_path,
         output_file_path,
         device_id,
+        mem_type,
         b_force_zero_latency,
         crop_rect):
 
@@ -24,6 +25,7 @@ def Decoder(
     # decoder instance
     viddec = dec.decoder(
         device_id,
+        mem_type,
         coded_id,
         b_force_zero_latency,
         p_crop_rect,
@@ -139,6 +141,13 @@ if __name__ == "__main__":
         help='GPU device ID - optional, default 0',
         required=False)
     parser.add_argument(
+        '-m',
+        '--mem_type',
+        type=int,
+        default=1,
+        help='mem_type of output surfce - 0: Internal 1: dev_copied 2: host_copied optional, default 1',
+        required=False)    
+    parser.add_argument(
         '-z',
         '--zero_latency',
         type=str,
@@ -161,6 +170,7 @@ if __name__ == "__main__":
     input_file_path = args.input
     output_file_path = args.output
     device_id = args.device
+    mem_type = args.mem_type
     b_force_zero_latency = args.zero_latency
     crop_rect = args.crop_rect
 
@@ -178,5 +188,6 @@ if __name__ == "__main__":
         input_file_path,
         output_file_path,
         device_id,
+        mem_type,
         b_force_zero_latency,
         crop_rect)
