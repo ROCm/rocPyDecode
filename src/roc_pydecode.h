@@ -45,12 +45,17 @@ extern "C" {
 
 namespace py = pybind11;
 
+enum OutputFormatEnum {
+    native = 0, bgr, bgr48, rgb, rgb48, bgra, bgra64, rgba, rgba64
+};
+
 struct PyPacketData {
     bool      end_of_stream;
     int       pkt_flags;
     int64_t   frame_pts;
     int64_t   frame_size;
-    uintptr_t frame_adrs;
+    uintptr_t frame_adrs;       // yuv frame address
+    uintptr_t frame_adrs_rgb;   // rgb frame address
     std::shared_ptr<BufferInterface> extBuf;
     PyPacketData(){
         extBuf = std::make_shared<BufferInterface>();

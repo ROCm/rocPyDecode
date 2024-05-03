@@ -44,6 +44,9 @@ class PyRocVideoDecoder : public RocVideoDecoder {
         py::object PyGetFrame(PyPacketData& packet);
 
         // for python binding
+        py::object PyGetFrameRgb(PyPacketData& packet, int rgb_format);
+
+        // for python binding
         py::object PyReleaseFrame(PyPacketData& packet);
       
         // for python binding
@@ -53,7 +56,10 @@ class PyRocVideoDecoder : public RocVideoDecoder {
         py::object PySaveFrameToFile(std::string& output_file_name_in, uintptr_t& surf_mem, uintptr_t& surface_info);
 
         // for python binding
-        py::object PySaveTensorToFile(std::string& output_file_name_in, uintptr_t& surf_mem, uintptr_t& surface_info);
+        py::object PySaveTensorToFile(std::string& output_file_name_in, uintptr_t& surf_mem, int width, int height, int rgb_format);
+
+        // for python binding
+        py::object PySaveRgbFrameToFile(std::string& output_file_name_in, uintptr_t& surf_mem, int width, int height, int rgb_format);
 
         // for python binding
         uintptr_t PyGetOutputSurfaceInfo();
@@ -83,6 +89,17 @@ class PyRocVideoDecoder : public RocVideoDecoder {
         py::int_ PyGetFrameSize();
       
     private:
+        int GetImageSizeMultiplier(int bit_depth, OutputFormatEnum& e_output_format);
+        void ConvertYuvToRgb(uint8_t *in_yuv_frame, uint8_t *rgb_dev_mem_ptr, OutputSurfaceInfo *surf_info, OutputFormatEnum& e_output_format, hipStream_t hip_stream);
+        size_t CalculateRgbImageSize(int bit_depth, int width, int height, OutputFormatEnum& e_output_format);
         std::shared_ptr <ConfigInfo> configInfo;
         void InitConfigStructure();
+
+        // to keep using till done with this class instance
+        uint8_t *hst_ptr_tensor_rgb = nullptr;
+        FILE *fp_tensor_rgb = nullptr;
+
+    protected:
+        // used in frame allocation
+        u_int8_t * frame_ptr_rgb = nullptr;
 };

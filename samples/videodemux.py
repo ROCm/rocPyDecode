@@ -6,10 +6,8 @@ import argparse
 import os.path
 
 
-def Demuxer(
-        input_file_path,
-        seek_pos
-):
+def Demuxer(input_file_path, seek_pos):
+
     # demuxer instance
     demuxer = dmx.demuxer(input_file_path)
     frames_counter = 0
@@ -26,6 +24,7 @@ def Demuxer(
 
     print("Total frames = ", frames_counter - 1)
     print("Demuxing has ended")
+    print()
 
 
 if __name__ == "__main__":
