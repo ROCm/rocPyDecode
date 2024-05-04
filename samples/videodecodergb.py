@@ -69,12 +69,14 @@ def Decoder(
 
             # save decoded rgb frame to file
             if (output_file_path is not None):
+                surface_info = viddec.GetOutputSurfaceInfo()
                 viddec.SaveRgbFrameToFile(
                     output_file_path,
                     packet.frame_adrs_rgb,
                     viddec.GetWidth(),
                     viddec.GetHeight(),
-                    rgb_format)
+                    rgb_format,
+                    surface_info)
 
             # release frame
             viddec.ReleaseFrame(packet)

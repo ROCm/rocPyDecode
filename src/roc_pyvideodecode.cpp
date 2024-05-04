@@ -238,19 +238,16 @@ py::object PyRocVideoDecoder::PySaveFrameToFile(std::string& output_file_name_in
 }
 
 // for python binding
-py::object PyRocVideoDecoder::PySaveRgbFrameToFile(std::string& output_file_name_in, uintptr_t& surf_mem, int width, int height, int rgb_format) {
-    return PySaveTensorToFile(output_file_name_in, surf_mem, width, height, rgb_format);
+py::object PyRocVideoDecoder::PySaveRgbFrameToFile(std::string& output_file_name_in, uintptr_t& surf_mem, int width, int height, int rgb_format, uintptr_t& surf_info) {
+    return PySaveTensorToFile(output_file_name_in, surf_mem, width, height, rgb_format, surf_info);
 }
 
 // for python binding
-py::object PyRocVideoDecoder::PySaveTensorToFile(std::string& output_file_name_in, uintptr_t& surf_mem, int width, int height, int rgb_format) {
+py::object PyRocVideoDecoder::PySaveTensorToFile(std::string& output_file_name_in, uintptr_t& surf_mem, int width, int height, int rgb_format, uintptr_t& in_surf_info) {
     OutputFormatEnum e_output_format = (OutputFormatEnum)rgb_format;
-    if(surf_mem == 0 || width <= 0 || height <= 0)
+    if(surf_mem == 0 || width <= 0 || height <= 0 || in_surf_info == 0)
         return py::cast<py::none>(Py_None);
-    OutputSurfaceInfo * surf_info = nullptr;
-    GetOutputSurfaceInfo(&surf_info);
-    if(surf_info == nullptr)
-        return py::cast<py::none>(Py_None);
+    OutputSurfaceInfo *surf_info = reinterpret_cast<OutputSurfaceInfo*>(in_surf_info);
     uint64_t output_image_size = (uint64_t) CalculateRgbImageSize(surf_info->bit_depth, width, height, e_output_format);
     if(hst_ptr_tensor_rgb == nullptr)
         hst_ptr_tensor_rgb = new uint8_t [width * height * GetImageSizeMultiplier(surf_info->bit_depth, e_output_format)];

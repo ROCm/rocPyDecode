@@ -88,14 +88,3 @@ The following are full list of arguments that can be passed to the sample.
 -m MEM_TYPE, --mem_type MEM_TYPE              : Memory Type of output surfce - 0: Internal 1: dev_copied 2: host_copied - optional, default 1
 -of RGB_FORMAT, --rgb_format RGB_FORMAT       : Rgb Format to use as tensor - 1:bgr, 2:bgr48, 3:rgb, 4:rgb48, 5:bgra, 6:bgra64, 7:rgba, 8:rgba64, converts decoded YUV frame to Tensor in RGB format, optional, default: 3
 ```
-
-## videodedemux.py
-
-This sample demuxes frames from a video file. To run this python sample script, you need to provide input video file full path name.
-
-### Arguments
-The following are full list of arguments that can be passed to the sample.
-```bash
--h, --help                                    : Show detail help message and exit
--i INPUT, --input INPUT                       : Input File Path - required
-```

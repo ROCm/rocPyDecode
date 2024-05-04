@@ -88,12 +88,14 @@ def Decoder(
 
             # save tensors to file, with original decoded Size
             if (output_file_path is not None):
+                surface_info = viddec.GetOutputSurfaceInfo()
                 viddec.SaveTensorToFile(
                     output_file_path,
                     img_tensor.data_ptr(),
                     viddec.GetWidth(),
                     viddec.GetHeight(),
-                    rgb_format)
+                    rgb_format, 
+                    surface_info)
 
             # for inference
             img_tensor.resize_(3, target_h, target_w)
