@@ -14,7 +14,8 @@ def Decoder(
         b_force_zero_latency,
         crop_rect,
         b_generate_md5,
-        ref_md5_file):
+        ref_md5_file,
+        resize_dim):
 
     # demuxer instance
     demuxer = dmx.demuxer(input_file_path)
@@ -70,6 +71,7 @@ def Decoder(
     # -----------------
     n_frame = 0
     total_dec_time = 0.0
+    frame_is_resized = False
 
     while True:
         start_time = datetime.datetime.now()
@@ -80,10 +82,19 @@ def Decoder(
             if (b_generate_md5):
                 surface_info = viddec.GetOutputSurfaceInfo()
                 viddec.UpdateMd5ForFrame(packet.frame_adrs, surface_info)
-            if (output_file_path is not None):
+
+            if (resize_dim is not None):
                 surface_info = viddec.GetOutputSurfaceInfo()
-                viddec.SaveFrameToFile(
-                    output_file_path, packet.frame_adrs, surface_info)
+                resized_surface_info = viddec.ResizeFrame(packet, resize_dim, surface_info)
+                frame_is_resized = True
+
+            if (output_file_path is not None):
+                if (frame_is_resized):
+                    viddec.SaveResizedFrameToFile(output_file_path, packet.frame_adrs_resized, resized_surface_info)
+                else:
+                    surface_info = viddec.GetOutputSurfaceInfo()
+                    viddec.SaveFrameToFile(output_file_path, packet.frame_adrs, surface_info)
+
             # release frame
             viddec.ReleaseFrame(packet)
 
@@ -193,6 +204,13 @@ if __name__ == "__main__":
         type=str,
         help='Input MD5 file path, optional',
         required=False)
+    parser.add_argument(
+        '-resize',
+        '--resize_dim',
+        nargs=2,
+        type=int,
+        help='Width & Height of new frame, optional, default: no resizing',
+        required=False)
 
     try:
         args = parser.parse_args()
@@ -207,6 +225,7 @@ if __name__ == "__main__":
     crop_rect = args.crop_rect
     b_generate_md5 = args.generate_md5
     ref_md5_file = args.input_md5
+    resize_dim = args.resize_dim
 
     b_force_zero_latency = True if b_force_zero_latency == 'yes' else False
     b_generate_md5 = True if b_generate_md5 == 'yes' else False
@@ -227,4 +246,5 @@ if __name__ == "__main__":
         b_force_zero_latency,
         crop_rect,
         b_generate_md5,
-        ref_md5_file)
+        ref_md5_file,
+        resize_dim)

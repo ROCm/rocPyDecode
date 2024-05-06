@@ -44,6 +44,12 @@ class PyRocVideoDecoder : public RocVideoDecoder {
         py::object PyGetFrame(PyPacketData& packet);
 
         // for python binding
+        uintptr_t PyResizeFrame(PyPacketData& packet, Dim *resized_dim, uintptr_t& in_surf_info); // ret new surface ptr or nullptr
+
+        // for python binding
+        uintptr_t PyGetResizedOutputSurfaceInfo(); // ret new surface ptr
+
+        // for python binding
         py::object PyReleaseFrame(PyPacketData& packet);
       
         // for python binding
@@ -54,6 +60,9 @@ class PyRocVideoDecoder : public RocVideoDecoder {
 
         // for python binding
         py::object PySaveTensorToFile(std::string& output_file_name_in, uintptr_t& surf_mem, uintptr_t& surface_info);
+
+        // for python binding
+        py::object PySaveResizedFrameToFile(std::string& output_file_name, uintptr_t& surf_mem, uintptr_t& surface_info);
 
         // for python binding
         uintptr_t PyGetOutputSurfaceInfo();
@@ -85,4 +94,12 @@ class PyRocVideoDecoder : public RocVideoDecoder {
     private:
         std::shared_ptr <ConfigInfo> configInfo;
         void InitConfigStructure();
+
+        // to keep using till done with this class instance
+        FILE *fp_yuv_out = nullptr;
+        OutputSurfaceInfo *resized_surf_info = nullptr;
+
+    protected:
+        // used in frame resizing
+        u_int8_t * frame_ptr_resized = nullptr;
 };

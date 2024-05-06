@@ -34,6 +34,7 @@ The following are full list of arguments that can be passed to the sample.
 -m MEM_TYPE, --mem_type MEM_TYPE 			  : Memory Type of output surfce - 0: Internal 1: dev_copied 2: host_copied - optional, default 1
 -z ZERO_LATENCY, --zero_latency ZERO_LATENCY  : Force zero latency - [options: yes,no], default: no
 -crop CROP_RECT, --crop_rect CROP_RECT        : Crop rectangle (left, top, right, bottom) - optional, default: None (no cropping)
+-resize RESIZE_DIM RESIZE_DIM, --resize_dim RESIZE_DIM RESIZE_DIM : Width & Height of new resized frame, optional, default: no resizing
 ```
 
 ## videodecodetorch.py
