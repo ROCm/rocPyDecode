@@ -30,3 +30,6 @@ class demuxer(object):
 
     def DemuxFrame(self):
          return self.vidmux.DemuxFrame()
+
+    def SeekFrame(self, frame_index):
+         return self.vidmux.SeekFrame(frame_index)

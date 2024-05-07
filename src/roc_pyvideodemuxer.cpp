@@ -28,7 +28,8 @@ void PyVideoDemuxerInitializer(py::module& m) {
         py::class_<PyVideoDemuxer, std::shared_ptr<PyVideoDemuxer>> (m, "PyVideoDemuxer")
         .def(py::init<const char*>())
         .def("GetCodecId",&PyVideoDemuxer::GetCodecId,"Get Codec ID")
-        .def("DemuxFrame",&PyVideoDemuxer::DemuxFrame);
+        .def("DemuxFrame",&PyVideoDemuxer::DemuxFrame)
+        .def("SeekFrame",&PyVideoDemuxer::SeekFrame);
 }
 
 rocDecVideoCodec ConvertAVCodec2RocDecVideoCodec(int av_codec) {
@@ -53,6 +54,21 @@ shared_ptr<PyPacketData> PyVideoDemuxer::DemuxFrame() {
     currentPacket.get()->frame_adrs = (uintptr_t)pVideo;
     currentPacket.get()->frame_size = video_size;
     currentPacket.get()->frame_pts = pts;
+    currentPacket.get()->end_of_stream = !ret;
+    return currentPacket;
+}
+
+shared_ptr<PyPacketData> PyVideoDemuxer::SeekFrame(int framIndex) {
+    uint8_t *pVideo=nullptr;
+    int video_size=0;
+
+    VideoSeekContext vSeek;
+    vSeek.seek_frame_ = framIndex; // user request frame #
+
+    bool ret = Seek(vSeek, &pVideo, &video_size);
+    currentPacket.get()->frame_adrs = (uintptr_t)pVideo;
+    currentPacket.get()->frame_size = video_size;
+    currentPacket.get()->frame_pts = vSeek.out_frame_pts_;
     currentPacket.get()->end_of_stream = !ret;
     return currentPacket;
 }
