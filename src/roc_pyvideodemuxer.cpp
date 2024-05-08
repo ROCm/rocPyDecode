@@ -24,7 +24,7 @@ THE SOFTWARE.
 
 using namespace std;
 
-void PyVideoDemuxerInitializer(py::module& m, py::module& types_m) {
+void PyVideoDemuxerInitializer(py::module& m) {
         py::class_<PyVideoDemuxer, std::shared_ptr<PyVideoDemuxer>> (m, "PyVideoDemuxer")
         .def(py::init<const char*>())
         .def("GetCodecId",&PyVideoDemuxer::GetCodecId,"Get Codec ID")
