@@ -245,14 +245,14 @@ if __name__ == "__main__":
     seek_mode = args.seek_mode
     seek_criteria = args.seek_criteria
 
-    # # validate the seek: mode/criteria
-    # if(seek_frame > 0):
-    #     if(seek_mode != 0 and seek_mode != 1):
-    #         print("Error: Invalid seek mode value.")
-    #         exit()
-    #     if(seek_criteria != 0 and seek_criteria != 1):
-    #         print("Error: Invalid seek criteria value.")
-    #         exit()
+    # validate the seek: mode/criteria
+    if(seek_frame > 0):
+        if(seek_mode != 0 and seek_mode != 1):
+            print("Error: Invalid seek mode value.")
+            exit()
+        if(seek_criteria != 0 and seek_criteria != 1):
+            print("Error: Invalid seek criteria value.")
+            exit()
 
     b_force_zero_latency = True if b_force_zero_latency == 'yes' else False
     b_generate_md5 = True if b_generate_md5 == 'yes' else False
