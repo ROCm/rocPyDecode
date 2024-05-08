@@ -31,5 +31,5 @@ class demuxer(object):
     def DemuxFrame(self):
          return self.vidmux.DemuxFrame()
 
-    def SeekFrame(self, frame_index):
-         return self.vidmux.SeekFrame(frame_index)
+    def SeekFrame(self, frame_number, seek_mode, seek_criteria):
+         return self.vidmux.SeekFrame(frame_number, seek_mode, seek_criteria)

@@ -66,7 +66,7 @@ PYBIND11_MODULE(rocPyDecode, m) {
     // -----------------------------
     // User Demuxer 'PyVideoDemuxer'
     // -----------------------------
-    PyVideoDemuxerInitializer(m);
+    PyVideoDemuxerInitializer(m, types_m);
 
     // --------------------------------------
     // AMD Video Decoder 'PyRocVideoDecoder'

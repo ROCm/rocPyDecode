@@ -35,6 +35,16 @@ from rocPyDecode.decTypes import ROCDEC_PKT_NOTIFY_EOS
 from rocPyDecode.decTypes import rocDecVideoCodec_AVC
 from rocPyDecode.decTypes import rocDecVideoCodec_HEVC
 
+# Seek Mode
+from rocPyDecode.decTypes import SEEK_MODE_EXACT_FRAME
+from rocPyDecode.decTypes import SEEK_MODE_PREV_KEY_FRAME
+from rocPyDecode.decTypes import SEEK_MODE_NUM
+
+# SEEK Criteria
+from rocPyDecode.decTypes import SEEK_CRITERIA_FRAME_NUM
+from rocPyDecode.decTypes import SEEK_CRITERIA_TIME_STAMP
+from rocPyDecode.decTypes import SEEK_CRITERIA_NUM
+
 _known_types = {
     rocDecVideoSurfaceFormat_NV12: ("rocDecVideoSurfaceFormat_NV12", rocDecVideoSurfaceFormat_NV12),
     rocDecVideoSurfaceFormat_P016: ("rocDecVideoSurfaceFormat_P016", rocDecVideoSurfaceFormat_P016),
@@ -49,6 +59,14 @@ _known_types = {
 
     rocDecVideoCodec_AVC: ("rocDecVideoCodec_AVC",rocDecVideoCodec_AVC),
     rocDecVideoCodec_HEVC: ("rocDecVideoCodec_HEVC",rocDecVideoCodec_HEVC),
+
+    SEEK_MODE_EXACT_FRAME: ("SEEK_MODE_EXACT_FRAME", SEEK_MODE_EXACT_FRAME),
+    SEEK_MODE_PREV_KEY_FRAME: ("SEEK_MODE_PREV_KEY_FRAME", SEEK_MODE_PREV_KEY_FRAME),
+    SEEK_MODE_NUM: ("SEEK_MODE_NUM", SEEK_MODE_NUM),
+
+    SEEK_CRITERIA_FRAME_NUM: ("SEEK_CRITERIA_FRAME_NUM", SEEK_CRITERIA_FRAME_NUM),
+    SEEK_CRITERIA_TIME_STAMP: ("SEEK_CRITERIA_TIME_STAMP", SEEK_CRITERIA_TIME_STAMP),
+    SEEK_CRITERIA_NUM: ("SEEK_CRITERIA_NUM", SEEK_CRITERIA_NUM),
     }
 
 
