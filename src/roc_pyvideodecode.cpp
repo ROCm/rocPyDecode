@@ -154,7 +154,7 @@ py::object PyRocVideoDecoder::PyGetFrameRgb(PyPacketData& packet, int rgb_format
             post_process_class = new VideoPostProcess();
         }
         // use post process instance
-        VideoPostProcess * post_proc = (VideoPostProcess *) post_process_class;
+        VideoPostProcess * post_proc = post_process_class;
         // Get Stream, and convert YUV 2 RGB
         post_proc->ColorConvertYUV2RGB((uint8_t*)packet.frame_adrs, surf_info, frame_ptr_rgb, e_output_format, GetStream());
         // save the rgb ptr
@@ -163,9 +163,9 @@ py::object PyRocVideoDecoder::PyGetFrameRgb(PyPacketData& packet, int rgb_format
         if((uint8_t*) packet.frame_adrs != nullptr) {
             uint32_t width = GetWidth();
             uint32_t height = GetHeight();
-            uint32_t surf_stride = (GetSurfaceStride() + 1) & ~1;
+            uint32_t surf_stride = (width * (((e_output_format == bgr) || (e_output_format == rgb)) ? 3 : 4));
              std::string type_str((const char*)"|u1");
-            std::vector<size_t> shape{ static_cast<size_t>(height), static_cast<size_t>(width)}; // NV12
+            std::vector<size_t> shape{ static_cast<size_t>(height), static_cast<size_t>(width)};
             std::vector<size_t> stride{ static_cast<size_t>(surf_stride), 1};
             packet.extBuf->LoadDLPack(shape, stride, type_str, (void *)frame_ptr_rgb);
         }
