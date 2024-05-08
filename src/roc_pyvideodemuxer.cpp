@@ -30,18 +30,6 @@ void PyVideoDemuxerInitializer(py::module& m, py::module& types_m) {
         .def("GetCodecId",&PyVideoDemuxer::GetCodecId,"Get Codec ID")
         .def("DemuxFrame",&PyVideoDemuxer::DemuxFrame)
         .def("SeekFrame",&PyVideoDemuxer::SeekFrame);
-
-    py::enum_<SeekModeEnum>(types_m,"SeekModeEnum", "Seek Mode")
-        .value("SEEK_MODE_EXACT_FRAME",SEEK_MODE_EXACT_FRAME)
-        .value("SEEK_MODE_PREV_KEY_FRAME",SEEK_MODE_PREV_KEY_FRAME)
-        .value("SEEK_MODE_NUM",SEEK_MODE_NUM)
-        .export_values();
-
-    py::enum_<SeekCriteriaEnum>(types_m,"SeekCriteriaEnum", "Seek Criteria")
-        .value("SEEK_CRITERIA_FRAME_NUM",SEEK_CRITERIA_FRAME_NUM)
-        .value("SEEK_CRITERIA_TIME_STAMP",SEEK_CRITERIA_TIME_STAMP)
-        .value("SEEK_CRITERIA_NUM",SEEK_CRITERIA_NUM)
-        .export_values();
 }
 
 rocDecVideoCodec ConvertAVCodec2RocDecVideoCodec(int av_codec) {
@@ -74,18 +62,10 @@ shared_ptr<PyPacketData> PyVideoDemuxer::SeekFrame(int frame_number, int seek_mo
     uint8_t *pVideo=nullptr;
     int video_size=0;
 
-    // check and default if bad value
-    if(seek_mode < SEEK_MODE_EXACT_FRAME || seek_mode > SEEK_MODE_NUM)
-        seek_mode = SEEK_MODE_PREV_KEY_FRAME;
-
-    // check and default if bad value
-    if(seek_criteria < SEEK_CRITERIA_FRAME_NUM || seek_criteria > SEEK_CRITERIA_NUM)
-        seek_criteria = SEEK_CRITERIA_FRAME_NUM;
-
     VideoSeekContext video_seek;
     video_seek.seek_frame_ = frame_number;
-    video_seek.seek_mode_ = (SeekMode) seek_mode;
-    video_seek.seek_crit_ = (SeekCriteria) seek_criteria;
+    video_seek.seek_mode_ = static_cast<SeekMode>(seek_mode);
+    video_seek.seek_crit_ = static_cast<SeekCriteria>(seek_criteria);
 
     bool ret = Seek(video_seek, &pVideo, &video_size);
     currentPacket.get()->frame_adrs = (uintptr_t)pVideo;

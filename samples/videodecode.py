@@ -73,7 +73,7 @@ def Decoder(
     # -----------------
     n_frame = 0
     total_dec_time = 0.0
-    not_seeking = True if seek_frame is None else False
+    not_seeking = True if (seek_frame == -1) else False
 
     while True:
         start_time = datetime.datetime.now()
@@ -207,7 +207,7 @@ if __name__ == "__main__":
         '-s',
         '--seek',
         type=int,
-        default=1,
+        default=-1,
         help='seek this number of frames, optional, default: no seek',
         required=False)
     parser.add_argument(
@@ -242,6 +242,15 @@ if __name__ == "__main__":
     seek_frame = args.seek
     seek_mode = args.seek_mode
     seek_criteria = args.seek_criteria
+
+    # validate the seek: mode/criteria
+    if(seek_frame > 0):
+        if(seek_mode != 0 and seek_mode != 1):
+            print("Error: Invalid seek mode value.")
+            exit()
+        if(seek_criteria != 0 and seek_criteria != 1):
+            print("Error: Invalid seek criteria value.")
+            exit()
 
     b_force_zero_latency = True if b_force_zero_latency == 'yes' else False
     b_generate_md5 = True if b_generate_md5 == 'yes' else False
