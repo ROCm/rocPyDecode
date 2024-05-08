@@ -81,6 +81,10 @@ PyRocVideoDecoder::~PyRocVideoDecoder() {
         }
         frame_ptr_rgb = nullptr;
     }
+    if( post_process_class != nullptr ) {
+        delete post_process_class;
+        post_process_class = nullptr;
+    }
 }
 
 int PyRocVideoDecoder::PyDecodeFrame(PyPacketData& packet) {
@@ -134,42 +138,6 @@ size_t PyRocVideoDecoder::CalculateRgbImageSize(int bit_depth, int width, int he
     return rgb_image_size;
 }
 
-void PyRocVideoDecoder::ConvertYuvToRgb(uint8_t *in_yuv_frame, uint8_t *rgb_dev_mem_ptr, OutputSurfaceInfo *surf_info, OutputFormatEnum& e_output_format, hipStream_t hip_stream) {
-    // has to be a multiple of 2 for hip colorconvert kernels
-    int rgb_width = (surf_info->output_width + 1) & ~1;
-    if (surf_info->surface_format == rocDecVideoSurfaceFormat_NV12) {
-        switch (e_output_format){
-            case bgr:
-                Nv12ToColor24<BGR24>(in_yuv_frame, surf_info->output_pitch, static_cast<uint8_t *>(rgb_dev_mem_ptr), 3 * rgb_width, surf_info->output_width, surf_info->output_height, surf_info->output_vstride, 0, hip_stream);
-                break;
-            case bgra:
-                Nv12ToColor32<BGRA32>(in_yuv_frame, surf_info->output_pitch, static_cast<uint8_t *>(rgb_dev_mem_ptr), 4 * rgb_width, surf_info->output_width, surf_info->output_height, surf_info->output_vstride, 0, hip_stream);
-                break;
-            case rgb:
-                Nv12ToColor24<RGB24>(in_yuv_frame, surf_info->output_pitch, static_cast<uint8_t *>(rgb_dev_mem_ptr), 3 * rgb_width, surf_info->output_width, surf_info->output_height, surf_info->output_vstride, 0, hip_stream);
-                break;
-            case rgba:
-                Nv12ToColor32<RGBA32>(in_yuv_frame, surf_info->output_pitch, static_cast<uint8_t *>(rgb_dev_mem_ptr), 4 * rgb_width, surf_info->output_width, surf_info->output_height, surf_info->output_vstride, 0, hip_stream);
-                break;
-            case bgr48:
-                Nv12ToColor48<BGR48>(in_yuv_frame, surf_info->output_pitch, static_cast<uint8_t *>(rgb_dev_mem_ptr), 6 * rgb_width, surf_info->output_width, surf_info->output_height, surf_info->output_vstride, 0, hip_stream);
-                break;
-            case rgb48:
-                Nv12ToColor48<RGB48>(in_yuv_frame, surf_info->output_pitch, static_cast<uint8_t *>(rgb_dev_mem_ptr), 6 * rgb_width, surf_info->output_width, surf_info->output_height, surf_info->output_vstride, 0, hip_stream);
-                break;
-            case bgra64:
-                Nv12ToColor64<BGRA64>(in_yuv_frame, surf_info->output_pitch, static_cast<uint8_t *>(rgb_dev_mem_ptr), 8 * rgb_width, surf_info->output_width, surf_info->output_height, surf_info->output_vstride, 0, hip_stream);
-                break;
-            case rgba64:
-                Nv12ToColor64<RGBA64>(in_yuv_frame, surf_info->output_pitch, static_cast<uint8_t *>(rgb_dev_mem_ptr), 8 * rgb_width, surf_info->output_width, surf_info->output_height, surf_info->output_vstride, 0, hip_stream);
-                break;
-            default:
-                std::cout << "surf_info->surface_format: has invalid value [" << surf_info->surface_format << "] "  << std::endl;
-                break;
-        }
-    }
-}
-
 // for python binding
 py::object PyRocVideoDecoder::PyGetFrameRgb(PyPacketData& packet, int rgb_format) {
     OutputFormatEnum e_output_format = (OutputFormatEnum)rgb_format;
@@ -194,14 +162,16 @@ py::object PyRocVideoDecoder::PyGetFrameRgb(PyPacketData& packet, int rgb_format
             if(frame_ptr_rgb == nullptr)
                 return py::cast(packet.frame_pts);
         }
-
+        // create new instance of post process class if not created
+        if(post_process_class == nullptr) {
+            post_process_class = new VideoPostProcess();
+        }
+        // use post process instance
+        VideoPostProcess * post_proc = (VideoPostProcess *) post_process_class;
         // Get Stream, and convert YUV 2 RGB
-        hipStream_t hip_stream_in = GetStream();
-        ConvertYuvToRgb((uint8_t *)packet.frame_adrs, frame_ptr_rgb, surf_info, e_output_format, hip_stream_in);
-
+        post_proc->ColorConvertYUV2RGB((uint8_t*)packet.frame_adrs, surf_info, frame_ptr_rgb, e_output_format, GetStream());
         // save the rgb ptr
         packet.frame_adrs_rgb = reinterpret_cast<std::uintptr_t>(frame_ptr_rgb);
-
         // Load DLPack Tensor
         if((uint8_t*) packet.frame_adrs != nullptr) {
             uint32_t width = GetWidth();

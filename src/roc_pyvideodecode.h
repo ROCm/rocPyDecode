@@ -24,6 +24,7 @@ THE SOFTWARE.
 
 #include "roc_video_dec.h"
 #include "roc_pydecode.h"
+#include "video_post_process.h"
 
 //
 // AMD Video Decoder Python Interface class
@@ -90,7 +91,7 @@ class PyRocVideoDecoder : public RocVideoDecoder {
       
     private:
         int GetImageSizeMultiplier(int bit_depth, OutputFormatEnum& e_output_format);
-        void ConvertYuvToRgb(uint8_t *in_yuv_frame, uint8_t *rgb_dev_mem_ptr, OutputSurfaceInfo *surf_info, OutputFormatEnum& e_output_format, hipStream_t hip_stream);
+        //void ConvertYuvToRgb(uint8_t *in_yuv_frame, uint8_t *rgb_dev_mem_ptr, OutputSurfaceInfo *surf_info, OutputFormatEnum& e_output_format, hipStream_t hip_stream);
         size_t CalculateRgbImageSize(int bit_depth, int width, int height, OutputFormatEnum& e_output_format);
         std::shared_ptr <ConfigInfo> configInfo;
         void InitConfigStructure();
@@ -102,4 +103,5 @@ class PyRocVideoDecoder : public RocVideoDecoder {
     protected:
         // used in frame allocation
         u_int8_t * frame_ptr_rgb = nullptr;
+        VideoPostProcess * post_process_class = nullptr;
 };
