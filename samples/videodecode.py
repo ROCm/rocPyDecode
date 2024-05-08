@@ -75,8 +75,6 @@ def Decoder(
     total_dec_time = 0.0
     not_seeking = True if (seek_frame == -1) else False
 
-    print("not_seeking: ",not_seeking )
-
     while True:
         start_time = datetime.datetime.now()
 
