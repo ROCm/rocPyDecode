@@ -158,7 +158,7 @@ if __name__ == "__main__":
         '--rgb_format',
         type=int,
         default=3,
-        help="Rgb Format to use as tensor - 1:bgr, 3:rgb, 5:bgra, 7:rgba, converts decoded YUV frame to Tensor in RGB format, optional, default: 3",
+        help="Rgb Format to use as tensor - 1:bgr, 3:rgb, converts decoded YUV frame to Tensor in RGB format, optional, default: 3",
         required=False)
     
     try:
@@ -178,11 +178,12 @@ if __name__ == "__main__":
     # handel params
     mem_type = 1 if (mem_type < 0 or mem_type > 2) else mem_type
     b_force_zero_latency = True if b_force_zero_latency == 'YES' else False
-    rgb_format = 3 if (rgb_format < 1 or rgb_format > 8) else rgb_format
+    rgb_format = 3 if (rgb_format != 1 and rgb_format != 3) else rgb_format
     if not os.path.exists(input_file_path):  # Input file (must exist)
         print("ERROR: input file doesn't exist.")
         exit()
 
+    print("rgb_format: ", rgb_format)
     Decoder(
         input_file_path,
         output_file_path,

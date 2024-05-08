@@ -90,9 +90,7 @@ class PyRocVideoDecoder : public RocVideoDecoder {
         py::int_ PyGetFrameSize();
       
     private:
-        int GetImageSizeMultiplier(int bit_depth, OutputFormatEnum& e_output_format);
-        //void ConvertYuvToRgb(uint8_t *in_yuv_frame, uint8_t *rgb_dev_mem_ptr, OutputSurfaceInfo *surf_info, OutputFormatEnum& e_output_format, hipStream_t hip_stream);
-        size_t CalculateRgbImageSize(int bit_depth, int width, int height, OutputFormatEnum& e_output_format);
+        size_t CalculateRgbImageSize(OutputFormatEnum& e_output_format, OutputSurfaceInfo* p_surf_info);
         std::shared_ptr <ConfigInfo> configInfo;
         void InitConfigStructure();
 

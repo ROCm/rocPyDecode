@@ -111,30 +111,17 @@ py::object PyRocVideoDecoder::PyGetFrame(PyPacketData& packet) {
     return py::cast(packet.frame_pts);
 }
 
-// implies count of channels and bit depth 8, 10 or 16
-int PyRocVideoDecoder::GetImageSizeMultiplier(int bit_depth, OutputFormatEnum& e_output_format) {
-    switch(bit_depth) {
-        case 8:
-            switch(e_output_format) {
-                case bgr:
-                case rgb:
-                    return 3; // (3*8=24)
-                case bgr48:
-                case rgb48:
-                    return 6; // (6*8=48 bits)
-                default:
-                    return 8; // (8*8=64 bits)
-            }
-    }
-    return 0;
-}
-
-size_t PyRocVideoDecoder::CalculateRgbImageSize(int bit_depth, int width, int height, OutputFormatEnum& e_output_format) {
+size_t PyRocVideoDecoder::CalculateRgbImageSize(OutputFormatEnum& e_output_format, OutputSurfaceInfo * p_surf_info) {
     size_t rgb_image_size = 0;
-    int rgb_width;
-    // has to be a multiple of 2 for hip colorconvert kernels
-    rgb_width = (width + 1) & ~1;
-    rgb_image_size = rgb_width * height * GetImageSizeMultiplier(bit_depth, e_output_format);
+    int rgb_width = 0;
+    if (p_surf_info->bit_depth == 8) {
+        rgb_width = (p_surf_info->output_width + 1) & ~1; // has to be a multiple of 2 for hip colorconvert kernels
+        rgb_image_size = ((e_output_format == bgr) || (e_output_format == rgb)) ? rgb_width * p_surf_info->output_height * 3 : rgb_width * p_surf_info->output_height * 4;
+    } else {
+        rgb_width = (p_surf_info->output_width + 1) & ~1;
+        rgb_image_size = ((e_output_format == bgr) || (e_output_format == rgb)) ? rgb_width * p_surf_info->output_height * 3 : ((e_output_format == bgr48) || (e_output_format == rgb48)) ?
+                                                rgb_width * p_surf_info->output_height * 6 : rgb_width * p_surf_info->output_height * 8;
+    }
     return rgb_image_size;
 }
 
@@ -151,16 +138,16 @@ py::object PyRocVideoDecoder::PyGetFrameRgb(PyPacketData& packet, int rgb_format
         OutputSurfaceInfo * surf_info = nullptr;
         GetOutputSurfaceInfo(&surf_info);
         if(surf_info == nullptr)
-            return py::cast(packet.frame_pts);
+            return py::cast(-1); // ret failure
         // get/calc new rgb image size
-        size_t rgb_image_size = CalculateRgbImageSize(surf_info->bit_depth, surf_info->output_width, surf_info->output_height, e_output_format);
-        if(rgb_image_size <=0 )
-            return py::cast(packet.frame_pts);
+        size_t rgb_image_size = CalculateRgbImageSize(e_output_format, surf_info);
+        if(rgb_image_size <= 0)
+            return py::cast(-1); // ret failure
         // allocate 'new' RGB image device-memory if wasn't
         if(frame_ptr_rgb == nullptr) {
             HIP_API_CALL(hipMalloc((void **)&frame_ptr_rgb, rgb_image_size));
             if(frame_ptr_rgb == nullptr)
-                return py::cast(packet.frame_pts);
+                return py::cast(-1); // ret failure
         }
         // create new instance of post process class if not created
         if(post_process_class == nullptr) {
@@ -217,36 +204,9 @@ py::object PyRocVideoDecoder::PySaveTensorToFile(std::string& output_file_name_i
     OutputFormatEnum e_output_format = (OutputFormatEnum)rgb_format;
     if(surf_mem == 0 || width <= 0 || height <= 0 || in_surf_info == 0)
         return py::cast<py::none>(Py_None);
-    OutputSurfaceInfo *surf_info = reinterpret_cast<OutputSurfaceInfo*>(in_surf_info);
-    uint64_t output_image_size = (uint64_t) CalculateRgbImageSize(surf_info->bit_depth, width, height, e_output_format);
-    if(hst_ptr_tensor_rgb == nullptr)
-        hst_ptr_tensor_rgb = new uint8_t [width * height * GetImageSizeMultiplier(surf_info->bit_depth, e_output_format)];
-    if (hst_ptr_tensor_rgb == nullptr)
-        return py::cast<py::none>(Py_None);
-    // file to write to
-    if(fp_tensor_rgb == nullptr){
-        fs::remove(output_file_name_in); // delete older file-attempt if exist, to append to new file
-        fp_tensor_rgb = fopen(output_file_name_in.c_str(), "ab");
-        if(fp_tensor_rgb == nullptr) {
-            delete hst_ptr_tensor_rgb;
-            hst_ptr_tensor_rgb = nullptr;
-            return py::cast<py::none>(Py_None);
-        }
-    }
-    // get data from GPU to HOST MEM
-    hipError_t hip_status = hipSuccess;
-    hip_status = hipMemcpyDtoH((void *)hst_ptr_tensor_rgb, (void*)surf_mem, output_image_size);
-    if (hip_status != hipSuccess) {
-        std::cerr << "ERROR: hipMemcpyDtoH failed! (" << hipGetErrorName(hip_status) << ")" << std::endl;
-        delete hst_ptr_tensor_rgb;
-        hst_ptr_tensor_rgb = nullptr;
-        fclose(fp_tensor_rgb);
-        fp_tensor_rgb = nullptr;
-        return py::cast<py::none>(Py_None);
-    }
-    // append
-    fseek(fp_tensor_rgb, 0L, SEEK_END);
-    fwrite(hst_ptr_tensor_rgb, 1, output_image_size, fp_tensor_rgb); // will append if not first time
+    OutputSurfaceInfo* surf_info = reinterpret_cast<OutputSurfaceInfo*>(in_surf_info);
+    size_t rgb_image_size = CalculateRgbImageSize(e_output_format, surf_info);
+    SaveFrameToFile(output_file_name_in, (void *)surf_mem, surf_info, rgb_image_size);
     return py::cast<py::none>(Py_None);
 }
 

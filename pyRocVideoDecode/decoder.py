@@ -77,6 +77,8 @@ class decoder(object):
 
     def GetFrameRgb(self, packet, rgb_format):
         pts = self.viddec.GetFrameRgb(packet, rgb_format)
+        if(pts == -1):
+            print("Error: GetFrameRgb returned failure.\n")
         return pts
 
     def GetWidth(self) -> int:
