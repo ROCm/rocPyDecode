@@ -51,7 +51,7 @@ shared_ptr<PyPacketData> PyVideoDemuxer::DemuxFrame() {
     int64_t pts=0;
         
     bool ret = Demux(&pVideo, &video_size, &pts);
-    currentPacket.get()->frame_adrs = (uintptr_t)pVideo;
+    currentPacket.get()->frame_adrs = reinterpret_cast<std::uintptr_t(pVideo);
     currentPacket.get()->frame_size = video_size;
     currentPacket.get()->frame_pts = pts;
     currentPacket.get()->end_of_stream = !ret;
@@ -68,7 +68,7 @@ shared_ptr<PyPacketData> PyVideoDemuxer::SeekFrame(int frame_number, int seek_mo
     video_seek.seek_crit_ = static_cast<SeekCriteria>(seek_criteria);
 
     bool ret = Seek(video_seek, &pVideo, &video_size);
-    currentPacket.get()->frame_adrs = (uintptr_t)pVideo;
+    currentPacket.get()->frame_adrs = reinterpret_cast<std::uintptr_t(pVideo);
     currentPacket.get()->frame_size = video_size;
     currentPacket.get()->frame_pts = video_seek.out_frame_pts_;
     currentPacket.get()->end_of_stream = !ret;
