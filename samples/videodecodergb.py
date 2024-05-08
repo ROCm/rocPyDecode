@@ -158,7 +158,7 @@ if __name__ == "__main__":
         '--rgb_format',
         type=int,
         default=3,
-        help="Rgb Format to use as tensor - 1:bgr, 2:bgr48, 3:rgb, 4:rgb48, 5:bgra, 6:bgra64, 7:rgba, 8:rgba64, converts decoded YUV frame to Tensor in RGB format, optional, default: 3",
+        help="Rgb Format to use as tensor - 1:bgr, 3:rgb, 5:bgra, 7:rgba, converts decoded YUV frame to Tensor in RGB format, optional, default: 3",
         required=False)
     
     try:
