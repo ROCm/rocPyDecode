@@ -21,6 +21,7 @@ THE SOFTWARE.
 */
    
 #include "roc_pyvideodemuxer.h"
+#include <exception>
 
 using namespace std;
 
@@ -62,12 +63,19 @@ shared_ptr<PyPacketData> PyVideoDemuxer::SeekFrame(int frame_number, int seek_mo
     uint8_t *pVideo=nullptr;
     int video_size=0;
 
-    VideoSeekContext video_seek;
+    VideoSeekContext video_seek(0);
     video_seek.seek_frame_ = frame_number;
     video_seek.seek_mode_ = static_cast<SeekMode>(seek_mode);
     video_seek.seek_crit_ = static_cast<SeekCriteria>(seek_criteria);
 
-    bool ret = Seek(video_seek, &pVideo, &video_size);
+    bool ret = false;
+    try {
+        ret = Seek(video_seek, &pVideo, &video_size);
+    } catch (const std::exception &ex) {
+      std::cerr << "Seek call failed: " << ex.what() << std::endl;
+      exit(1);
+    }
+
     currentPacket.get()->frame_adrs = reinterpret_cast<std::uintptr_t>(pVideo);
     currentPacket.get()->frame_size = video_size;
     currentPacket.get()->frame_pts = video_seek.out_frame_pts_;
