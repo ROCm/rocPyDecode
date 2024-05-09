@@ -21,18 +21,22 @@ The torch python sample requires pytorch for ROCm, which can be installed as fol
 
 ## videodecode.py
 
-This sample demuxes & decode frames from a video file, and optionally saves the frames to a file. To run this python sample script, you need to provide input video file full path name, other arguments are optional.
+This sample demuxes & decode frames from a video file, and optionally saves the frames to a file. \
+To run this python sample script, you need to provide input video file full path name, other arguments are optional.
 
 ### Arguments
 The following are full list of arguments that can be passed to the sample.
 ```bash
--h, --help                                    : Show detail help message and exit
--i INPUT, --input INPUT                       : Input File Path - required
--o OUTPUT, --output OUTPUT                    : Output File Path - optional
--d DEVICE, --device DEVICE                    : GPU device ID - optional, default - 0
--m MEM_TYPE, --mem_type MEM_TYPE              : Memory Type of output surfce - 0: Internal 1: dev_copied 2: host_copied - optional, default 1
--z ZERO_LATENCY, --zero_latency ZERO_LATENCY  : Force zero latency - [options: yes,no], default: no
--crop CROP_RECT, --crop_rect CROP_RECT        : Crop rectangle (left, top, right, bottom) - optional, default: None (no cropping)
+-h, --help                                       : Show detail help message and exit
+-i INPUT, --input INPUT                          : Input File Path - required
+-o OUTPUT, --output OUTPUT                       : Output File Path - optional
+-d DEVICE, --device DEVICE                       : GPU device ID - optional, default - 0
+-m MEM_TYPE, --mem_type MEM_TYPE                 : Memory Type of output surfce - 0: Internal 1: dev_copied 2: host_copied - optional, default 1
+-z ZERO_LATENCY, --zero_latency ZERO_LATENCY     : Force zero latency - [options: yes,no], default: no
+-crop CROP_RECT, --crop_rect CROP_RECT           : Crop rectangle (left, top, right, bottom) - optional, default: None (no cropping)
+-s SEEK, --seek SEEK                             : seek this number of frames, optional, default: no seek
+-sm SEEK_MODE, --seek_mode SEEK_MODE             : seek mode, 0 - by exact frame number, 1 - by previous key frame, optional, default: 1 - by previous key frame
+-sc SEEK_CRITERIA, --seek_criteria SEEK_CRITERIA : seek criteria, 0 - by frame number, 1 - by time stamp, optional, default: 0 - by frame number
 ```
 
 ## videodecodergb.py
@@ -49,15 +53,13 @@ The following are full list of arguments that can be passed to the sample.
 -m MEM_TYPE, --mem_type MEM_TYPE              : Memory Type of output surfce - 0: Internal 1: dev_copied 2: host_copied - optional, default 1
 -z ZERO_LATENCY, --zero_latency ZERO_LATENCY  : Force zero latency - [options: yes,no], default: no
 -crop CROP_RECT, --crop_rect CROP_RECT        : Crop rectangle (left, top, right, bottom) - optional, default: None (no cropping)
--of RGB_FORMAT, --rgb_format RGB_FORMAT       : Rgb Format to use - 1:bgr, 2:bgr48, 3:rgb, 4:rgb48, 5:bgra, 6:bgra64, 7:rgba, 8:rgba64, converts decoded YUV frame to RGB format, optional, default: 3
+-of RGB_FORMAT, --rgb_format RGB_FORMAT       : Rgb Format to use - 1:bgr, 3:rgb, converts decoded YUV frame to Tensor in RGB format, optional, default: 3
 ```
 
 ## videodecodetorch.py
 
-This sample demuxes & decode frames from a video file, and convert it to pytorch tensor via DLPack. Optionally you can save it to a file. The output is the pytorch image tensors in native YUV420 format (native). To run this python sample script, you need to provide input video file full path name, other arguments are optional.
-
-## Prerequisites
-* [pytorch for ROCm](https://pytorch.org/get-started/locally/)
+This sample demuxes & decode frames from a video file, and convert it to pytorch tensor via DLPack. Optionally you can save it to a file. \
+To run this python sample script, you need to provide input video file full path name, other arguments are optional.
 
 ### Arguments
 The following are full list of arguments that can be passed to the sample.
@@ -73,18 +75,27 @@ The following are full list of arguments that can be passed to the sample.
 
 ## videodecodetorch_resnet50.py
 
-This sample demuxes & decode frames from a video file, converts each frame to pytorch tensor via DLPack. It resizes the frame to match resnet50 model, and feed it to the model inference, printing out 5 possible predictions with precision ratio, for each frame it decodes. Optionally you can save it to a file. The output is the pytorch image tensors with the rgb format the user specifies with -of or as default 'rgb' if not specified. To run this python sample script, you need to provide input video file full path name, other arguments are optional.
-
-## Prerequisites
-* [pytorch for ROCm](https://pytorch.org/get-started/locally/)
+This sample demuxes & decode frames from a video file, converts each frame to pytorch tensor via DLPack. \
+It resizes the frame to match resnet50 model, and feed it to the model inference, printing out 5 possible predictions with precision ratio, for each frame it decodes. \
+To run this python sample script, you need to provide input video file full path name, other argument is optional.
 
 ### Arguments
 The following are full list of arguments that can be passed to the sample.
 ```bash
 -h, --help                                    : Show detail help message and exit
 -i INPUT, --input INPUT                       : Input File Path - required
--o OUTPUT, --output OUTPUT                    : Output File Path - optional
 -d DEVICE, --device DEVICE                    : GPU device ID - optional, default - 0
 -m MEM_TYPE, --mem_type MEM_TYPE              : Memory Type of output surfce - 0: Internal 1: dev_copied 2: host_copied - optional, default 1
--of RGB_FORMAT, --rgb_format RGB_FORMAT       : Rgb Format to use as tensor - 1:bgr, 2:bgr48, 3:rgb, 4:rgb48, 5:bgra, 6:bgra64, 7:rgba, 8:rgba64, converts decoded YUV frame to Tensor in RGB format, optional, default: 3
+```
+
+## videodedemux.py
+
+This sample demuxes frames from a video file. \
+To run this python sample script, you need to provide input video file full path name.
+
+### Arguments
+The following are full list of arguments that can be passed to the sample.
+```bash
+-h, --help                                    : Show detail help message and exit
+-i INPUT, --input INPUT                       : Input File Path - required
 ```
