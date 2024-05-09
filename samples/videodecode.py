@@ -14,7 +14,10 @@ def Decoder(
         b_force_zero_latency,
         crop_rect,
         b_generate_md5,
-        ref_md5_file):
+        ref_md5_file,
+        seek_frame,
+        seek_mode,
+        seek_criteria):
 
     # demuxer instance
     demuxer = dmx.demuxer(input_file_path)
@@ -70,10 +73,17 @@ def Decoder(
     # -----------------
     n_frame = 0
     total_dec_time = 0.0
+    not_seeking = True if (seek_frame == -1) else False
 
     while True:
         start_time = datetime.datetime.now()
-        packet = demuxer.DemuxFrame()
+
+        if(not_seeking):
+            packet = demuxer.DemuxFrame()
+        else:
+            packet = demuxer.SeekFrame(seek_frame, seek_mode, seek_criteria)
+            not_seeking = True
+
         n_frame_returned = viddec.DecodeFrame(packet)
         for i in range(n_frame_returned):
             viddec.GetFrame(packet)
@@ -193,6 +203,28 @@ if __name__ == "__main__":
         type=str,
         help='Input MD5 file path, optional',
         required=False)
+    parser.add_argument(
+        '-s',
+        '--seek',
+        type=int,
+        default=-1,
+        help='seek this number of frames, optional, default: no seek',
+        required=False)
+    parser.add_argument(
+        '-sm',
+        '--seek_mode',
+        type=int,
+        default=1,
+        help='seek mode, 0 - by exact frame number, 1 - by previous key frame, optional, default: 1 - by previous key frame',
+        required=False)
+    parser.add_argument(
+        '-sc',
+        '--seek_criteria',
+        type=int,
+        default=0,
+        help='seek criteria, 0 - by frame number, 1 - by time stamp, optional, default: 0 - by frame number',
+        required=False)
+
 
     try:
         args = parser.parse_args()
@@ -207,6 +239,18 @@ if __name__ == "__main__":
     crop_rect = args.crop_rect
     b_generate_md5 = args.generate_md5
     ref_md5_file = args.input_md5
+    seek_frame = args.seek
+    seek_mode = args.seek_mode
+    seek_criteria = args.seek_criteria
+
+    # validate the seek: mode/criteria
+    if(seek_frame > 0):
+        if(seek_mode != 0 and seek_mode != 1):
+            print("Error: Invalid seek mode value.")
+            exit()
+        if(seek_criteria != 0 and seek_criteria != 1):
+            print("Error: Invalid seek criteria value.")
+            exit()
 
     b_force_zero_latency = True if b_force_zero_latency == 'yes' else False
     b_generate_md5 = True if b_generate_md5 == 'yes' else False
@@ -227,4 +271,7 @@ if __name__ == "__main__":
         b_force_zero_latency,
         crop_rect,
         b_generate_md5,
-        ref_md5_file)
+        ref_md5_file,
+        seek_frame,
+        seek_mode,
+        seek_criteria)

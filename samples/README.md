@@ -27,13 +27,16 @@ To run this python sample script, you need to provide input video file full path
 ### Arguments
 The following are full list of arguments that can be passed to the sample.
 ```bash
--h, --help                                    : Show detail help message and exit
--i INPUT, --input INPUT                       : Input File Path - required
--o OUTPUT, --output OUTPUT                    : Output File Path - optional
--d DEVICE, --device DEVICE                    : GPU device ID - optional, default - 0
--m MEM_TYPE, --mem_type MEM_TYPE 			  : Memory Type of output surfce - 0: Internal 1: dev_copied 2: host_copied - optional, default 1
--z ZERO_LATENCY, --zero_latency ZERO_LATENCY  : Force zero latency - [options: yes,no], default: no
--crop CROP_RECT, --crop_rect CROP_RECT        : Crop rectangle (left, top, right, bottom) - optional, default: None (no cropping)
+-h, --help                                       : Show detail help message and exit
+-i INPUT, --input INPUT                          : Input File Path - required
+-o OUTPUT, --output OUTPUT                       : Output File Path - optional
+-d DEVICE, --device DEVICE                       : GPU device ID - optional, default - 0
+-m MEM_TYPE, --mem_type MEM_TYPE                 : Memory Type of output surfce - 0: Internal 1: dev_copied 2: host_copied - optional, default 1
+-z ZERO_LATENCY, --zero_latency ZERO_LATENCY     : Force zero latency - [options: yes,no], default: no
+-crop CROP_RECT, --crop_rect CROP_RECT           : Crop rectangle (left, top, right, bottom) - optional, default: None (no cropping)
+-s SEEK, --seek SEEK                             : seek this number of frames, optional, default: no seek
+-sm SEEK_MODE, --seek_mode SEEK_MODE             : seek mode, 0 - by exact frame number, 1 - by previous key frame, optional, default: 1 - by previous key frame
+-sc SEEK_CRITERIA, --seek_criteria SEEK_CRITERIA : seek criteria, 0 - by frame number, 1 - by time stamp, optional, default: 0 - by frame number
 ```
 
 ## videodecodetorch.py

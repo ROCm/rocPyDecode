@@ -21,6 +21,7 @@ THE SOFTWARE.
 */
    
 #include "roc_pyvideodemuxer.h"
+#include <exception>
 
 using namespace std;
 
@@ -28,7 +29,8 @@ void PyVideoDemuxerInitializer(py::module& m) {
         py::class_<PyVideoDemuxer, std::shared_ptr<PyVideoDemuxer>> (m, "PyVideoDemuxer")
         .def(py::init<const char*>())
         .def("GetCodecId",&PyVideoDemuxer::GetCodecId,"Get Codec ID")
-        .def("DemuxFrame",&PyVideoDemuxer::DemuxFrame);
+        .def("DemuxFrame",&PyVideoDemuxer::DemuxFrame)
+        .def("SeekFrame",&PyVideoDemuxer::SeekFrame);
 }
 
 rocDecVideoCodec ConvertAVCodec2RocDecVideoCodec(int av_codec) {
@@ -45,14 +47,38 @@ void PyVideoDemuxer::InitPacket() {
 }
 
 shared_ptr<PyPacketData> PyVideoDemuxer::DemuxFrame() {
-    uint8_t *pVideo=nullptr;
-    int video_size=0;
-    int64_t pts=0;
+    uint8_t *p_video = nullptr;
+    int video_size = 0;
+    int64_t pts = 0;
         
-    bool ret = Demux(&pVideo, &video_size, &pts);
-    currentPacket.get()->frame_adrs = (uintptr_t)pVideo;
+    bool ret = Demux(&p_video, &video_size, &pts);
+    currentPacket.get()->frame_adrs = reinterpret_cast<std::uintptr_t>(p_video);
     currentPacket.get()->frame_size = video_size;
     currentPacket.get()->frame_pts = pts;
+    currentPacket.get()->end_of_stream = !ret;
+    return currentPacket;
+}
+
+shared_ptr<PyPacketData> PyVideoDemuxer::SeekFrame(int frame_number, int seek_mode, int seek_criteria) {
+    uint8_t *p_video = nullptr;
+    int video_size = 0;
+
+    VideoSeekContext video_seek;
+    video_seek.seek_frame_ = frame_number;
+    video_seek.seek_mode_ = static_cast<SeekMode>(seek_mode);
+    video_seek.seek_crit_ = static_cast<SeekCriteria>(seek_criteria);
+
+    bool ret = false;
+    try {
+        ret = Seek(video_seek, &p_video, &video_size);
+    } catch (const std::exception &ex) {
+      std::cerr << "Seek call failed: " << ex.what() << std::endl;
+      exit(1);
+    }
+
+    currentPacket.get()->frame_adrs = reinterpret_cast<std::uintptr_t>(p_video);
+    currentPacket.get()->frame_size = video_size;
+    currentPacket.get()->frame_pts = video_seek.out_frame_pts_;
     currentPacket.get()->end_of_stream = !ret;
     return currentPacket;
 }
