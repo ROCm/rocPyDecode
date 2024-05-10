@@ -111,6 +111,19 @@ py::object PyRocVideoDecoder::PyGetFrame(PyPacketData& packet) {
     return py::cast(packet.frame_pts);
 }
 
+size_t PyRocVideoDecoder::GetRgbFrameStride(OutputFormatEnum& e_output_format, OutputSurfaceInfo * p_surf_info) {
+    size_t rgb_image_stride = 1;
+    int rgb_width = 0;
+    if (p_surf_info->bit_depth == 8) {
+        rgb_width = (p_surf_info->output_width + 1) & ~1; // has to be a multiple of 2 for hip colorconvert kernels
+        rgb_image_stride = ((e_output_format == bgr) || (e_output_format == rgb)) ? rgb_width * 3 : rgb_width * 4;
+    } else {
+        rgb_width = (p_surf_info->output_width + 1) & ~1;
+        rgb_image_stride = ((e_output_format == bgr) || (e_output_format == rgb)) ? rgb_width * 3 : ((e_output_format == bgr48) || (e_output_format == rgb48)) ? rgb_width * 6 : rgb_width * 8;
+    }
+    return rgb_image_stride;
+}
+
 size_t PyRocVideoDecoder::CalculateRgbImageSize(OutputFormatEnum& e_output_format, OutputSurfaceInfo * p_surf_info) {
     size_t rgb_image_size = 0;
     int rgb_width = 0;
@@ -163,7 +176,7 @@ py::object PyRocVideoDecoder::PyGetFrameRgb(PyPacketData& packet, int rgb_format
         if((uint8_t*) packet.frame_adrs != nullptr) {
             uint32_t width = GetWidth();
             uint32_t height = GetHeight();
-            uint32_t surf_stride = (width * (((e_output_format == bgr) || (e_output_format == rgb)) ? 3 : 4));
+            uint32_t surf_stride = GetRgbFrameStride(e_output_format, surf_info);
              std::string type_str((const char*)"|u1");
             std::vector<size_t> shape{ static_cast<size_t>(height), static_cast<size_t>(width)};
             std::vector<size_t> stride{ static_cast<size_t>(surf_stride), 1};
