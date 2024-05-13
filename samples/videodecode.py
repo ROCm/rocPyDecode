@@ -255,7 +255,7 @@ if __name__ == "__main__":
             print("Error: Invalid seek criteria value.")
             exit()
 
-    # handel params
+    # handle params
     mem_type = 1 if (mem_type < 0 or mem_type > 2) else mem_type
     b_force_zero_latency = True if b_force_zero_latency == 'YES' else False
     b_generate_md5 = True if b_generate_md5 == 'YES' else False
