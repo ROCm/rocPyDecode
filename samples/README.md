@@ -85,7 +85,6 @@ The following are full list of arguments that can be passed to the sample.
 -h, --help                                    : Show detail help message and exit
 -i INPUT, --input INPUT                       : Input File Path - required
 -d DEVICE, --device DEVICE                    : GPU device ID - optional, default - 0
--m MEM_TYPE, --mem_type MEM_TYPE              : Memory Type of output surfce - 0: Internal 1: dev_copied 2: host_copied - optional, default 1
 ```
 
 ## videodedemux.py

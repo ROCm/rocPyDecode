@@ -12,7 +12,6 @@ def Decoder(
         input_file_path,
         output_file_path,
         device_id,
-        mem_type,
         rgb_format):
 
     # Init resnet
@@ -40,7 +39,7 @@ def Decoder(
     # decoder instance
     viddec = dec.decoder(
         device_id,
-        mem_type,
+        1,
         codec_id,
         False,
         None,
@@ -165,13 +164,6 @@ if __name__ == "__main__":
         help='GPU device ID - optional, default 0',
         required=False)
     parser.add_argument(
-        '-m',
-        '--mem_type',
-        type=int,
-        default=1,
-        help='mem_type of output surfce - 0: Internal 1: dev_copied 2: host_copied optional, default 1',
-        required=False)
-    parser.add_argument(
         '-of',
         '--rgb_format',
         type=int,
@@ -188,11 +180,9 @@ if __name__ == "__main__":
     input_file_path = args.input
     output_file_path = args.output
     device_id = args.device
-    mem_type = args.mem_type
     rgb_format = args.rgb_format
 
     # handel params
-    mem_type = 1 if (mem_type < 0 or mem_type > 2) else mem_type
     rgb_format = 3 if (rgb_format < 1 or rgb_format > 8) else rgb_format
     if not os.path.exists(input_file_path):  # Input file (must exist)
         print("ERROR: input file doesn't exist.")
@@ -205,5 +195,4 @@ if __name__ == "__main__":
         input_file_path,
         output_file_path,
         device_id,
-        mem_type,
         rgb_format)
