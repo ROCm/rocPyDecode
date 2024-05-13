@@ -77,8 +77,6 @@ class decoder(object):
 
     def GetFrameRgb(self, packet, rgb_format):
         pts = self.viddec.GetFrameRgb(packet, rgb_format)
-        if(pts == -1):
-            print("Error: GetFrameRgb returned failure.\n")
         return pts
 
     def GetWidth(self) -> int:
@@ -98,9 +96,6 @@ class decoder(object):
 
     def SaveFrameToFile(self, output_file_path, frame_adrs, surface_info):
         return self.viddec.SaveFrameToFile( output_file_path, frame_adrs, surface_info)
-
-    def SaveRgbFrameToFile(self, output_file_path, frame_adrs, width, height, rgb_format, surface_info):
-        return self.viddec.SaveRgbFrameToFile(output_file_path, frame_adrs, width, height, rgb_format, surface_info)
 
     def SaveTensorToFile(self, output_file_path, frame_adrs, width, height, rgb_format, surface_info):
         return self.viddec.SaveTensorToFile(output_file_path, frame_adrs, width, height, rgb_format, surface_info)

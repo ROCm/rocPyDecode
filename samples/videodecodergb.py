@@ -65,12 +65,16 @@ def Decoder(
         n_frame_returned = viddec.DecodeFrame(packet)
 
         for i in range(n_frame_returned):
-            viddec.GetFrameRgb(packet, rgb_format)
+            pts = viddec.GetFrameRgb(packet, rgb_format)
+
+            if(pts == -1):
+                print("Error: GetFrameRgb returned failure.\n")
+                continue
 
             # save decoded rgb frame to file
             if (output_file_path is not None):
                 surface_info = viddec.GetOutputSurfaceInfo()
-                viddec.SaveRgbFrameToFile(
+                viddec.SaveTensorToFile(
                     output_file_path,
                     packet.frame_adrs_rgb,
                     viddec.GetWidth(),

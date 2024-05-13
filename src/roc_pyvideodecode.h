@@ -60,9 +60,6 @@ class PyRocVideoDecoder : public RocVideoDecoder {
         py::object PySaveTensorToFile(std::string& output_file_name_in, uintptr_t& surf_mem, int width, int height, int rgb_format, uintptr_t& surf_info);
 
         // for python binding
-        py::object PySaveRgbFrameToFile(std::string& output_file_name_in, uintptr_t& surf_mem, int width, int height, int rgb_format, uintptr_t& surf_info);
-
-        // for python binding
         uintptr_t PyGetOutputSurfaceInfo();
  
         // for python binding
@@ -90,7 +87,6 @@ class PyRocVideoDecoder : public RocVideoDecoder {
         py::int_ PyGetFrameSize();
       
     private:
-        size_t GetRgbFrameStride(OutputFormatEnum& e_output_format, OutputSurfaceInfo * p_surf_info);
         size_t CalculateRgbImageSize(OutputFormatEnum& e_output_format, OutputSurfaceInfo* p_surf_info);
         std::shared_ptr <ConfigInfo> configInfo;
         void InitConfigStructure();
