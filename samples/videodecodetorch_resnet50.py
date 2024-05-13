@@ -80,7 +80,11 @@ def Decoder(
         n_frame_returned = viddec.DecodeFrame(packet)
 
         for i in range(n_frame_returned):
-            viddec.GetFrameRgb(packet, rgb_format)
+            pts = viddec.GetFrameRgb(packet, rgb_format)
+
+            if(pts == -1):
+                print("Error: GetFrameRgb returned failure.\n")
+                continue
 
             # using torch tensor
             img_tensor = torch.from_dlpack(packet.extBuf.__dlpack__(packet))
