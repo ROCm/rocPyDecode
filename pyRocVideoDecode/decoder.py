@@ -109,9 +109,6 @@ class decoder(object):
         return self.viddec.SaveFrameToFile(
             output_file_path, frame_adrs, surface_info)
 
-    def SaveResizedFrameToFile(self, output_file_path, frame_adrs, surface_info):
-        return self.viddec.SaveResizedFrameToFile( output_file_path, frame_adrs, surface_info)
-
     def SaveTensorToFile(
             self,
             output_file_path,

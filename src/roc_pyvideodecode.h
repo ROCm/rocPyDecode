@@ -62,9 +62,6 @@ class PyRocVideoDecoder : public RocVideoDecoder {
         py::object PySaveTensorToFile(std::string& output_file_name_in, uintptr_t& surf_mem, uintptr_t& surface_info);
 
         // for python binding
-        py::object PySaveResizedFrameToFile(std::string& output_file_name, uintptr_t& surf_mem, uintptr_t& surface_info);
-
-        // for python binding
         uintptr_t PyGetOutputSurfaceInfo();
  
         // for python binding

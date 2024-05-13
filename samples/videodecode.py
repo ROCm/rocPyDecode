@@ -100,7 +100,7 @@ def Decoder(
 
             if (output_file_path is not None):
                 if (frame_is_resized):
-                    viddec.SaveResizedFrameToFile(output_file_path, packet.frame_adrs_resized, resized_surface_info)
+                    viddec.SaveFrameToFile(output_file_path, packet.frame_adrs_resized, resized_surface_info)
                 else:
                     surface_info = viddec.GetOutputSurfaceInfo()
                     viddec.SaveFrameToFile(output_file_path, packet.frame_adrs, surface_info)
