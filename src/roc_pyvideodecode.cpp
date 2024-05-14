@@ -176,7 +176,7 @@ py::object PyRocVideoDecoder::PyGetNumOfFlushedFrames() {
 
 // for python binding
 py::object PyRocVideoDecoder::PyReleaseFrame(PyPacketData& packet) {  
-    bool ret = ReleaseFrame(packet.frame_pts, true);     
+    bool ret = ReleaseFrame(packet.frame_pts);
     return py::cast(ret);
 }
 
