@@ -1,10 +1,9 @@
+import pyRocVideoDecode.decoder as dec
+import pyRocVideoDecode.demuxer as dmx
 import datetime
 import sys
 import argparse
 import os.path
-import torch
-import pyRocVideoDecode.decoder as dec
-import pyRocVideoDecode.demuxer as dmx
 
 
 def Decoder(
@@ -13,7 +12,8 @@ def Decoder(
         device_id,
         mem_type,
         b_force_zero_latency,
-        crop_rect):
+        crop_rect,
+        rgb_format):
 
     # demuxer instance
     demuxer = dmx.demuxer(input_file_path)
@@ -65,19 +65,21 @@ def Decoder(
         n_frame_returned = viddec.DecodeFrame(packet)
 
         for i in range(n_frame_returned):
-            viddec.GetFrame(packet)
+            pts = viddec.GetFrameRgb(packet, rgb_format)
 
-            # using torch tensor
-            img_tensor = torch.from_dlpack(packet.extBuf.__dlpack__(packet))
+            if(pts == -1):
+                print("Error: GetFrameRgb returned failure.\n")
+                continue
 
-            # TODO: some tensor work
-
-            # save tensors to file, with original decoded Size
+            # save decoded rgb frame to file
             if (output_file_path is not None):
                 surface_info = viddec.GetOutputSurfaceInfo()
-                viddec.SaveFrameToFile(
+                viddec.SaveTensorToFile(
                     output_file_path,
-                    img_tensor.data_ptr(),
+                    packet.frame_adrs_rgb,
+                    viddec.GetWidth(),
+                    viddec.GetHeight(),
+                    rgb_format,
                     surface_info)
 
             # release frame
@@ -107,12 +109,6 @@ def Decoder(
             print("info: avg frame per second: " +"{0:0.2f}".format(round(frame_per_second,2)) +"\n")
         else:
             print("info: frame count= ", n_frame)
-
-    # print tensor details
-    print("Tensor Shape:   ", packet.extBuf.shape)
-    print("Tensor Strides: ", packet.extBuf.strides)
-    print("Tensor dType:   ", packet.extBuf.dtype)
-    print("Tensor Device:  ", packet.extBuf.__dlpack_device__(), "\n")
 
 
 if __name__ == "__main__":
@@ -161,7 +157,14 @@ if __name__ == "__main__":
         type=int,
         help='Crop rectangle (left, top, right, bottom), optional, default: no cropping',
         required=False)
-
+    parser.add_argument(
+        '-of',
+        '--rgb_format',
+        type=int,
+        default=3,
+        help="Rgb Format to use - 1:bgr, 3:rgb, converts decoded YUV frame to Tensor in RGB format, optional, default: 3",
+        required=False)
+    
     try:
         args = parser.parse_args()
     except BaseException:
@@ -174,21 +177,22 @@ if __name__ == "__main__":
     mem_type = args.mem_type
     b_force_zero_latency = args.zero_latency.upper()
     crop_rect = args.crop_rect
+    rgb_format = args.rgb_format
 
     # handel params
     mem_type = 1 if (mem_type < 0 or mem_type > 2) else mem_type
     b_force_zero_latency = True if b_force_zero_latency == 'YES' else False
+    rgb_format = 3 if (rgb_format != 1 and rgb_format != 3) else rgb_format
     if not os.path.exists(input_file_path):  # Input file (must exist)
         print("ERROR: input file doesn't exist.")
         exit()
 
-    # torch GPU
-    print("\nPyTorch Using: ", torch.cuda.get_device_name(0))
-
+    print("rgb_format: ", rgb_format)
     Decoder(
         input_file_path,
         output_file_path,
         device_id,
         mem_type,
         b_force_zero_latency,
-        crop_rect)
+        crop_rect,
+        rgb_format)

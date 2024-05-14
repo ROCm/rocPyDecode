@@ -58,6 +58,18 @@ PYBIND11_MODULE(rocPyDecode, m) {
         .value("rocDecVideoCodec_HEVC",rocDecVideoCodec_HEVC)          
         .export_values(); 
 
+    py::enum_<OutputFormatEnum>(types_m,"OutputFormatEnum","Types of images")
+        .value("native",native)
+        .value("bgr",bgr)
+        .value("bgr48",bgr48)
+        .value("rgb",rgb)
+        .value("rgb48",rgb48)
+        .value("bgra",bgra)
+        .value("bgra64",bgra64)
+        .value("rgba",rgba)
+        .value("rgba64",rgba64)
+       .export_values();
+
     // ---------
     // PyExport
     // ---------
@@ -102,12 +114,13 @@ PYBIND11_MODULE(rocPyDecode, m) {
     // PyPacketData
     py::class_<PyPacketData, shared_ptr<PyPacketData>>(m, "PyPacketData", py::module_local())
         .def(py::init<>())
-        .def_readwrite("end_of_stream", &PyPacketData::end_of_stream)
-        .def_readwrite("pkt_flags",     &PyPacketData::pkt_flags)
-        .def_readwrite("frame_pts",     &PyPacketData::frame_pts)
-        .def_readwrite("frame_size",    &PyPacketData::frame_size)
-        .def_readwrite("frame_adrs",    &PyPacketData::frame_adrs)
-        .def_readwrite("extBuf",        &PyPacketData::extBuf)
+        .def_readwrite("end_of_stream",  &PyPacketData::end_of_stream)
+        .def_readwrite("pkt_flags",      &PyPacketData::pkt_flags)
+        .def_readwrite("frame_pts",      &PyPacketData::frame_pts)
+        .def_readwrite("frame_size",     &PyPacketData::frame_size)
+        .def_readwrite("frame_adrs",     &PyPacketData::frame_adrs)
+        .def_readwrite("frame_adrs_rgb", &PyPacketData::frame_adrs_rgb)
+        .def_readwrite("extBuf",         &PyPacketData::extBuf)
         
         // DL Pack Tensor
         .def_property_readonly("shape", [](std::shared_ptr<PyPacketData>& self) {

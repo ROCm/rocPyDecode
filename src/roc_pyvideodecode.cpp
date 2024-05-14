@@ -21,7 +21,8 @@ THE SOFTWARE.
 */
 
 #include "roc_pyvideodecode.h"
- 
+#include "colorspace_kernels.h"
+
 using namespace std;
 
 void PyRocVideoDecoderInitializer(py::module& m) {
@@ -32,6 +33,7 @@ void PyRocVideoDecoderInitializer(py::module& m) {
         .def("GetDeviceinfo",&PyRocVideoDecoder::PyGetDeviceinfo)
         .def("DecodeFrame",&PyRocVideoDecoder::PyDecodeFrame) 
         .def("GetFrame",&PyRocVideoDecoder::PyGetFrame)
+        .def("GetFrameRgb",&PyRocVideoDecoder::PyGetFrameRgb)
         .def("GetWidth",&PyRocVideoDecoder::PyGetWidth)
         .def("GetHeight",&PyRocVideoDecoder::PyGetHeight)
         .def("GetStride",&PyRocVideoDecoder::PyGetStride)
@@ -55,7 +57,30 @@ void PyRocVideoDecoder::InitConfigStructure() {
     configInfo.get()->pci_device_id = 0;
 }
 
-PyRocVideoDecoder::~PyRocVideoDecoder() {}
+PyRocVideoDecoder::~PyRocVideoDecoder() {
+    // close tensor rgb file if still open, used in SAVE Tensor
+    if( fp_tensor_rgb != nullptr) {
+        fclose(fp_tensor_rgb);
+        fp_tensor_rgb = nullptr;
+    }
+    // free host mem, used in SAVE Tensor
+    if(hst_ptr_tensor_rgb != nullptr) {
+        delete hst_ptr_tensor_rgb;
+        hst_ptr_tensor_rgb = nullptr;
+    }
+    // free new RGB frame ptr if used
+    if (frame_ptr_rgb != nullptr) {
+        hipError_t hip_status = hipFree(frame_ptr_rgb);
+        if (hip_status != hipSuccess) {
+            std::cerr << "ERROR: hipFree failed! (" << hip_status << ")" << std::endl;
+        }
+        frame_ptr_rgb = nullptr;
+    }
+    if( post_process_class != nullptr ) {
+        delete post_process_class;
+        post_process_class = nullptr;
+    }
+}
 
 int PyRocVideoDecoder::PyDecodeFrame(PyPacketData& packet) {
     int decoded_frame_count = DecodeFrame((u_int8_t*) packet.frame_adrs, static_cast<size_t>(packet.frame_size), packet.pkt_flags, packet.frame_pts);
@@ -74,9 +99,71 @@ py::object PyRocVideoDecoder::PyGetFrame(PyPacketData& packet) {
         uint32_t height = GetHeight();    
         uint32_t surf_stride = GetSurfaceStride(); 
         std::string type_str((const char*)"|u1");
-        std::vector<size_t> shape{ static_cast<size_t>(height * 1.5), width}; // NV12
+        std::vector<size_t> shape{ static_cast<size_t>(height * 1.5), static_cast<size_t>(width)}; // NV12
         std::vector<size_t> stride{ static_cast<size_t>(surf_stride), 1};
         packet.extBuf->LoadDLPack(shape, stride, type_str, (void *)packet.frame_adrs);
+    }
+    return py::cast(packet.frame_pts);
+}
+
+size_t PyRocVideoDecoder::CalculateRgbImageSize(OutputFormatEnum& e_output_format, OutputSurfaceInfo * p_surf_info) {
+    size_t rgb_image_size = 0;
+    int rgb_width = 0;
+    if (p_surf_info->bit_depth == 8) {
+        rgb_width = (p_surf_info->output_width + 1) & ~1; // has to be a multiple of 2 for hip colorconvert kernels
+        rgb_image_size = ((e_output_format == bgr) || (e_output_format == rgb)) ? rgb_width * p_surf_info->output_height * 3 : rgb_width * p_surf_info->output_height * 4;
+    } else {
+        rgb_width = (p_surf_info->output_width + 1) & ~1;
+        rgb_image_size = ((e_output_format == bgr) || (e_output_format == rgb)) ? rgb_width * p_surf_info->output_height * 3 : ((e_output_format == bgr48) || (e_output_format == rgb48)) ?
+                                                rgb_width * p_surf_info->output_height * 6 : rgb_width * p_surf_info->output_height * 8;
+    }
+    return rgb_image_size;
+}
+
+// for python binding
+py::object PyRocVideoDecoder::PyGetFrameRgb(PyPacketData& packet, int rgb_format) {
+    OutputFormatEnum e_output_format = (OutputFormatEnum)rgb_format;
+    // Get YUV Frame
+    int64_t pts = packet.frame_pts;
+    packet.frame_adrs = reinterpret_cast<std::uintptr_t>(GetFrame(&pts));
+    packet.frame_pts = pts;
+    // Load DLPack Tensor
+    if((u_int8_t*)packet.frame_adrs != nullptr) {
+        // get surface info
+        OutputSurfaceInfo * surf_info = nullptr;
+        GetOutputSurfaceInfo(&surf_info);
+        if(surf_info == nullptr)
+            return py::cast(-1); // ret failure
+        // get/calc new rgb image size
+        size_t rgb_image_size = CalculateRgbImageSize(e_output_format, surf_info);
+        if(rgb_image_size <= 0)
+            return py::cast(-1); // ret failure
+        // allocate 'new' RGB image device-memory if wasn't
+        if(frame_ptr_rgb == nullptr) {
+            HIP_API_CALL(hipMalloc((void **)&frame_ptr_rgb, rgb_image_size));
+            if(frame_ptr_rgb == nullptr)
+                return py::cast(-1); // ret failure
+        }
+        // create new instance of post process class if not created
+        if(post_process_class == nullptr) {
+            post_process_class = new VideoPostProcess();
+        }
+        // use post process instance
+        VideoPostProcess * post_proc = post_process_class;
+        // Get Stream, and convert YUV 2 RGB
+        post_proc->ColorConvertYUV2RGB((uint8_t*)packet.frame_adrs, surf_info, frame_ptr_rgb, e_output_format, GetStream());
+        // save the rgb ptr
+        packet.frame_adrs_rgb = reinterpret_cast<std::uintptr_t>(frame_ptr_rgb);
+        // Load DLPack Tensor
+        if((uint8_t*) packet.frame_adrs != nullptr) {
+            uint32_t width = GetWidth();
+            uint32_t height = GetHeight();
+            uint32_t surf_stride = post_proc->GetRgbStride(e_output_format, surf_info);
+             std::string type_str((const char*)"|u1");
+            std::vector<size_t> shape{ static_cast<size_t>(height), static_cast<size_t>(width)};
+            std::vector<size_t> stride{ static_cast<size_t>(surf_stride), 1};
+            packet.extBuf->LoadDLPack(shape, stride, type_str, (void *)frame_ptr_rgb);
+        }
     }
     return py::cast(packet.frame_pts);
 }
@@ -101,15 +188,15 @@ py::object PyRocVideoDecoder::PySaveFrameToFile(std::string& output_file_name_in
     }
     return py::cast<py::none>(Py_None);
 }
- 
+
 // for python binding
-py::object PyRocVideoDecoder::PySaveTensorToFile(std::string& output_file_name_in, uintptr_t& surf_mem, uintptr_t& surface_info) {
-    std::string output_file_name = output_file_name_in.c_str();   
-    if(surf_mem && surface_info) {
-        OutputSurfaceInfo* si = reinterpret_cast<OutputSurfaceInfo*>(surface_info);
-        si->mem_type = OUT_SURFACE_MEM_HOST_COPIED; // will not copy from D2H
-        SaveFrameToFile(output_file_name, (void *)surf_mem, si);
-    }
+py::object PyRocVideoDecoder::PySaveTensorToFile(std::string& output_file_name_in, uintptr_t& surf_mem, int width, int height, int rgb_format, uintptr_t& in_surf_info) {
+    OutputFormatEnum e_output_format = (OutputFormatEnum)rgb_format;
+    if(surf_mem == 0 || width <= 0 || height <= 0 || in_surf_info == 0)
+        return py::cast<py::none>(Py_None);
+    OutputSurfaceInfo* surf_info = reinterpret_cast<OutputSurfaceInfo*>(in_surf_info);
+    size_t rgb_image_size = CalculateRgbImageSize(e_output_format, surf_info);
+    SaveFrameToFile(output_file_name_in, (void *)surf_mem, surf_info, rgb_image_size);
     return py::cast<py::none>(Py_None);
 }
 

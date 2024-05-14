@@ -24,6 +24,7 @@ THE SOFTWARE.
 
 #include "roc_video_dec.h"
 #include "roc_pydecode.h"
+#include "video_post_process.h"
 
 //
 // AMD Video Decoder Python Interface class
@@ -44,6 +45,9 @@ class PyRocVideoDecoder : public RocVideoDecoder {
         py::object PyGetFrame(PyPacketData& packet);
 
         // for python binding
+        py::object PyGetFrameRgb(PyPacketData& packet, int rgb_format);
+
+        // for python binding
         py::object PyReleaseFrame(PyPacketData& packet);
       
         // for python binding
@@ -53,7 +57,7 @@ class PyRocVideoDecoder : public RocVideoDecoder {
         py::object PySaveFrameToFile(std::string& output_file_name_in, uintptr_t& surf_mem, uintptr_t& surface_info);
 
         // for python binding
-        py::object PySaveTensorToFile(std::string& output_file_name_in, uintptr_t& surf_mem, uintptr_t& surface_info);
+        py::object PySaveTensorToFile(std::string& output_file_name_in, uintptr_t& surf_mem, int width, int height, int rgb_format, uintptr_t& surf_info);
 
         // for python binding
         uintptr_t PyGetOutputSurfaceInfo();
@@ -83,6 +87,16 @@ class PyRocVideoDecoder : public RocVideoDecoder {
         py::int_ PyGetFrameSize();
       
     private:
+        size_t CalculateRgbImageSize(OutputFormatEnum& e_output_format, OutputSurfaceInfo* p_surf_info);
         std::shared_ptr <ConfigInfo> configInfo;
         void InitConfigStructure();
+
+        // to keep using till done with this class instance
+        uint8_t *hst_ptr_tensor_rgb = nullptr;
+        FILE *fp_tensor_rgb = nullptr;
+
+    protected:
+        // used in frame allocation
+        u_int8_t * frame_ptr_rgb = nullptr;
+        VideoPostProcess * post_process_class = nullptr;
 };
