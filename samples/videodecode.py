@@ -76,7 +76,7 @@ def Decoder(
     total_dec_time = 0.0
     frame_is_resized = False
     not_seeking = True if (seek_frame == -1) else False
-    print("resize_dim: ", resize_dim)
+
     if (resize_dim is not None):
         resize_dim = None if(resize_dim[0] == 0 or resize_dim[1] == 0) else resize_dim
 
@@ -99,8 +99,10 @@ def Decoder(
 
             if (resize_dim is not None):
                 surface_info = viddec.GetOutputSurfaceInfo()
-                viddec.ResizeFrame(packet, resize_dim, surface_info)
-                frame_is_resized = True
+                if(viddec.ResizeFrame(packet, resize_dim, surface_info) is not 0):
+                    frame_is_resized = True
+                else:
+                    frame_is_resized = False
 
             if (output_file_path is not None):
                 if (frame_is_resized):

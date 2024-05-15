@@ -35,7 +35,7 @@ void PyRocVideoDecoderInitializer(py::module& m) {
         .def("DecodeFrame",&PyRocVideoDecoder::PyDecodeFrame) 
         .def("GetFrame",&PyRocVideoDecoder::PyGetFrame)
         .def("GetFrameRgb",&PyRocVideoDecoder::PyGetFrameRgb)
-		    .def("ResizeFrame",&PyRocVideoDecoder::PyResizeFrame)
+        .def("ResizeFrame",&PyRocVideoDecoder::PyResizeFrame)
         .def("GetWidth",&PyRocVideoDecoder::PyGetWidth)
         .def("GetHeight",&PyRocVideoDecoder::PyGetHeight)
         .def("GetStride",&PyRocVideoDecoder::PyGetStride)
@@ -205,12 +205,12 @@ uintptr_t PyRocVideoDecoder::PyResizeFrame(PyPacketData& packet, Dim *resized_di
     // alloc or refill surf-info one time, and refill if size changed
     if (resized_image_size_in_bytes != requested_size_in_bytes) {
         resized_image_size_in_bytes = requested_size_in_bytes;
-        if(resized_surf_info == nullptr)
-            resized_surf_info = (OutputSurfaceInfo *) malloc(sizeof(OutputSurfaceInfo));
-        if(resized_surf_info == nullptr){
-            std::cerr << "ERROR: Failed to allocate Surface Info!" << std::endl;
-            resized_image_size_in_bytes = 0;
-            return reinterpret_cast<std::uintptr_t>(nullptr);
+        if(resized_surf_info == nullptr) {
+            if((resized_surf_info = (OutputSurfaceInfo *) malloc(sizeof(OutputSurfaceInfo))) == nullptr){
+                std::cerr << "ERROR: Failed to allocate Surface Info!" << std::endl;
+                resized_image_size_in_bytes = 0;
+                return reinterpret_cast<std::uintptr_t>(nullptr);
+            }
         }
         memcpy(resized_surf_info, surf_info, sizeof(OutputSurfaceInfo));
         resized_surf_info->output_width = resized_dim->w;
