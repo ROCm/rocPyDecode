@@ -35,6 +35,17 @@ from rocPyDecode.decTypes import ROCDEC_PKT_NOTIFY_EOS
 from rocPyDecode.decTypes import rocDecVideoCodec_AVC
 from rocPyDecode.decTypes import rocDecVideoCodec_HEVC
 
+#  OutputFormatEnum - Types of images
+from rocPyDecode.decTypes import native
+from rocPyDecode.decTypes import bgr
+from rocPyDecode.decTypes import bgr48
+from rocPyDecode.decTypes import rgb
+from rocPyDecode.decTypes import rgb48
+from rocPyDecode.decTypes import bgra
+from rocPyDecode.decTypes import bgra64
+from rocPyDecode.decTypes import rgba
+from rocPyDecode.decTypes import rgba64
+
 _known_types = {
     rocDecVideoSurfaceFormat_NV12: ("rocDecVideoSurfaceFormat_NV12", rocDecVideoSurfaceFormat_NV12),
     rocDecVideoSurfaceFormat_P016: ("rocDecVideoSurfaceFormat_P016", rocDecVideoSurfaceFormat_P016),
@@ -49,6 +60,16 @@ _known_types = {
 
     rocDecVideoCodec_AVC: ("rocDecVideoCodec_AVC",rocDecVideoCodec_AVC),
     rocDecVideoCodec_HEVC: ("rocDecVideoCodec_HEVC",rocDecVideoCodec_HEVC),
+
+    native: ("native",native),
+    bgr: ("bgr",bgr),
+    bgr48: ("bgr48",bgr48),
+    rgb: ("rgb",rgb),
+    rgb48: ("rgb48",rgb48),
+    bgra: ("bgra",bgra),
+    bgra64: ("bgra64",bgra64),
+    rgba: ("rgba",rgba),
+    rgba64: ("rgba64",rgba64),
     }
 
 

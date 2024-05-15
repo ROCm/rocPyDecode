@@ -24,6 +24,7 @@ THE SOFTWARE.
 
 #include "roc_video_dec.h"
 #include "roc_pydecode.h"
+#include "video_post_process.h"
 
 //
 // AMD Video Decoder Python Interface class
@@ -44,10 +45,13 @@ class PyRocVideoDecoder : public RocVideoDecoder {
         py::object PyGetFrame(PyPacketData& packet);
 
         // for python binding
+        py::object PyGetFrameRgb(PyPacketData& packet, int rgb_format);
+
+        // for python binding
         uintptr_t PyResizeFrame(PyPacketData& packet, Dim *resized_dim, uintptr_t& in_surf_info); // ret new surface ptr or nullptr
 
         // for python binding
-        uintptr_t PyGetResizedOutputSurfaceInfo(); // ret new surface ptr
+        uintptr_t PyGetResizedOutputSurfaceInfo();
 
         // for python binding
         py::object PyReleaseFrame(PyPacketData& packet);
@@ -59,7 +63,7 @@ class PyRocVideoDecoder : public RocVideoDecoder {
         py::object PySaveFrameToFile(std::string& output_file_name_in, uintptr_t& surf_mem, uintptr_t& surface_info);
 
         // for python binding
-        py::object PySaveTensorToFile(std::string& output_file_name_in, uintptr_t& surf_mem, uintptr_t& surface_info);
+        py::object PySaveTensorToFile(std::string& output_file_name_in, uintptr_t& surf_mem, int width, int height, int rgb_format, uintptr_t& surf_info);
 
         // for python binding
         uintptr_t PyGetOutputSurfaceInfo();
@@ -89,14 +93,20 @@ class PyRocVideoDecoder : public RocVideoDecoder {
         py::int_ PyGetFrameSize();
       
     private:
+        size_t CalculateRgbImageSize(OutputFormatEnum& e_output_format, OutputSurfaceInfo* p_surf_info);
         std::shared_ptr <ConfigInfo> configInfo;
         void InitConfigStructure();
 
         // to keep using till done with this class instance
-        FILE *fp_yuv_out = nullptr;
-        OutputSurfaceInfo *resized_surf_info = nullptr;
+        uint8_t *hst_ptr_tensor_rgb = nullptr;
+        FILE *fp_tensor_rgb = nullptr;
 
     protected:
+        // used in frame allocation
+        u_int8_t * frame_ptr_rgb = nullptr;
+        VideoPostProcess * post_process_class = nullptr;
         // used in frame resizing
         u_int8_t * frame_ptr_resized = nullptr;
+        size_t resized_image_size_in_bytes = 0;
+        OutputSurfaceInfo *resized_surf_info = nullptr;
 };

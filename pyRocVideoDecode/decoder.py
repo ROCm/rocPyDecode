@@ -56,12 +56,11 @@ class decoder(object):
             mem_type,
             codec,
             b_force_zero_latency,
-            p_crop_rect,
+            crop_rect,
             max_width,
             max_height,
             clk_rate):
-        if (mem_type < 0 or mem_type > 2):
-            mem_type = 1
+        p_crop_rect = GetRectangle(crop_rect)
         self.viddec = rocpydec.PyRocVideoDecoder(
             device_id,
             mem_type,
@@ -80,6 +79,10 @@ class decoder(object):
 
     def GetFrame(self, packet):
         pts = self.viddec.GetFrame(packet)
+        return pts
+
+    def GetFrameRgb(self, packet, rgb_format):
+        pts = self.viddec.GetFrameRgb(packet, rgb_format)
         return pts
 
     def ResizeFrame(self, packet, resize_dim, surface_info):
@@ -101,21 +104,14 @@ class decoder(object):
     def GetOutputSurfaceInfo(self):
         return self.viddec.GetOutputSurfaceInfo()
 
-    def SaveFrameToFile(
-            self,
-            output_file_path,
-            frame_adrs: np.uint64,
-            surface_info: np.uint8):
-        return self.viddec.SaveFrameToFile(
-            output_file_path, frame_adrs, surface_info)
+    def GetResizedOutputSurfaceInfo(self):
+        return self.viddec.GetResizedOutputSurfaceInfo()
 
-    def SaveTensorToFile(
-            self,
-            output_file_path,
-            frame_adrs: np.uint64,
-            surface_info: np.uint8):
-        return self.viddec.SaveTensorToFile(
-            output_file_path, frame_adrs, surface_info)
+    def SaveFrameToFile(self, output_file_path, frame_adrs, surface_info):
+        return self.viddec.SaveFrameToFile( output_file_path, frame_adrs, surface_info)
+
+    def SaveTensorToFile(self, output_file_path, frame_adrs, width, height, rgb_format, surface_info):
+        return self.viddec.SaveTensorToFile(output_file_path, frame_adrs, width, height, rgb_format, surface_info)
 
     def ReleaseFrame(self, packet):
         self.viddec.ReleaseFrame(packet)

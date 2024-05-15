@@ -32,7 +32,7 @@ def Decoder(
         mem_type,
         codec_id,
         b_force_zero_latency,
-        p_crop_rect,
+        crop_rect,
         0,
         0,
         1000)
@@ -76,6 +76,9 @@ def Decoder(
     total_dec_time = 0.0
     frame_is_resized = False
     not_seeking = True if (seek_frame == -1) else False
+    print("resize_dim: ", resize_dim)
+    if (resize_dim is not None):
+        resize_dim = None if(resize_dim[0] == 0 or resize_dim[1] == 0) else resize_dim
 
     while True:
         start_time = datetime.datetime.now()
@@ -87,6 +90,7 @@ def Decoder(
             not_seeking = True
 
         n_frame_returned = viddec.DecodeFrame(packet)
+
         for i in range(n_frame_returned):
             viddec.GetFrame(packet)
             if (b_generate_md5):
@@ -95,11 +99,12 @@ def Decoder(
 
             if (resize_dim is not None):
                 surface_info = viddec.GetOutputSurfaceInfo()
-                resized_surface_info = viddec.ResizeFrame(packet, resize_dim, surface_info)
+                viddec.ResizeFrame(packet, resize_dim, surface_info)
                 frame_is_resized = True
 
             if (output_file_path is not None):
                 if (frame_is_resized):
+                    resized_surface_info = viddec.GetResizedOutputSurfaceInfo()
                     viddec.SaveFrameToFile(output_file_path, packet.frame_adrs_resized, resized_surface_info)
                 else:
                     surface_info = viddec.GetOutputSurfaceInfo()
@@ -116,7 +121,7 @@ def Decoder(
         # increament frames counter
         n_frame += n_frame_returned
 
-        if (packet.frame_size <= 0):
+        if (packet.frame_size <= 0):  # EOF: no more to decode
             break
 
     # beyond the decoding loop
@@ -128,9 +133,8 @@ def Decoder(
         if (n_frame > 0 and total_dec_time > 0):
             time_per_frame = (total_dec_time / n_frame) * 1000
             frame_per_second = n_frame / total_dec_time
-            print("info: avg decoding time per frame: " +
-                  "{0:0.2f}".format(round(time_per_frame, 2)) + " ms")
-            print("info: avg frame per second: " + "{0:0.2f}".format(round(frame_per_second, 2)) + "\n")
+            print("info: avg decoding time per frame: " +"{0:0.2f}".format(round(time_per_frame, 2)) + " ms")
+            print("info: avg frame per second: " +"{0:0.2f}".format(round(frame_per_second,2)) +"\n")
         else:
             print("info: frame count= ", n_frame)
 
@@ -248,13 +252,14 @@ if __name__ == "__main__":
     except BaseException:
         sys.exit()
 
+    # get params
     input_file_path = args.input
     output_file_path = args.output
     device_id = args.device
     mem_type = args.mem_type
-    b_force_zero_latency = args.zero_latency
+    b_force_zero_latency = args.zero_latency.upper()
     crop_rect = args.crop_rect
-    b_generate_md5 = args.generate_md5
+    b_generate_md5 = args.generate_md5.upper()
     ref_md5_file = args.input_md5
     seek_frame = args.seek
     seek_mode = args.seek_mode
@@ -270,14 +275,11 @@ if __name__ == "__main__":
             print("Error: Invalid seek criteria value.")
             exit()
 
-    b_force_zero_latency = True if b_force_zero_latency == 'yes' else False
-    b_generate_md5 = True if b_generate_md5 == 'yes' else False
-
-    # rect from user
-    p_crop_rect = dec.GetRectangle(crop_rect)
-
-    # Input file (must exist)
-    if not os.path.exists(input_file_path):
+    # handle params
+    mem_type = 1 if (mem_type < 0 or mem_type > 2) else mem_type
+    b_force_zero_latency = True if b_force_zero_latency == 'YES' else False
+    b_generate_md5 = True if b_generate_md5 == 'YES' else False
+    if not os.path.exists(input_file_path):  # Input file (must exist)
         print("ERROR: input file doesn't exist.")
         exit()
 

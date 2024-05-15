@@ -3,35 +3,49 @@ import sys
 import argparse
 import os.path
 import torch
-import torchvision 
-import numpy as np
+import torchvision
 import pyRocVideoDecode.decoder as dec
 import pyRocVideoDecode.demuxer as dmx
 
-def Decoder(input_file_path, device_id, mem_type):
+
+def Decoder(
+        input_file_path,
+        output_file_path,
+        device_id,
+        rgb_format):
 
     # Init resnet
-    model = torchvision.models.resnet50(weights=torchvision.models.ResNet50_Weights.DEFAULT)
+    model = torchvision.models.resnet50(
+        weights=torchvision.models.ResNet50_Weights.DEFAULT)
     model.eval()
     model.to("cuda")
 
-    # get labels as list 
-    labels_file = open("data/labels.txt", "r") 
-    data = labels_file.read() 
+    # get labels as list
+    labels_file = open("data/labels.txt", "r")
+    data = labels_file.read()
     categories = data.split("\n")
-    labels_file.close() 
+    labels_file.close()
 
-    # resnet expects images to be 3 channel planar RGB of 224x244 size at least.
+    # resnet expects images to be 3 channel planar RGB of 224x244 size at
+    # least.
     target_w, target_h = 224, 224
-   
+
     # demuxer instance
     demuxer = dmx.demuxer(input_file_path)
 
     # get the used coded id
-    coded_id = dec.GetRocDecCodecID(demuxer.GetCodecId())
+    codec_id = dec.GetRocDecCodecID(demuxer.GetCodecId())
 
     # decoder instance
-    viddec = dec.decoder(device_id, mem_type, coded_id, False, None, 0, 0, 0)
+    viddec = dec.decoder(
+        device_id,
+        1,
+        codec_id,
+        False,
+        None,
+        0,
+        0,
+        1000)
 
     # Get GPU device information
     cfg = viddec.GetGpuInfo()
@@ -62,24 +76,34 @@ def Decoder(input_file_path, device_id, mem_type):
 
     while True:
         start_time = datetime.datetime.now()
-
         packet = demuxer.DemuxFrame()
-
-        if (packet.end_of_stream):
-            break
-
         n_frame_returned = viddec.DecodeFrame(packet)
 
         for i in range(n_frame_returned):
-            viddec.GetFrame(packet)
+            pts = viddec.GetFrameRgb(packet, rgb_format)
+
+            if(pts == -1):
+                print("Error: GetFrameRgb returned failure.\n")
+                continue
 
             # using torch tensor
             img_tensor = torch.from_dlpack(packet.extBuf.__dlpack__(packet))
-            
+
+            # save tensors to file, with original decoded Size
+            if (output_file_path is not None):
+                surface_info = viddec.GetOutputSurfaceInfo()
+                viddec.SaveTensorToFile(
+                    output_file_path,
+                    img_tensor.data_ptr(),
+                    viddec.GetWidth(),
+                    viddec.GetHeight(),
+                    rgb_format, 
+                    surface_info)
+
+            # for inference
             img_tensor.resize_(3, target_h, target_w)
             img_tensor = img_tensor.type(dtype=torch.cuda.FloatTensor)
             img_tensor = torch.divide(img_tensor, 255.0)
-
             data_transforms = torchvision.transforms.Normalize(
                 mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
             )
@@ -108,7 +132,7 @@ def Decoder(input_file_path, device_id, mem_type):
         # increament frames counter
         n_frame += n_frame_returned
 
-        if (packet.end_of_stream):  # no more to decode?
+        if (packet.frame_size <= 0):  # no more to decode?
             break
 
     # beyond the decoding loop
@@ -117,7 +141,7 @@ def Decoder(input_file_path, device_id, mem_type):
     print("info: Total frame decoded: " + str(n_frame))
     print("info: frame count= ", n_frame)
     print()
- 
+
 
 if __name__ == "__main__":
 
@@ -131,6 +155,12 @@ if __name__ == "__main__":
         help='Input File Path - required',
         required=True)
     parser.add_argument(
+        '-o',
+        '--output',
+        type=str,
+        help='Output File Path - optional',
+        required=False)
+    parser.add_argument(
         '-d',
         '--device',
         type=int,
@@ -138,27 +168,35 @@ if __name__ == "__main__":
         help='GPU device ID - optional, default 0',
         required=False)
     parser.add_argument(
-        '-m',
-        '--mem_type',
+        '-of',
+        '--rgb_format',
         type=int,
-        default=1,
-        help='mem_type of output surfce - 0: Internal 1: dev_copied 2: host_copied optional, default 1',
-        required=False)    
+        default=3,
+        help="Rgb Format to use as tensor - 1:bgr, 2:bgr48, 3:rgb, 4:rgb48, 5:bgra, 6:bgra64, 7:rgba, 8:rgba64, converts decoded YUV frame to Tensor in RGB format, optional, default: 3",
+        required=False)
 
     try:
         args = parser.parse_args()
     except BaseException:
         sys.exit()
 
+    # get params
     input_file_path = args.input
+    output_file_path = args.output
     device_id = args.device
-    mem_type = args.mem_type
- 
-    # Input file (must exist)
-    if not os.path.exists(input_file_path):
+    rgb_format = args.rgb_format
+
+    # handel params
+    rgb_format = 3 if (rgb_format < 1 or rgb_format > 8) else rgb_format
+    if not os.path.exists(input_file_path):  # Input file (must exist)
         print("ERROR: input file doesn't exist.")
         exit()
 
+    # torch GPU
     print("\nPyTorch Using: ", torch.cuda.get_device_name(0))
 
-    Decoder(input_file_path, device_id, mem_type)
+    Decoder(
+        input_file_path,
+        output_file_path,
+        device_id,
+        rgb_format)
