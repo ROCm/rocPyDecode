@@ -126,6 +126,7 @@ PYBIND11_MODULE(rocPyDecode, m) {
         .def_readwrite("frame_size",    &PyPacketData::frame_size)
         .def_readwrite("frame_adrs",    &PyPacketData::frame_adrs)
         .def_readwrite("frame_adrs_rgb", &PyPacketData::frame_adrs_rgb)
+        .def_readwrite("frame_adrs_rgb", &PyPacketData::frame_adrs_rgb)
         .def_readwrite("frame_adrs_resized", &PyPacketData::frame_adrs_resized)
         .def_readwrite("extBuf",        &PyPacketData::extBuf)
         

@@ -35,7 +35,7 @@ void PyRocVideoDecoderInitializer(py::module& m) {
         .def("DecodeFrame",&PyRocVideoDecoder::PyDecodeFrame) 
         .def("GetFrame",&PyRocVideoDecoder::PyGetFrame)
         .def("GetFrameRgb",&PyRocVideoDecoder::PyGetFrameRgb)
-		.def("ResizeFrame",&PyRocVideoDecoder::PyResizeFrame)
+		    .def("ResizeFrame",&PyRocVideoDecoder::PyResizeFrame)
         .def("GetWidth",&PyRocVideoDecoder::PyGetWidth)
         .def("GetHeight",&PyRocVideoDecoder::PyGetHeight)
         .def("GetStride",&PyRocVideoDecoder::PyGetStride)
@@ -255,7 +255,7 @@ py::object PyRocVideoDecoder::PyGetNumOfFlushedFrames() {
 
 // for python binding
 py::object PyRocVideoDecoder::PyReleaseFrame(PyPacketData& packet) {  
-    bool ret = ReleaseFrame(packet.frame_pts, true);     
+    bool ret = ReleaseFrame(packet.frame_pts);
     return py::cast(ret);
 }
 
