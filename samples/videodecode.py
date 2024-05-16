@@ -99,7 +99,7 @@ def Decoder(
 
             if (resize_dim is not None):
                 surface_info = viddec.GetOutputSurfaceInfo()
-                if(viddec.ResizeFrame(packet, resize_dim, surface_info) is not 0):
+                if(viddec.ResizeFrame(packet, resize_dim, surface_info) != 0):
                     frame_is_resized = True
                 else:
                     frame_is_resized = False
