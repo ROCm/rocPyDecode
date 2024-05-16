@@ -40,6 +40,8 @@ rocDecVideoCodec ConvertAVCodec2RocDecVideoCodec(int av_codec) {
 void PyVideoDemuxer::InitPacket() {
     currentPacket.reset(new PyPacketData());    
     currentPacket.get()->frame_adrs = 0;
+    currentPacket.get()->frame_adrs_rgb = 0;
+    currentPacket.get()->pkt_flags = 0;
     currentPacket.get()->frame_size = 0;
     currentPacket.get()->frame_pts = 0;
     currentPacket.get()->end_of_stream = false;
