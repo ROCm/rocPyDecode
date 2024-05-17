@@ -17,7 +17,8 @@ def Decoder(
         ref_md5_file,
         seek_frame,
         seek_mode,
-        seek_criteria):
+        seek_criteria,
+        resize_dim):
 
     # demuxer instance
     demuxer = dmx.demuxer(input_file_path)
@@ -73,7 +74,11 @@ def Decoder(
     # -----------------
     n_frame = 0
     total_dec_time = 0.0
+    frame_is_resized = False
     not_seeking = True if (seek_frame == -1) else False
+
+    if (resize_dim is not None):
+        resize_dim = None if(resize_dim[0] == 0 or resize_dim[1] == 0) else resize_dim
 
     while True:
         start_time = datetime.datetime.now()
@@ -91,12 +96,22 @@ def Decoder(
             if (b_generate_md5):
                 surface_info = viddec.GetOutputSurfaceInfo()
                 viddec.UpdateMd5ForFrame(packet.frame_adrs, surface_info)
-            if (output_file_path is not None):
+
+            if (resize_dim is not None):
                 surface_info = viddec.GetOutputSurfaceInfo()
-                viddec.SaveFrameToFile(
-                    output_file_path,
-                    packet.frame_adrs,
-                    surface_info)
+                if(viddec.ResizeFrame(packet, resize_dim, surface_info) != 0):
+                    frame_is_resized = True
+                else:
+                    frame_is_resized = False
+
+            if (output_file_path is not None):
+                if (frame_is_resized):
+                    resized_surface_info = viddec.GetResizedOutputSurfaceInfo()
+                    viddec.SaveFrameToFile(output_file_path, packet.frame_adrs_resized, resized_surface_info)
+                else:
+                    surface_info = viddec.GetOutputSurfaceInfo()
+                    viddec.SaveFrameToFile(output_file_path, packet.frame_adrs, surface_info)
+
             # release frame
             viddec.ReleaseFrame(packet)
 
@@ -226,8 +241,14 @@ if __name__ == "__main__":
         default=0,
         help='seek criteria, 0 - by frame number, 1 - by time stamp, optional, default: 0 - by frame number',
         required=False)
-
-
+    parser.add_argument(    
+        '-resize',
+        '--resize_dim',
+        nargs=2,
+        type=int,
+        help='Width & Height of new frame, optional, default: no resizing',
+        required=False)
+    
     try:
         args = parser.parse_args()
     except BaseException:
@@ -245,7 +266,8 @@ if __name__ == "__main__":
     seek_frame = args.seek
     seek_mode = args.seek_mode
     seek_criteria = args.seek_criteria
-
+    resize_dim = args.resize_dim
+    
     # validate the seek: mode/criteria
     if(seek_frame > 0):
         if(seek_mode != 0 and seek_mode != 1):
@@ -274,4 +296,5 @@ if __name__ == "__main__":
         ref_md5_file,
         seek_frame,
         seek_mode,
-        seek_criteria)
+        seek_criteria,
+        resize_dim)

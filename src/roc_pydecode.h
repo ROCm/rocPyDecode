@@ -52,6 +52,7 @@ struct PyPacketData {
     int64_t   frame_size;
     uintptr_t frame_adrs;       // yuv frame address
     uintptr_t frame_adrs_rgb;   // rgb frame address
+    uintptr_t frame_adrs_resized; // new resized yuv frame
     std::shared_ptr<BufferInterface> extBuf;
     PyPacketData(){
         extBuf = std::make_shared<BufferInterface>();

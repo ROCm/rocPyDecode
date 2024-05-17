@@ -111,16 +111,23 @@ PYBIND11_MODULE(rocPyDecode, m) {
         .def_readwrite("right",&Rect::right)
         .def_readwrite("bottom",&Rect::bottom);
 
+    // Dim
+    py::class_<Dim>(m, "Dim")
+        .def(py::init<>())
+        .def_readwrite("width",&Dim::w)
+        .def_readwrite("height",&Dim::h);
+
     // PyPacketData
     py::class_<PyPacketData, shared_ptr<PyPacketData>>(m, "PyPacketData", py::module_local())
         .def(py::init<>())
-        .def_readwrite("end_of_stream",  &PyPacketData::end_of_stream)
-        .def_readwrite("pkt_flags",      &PyPacketData::pkt_flags)
-        .def_readwrite("frame_pts",      &PyPacketData::frame_pts)
-        .def_readwrite("frame_size",     &PyPacketData::frame_size)
-        .def_readwrite("frame_adrs",     &PyPacketData::frame_adrs)
+        .def_readwrite("end_of_stream", &PyPacketData::end_of_stream)
+        .def_readwrite("pkt_flags",     &PyPacketData::pkt_flags)
+        .def_readwrite("frame_pts",     &PyPacketData::frame_pts)
+        .def_readwrite("frame_size",    &PyPacketData::frame_size)
+        .def_readwrite("frame_adrs",    &PyPacketData::frame_adrs)
         .def_readwrite("frame_adrs_rgb", &PyPacketData::frame_adrs_rgb)
-        .def_readwrite("extBuf",         &PyPacketData::extBuf)
+        .def_readwrite("frame_adrs_resized", &PyPacketData::frame_adrs_resized)
+        .def_readwrite("extBuf",        &PyPacketData::extBuf)
         
         // DL Pack Tensor
         .def_property_readonly("shape", [](std::shared_ptr<PyPacketData>& self) {

@@ -48,6 +48,12 @@ class PyRocVideoDecoder : public RocVideoDecoder {
         py::object PyGetFrameRgb(PyPacketData& packet, int rgb_format);
 
         // for python binding
+        uintptr_t PyResizeFrame(PyPacketData& packet, Dim *resized_dim, uintptr_t& in_surf_info); // ret new surface ptr or nullptr
+
+        // for python binding
+        uintptr_t PyGetResizedOutputSurfaceInfo();
+
+        // for python binding
         py::object PyReleaseFrame(PyPacketData& packet);
       
         // for python binding
@@ -97,6 +103,10 @@ class PyRocVideoDecoder : public RocVideoDecoder {
 
     protected:
         // used in frame allocation
-        u_int8_t * frame_ptr_rgb = nullptr;
+        uint8_t *frame_ptr_rgb = nullptr;
         VideoPostProcess * post_process_class = nullptr;
+        // used in frame resizing
+        uint8_t *frame_ptr_resized = nullptr;
+        size_t resized_image_size_in_bytes = 0;
+        OutputSurfaceInfo *resized_surf_info = nullptr;
 };

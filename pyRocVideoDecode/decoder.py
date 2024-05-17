@@ -37,6 +37,12 @@ def GetRectangle(crop_rect: dict) -> rocpydec.Rect:
         p_crop_rect.bottom = crop_rect[3]
     return p_crop_rect
 
+def GetDim(p_dim_wd: dict) -> rocpydec.Dim:
+    dim_wd = rocpydec.Dim()
+    if (p_dim_wd is not None):
+        dim_wd.width = p_dim_wd[0]
+        dim_wd.height = p_dim_wd[1]
+    return dim_wd
 
 def GetOutputSurfaceInfo():
     surf_info_struct = rocpydec.OutputSurfaceInfo()
@@ -79,6 +85,10 @@ class decoder(object):
         pts = self.viddec.GetFrameRgb(packet, rgb_format)
         return pts
 
+    def ResizeFrame(self, packet, resize_dim, surface_info):
+        resize_dim = GetDim(resize_dim)
+        return self.viddec.ResizeFrame(packet, resize_dim, surface_info)
+
     def GetWidth(self) -> int:
         return self.viddec.GetWidth()
 
@@ -93,6 +103,9 @@ class decoder(object):
 
     def GetOutputSurfaceInfo(self):
         return self.viddec.GetOutputSurfaceInfo()
+
+    def GetResizedOutputSurfaceInfo(self):
+        return self.viddec.GetResizedOutputSurfaceInfo()
 
     def SaveFrameToFile(self, output_file_path, frame_adrs, surface_info):
         return self.viddec.SaveFrameToFile( output_file_path, frame_adrs, surface_info)
