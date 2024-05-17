@@ -195,7 +195,7 @@ uintptr_t PyRocVideoDecoder::PyResizeFrame(PyPacketData& packet, Dim *resized_di
     // check params
     if(resized_dim == nullptr || in_surf_info == 0)
         return 0;
-    if((reinterpret_cast<uint8_t*>(packet.frame_adrs) == nullptr) || resized_dim->w ==0 || resized_dim->h == 0)
+    if((reinterpret_cast<uint8_t*>(packet.frame_adrs) == nullptr) || resized_dim->w == 0 || resized_dim->h == 0)
         return 0;
     OutputSurfaceInfo *surf_info = reinterpret_cast<OutputSurfaceInfo*>(in_surf_info);
     // validate request
