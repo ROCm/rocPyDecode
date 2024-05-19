@@ -26,6 +26,18 @@ THE SOFTWARE.
 #include "roc_pydecode.h"
 #include "video_post_process.h"
 
+typedef enum ReconfigFlushMode_enum {
+    RECONFIG_FLUSH_MODE_NONE = 0,               /**<  Just flush to get the frame count */
+    RECONFIG_FLUSH_MODE_DUMP_TO_FILE = 1,       /**<  The remaining frames will be dumped to file in this mode */
+    RECONFIG_FLUSH_MODE_CALCULATE_MD5 = 2,      /**<  Calculate the MD5 of the flushed frames */
+} ReconfigFlushMode;
+
+// this struct is used by videodecode and videodecodeMultiFiles to dump last frames to file
+typedef struct ReconfigDumpFileStruct_t {
+    bool b_dump_frames_to_file;
+    std::string output_file_name;
+} ReconfigDumpFileStruct;
+
 //
 // AMD Video Decoder Python Interface class
 //
@@ -91,15 +103,18 @@ class PyRocVideoDecoder : public RocVideoDecoder {
 
         // for python binding
         py::int_ PyGetFrameSize();
+
+        // for python binding
+        py::object PySetReconfigParams(int flush_mode, std::string& output_file_name_in);
       
     private:
         size_t CalculateRgbImageSize(OutputFormatEnum& e_output_format, OutputSurfaceInfo* p_surf_info);
         std::shared_ptr <ConfigInfo> configInfo;
         void InitConfigStructure();
 
-        // to keep using till done with this class instance
-        uint8_t *hst_ptr_tensor_rgb = nullptr;
-        FILE *fp_tensor_rgb = nullptr;
+        // for flush back to support multi-resolution video streams
+        ReconfigParams PyReconfigParams;
+        ReconfigDumpFileStruct PyReconfigDumpFileStruct;
 
     protected:
         // used in frame allocation

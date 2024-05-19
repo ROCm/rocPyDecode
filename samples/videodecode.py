@@ -69,6 +69,15 @@ def Decoder(
     if b_generate_md5:
         viddec.InitMd5()
 
+    # set reconfiguration params based on user arguments
+    flush_mode = 0
+    if (output_file_path is not None):
+        flush_mode = 1
+    elif b_generate_md5:
+        flush_mode = 2
+
+    viddec.SetReconfigParams(flush_mode, output_file_path if (output_file_path is not None) else str(""))
+
     # -----------------
     # The decoding loop
     # -----------------

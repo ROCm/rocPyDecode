@@ -130,3 +130,6 @@ class decoder(object):
         digest = np.zeros(16, np.uint8)
         self.viddec.FinalizeMd5(digest.ctypes.data)
         return digest
+
+    def SetReconfigParams(self, flush_mode, out_file_name):
+        return self.viddec.SetReconfigParams(flush_mode, out_file_name)
