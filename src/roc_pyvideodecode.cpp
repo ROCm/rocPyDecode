@@ -86,8 +86,6 @@ int PyReconfigureFlushCallback(void *p_viddec_obj, uint32_t flush_mode, void * p
 
 py::object PyRocVideoDecoder::PySetReconfigParams(int flush_mode, std::string& output_file_name_in) {
     ReconfigFlushMode mode = static_cast<ReconfigFlushMode>(flush_mode);
-    if(mode < RECONFIG_FLUSH_MODE_NONE || mode > RECONFIG_FLUSH_MODE_CALCULATE_MD5)
-        mode = RECONFIG_FLUSH_MODE_NONE;
     if(!output_file_name_in.empty()) {
         PyReconfigDumpFileStruct.output_file_name = output_file_name_in;
         PyReconfigDumpFileStruct.b_dump_frames_to_file = true;
