@@ -46,31 +46,78 @@ void PyRocVideoDecoderInitializer(py::module& m) {
         .def("GetOutputSurfaceInfo",&PyRocVideoDecoder::PyGetOutputSurfaceInfo)
         .def("GetResizedOutputSurfaceInfo",&PyRocVideoDecoder::PyGetResizedOutputSurfaceInfo)
         .def("GetNumOfFlushedFrames",&PyRocVideoDecoder::PyGetNumOfFlushedFrames)
+        .def("SetReconfigParams",&PyRocVideoDecoder::PySetReconfigParams)
         .def("InitMd5",&PyRocVideoDecoder::PyInitMd5)
         .def("FinalizeMd5",&PyRocVideoDecoder::PyFinalizeMd5)
         .def("UpdateMd5ForFrame",&PyRocVideoDecoder::PyUpdateMd5ForFrame);
 }
 
+// callback function to flush last frames and save it to file when reconfigure happens
+// reference to non-static member function must be called
+int PyReconfigureFlushCallback(void *p_viddec_obj, uint32_t flush_mode, void * p_user_struct) {
+    int n_frames_flushed = 0;
+    if ((p_viddec_obj == nullptr) ||  (p_user_struct == nullptr))
+        return n_frames_flushed;
+    RocVideoDecoder *viddec = static_cast<RocVideoDecoder *> (p_viddec_obj);
+    OutputSurfaceInfo *surf_info;
+    if (!viddec->GetOutputSurfaceInfo(&surf_info)) {
+        std::cerr << "Error: Failed to get Output Surface Info!" << std::endl;
+        return n_frames_flushed;
+    }
+    uint8_t *pframe = nullptr;
+    int64_t pts;
+    while ((pframe = viddec->GetFrame(&pts))) {
+        if (flush_mode != RECONFIG_FLUSH_MODE_NONE) {
+            if (flush_mode == ReconfigFlushMode::RECONFIG_FLUSH_MODE_DUMP_TO_FILE) {
+                ReconfigDumpFileStruct *p_dump_file_struct = static_cast<ReconfigDumpFileStruct *>(p_user_struct);
+                if (p_dump_file_struct->b_dump_frames_to_file) {
+                    viddec->SaveFrameToFile(p_dump_file_struct->output_file_name, pframe, surf_info);
+                }
+            } else if (flush_mode == ReconfigFlushMode::RECONFIG_FLUSH_MODE_CALCULATE_MD5) {
+                viddec->UpdateMd5ForFrame(pframe, surf_info);
+            }
+        }
+        // release and flush frame
+        viddec->ReleaseFrame(pts, true);
+        n_frames_flushed ++;
+    }
+    return n_frames_flushed;
+}
+
+py::object PyRocVideoDecoder::PySetReconfigParams(int flush_mode, std::string& output_file_name_in) {
+    ReconfigFlushMode mode = static_cast<ReconfigFlushMode>(flush_mode);
+    if(!output_file_name_in.empty()) {
+        PyReconfigDumpFileStruct.output_file_name = output_file_name_in;
+        PyReconfigDumpFileStruct.b_dump_frames_to_file = true;
+    } else {
+        if(mode == RECONFIG_FLUSH_MODE_DUMP_TO_FILE)
+            mode = RECONFIG_FLUSH_MODE_NONE;
+    }
+    PyReconfigParams.p_fn_reconfigure_flush = PyReconfigureFlushCallback;
+    PyReconfigParams.p_reconfig_user_struct = &PyReconfigDumpFileStruct;
+    PyReconfigParams.reconfig_flush_mode = mode;
+    // set the parent class
+    SetReconfigParams(&PyReconfigParams);
+    return py::cast<py::none>(Py_None);
+}
+
 void PyRocVideoDecoder::InitConfigStructure() {
+    // init config struct
     configInfo.reset(new ConfigInfo());    
     configInfo.get()->device_name = std::string("");
     configInfo.get()->gcn_arch_name = std::string("");
     configInfo.get()->pci_bus_id = 0;
     configInfo.get()->pci_domain_id = 0;
     configInfo.get()->pci_device_id = 0;
+    // init flush callback struct: support multi-resolution video streams
+    PyReconfigDumpFileStruct.b_dump_frames_to_file = false;
+    PyReconfigDumpFileStruct.output_file_name.clear();
+    PyReconfigParams.p_fn_reconfigure_flush = nullptr;
+    PyReconfigParams.p_reconfig_user_struct = nullptr;
+    PyReconfigParams.reconfig_flush_mode = 0;
 }
 
 PyRocVideoDecoder::~PyRocVideoDecoder() {
-    // close tensor rgb file if still open, used in SAVE Tensor
-    if( fp_tensor_rgb != nullptr) {
-        fclose(fp_tensor_rgb);
-        fp_tensor_rgb = nullptr;
-    }
-    // free host mem, used in SAVE Tensor
-    if(hst_ptr_tensor_rgb != nullptr) {
-        delete hst_ptr_tensor_rgb;
-        hst_ptr_tensor_rgb = nullptr;
-    }
     // free new RGB frame ptr if used
     if (frame_ptr_rgb != nullptr) {
         hipError_t hip_status = hipFree(frame_ptr_rgb);
