@@ -30,16 +30,10 @@ The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access
   sudo apt install cmake
   ```
 
-* Python `3`
+* Python3 and Python3 PIP
   
   ```shell
-  sudo apt install python3
-  ```
-
-* Pip3 `10+`
-  
-  ```shell
-  sudo apt install python3-pip
+  sudo apt install python3-dev python3-pip
   ```
 
 * [DLPack](https://pypi.org/project/dlpack/)
