@@ -131,6 +131,7 @@ commonPackages = [
     'unzip',
     'pkg-config',
     'inxi',
+    'python3',
     'python3-pip'
 ]
 
@@ -139,13 +140,15 @@ coreDebianPackages = [
     'rocdecode',
     'rocdecode-dev',
     'rocdecode-test',
+    'python3-dev'
 ]
 
 # core RPM packages
 coreRPMPackages = [
     'rocdecode',
     'rocdecode-devel',
-    'rocdecode-test'
+    'rocdecode-test',
+    'python3-devel'
 ]
 
 # common packages

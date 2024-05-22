@@ -2,7 +2,7 @@
 
 # rocDecode Python Binding
 
-The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access rocDecode APIs in both Python and C/C++ languages. It works by connecting Python and C/C++ libraries, enabling functions calling and data passing between the two languages. The rocpydecode.so library is a wrapper that facilitates the use of rocDecode APIs that are written primarily in C/C++ language within Python.
+The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access rocDecode APIs in both Python and C/C++ languages. It works by connecting Python and C/C++ libraries, enabling function calling and data passing between the two languages. The rocpydecode.so library is a wrapper that facilitates the use of rocDecode APIs that are written primarily in C/C++ language within Python.
 
 ## Prerequisites
 
@@ -18,52 +18,40 @@ The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access
 > [!IMPORTANT]
 > `sudo amdgpu-install --usecase=rocm`
 
-* [rocDecode C/C++ Library](https://github.com/ROCm/rocDecode)
+* [rocDecode](https://github.com/ROCm/rocDecode)
+  
+  ```shell
+  sudo apt install rocdecode-dev
+  ```
+
 * CMake `3.5` or higher
-  * Ubuntu 20/22
-
-    ```bash
-    sudo apt install cmake
-    ```
-
-  * RHEL 8/9
-    ```bash
-    sudo yum install cmake
-    ```
+  
+  ```shell
+  sudo apt install cmake
+  ```
 
 * Python `3`
-  * Ubuntu 20/22
-
-    ```bash
-    sudo apt install python3
-    ```
-
-  * RHEL 8/9
-
-    ```bash
-    sudo yum install python3
-    ```
+  
+  ```shell
+  sudo apt install python3
+  ```
 
 * Pip3 `10+`
-  * Ubuntu 20/22
-
-    ```bash
-    sudo apt install python3-pip
-    ```
-  * RHEL 8/9
-
-    ```bash
-    sudo yum install python3-pip
-    ```
+  
+  ```shell
+  sudo apt install python3-pip
+  ```
 
 * [DLPack](https://pypi.org/project/dlpack/)
-  * Ubuntu 20/22
-
-    ```bash
+  
+  ```shell
     sudo pip3 install dlpack
     wget http://archive.ubuntu.com/ubuntu/pool/universe/d/dlpack/libdlpack-dev_0.6-1_amd64.deb
     sudo dpkg -i libdlpack-dev_0.6-1_amd64.deb    
     ```
+
+>[!NOTE]
+> * All package installs are shown with the `apt` package manager. Use the appropriate package manager for your operating system.
 
 ## Prerequisites setup script
 
