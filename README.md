@@ -74,6 +74,9 @@ cd rocPyDecode
 python rocPyDecode-docker-install.py 
 ```
 
+> [!IMPORTANT] 
+> `RHEL`/`SLES` package install requires manual `FFMPEG` dev install
+
 ## Run Sample Scripts
 
 * Sample scripts and instructions to run them can be found [here](samples/)
