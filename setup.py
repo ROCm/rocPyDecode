@@ -34,8 +34,8 @@ subprocess.check_call(['cmake', '--build', build_dir, '--config', 'Release'])
 # Install the built binaries
 subprocess.check_call(['cmake', '--install', build_dir])
 
-# Install the built binaries
-subprocess.check_call(['ctest', '-VV'])
+# Test built binaries
+subprocess.check_call(['ctest', '--test-dir', build_dir, '-VV'])
 
 setup(
       name='rocPyDecode',
