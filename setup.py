@@ -34,9 +34,6 @@ subprocess.check_call(['cmake', '--build', build_dir, '--config', 'Release'])
 # Install the built binaries
 subprocess.check_call(['cmake', '--install', build_dir])
 
-# Test built binaries
-subprocess.check_call(['ctest', '--test-dir', build_dir, '-VV'])
-
 setup(
       name='rocPyDecode',
       description='AMD ROCm Video Decoder Library',
@@ -48,3 +45,6 @@ setup(
       package_dir={'pyRocVideoDecode':'pyRocVideoDecode'},
       package_data={"pyRocVideoDecode":["__init__.pyi"]},
       )
+
+# Test built binaries
+subprocess.check_call(['ctest', '--test-dir', build_dir, '-VV'])
