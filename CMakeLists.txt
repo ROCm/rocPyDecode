@@ -148,6 +148,11 @@ if(HIP_FOUND AND rocDecode_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
     message("-- ${Green}ROCm Video Decode Library Python Binding - rocPyDecode module added ${ColourReset}")
     message("-- ${BoldBlue}rocPyDecode Version -- ${VERSION}${ColourReset}")
     message("-- ${BoldBlue}rocPyDecode Install Path -- ${CMAKE_INSTALL_PREFIX_PYTHON}${ColourReset}")
+
+    # make test with CTest
+    enable_testing()
+    include(CTest)
+    add_subdirectory(samples)
 else()
     message("-- ${Red}WARNING: rocPyDecode module excluded - Dependency Failure${ColourReset}")
     # Python3
