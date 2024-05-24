@@ -18,12 +18,6 @@ The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access
 > [!IMPORTANT]
 > `sudo amdgpu-install --usecase=rocm`
 
-* [rocDecode](https://github.com/ROCm/rocDecode)
-  
-  ```shell
-  sudo apt install rocdecode-dev
-  ```
-
 * CMake `3.5` or higher
   
   ```shell
@@ -34,6 +28,24 @@ The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access
   
   ```shell
   sudo apt install python3-dev python3-pip
+  ```
+
+* [pkg-config](https://en.wikipedia.org/wiki/Pkg-config)
+
+  ```shell
+  sudo apt install pkg-config
+  ```
+
+* [rocDecode](https://github.com/ROCm/rocDecode)
+  
+  ```shell
+  sudo apt install rocdecode-dev
+  ```
+
+* [FFmpeg](https://ffmpeg.org/about.html) runtime and headers - for tests and samples
+
+  ```shell
+  sudo apt install ffmpeg libavcodec-dev libavformat-dev libavutil-dev
   ```
 
 * [DLPack](https://pypi.org/project/dlpack/)
@@ -80,3 +92,28 @@ python rocPyDecode-docker-install.py
 ## Run Sample Scripts
 
 * Sample scripts and instructions to run them can be found [here](samples/)
+
+## Documentation
+
+Run the following code to build our documentation locally.
+
+```shell
+cd docs
+pip3 install -r sphinx/requirements.txt
+python3 -m sphinx -T -E -b html -d _build/doctrees -D language=en . _build/html
+```
+
+For more information on documentation builds, refer to the
+[Building documentation](https://rocm.docs.amd.com/en/latest/contribute/building.html)
+page.
+
+## Tested configurations
+
+* Linux
+  * Ubuntu - `20.04` / `22.04`
+  * RHEL - `8` / `9`
+* ROCm:
+  * rocm-core - `6.2.0.60200-crdnnh.14042`
+  * amdgpu-core - `1:6.2.60200-1778439.22.04`
+* rocdecode - `0.6.0.60200-crdnnh.14042`
+* FFmpeg - `4.2.7` / `4.4.2-0`
