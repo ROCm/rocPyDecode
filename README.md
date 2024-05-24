@@ -30,16 +30,22 @@ The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access
   sudo apt install python3-dev python3-pip
   ```
 
-* [pkg-config](https://en.wikipedia.org/wiki/Pkg-config)
+* [PyBind11](https://github.com/pybind/pybind11)
 
   ```shell
-  sudo apt install pkg-config
+  pip3 install pybind11
   ```
 
 * [rocDecode](https://github.com/ROCm/rocDecode)
   
   ```shell
   sudo apt install rocdecode-dev
+  ```
+
+* [pkg-config](https://en.wikipedia.org/wiki/Pkg-config)
+
+  ```shell
+  sudo apt install pkg-config
   ```
 
 * [FFmpeg](https://ffmpeg.org/about.html) runtime and headers - for tests and samples
