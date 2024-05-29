@@ -45,3 +45,6 @@ setup(
       package_dir={'pyRocVideoDecode':'pyRocVideoDecode'},
       package_data={"pyRocVideoDecode":["__init__.pyi"]},
       )
+
+# Test built binaries -- TBD: Optional
+# subprocess.check_call(['ctest', '--test-dir', build_dir, '-VV'])

@@ -122,7 +122,7 @@ if(HIP_FOUND AND rocDecode_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
     file(GLOB_RECURSE include src/*.h)
     file(GLOB_RECURSE sources src/*.cpp  ${ROCM_PATH}/share/rocdecode/utils/*.cpp ${ROCM_PATH}/share/rocdecode/utils/rocvideodecode/*.cpp)
 
-     pybind11_add_module(${TARGET_NAME} MODULE ${sources})
+    pybind11_add_module(${TARGET_NAME} MODULE ${sources})
 
     target_link_libraries(${TARGET_NAME} PRIVATE ${LINK_LIBRARY_LIST})
     message("-- ${White}rocPyDecode -- Link Libraries: ${LINK_LIBRARY_LIST}${ColourReset}")
@@ -148,18 +148,23 @@ if(HIP_FOUND AND rocDecode_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
     message("-- ${Green}ROCm Video Decode Library Python Binding - rocPyDecode module added ${ColourReset}")
     message("-- ${BoldBlue}rocPyDecode Version -- ${VERSION}${ColourReset}")
     message("-- ${BoldBlue}rocPyDecode Install Path -- ${CMAKE_INSTALL_PREFIX_PYTHON}${ColourReset}")
+
+    # make test with CTest
+    enable_testing()
+    include(CTest)
+    add_subdirectory(samples)
 else()
     message("-- ${Red}WARNING: rocPyDecode module excluded - Dependency Failure${ColourReset}")
     # Python3
     if(NOT Python3_FOUND)
-      message("-- ${Yellow}NOTE: rocPyDecode pybind requires Python3, Not Found${ColourReset}")
+        message("-- ${Yellow}NOTE: rocPyDecode pybind requires Python3, Not Found${ColourReset}")
     endif()
     # PyBind11
     if(NOT pybind11_FOUND)
-      message("-- ${Yellow}NOTE: rocPyDecode requires pybind11, Not Found${ColourReset}")	
+        message("-- ${Yellow}NOTE: rocPyDecode requires pybind11, Not Found${ColourReset}")	
     endif()
     # rocDecode
     if(NOT rocDecode_FOUND)
-      message("-- ${Yellow}NOTE: rocPyDecode requires rocDecode, Not Found${ColourReset}")	
+        message("-- ${Yellow}NOTE: rocPyDecode requires rocDecode, Not Found${ColourReset}")	
     endif()
 endif()

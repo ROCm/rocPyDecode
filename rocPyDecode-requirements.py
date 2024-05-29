@@ -22,6 +22,7 @@ import os
 import sys
 import argparse
 import platform
+import traceback
 if sys.version_info[0] < 3:
     import commands
 else:
@@ -37,6 +38,7 @@ def ERROR_CHECK(call):
     status = call
     if(status != 0):
         print('ERROR_CHECK failed with status:'+str(status))
+        traceback.print_stack()
         exit(status)
 
 # Arguments
@@ -131,6 +133,7 @@ commonPackages = [
     'unzip',
     'pkg-config',
     'inxi',
+    'python3',
     'python3-pip'
 ]
 
@@ -139,13 +142,15 @@ coreDebianPackages = [
     'rocdecode',
     'rocdecode-dev',
     'rocdecode-test',
+    'python3-dev'
 ]
 
 # core RPM packages
 coreRPMPackages = [
     'rocdecode',
     'rocdecode-devel',
-    'rocdecode-test'
+    'rocdecode-test',
+    'python3-devel'
 ]
 
 # common packages

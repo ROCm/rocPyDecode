@@ -2,7 +2,7 @@
 
 # rocDecode Python Binding
 
-The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access rocDecode APIs in both Python and C/C++ languages. It works by connecting Python and C/C++ libraries, enabling functions calling and data passing between the two languages. The rocpydecode.so library is a wrapper that facilitates the use of rocDecode APIs that are written primarily in C/C++ language within Python.
+The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access rocDecode APIs in both Python and C/C++ languages. It works by connecting Python and C/C++ libraries, enabling function calling and data passing between the two languages. The rocpydecode.so library is a wrapper that facilitates the use of rocDecode APIs that are written primarily in C/C++ language within Python.
 
 ## Prerequisites
 
@@ -18,52 +18,52 @@ The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access
 > [!IMPORTANT]
 > `sudo amdgpu-install --usecase=rocm`
 
-* [rocDecode C/C++ Library](https://github.com/ROCm/rocDecode)
 * CMake `3.5` or higher
-  * Ubuntu 20/22
+  
+  ```shell
+  sudo apt install cmake
+  ```
 
-    ```bash
-    sudo apt install cmake
-    ```
+* Python3 and Python3 PIP
+  
+  ```shell
+  sudo apt install python3-dev python3-pip
+  ```
 
-  * RHEL 8/9
-    ```bash
-    sudo yum install cmake
-    ```
+* [PyBind11](https://github.com/pybind/pybind11)
 
-* Python `3`
-  * Ubuntu 20/22
+  ```shell
+  pip3 install pybind11
+  ```
 
-    ```bash
-    sudo apt install python3
-    ```
+* [rocDecode](https://github.com/ROCm/rocDecode)
+  
+  ```shell
+  sudo apt install rocdecode-dev
+  ```
 
-  * RHEL 8/9
+* [pkg-config](https://en.wikipedia.org/wiki/Pkg-config)
 
-    ```bash
-    sudo yum install python3
-    ```
+  ```shell
+  sudo apt install pkg-config
+  ```
 
-* Pip3 `10+`
-  * Ubuntu 20/22
+* [FFmpeg](https://ffmpeg.org/about.html) runtime and headers - for tests and samples
 
-    ```bash
-    sudo apt install python3-pip
-    ```
-  * RHEL 8/9
-
-    ```bash
-    sudo yum install python3-pip
-    ```
+  ```shell
+  sudo apt install ffmpeg libavcodec-dev libavformat-dev libavutil-dev
+  ```
 
 * [DLPack](https://pypi.org/project/dlpack/)
-  * Ubuntu 20/22
-
-    ```bash
+  
+  ```shell
     sudo pip3 install dlpack
     wget http://archive.ubuntu.com/ubuntu/pool/universe/d/dlpack/libdlpack-dev_0.6-1_amd64.deb
     sudo dpkg -i libdlpack-dev_0.6-1_amd64.deb    
     ```
+
+>[!NOTE]
+> * All package installs are shown with the `apt` package manager. Use the appropriate package manager for your operating system.
 
 ## Prerequisites setup script
 
@@ -92,6 +92,34 @@ cd rocPyDecode
 python rocPyDecode-docker-install.py 
 ```
 
+> [!IMPORTANT] 
+> `RHEL`/`SLES` package install requires manual `FFMPEG` dev install
+
 ## Run Sample Scripts
 
 * Sample scripts and instructions to run them can be found [here](samples/)
+
+## Documentation
+
+Run the following code to build our documentation locally.
+
+```shell
+cd docs
+pip3 install -r sphinx/requirements.txt
+python3 -m sphinx -T -E -b html -d _build/doctrees -D language=en . _build/html
+```
+
+For more information on documentation builds, refer to the
+[Building documentation](https://rocm.docs.amd.com/en/latest/contribute/building.html)
+page.
+
+## Tested configurations
+
+* Linux
+  * Ubuntu - `20.04` / `22.04`
+  * RHEL - `8` / `9`
+* ROCm:
+  * rocm-core - `6.2.0.60200-crdnnh.14042`
+  * amdgpu-core - `1:6.2.60200-1778439.22.04`
+* rocdecode - `0.6.0.60200-crdnnh.14042`
+* FFmpeg - `4.2.7` / `4.4.2-0`
