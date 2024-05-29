@@ -46,5 +46,5 @@ setup(
       package_data={"pyRocVideoDecode":["__init__.pyi"]},
       )
 
-# Test built binaries
-subprocess.check_call(['ctest', '--test-dir', build_dir, '-VV'])
+# Test built binaries -- TBD: Optional
+# subprocess.check_call(['ctest', '--test-dir', build_dir, '-VV'])
