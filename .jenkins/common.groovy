@@ -57,7 +57,6 @@ def runPackageCommand(platform, project) {
                 """
 
     platform.runCommand(this, command)
-    platform.archiveArtifacts(this, packageHelper[1])
 }
 
 return this
