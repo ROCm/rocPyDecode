@@ -21,6 +21,34 @@
 import subprocess
 import os
 from setuptools import setup, find_packages
+from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
+
+def get_rocm_rev():
+    try:
+        # Execute the "apt show rocm-libs -a" command and capture the output
+        result = subprocess.run(['apt', 'show', 'rocm-libs', '-a'], capture_output=True, text=True, check=True)
+        # Split the output into lines and find the line containing the Version/Revision
+        lines = result.stdout.split('\n')
+        for line in lines:
+            # print(line)
+            if 'Version:' in line and not line.startswith('#'):
+                parts = line.split()
+                if parts[0] == 'Version:':
+                    words = parts[1].split('.')
+                    revision = words[3].split('-')
+                    return revision[0]
+    except subprocess.CalledProcessError as e:
+        print("Failed to obtain rocm revision:", e)
+    except Exception as e:
+        print("An error occurred:", e)
+    return "ROCm version/revision not found"
+
+class custom_bdist_wheel(_bdist_wheel):
+    def get_tag(self):
+        python, abi, plat = super().get_tag()
+        # Customize the platform tag, CI team requirements
+        plat = 'manylinux_2_28_x86_64'
+        return python, abi, plat
 
 # Call CMake to configure and build the project
 build_dir = os.path.join(os.getcwd(), 'build')
@@ -38,12 +66,13 @@ setup(
       name='rocPyDecode',
       description='AMD ROCm Video Decoder Library',
       url='https://github.com/ROCm/rocPyDecode',
-      version='1.0.0',
+      version='1.0.0' + '.' + get_rocm_rev(),
       author='AMD',
       license='MIT License',
       packages=['pyRocVideoDecode'],
       package_dir={'pyRocVideoDecode':'pyRocVideoDecode'},
       package_data={"pyRocVideoDecode":["__init__.pyi"]},
+      cmdclass={'bdist_wheel': custom_bdist_wheel,},
       )
 
 # Test built binaries -- TBD: Optional
