@@ -6,26 +6,34 @@ import argparse
 import os.path
 import multiprocessing
 from multiprocessing import Process, Value
-from array import array
+from hip import hip
 
+def HipCheck(call_result):
+    err = call_result[0]
+    result = call_result[1:]
+    if len(result) == 1:
+        result = result[0]
+    if isinstance(err, hip.hipError_t) and err != hip.hipError_t.hipSuccess:
+        raise RuntimeError(str(err))
+    return result
 
-def DecProc(device_id, input_file_path, p_frames, p_fps):
-
+def DecProc(input_file_path, device_id, p_frames, p_fps):
     # demuxer instance
     demuxer = dmx.demuxer(input_file_path)
+
     # get the used coded id
     codec_id = dec.GetRocDecCodecID(demuxer.GetCodecId())
 
     # decoder instance
     viddec = dec.decoder(
-        device_id=device_id,
-        mem_type=1,
-        codec=codec_id,
-        b_force_zero_latency=False,
-        crop_rect=None,
-        max_width=0,
-        max_height=0,
-        clk_rate=1000)
+        device_id = device_id,
+        mem_type = 1,
+        codec = codec_id,
+        b_force_zero_latency = False,
+        crop_rect = None,
+        max_width = 0,
+        max_height = 0,
+        clk_rate = 1000)
 
     # Get GPU device information
     cfg = viddec.GetGpuInfo()
@@ -46,7 +54,6 @@ def DecProc(device_id, input_file_path, p_frames, p_fps):
           str(cfg.pci_domain_id) +
           "." +
           str(cfg.pci_device_id))
-
     n_frame = 0
     total_dec_time = 0.0
 
@@ -75,7 +82,7 @@ def DecProc(device_id, input_file_path, p_frames, p_fps):
     if (n_frame > 0 and total_dec_time > 0):
         time_per_frame = (total_dec_time / n_frame) * 1000
         frame_per_second = n_frame / total_dec_time
-        p_fps.value = round(frame_per_second,2)
+        p_fps.value = frame_per_second
 
 if __name__ == "__main__":
 
@@ -111,11 +118,40 @@ if __name__ == "__main__":
     input_file_path = args.input
     device_id = args.device
     num_process = args.num_process
+    sd = 0
 
     # handle params
     if not os.path.exists(input_file_path):  # Input file (must exist)
         print("ERROR: input file doesn't exist.")
         exit()
+
+    print("info: number of parallel runs: ", num_process)
+
+    # HIP Python calls to find number of VCNs per device
+    props = hip.hipDeviceProp_t()
+    HipCheck(hip.hipGetDeviceProperties(props, device_id))
+    gcn_arch_name = props.gcnArchName.decode('UTF-8')
+    gcn_arch_name = gcn_arch_name.split(':', 1)[0]
+    num_devices = HipCheck(hip.hipGetDeviceCount())
+    if (num_devices < 1):
+        print("ERROR: no GPUs found")
+        sys.exit()
+    if (gcn_arch_name == 'gfx90a' and num_devices > 1):
+        sd = 1
+
+    v_device_id  = []
+    for i in range(num_process):
+        # use correct device
+        if (device_id % 2 == 0):
+            if (i % 2 == 0):
+                v_device_id.append(device_id)
+            else:
+                v_device_id.append(device_id + sd)
+        else:
+            if (i % 2 == 0):
+                v_device_id.append(device_id - sd)
+            else:
+                v_device_id.append(device_id)
 
     total_frames = 0
     total_fps = 0.0
@@ -129,14 +165,14 @@ if __name__ == "__main__":
     p_fps = Value('f', 0.0)
 
     for i in range(0, num_process):
-        p = Process(target=DecProc, args=(device_id, input_file_path, p_frames, p_fps))
+        p = Process(target=DecProc, args=(input_file_path, v_device_id[i], p_frames, p_fps))
         p.start()
         processes.append(p)
 
     for p in processes:
+        p.join()
         total_frames += p_frames.value
         total_fps += p_fps.value
-        p.join()
 
     print("info: Total frame decoded: " + str(total_frames))
-    print("info: avg frame per second: " + str(total_fps))
+    print("info: avg frame per second: " + str(round(total_fps, 2)))
