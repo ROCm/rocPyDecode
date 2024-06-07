@@ -133,3 +133,17 @@ class decoder(object):
 
     def SetReconfigParams(self, flush_mode, out_file_name):
         return self.viddec.SetReconfigParams(flush_mode, out_file_name)
+
+    def SetDecoderSessionID(self, session_id):
+        self.viddec.SetDecoderSessionID(session_id)
+        return
+
+    def GetDecoderSessionID(self):
+        return self.viddec.GetDecoderSessionID()
+
+    def AddDecoderSessionOverHead(self, session_id, duration):
+        self.viddec.AddDecoderSessionOverHead(session_id, duration)
+        return
+
+    def GetDecoderSessionOverHead(self, session_id):
+        return self.viddec.GetDecoderSessionOverHead(session_id)

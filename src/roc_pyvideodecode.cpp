@@ -49,7 +49,11 @@ void PyRocVideoDecoderInitializer(py::module& m) {
         .def("SetReconfigParams",&PyRocVideoDecoder::PySetReconfigParams)
         .def("InitMd5",&PyRocVideoDecoder::PyInitMd5)
         .def("FinalizeMd5",&PyRocVideoDecoder::PyFinalizeMd5)
-        .def("UpdateMd5ForFrame",&PyRocVideoDecoder::PyUpdateMd5ForFrame);
+        .def("UpdateMd5ForFrame",&PyRocVideoDecoder::PyUpdateMd5ForFrame)
+        .def("SetDecoderSessionID",&PyRocVideoDecoder::PySetDecoderSessionID)
+        .def("GetDecoderSessionID",&PyRocVideoDecoder::PyGetDecoderSessionID)
+        .def("AddDecoderSessionOverHead",&PyRocVideoDecoder::PyAddDecoderSessionOverHead)
+        .def("GetDecoderSessionOverHead",&PyRocVideoDecoder::PyGetDecoderSessionOverHead);
 }
 
 // callback function to flush last frames and save it to file when reconfigure happens
@@ -382,4 +386,26 @@ py::int_ PyRocVideoDecoder::PyGetFrameSize() {
 // for python binding
 py::int_ PyRocVideoDecoder::PyGetStride() {
     return py::int_(static_cast<int>(GetSurfaceStride()));
+}
+
+// for python binding, Session Overhead: Set
+py::object PyRocVideoDecoder::PySetDecoderSessionID(int session_id) {
+    SetDecoderSessionID(session_id);
+    return py::cast<py::none>(Py_None);
+}
+
+// for python binding, Session Overhead: Get
+py::object PyRocVideoDecoder::PyGetDecoderSessionID() {
+    return py::int_(static_cast<int>(GetDecoderSessionID()));
+}
+
+// for python binding, Session overhead refers to decoder initialization and deinitialization time
+py::object PyRocVideoDecoder::PyAddDecoderSessionOverHead(int session_id, int64_t duration) {
+    AddDecoderSessionOverHead(session_id, duration);
+    return py::cast<py::none>(Py_None);
+}
+
+// for python binding, Session overhead refers to decoder initialization and deinitialization time
+py::object PyRocVideoDecoder::PyGetDecoderSessionOverHead(int session_id) {
+    return py::cast(GetDecoderSessionOverHead(session_id));
 }
