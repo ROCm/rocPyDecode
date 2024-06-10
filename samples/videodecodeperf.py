@@ -17,7 +17,7 @@ def HipCheck(call_result):
         raise RuntimeError(str(err))
     return result
 
-def DecProc(input_file_path, device_id, p_frames, p_fps):
+def DecProc(input_file_path, device_id, p_frames, p_fps, thread_id):
     # demuxer instance
     demuxer = dmx.demuxer(input_file_path)
 
@@ -37,6 +37,8 @@ def DecProc(input_file_path, device_id, p_frames, p_fps):
 
     # Get GPU device information
     cfg = viddec.GetGpuInfo()
+
+    viddec.SetDecoderSessionID(thread_id)
 
     #  print some GPU info out
     print("\ninfo: Input file: " +
@@ -81,6 +83,7 @@ def DecProc(input_file_path, device_id, p_frames, p_fps):
 
     if (n_frame > 0 and total_dec_time > 0):
         time_per_frame = (total_dec_time / n_frame) * 1000
+        time_per_frame -= (viddec.GetDecoderSessionOverHead(thread_id) / n_frame) # remove the overhead
         frame_per_second = n_frame / total_dec_time
         p_fps.value = frame_per_second
 
@@ -165,7 +168,7 @@ if __name__ == "__main__":
     p_fps = Value('f', 0.0)
 
     for i in range(0, num_process):
-        p = Process(target=DecProc, args=(input_file_path, v_device_id[i], p_frames, p_fps))
+        p = Process(target=DecProc, args=(input_file_path, v_device_id[i], p_frames, p_fps, i))
         p.start()
         processes.append(p)
 
