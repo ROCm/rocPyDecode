@@ -107,12 +107,8 @@ class PyRocVideoDecoder : public RocVideoDecoder {
         // for python binding
         py::object PySetReconfigParams(int flush_mode, std::string& output_file_name_in);
 
-        // for python binding, Session Overhead
-        py::object PySetDecoderSessionID(int session_id);
-        py::object PyGetDecoderSessionID();
-
         // Session overhead refers to decoder initialization and deinitialization time
-        py::object PyAddDecoderSessionOverHead(int session_id, int64_t duration);
+        py::object PyAddDecoderSessionOverHead(int session_id, double duration);
         py::object PyGetDecoderSessionOverHead(int session_id);
 
     private:

@@ -90,8 +90,6 @@ def Decoder(
     if (resize_dim is not None):
         resize_dim = None if(resize_dim[0] == 0 or resize_dim[1] == 0) else resize_dim
 
-    viddec.SetDecoderSessionID(session_id)
-
     while True:
         start_time = datetime.datetime.now()
 

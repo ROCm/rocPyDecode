@@ -50,8 +50,6 @@ void PyRocVideoDecoderInitializer(py::module& m) {
         .def("InitMd5",&PyRocVideoDecoder::PyInitMd5)
         .def("FinalizeMd5",&PyRocVideoDecoder::PyFinalizeMd5)
         .def("UpdateMd5ForFrame",&PyRocVideoDecoder::PyUpdateMd5ForFrame)
-        .def("SetDecoderSessionID",&PyRocVideoDecoder::PySetDecoderSessionID)
-        .def("GetDecoderSessionID",&PyRocVideoDecoder::PyGetDecoderSessionID)
         .def("AddDecoderSessionOverHead",&PyRocVideoDecoder::PyAddDecoderSessionOverHead)
         .def("GetDecoderSessionOverHead",&PyRocVideoDecoder::PyGetDecoderSessionOverHead);
 }
@@ -388,24 +386,13 @@ py::int_ PyRocVideoDecoder::PyGetStride() {
     return py::int_(static_cast<int>(GetSurfaceStride()));
 }
 
-// for python binding, Session Overhead: Set
-py::object PyRocVideoDecoder::PySetDecoderSessionID(int session_id) {
-    SetDecoderSessionID(session_id);
-    return py::cast<py::none>(Py_None);
-}
-
-// for python binding, Session Overhead: Get
-py::object PyRocVideoDecoder::PyGetDecoderSessionID() {
-    return py::int_(static_cast<int>(GetDecoderSessionID()));
-}
-
 // for python binding, Session overhead refers to decoder initialization and deinitialization time
-py::object PyRocVideoDecoder::PyAddDecoderSessionOverHead(int session_id, int64_t duration) {
-    AddDecoderSessionOverHead(session_id, duration);
+py::object PyRocVideoDecoder::PyAddDecoderSessionOverHead(int session_id, double duration) {
+    AddDecoderSessionOverHead(static_cast<std::thread::id>(session_id), duration);
     return py::cast<py::none>(Py_None);
 }
 
 // for python binding, Session overhead refers to decoder initialization and deinitialization time
 py::object PyRocVideoDecoder::PyGetDecoderSessionOverHead(int session_id) {
-    return py::cast(GetDecoderSessionOverHead(session_id));
+    return py::cast(GetDecoderSessionOverHead(static_cast<std::thread::id>(session_id)));
 }
