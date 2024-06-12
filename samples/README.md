@@ -104,15 +104,3 @@ The following are full list of arguments that can be passed to the sample.
 -i INPUT, --input INPUT                       : Input File Path - required
 -d DEVICE, --device DEVICE                    : GPU device ID - optional, default - 0
 ```
-
-## videodedemux.py
-
-This sample demuxes frames from a video file. \
-To run this python sample script, you need to provide input video file full path name.
-
-### Arguments
-The following are full list of arguments that can be passed to the sample.
-```bash
--h, --help                                    : Show detail help message and exit
--i INPUT, --input INPUT                       : Input File Path - required
-```
