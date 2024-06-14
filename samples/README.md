@@ -40,6 +40,22 @@ The following are full list of arguments that can be passed to the sample.
 -resize RESIZE_DIM RESIZE_DIM, --resize_dim RESIZE_DIM RESIZE_DIM : Width & Height of new resized frame, optional, default: no resizing
 ```
 
+## videodecodeperf.py
+
+This sample demuxes & decode frames from a video file, and optionally saves the frames to a file. \
+To run this python sample script, you need to provide input video file full path name, other arguments are optional.
+
+### Arguments
+
+The following are full list of arguments that can be passed to the sample.
+
+```bash
+-h, --help                                                  : Show detail help message and exit
+-i INPUT, --input INPUT                                     : Input File Path - required
+-d DEVICE, --device DEVICE                                  : GPU device ID - optional, default - 0
+-t Number of Processes, --num_process Number of Processes   : Number of Processes - optional, default 4
+```
+
 ## videodecodergb.py
 
 This sample demuxes & decode frames from a video file, and convert it to an rgb frame. Optionally you can save the rgb frames to a file. The output is the rgb frame with the format the user specifies with -of or as default 'rgb' if not specified. To run this python sample script, you need to provide input video file full path name, other arguments are optional.
