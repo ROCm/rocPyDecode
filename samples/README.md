@@ -42,7 +42,7 @@ The following are full list of arguments that can be passed to the sample.
 
 ## videodecodeperf.py
 
-This sample demuxes & decode frames from a video file, and optionally saves the frames to a file. \
+This sample demuxes & decode frames from a video file on multiple processed. USer can define the number of parallel jobs to observe performance scaling. \
 To run this python sample script, you need to provide input video file full path name, other arguments are optional.
 
 ### Arguments
