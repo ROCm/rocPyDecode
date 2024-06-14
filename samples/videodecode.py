@@ -85,6 +85,7 @@ def Decoder(
     total_dec_time = 0.0
     frame_is_resized = False
     not_seeking = True if (seek_frame == -1) else False
+    session_id = 0
 
     if (resize_dim is not None):
         resize_dim = None if(resize_dim[0] == 0 or resize_dim[1] == 0) else resize_dim
@@ -143,6 +144,7 @@ def Decoder(
     if (output_file_path is None):
         if (n_frame > 0 and total_dec_time > 0):
             time_per_frame = (total_dec_time / n_frame) * 1000
+            time_per_frame -= (viddec.GetDecoderSessionOverHead(session_id) / n_frame) # remove the overhead
             frame_per_second = n_frame / total_dec_time
             print("info: avg decoding time per frame: " +"{0:0.2f}".format(round(time_per_frame, 2)) + " ms")
             print("info: avg frame per second: " +"{0:0.2f}".format(round(frame_per_second,2)) +"\n")
