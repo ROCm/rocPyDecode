@@ -5,6 +5,7 @@
 * [rocPyDecode installed](../README.md#rocpydecode-install)
 * [DLPack](https://pypi.org/project/dlpack/)
 * [pytorch for ROCm](https://pytorch.org/get-started/locally/)
+* [Python HIP](https://rocm.docs.amd.com/projects/hip-python/en/latest/user_guide/0_install.html)
 
 The torch python sample requires pytorch for ROCm, which can be installed as follow:
 
@@ -17,6 +18,13 @@ The torch python sample requires pytorch for ROCm, which can be installed as fol
 - If using a docker environment or any system with `root` access, no need for reboot.
 ```bash
     pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.0
+```
+
+The performance sample requires python HIP, which can be installed as follows:
+
+```
+python3 -m pip install --upgrade pip
+python3 -m pip install -i https://test.pypi.org/simple hip-python
 ```
 
 ## videodecode.py
@@ -44,6 +52,8 @@ The following are full list of arguments that can be passed to the sample.
 
 This sample demuxes & decode frames from a video file on multiple processes. User can define the number of parallel jobs to observe performance scaling. \
 To run this python sample script, you need to provide input video file full path name, other arguments are optional.
+
+
 
 ### Arguments
 
