@@ -23,10 +23,26 @@ import os
 from setuptools import setup, find_packages
 from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 
+def detect_os_command():
+    os_release_path = "/etc/os-release"
+    if os.path.exists(os_release_path):
+        with open(os_release_path, 'r') as file:
+            os_release_info = file.read()
+        if "ID=ubuntu" in os_release_info:
+            return ['apt', 'show', 'rocm-libs', '-a']
+        elif "ID=rhel" in os_release_info or "Red Hat Enterprise Linux" in os_release_info:
+            return ['dnf', 'info', 'rocm-libs']
+        elif "ID=sles" in os_release_info or "SUSE Linux Enterprise Server" in os_release_info:
+            return ['zypper', 'info', 'rocm-libs']
+    return [''] # "Unknown"
+
 def get_rocm_rev():
     try:
+        apt_command = detect_os_command()
+        if apt_command == ['']:
+            return "00000" # "Unknown os"
         # Execute the "apt show rocm-libs -a" command and capture the output
-        result = subprocess.run(['apt', 'show', 'rocm-libs', '-a'], capture_output=True, text=True, check=True)
+        result = subprocess.run(apt_command, capture_output=True, text=True, check=True)
         # Split the output into lines and find the line containing the Version/Revision
         lines = result.stdout.split('\n')
         for line in lines:
@@ -41,7 +57,7 @@ def get_rocm_rev():
         print("Failed to obtain rocm revision:", e)
     except Exception as e:
         print("An error occurred:", e)
-    return "ROCm version/revision not found"
+    return "00000" # error, can't get the rev
 
 class custom_bdist_wheel(_bdist_wheel):
     def get_tag(self):
