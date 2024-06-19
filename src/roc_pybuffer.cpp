@@ -163,8 +163,9 @@ int BufferInterface::LoadDLPack(std::vector<size_t>& _shape, std::vector<size_t>
     }
     
     // Convert strides
-    m_dlTensor->strides = new int64_t[m_dlTensor->ndim];
-    for (int i = 0; i < m_dlTensor->ndim; ++i) {
+    int strides_dim = _stride.size();
+    m_dlTensor->strides = new int64_t[strides_dim];
+    for (int i = 0; i < strides_dim; ++i) {
         m_dlTensor->strides[i] = _stride[i];
         if (m_dlTensor->strides[i] % itemSizeDT != 0) {
             throw std::runtime_error("Stride must be a multiple of the element size in bytes");

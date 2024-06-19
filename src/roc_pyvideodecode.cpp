@@ -226,8 +226,8 @@ py::object PyRocVideoDecoder::PyGetFrameRgb(PyPacketData& packet, int rgb_format
             uint32_t height = GetHeight();
             uint32_t surf_stride = post_proc->GetRgbStride(e_output_format, surf_info);
             std::string type_str(static_cast<const char*>("|u1"));
-            std::vector<size_t> shape{ static_cast<size_t>(height), static_cast<size_t>(width)};
-            std::vector<size_t> stride{ static_cast<size_t>(surf_stride), 1};
+            std::vector<size_t> shape{ static_cast<size_t>(height), static_cast<size_t>(width), 3}; // 3 rgb channels
+            std::vector<size_t> stride{ static_cast<size_t>(surf_stride), 1, 0}; // python assumes same dim for both shape & strides
             packet.extBuf->LoadDLPack(shape, stride, type_str, (void *)frame_ptr_rgb);
         }
     }
