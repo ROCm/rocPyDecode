@@ -23,25 +23,37 @@ import os
 from setuptools import setup, find_packages
 from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 
+def get_rev_based_on_os():
+    os.system("cat /etc/os-release | grep ID= > os_release")
+    if os.path.exists('os_release'):
+        with open('os_release', 'r') as file:
+            os_release_info = file.read()
+        if "ubuntu" in os_release_info:
+            os.system('apt show rocm-libs -a | grep Version > rev_file')
+            return True
+        elif "rhel" in os_release_info:
+            os.system('yum info rocm-libs | grep Version > rev_file')
+            return True
+        elif "sles" in os_release_info:
+            os.system('zypper info rocm-libs | grep Version > rev_file')
+            return True
+        elif "centos" in os_release_info:
+            os.system('yum info rocm-libs | grep Version > rev_file')
+            return True
+    return False
+
 def get_rocm_rev():
     try:
-        # Execute the "apt show rocm-libs -a" command and capture the output
-        result = subprocess.run(['apt', 'show', 'rocm-libs', '-a'], capture_output=True, text=True, check=True)
-        # Split the output into lines and find the line containing the Version/Revision
-        lines = result.stdout.split('\n')
-        for line in lines:
-            # print(line)
-            if 'Version:' in line and not line.startswith('#'):
-                parts = line.split()
-                if parts[0] == 'Version:':
-                    words = parts[1].split('.')
-                    revision = words[3].split('-')
-                    return revision[0]
-    except subprocess.CalledProcessError as e:
-        print("Failed to obtain rocm revision:", e)
+        if get_rev_based_on_os() == False:
+            return "0" # "Unknown os"
+        # "apt/yum/zepper" abs in file: rev_file
+        if os.path.exists('rev_file'):
+            with open("rev_file", 'r') as file:
+                rev_data = file.read().split(".")
+                return rev_data[3][:5]
     except Exception as e:
         print("An error occurred:", e)
-    return "ROCm version/revision not found"
+    return "0" # error, can't get the rev
 
 class custom_bdist_wheel(_bdist_wheel):
     def get_tag(self):
