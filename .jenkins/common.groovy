@@ -11,7 +11,20 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
                 set -ex
                 echo Build rocPyDecode - ${buildTypeDir}
                 cd ${project.paths.project_build_prefix}
+                
+                wget https://github.com/dmlc/dlpack/archive/refs/tags/v0.6.tar.gz
+                tar -xvf v0.6.tar.gz
+                cd dlpack-0.6
+                mkdir build
+                cd build
+                cmake ..
+                make
+                sudo make install
+                cd ../..
+
                 python3 rocPyDecode-docker-install.py
+                pip freeze
+                pip show rocPyDecode
                 """
 
     platform.runCommand(this, command)
