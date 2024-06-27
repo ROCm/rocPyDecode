@@ -22,7 +22,7 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
                 sudo make install
                 cd ../..
 
-                pip install pybind11
+                pip install pybind11[global]
 
                 python3 rocPyDecode-docker-install.py
                 pip freeze
