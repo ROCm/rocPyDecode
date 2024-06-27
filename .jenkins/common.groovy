@@ -54,6 +54,7 @@ def runTestCommand (platform, project) {
                 echo make samples
                 pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.0
                 cd ${project.paths.project_build_prefix}
+                echo \$PYTHONPATH
                 LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/opt/rocm/lib${libLocation} python3 samples/videodecode.py
                 """
 
