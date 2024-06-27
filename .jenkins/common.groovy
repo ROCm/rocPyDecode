@@ -23,10 +23,11 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
                 cd ../..
 
                 pip install pybind11[global]
+                python3 -m pip install pybind11[global]
 
                 python3 rocPyDecode-docker-install.py
 
-                python3 setup.py install
+                pip install .
 
                 pip freeze
                 pip show rocPyDecode
