@@ -11,8 +11,17 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
                 set -ex
                 echo Build rocPyDecode - ${buildTypeDir}
                 cd ${project.paths.project_build_prefix}
-                wget http://archive.ubuntu.com/ubuntu/pool/universe/d/dlpack/libdlpack-dev_0.6-1_amd64.deb
-                sudo dpkg -i libdlpack-dev_0.6-1_amd64.deb
+                
+                wget https://github.com/dmlc/dlpack/archive/refs/tags/v0.6.tar.gz
+                tar -xvf v0.6.tar.gz
+                cd dlpack-0.6
+                mkdir build
+                cd build
+                cmake ..
+                make
+                sudo make install
+                cd ../..
+
                 python3 rocPyDecode-docker-install.py
                 pip freeze
                 pip show rocPyDecode
