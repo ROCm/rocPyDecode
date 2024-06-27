@@ -17,7 +17,7 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
                 dpkg -i /libdlpack-dev_0.6-1_amd64.deb
 
                 pip freeze
-                pip show pyRocVideoDecode
+                pip show rocPyDecode
                 """
 
     platform.runCommand(this, command)
