@@ -108,7 +108,6 @@ if "redhat" in platfromInfo or os.path.exists('/usr/bin/yum'):
 elif "Ubuntu" in platfromInfo or os.path.exists('/usr/bin/apt-get'):
     linuxSystemInstall = 'apt-get -y'
     linuxSystemInstall_check = '--allow-unauthenticated'
-    linuxFlag = '-S'
     if not "Ubuntu" in platfromInfo:
         platfromInfo = platfromInfo+'-Ubuntu'
 else:
