@@ -28,7 +28,6 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
                 python3 rocPyDecode-docker-install.py
 
                 sudo python3 setup.py install
-                sudo pip install .
                 sudo pip3 install .
 
                 pip3 freeze
