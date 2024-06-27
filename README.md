@@ -95,6 +95,16 @@ python rocPyDecode-docker-install.py
 > [!IMPORTANT] 
 > `RHEL`/`SLES` package install requires manual `FFMPEG` dev install
 
+## Run CTest
+
+* This will run the simple videodecode sample and show pass/fail.
+
+```
+cd rocPyDecode
+cmake .
+ctest -VV
+```
+
 ## Run Sample Scripts
 
 * Sample scripts and instructions to run them can be found [here](samples/)
