@@ -11,6 +11,7 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
                 set -ex
 
                 echo Build rocDecode
+                rm -rf rocDecode
                 git clone http://github.com/ROCm/rocDecode.git
                 cd rocDecode
                 python3 rocDecode-setup.py
@@ -18,6 +19,7 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
                 cd build
                 cmake ..
                 make -j
+                sudo make install
                 cd ../..
 
                 echo Build rocPyDecode - ${buildTypeDir}
