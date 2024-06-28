@@ -9,6 +9,17 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
     
     def command = """#!/usr/bin/env bash
                 set -ex
+
+                echo Build rocDecode
+                git clone http://github.com/ROCm/rocDecode.git
+                cd rocDecode
+                python3 rocDecode-setup.py
+                mkdir build
+                cd build
+                cmake ..
+                make -j
+                cd ../..
+
                 echo Build rocPyDecode - ${buildTypeDir}
                 cd ${project.paths.project_build_prefix}
                 
