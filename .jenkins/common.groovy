@@ -35,6 +35,9 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
                 echo Build rocPyDecode - ${buildTypeDir}
                 cd ${project.paths.project_build_prefix}
                 python3 rocPyDecode-docker-install.py
+
+                pip3 freeze
+                pip3 show rocPyDecode
                 """
 
     platform.runCommand(this, command)
