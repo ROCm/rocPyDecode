@@ -20,6 +20,18 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
 
                 ${getDependenciesCommand}
 
+                echo Build rocDecode
+                rm -rf rocDecode
+                git clone http://github.com/ROCm/rocDecode.git
+                cd rocDecode
+                python3 rocDecode-setup.py
+                mkdir build
+                cd build
+                cmake ..
+                make -j
+                sudo make install
+                cd ../..
+
                 echo Build rocPyDecode - ${buildTypeDir}
                 cd ${project.paths.project_build_prefix}
                 python3 rocPyDecode-docker-install.py
