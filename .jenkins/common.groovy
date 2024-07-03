@@ -6,9 +6,20 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
 
     String buildTypeArg = debug ? '-DCMAKE_BUILD_TYPE=Debug' : '-DCMAKE_BUILD_TYPE=Release'
     String buildTypeDir = debug ? 'debug' : 'release'
+
+    def getDependenciesCommand = ""
+    if (project.installLibraryDependenciesFromCI) {
+        project.libraryDependencies.each
+        { libraryName ->
+            getDependenciesCommand += auxiliary.getLibrary(libraryName, platform.jenkinsLabel)
+        }
+    }
     
     def command = """#!/usr/bin/env bash
                 set -ex
+
+                ${getDependenciesCommand}
+
                 echo Build rocPyDecode - ${buildTypeDir}
                 cd ${project.paths.project_build_prefix}
                 python3 rocPyDecode-docker-install.py
