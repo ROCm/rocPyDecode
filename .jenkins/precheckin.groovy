@@ -9,7 +9,7 @@ def runCI =
     
     def prj = new rocProject('rocPyDecode', 'PreCheckin')
     prj.installLibraryDependenciesFromCI = true
-    prj.libraryDependencies = ['rocDecode']
+    // prj.libraryDependencies = ['rocDecode']
 
     def nodes = new dockerNodes(nodeDetails, jobName, prj)
 
