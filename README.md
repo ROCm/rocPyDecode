@@ -8,7 +8,6 @@ The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access
 
 * Linux distribution
   * Ubuntu - `20.04` / `22.04`
-  * RHEL - `8` / `9`
 
 * [ROCm-supported hardware](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/reference/system-requirements.html)
 > [!IMPORTANT] 
@@ -127,7 +126,6 @@ page.
 
 * Linux
   * Ubuntu - `20.04` / `22.04`
-  * RHEL - `8` / `9`
 * ROCm:
   * rocm-core - `6.2.0.60200-crdnnh.14042`
   * amdgpu-core - `1:6.2.60200-1778439.22.04`
