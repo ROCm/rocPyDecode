@@ -108,7 +108,6 @@ if "redhat" in platfromInfo or os.path.exists('/usr/bin/yum'):
 elif "Ubuntu" in platfromInfo or os.path.exists('/usr/bin/apt-get'):
     linuxSystemInstall = 'apt-get -y'
     linuxSystemInstall_check = '--allow-unauthenticated'
-    linuxFlag = '-S'
     if not "Ubuntu" in platfromInfo:
         platfromInfo = platfromInfo+'-Ubuntu'
 else:
@@ -169,7 +168,7 @@ else:
     ERROR_CHECK(os.system('pip3 install pybind11'))
 
 if "Ubuntu" in platfromInfo:
-    # core debian packages
+# core debian packages
     if rocdecodeInstall == 'ON':
         for i in range(len(coreDebianPackages)):
             ERROR_CHECK(os.system('sudo '+linuxFlag+' '+linuxSystemInstall +
@@ -191,7 +190,7 @@ if "Ubuntu" in platfromInfo:
     # install the deb now
     ERROR_CHECK(os.system('dpkg -i /tmp/libdlpack-dev_0.6-1_amd64.deb'))
 
-elif "redhat" in platfromInfo:
+else:
     # core RPM packages
     if rocdecodeInstall == 'ON':
         for i in range(len(coreRPMPackages)):

@@ -9,9 +9,39 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
     
     def command = """#!/usr/bin/env bash
                 set -ex
+
+                echo Build rocDecode
+                rm -rf rocDecode
+                git clone http://github.com/ROCm/rocDecode.git
+                cd rocDecode
+                python3 rocDecode-setup.py
+                mkdir build
+                cd build
+                cmake ..
+                make -j
+                sudo make install
+                cd ../..
+
                 echo Build rocPyDecode - ${buildTypeDir}
                 cd ${project.paths.project_build_prefix}
+                
+                wget https://github.com/dmlc/dlpack/archive/refs/tags/v0.6.tar.gz
+                tar -xvf v0.6.tar.gz
+                cd dlpack-0.6
+                mkdir build
+                cd build
+                cmake ..
+                make
+                sudo make install
+                cd ../..
+
+                pip3 install pybind11[global]
+                python3 -m pip install pybind11[global]
+
                 python3 rocPyDecode-docker-install.py
+
+                pip3 freeze
+                pip3 show rocPyDecode
                 """
 
     platform.runCommand(this, command)
@@ -34,6 +64,7 @@ def runTestCommand (platform, project) {
                 echo make samples
                 pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.0
                 cd ${project.paths.project_build_prefix}
+                echo \$PYTHONPATH
                 LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/opt/rocm/lib${libLocation} python3 samples/videodecode.py
                 """
 
