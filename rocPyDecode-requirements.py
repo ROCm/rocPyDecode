@@ -47,14 +47,11 @@ parser.add_argument('--rocm_path', type=str, default='/opt/rocm',
                     help='ROCm Installation Path - optional (default:/opt/rocm) - ROCm Installation Required')
 parser.add_argument('--rocdecode', type=str, default='ON',
                     help='rocDecode Installation - optional (default:ON) [options:ON/OFF]')
-parser.add_argument('--docker', type=str, default='NO',
-                    help='running on docker image - optional (default:NO) [options:NO/YES]')
 
 args = parser.parse_args()
 
 rocdecodeInstall = args.rocdecode.upper()
 ROCM_PATH = args.rocm_path
-docker_image = args.docker.upper()
 
 if "ROCM_PATH" in os.environ:
     ROCM_PATH = os.environ.get('ROCM_PATH')
