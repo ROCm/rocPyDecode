@@ -33,7 +33,7 @@ The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access
 * [PyBind11](https://github.com/pybind/pybind11)
 
   ```shell
-  pip3 install pybind11
+  sudo apt install pybind11-dev
   ```
 
 * [rocDecode](https://github.com/ROCm/rocDecode)
@@ -57,9 +57,7 @@ The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access
 * [DLPack](https://pypi.org/project/dlpack/)
   
   ```shell
-    sudo pip3 install dlpack
-    wget http://archive.ubuntu.com/ubuntu/pool/universe/d/dlpack/libdlpack-dev_0.6-1_amd64.deb
-    sudo dpkg -i libdlpack-dev_0.6-1_amd64.deb    
+    sudo apt install libdlpack-dev   
     ```
 
 >[!NOTE]
