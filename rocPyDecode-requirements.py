@@ -47,14 +47,11 @@ parser.add_argument('--rocm_path', type=str, default='/opt/rocm',
                     help='ROCm Installation Path - optional (default:/opt/rocm) - ROCm Installation Required')
 parser.add_argument('--rocdecode', type=str, default='ON',
                     help='rocDecode Installation - optional (default:ON) [options:ON/OFF]')
-parser.add_argument('--docker', type=str, default='NO',
-                    help='running on docker image - optional (default:NO) [options:NO/YES]')
 
 args = parser.parse_args()
 
 rocdecodeInstall = args.rocdecode.upper()
 ROCM_PATH = args.rocm_path
-docker_image = args.docker.upper()
 
 if "ROCM_PATH" in os.environ:
     ROCM_PATH = os.environ.get('ROCM_PATH')
@@ -142,10 +139,14 @@ coreDebianPackages = [
     'rocdecode',
     'rocdecode-dev',
     'rocdecode-test',
-    'python3-dev'
+    'python3-dev',
+    'pybind11-dev',
+    'libdlpack-dev'
 ]
 
 # core RPM packages
+# TODO: dlpack/ pybind11-devel package
+
 coreRPMPackages = [
     'rocdecode',
     'rocdecode-devel',
@@ -162,34 +163,12 @@ for i in range(len(commonPackages)):
 # rocPyDecode Requirements
 ERROR_CHECK(os.system('sudo -v'))
 
-#pybind11 install for both Ubuntu and RHEL
-if(docker_image == 'YES'):
-    ERROR_CHECK(os.system('pip3 install "pybind11[global]"'))
-else:
-    ERROR_CHECK(os.system('pip3 install pybind11'))
-
 if "Ubuntu" in platfromInfo:
     # core debian packages
     if rocdecodeInstall == 'ON':
         for i in range(len(coreDebianPackages)):
             ERROR_CHECK(os.system('sudo '+linuxFlag+' '+linuxSystemInstall +
                     ' '+linuxSystemInstall_check+' install '+ coreDebianPackages[i]))
-    # dlpack
-    # TODO: make this dynamic allowing to change the ver# via parameter
-    ERROR_CHECK(os.system('wget http://archive.ubuntu.com/ubuntu/pool/universe/d/dlpack/libdlpack-dev_0.6-1_amd64.deb'))
-    # install needed z package
-    ERROR_CHECK(os.system(linuxSystemInstall+' install zstd'))
-    # Extract files from the archive
-    ERROR_CHECK(os.system('ar x libdlpack-dev_0.6-1_amd64.deb'))
-    # Uncompress zstd files an re-compress them using xz
-    ERROR_CHECK(os.system('zstd -d < control.tar.zst | xz > control.tar.xz'))
-    ERROR_CHECK(os.system('zstd -d < data.tar.zst | xz > data.tar.xz'))
-    # Re-create the Debian package in /tmp/
-    ERROR_CHECK(os.system('ar -m -c -a sdsd /tmp/libdlpack-dev_0.6-1_amd64.deb debian-binary control.tar.xz data.tar.xz'))
-    # Clean up
-    ERROR_CHECK(os.system('rm debian-binary control.tar.xz data.tar.xz control.tar.zst data.tar.zst'))
-    # install the deb now
-    ERROR_CHECK(os.system('dpkg -i /tmp/libdlpack-dev_0.6-1_amd64.deb'))
 
 elif "redhat" in platfromInfo:
     # core RPM packages
@@ -197,7 +176,5 @@ elif "redhat" in platfromInfo:
         for i in range(len(coreRPMPackages)):
             ERROR_CHECK(os.system('sudo '+linuxFlag+' '+linuxSystemInstall +
                     ' '+linuxSystemInstall_check+' install '+ coreRPMPackages[i]))
-    # dlpack
-    # TODO
 
 print("\rocPyDecode Dependencies Installed with rocPyDecode-setup.py V-"+__version__+"\n")
