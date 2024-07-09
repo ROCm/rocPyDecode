@@ -154,6 +154,9 @@ coreRPMPackages = [
     'python3-devel'
 ]
 
+# update
+ERROR_CHECK(os.system('sudo '+linuxFlag+' '+linuxSystemInstall +' '+linuxSystemInstall_check+' update'))
+
 # common packages
 ERROR_CHECK(os.system('sudo -v'))
 for i in range(len(commonPackages)):
