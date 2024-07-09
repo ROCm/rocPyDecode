@@ -65,7 +65,7 @@ if (is_conda_installed() ):
     subprocess.check_call(['conda','install', '-y', 'python='+sys_python_version], stdout=open(os.devnull, 'wb'))
 
     # install requirements
-    os.system('python rocPyDecode-requirements.py --docker=YES')
+    os.system('python rocPyDecode-requirements.py')
 
     # UN-INSTALL older rocPyDecode
     subprocess.check_call(['rm', '-rf', 'build'], stdout=open(os.devnull, 'wb'))
@@ -79,7 +79,7 @@ if (is_conda_installed() ):
     subprocess.check_call(['conda','install', '-y', 'python='+conda_python_version], stdout=open(os.devnull, 'wb'))
 else:
     # install requirements
-    os.system('python rocPyDecode-requirements.py --docker=YES')
+    os.system('python rocPyDecode-requirements.py')
     # install for all other dockers
     os.system('python3 setup.py install')
 
