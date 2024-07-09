@@ -151,7 +151,7 @@ coreRPMPackages = [
     'rocdecode',
     'rocdecode-devel',
     'rocdecode-test',
-    'python3-devel',
+    'python3-devel'
 ]
 
 # common packages
