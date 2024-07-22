@@ -53,11 +53,10 @@ if(Python3_FOUND)
             COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/samples/videodecodeperf.py
             -i ${CMAKE_SOURCE_DIR}/data/videos/AMD_driving_virtual_20-H264.mp4 
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-    # TODO: Uncomment after we get AV1 video
     if(${ROCDECODE_MAJOR_VERSION} VERSION_GREATER_EQUAL "0" AND ${ROCDECODE_MINOR_VERSION} VERSION_GREATER_EQUAL "7" AND ${ROCDECODE_MICRO_VERSION} VERSION_GREATER_EQUAL "0")
-    #    add_test(NAME video_decode_python_AV1
-    #    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/samples/videodecode.py
-    #    -i ${CMAKE_SOURCE_DIR}/data/videos/AMD_driving_virtual_20-H265.mp4 
-    #    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}) 
+        add_test(NAME video_decode_python_AV1
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/samples/videodecode.py
+        -i ${CMAKE_SOURCE_DIR}/data/videos/AMD_driving_virtual_20-AV1.mp4 
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}) 
     endif() 
 endif(Python3_FOUND)

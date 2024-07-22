@@ -50,11 +50,12 @@ void PyRocVideoDecoderInitializer(py::module& m) {
         .def("InitMd5",&PyRocVideoDecoder::PyInitMd5)
         .def("FinalizeMd5",&PyRocVideoDecoder::PyFinalizeMd5)
         .def("UpdateMd5ForFrame",&PyRocVideoDecoder::PyUpdateMd5ForFrame)
-#if ROCDECODE_CHECK_VERSION(0,6,0)
+// TODO: Change after merging with mainline #if ROCDECODE_CHECK_VERSION(0,6,0)
+#if OVERHEAD_SUPPORT
         .def("AddDecoderSessionOverHead",&PyRocVideoDecoder::PyAddDecoderSessionOverHead)
-        .def("GetDecoderSessionOverHead",&PyRocVideoDecoder::PyGetDecoderSessionOverHead);
+        .def("GetDecoderSessionOverHead",&PyRocVideoDecoder::PyGetDecoderSessionOverHead)
 #endif
-
+    ;
 }
 
 // callback function to flush last frames and save it to file when reconfigure happens
@@ -389,7 +390,8 @@ py::int_ PyRocVideoDecoder::PyGetStride() {
     return py::int_(static_cast<int>(GetSurfaceStride()));
 }
 
-#if ROCDECODE_CHECK_VERSION(0,6,0)
+// TODO: Change after merging with mainline #if ROCDECODE_CHECK_VERSION(0,6,0)
+#if OVERHEAD_SUPPORT
 // for python binding, Session overhead refers to decoder initialization and deinitialization time
 py::object PyRocVideoDecoder::PyAddDecoderSessionOverHead(int session_id, double duration) {
     AddDecoderSessionOverHead(static_cast<std::thread::id>(session_id), duration);
