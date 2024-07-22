@@ -117,7 +117,7 @@ if(HIP_FOUND AND rocDecode_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
     include_directories(${pybind11_INCLUDE_DIRS})
     # rocPyDecode include
     include_directories(src)
-    message("-- ${White}rocPyDecode OVERHEAD_SUPPORT -- ${OVERHEAD_SUPPORT}")
+
     file(GLOB_RECURSE pyfiles pyRocVideoDecode/*.py pyRocVideoDecode/*.pyi)
     file(GLOB_RECURSE include src/*.h)
     file(GLOB_RECURSE sources src/*.cpp  ${ROCM_PATH}/share/rocdecode/utils/*.cpp ${ROCM_PATH}/share/rocdecode/utils/rocvideodecode/*.cpp)
@@ -132,7 +132,7 @@ if(HIP_FOUND AND rocDecode_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
     if(${ROCDECODE_MAJOR_VERSION} VERSION_GREATER_EQUAL "0" AND ${ROCDECODE_MINOR_VERSION} VERSION_GREATER_EQUAL "6" AND ${ROCDECODE_MICRO_VERSION} VERSION_GREATER_EQUAL "0")
         target_compile_definitions(${TARGET_NAME} PUBLIC OVERHEAD_SUPPORT=1)
     else()
-    target_compile_definitions(${TARGET_NAME} PUBLIC OVERHEAD_SUPPORT=0)
+        target_compile_definitions(${TARGET_NAME} PUBLIC OVERHEAD_SUPPORT=0)
     endif()
 
     set_target_properties(${TARGET_NAME} PROPERTIES
