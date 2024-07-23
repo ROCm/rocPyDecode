@@ -94,7 +94,16 @@ python rocPyDecode-docker-install.py
 
 ## Run CTest
 
-* This will run the simple videodecode sample and show pass/fail.
+* This will run python samples and show pass/fail.
+
+* Dependencies:
+
+```
+python3 -m pip install --upgrade pip
+python3 -m pip install -i https://test.pypi.org/simple hip-python
+```
+
+* Run test:
 
 ```
 cd rocPyDecode

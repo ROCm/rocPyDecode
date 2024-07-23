@@ -25,10 +25,38 @@ cmake_minimum_required(VERSION 3.5)
 set(Python3_FIND_VIRTUALENV FIRST)
 find_package(Python3 QUIET)
 
-# videoDecode
+# rocPyDecode tests
 if(Python3_FOUND)
-    add_test(NAME video_decode_python
+    # add python-hip for perf tests
+    execute_process(COMMAND ${Python3_EXECUTABLE} -m pip install --upgrade pip)
+    execute_process(COMMAND ${Python3_EXECUTABLE} -m pip install -i https://test.pypi.org/simple hip-python)
+
+    #run tests
+    add_test(NAME video_decode_python_H265
             COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/samples/videodecode.py
             -i ${CMAKE_SOURCE_DIR}/data/videos/AMD_driving_virtual_20-H265.mp4 
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    add_test(NAME video_decode_perf_python_H265
+            COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/samples/videodecodeperf.py
+            -i ${CMAKE_SOURCE_DIR}/data/videos/AMD_driving_virtual_20-H265.mp4 
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    add_test(NAME video_decode_rgb_python_H265
+            COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/samples/videodecodergb.py
+            -i ${CMAKE_SOURCE_DIR}/data/videos/AMD_driving_virtual_20-H265.mp4 
+            -of 3
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    add_test(NAME video_decode_python_H264
+            COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/samples/videodecode.py
+            -i ${CMAKE_SOURCE_DIR}/data/videos/AMD_driving_virtual_20-H264.mp4 
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    add_test(NAME video_decode_perf_python_H264
+            COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/samples/videodecodeperf.py
+            -i ${CMAKE_SOURCE_DIR}/data/videos/AMD_driving_virtual_20-H264.mp4 
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    if(${ROCDECODE_MAJOR_VERSION} VERSION_GREATER_EQUAL "0" AND ${ROCDECODE_MINOR_VERSION} VERSION_GREATER_EQUAL "7" AND ${ROCDECODE_MICRO_VERSION} VERSION_GREATER_EQUAL "0")
+        add_test(NAME video_decode_python_AV1
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/samples/videodecode.py
+        -i ${CMAKE_SOURCE_DIR}/data/videos/AMD_driving_virtual_20-AV1.mp4 
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}) 
+    endif() 
 endif(Python3_FOUND)
