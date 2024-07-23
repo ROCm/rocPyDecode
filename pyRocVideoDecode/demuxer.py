@@ -20,10 +20,19 @@
 
 import rocPyDecode as rocpydec
 
+class stream_provider(object):
+    def __init__(self, input_file_path: str):
+        self.stream_provider = rocpydec.PyFileStreamProvider(input_file_path)
+
+    def GetFileStremProvider(self):
+         return self.stream_provider
 
 class demuxer(object):
-    def __init__(self, input_file_path: str):
-        self.vidmux = rocpydec.PyVideoDemuxer(input_file_path)
+    def __init__(self, name):
+        if isinstance(name, str):
+            self.vidmux = rocpydec.PyVideoDemuxer(name)
+        elif isinstance(name, stream_provider):
+            self.vidmux = rocpydec.PyVideoDemuxer(name.GetFileStremProvider())
 
     def GetCodecId(self)-> int:
         return self.vidmux.GetCodecId() 
@@ -33,3 +42,6 @@ class demuxer(object):
 
     def SeekFrame(self, frame_number, seek_mode, seek_criteria):
          return self.vidmux.SeekFrame(frame_number, seek_mode, seek_criteria)
+    
+
+     
