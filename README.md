@@ -8,7 +8,6 @@ The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access
 
 * Linux distribution
   * Ubuntu - `20.04` / `22.04`
-  * RHEL - `8` / `9`
 
 * [ROCm-supported hardware](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/reference/system-requirements.html)
 > [!IMPORTANT] 
@@ -33,7 +32,7 @@ The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access
 * [PyBind11](https://github.com/pybind/pybind11)
 
   ```shell
-  pip3 install pybind11
+  sudo apt install pybind11-dev
   ```
 
 * [rocDecode](https://github.com/ROCm/rocDecode)
@@ -57,9 +56,7 @@ The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access
 * [DLPack](https://pypi.org/project/dlpack/)
   
   ```shell
-    sudo pip3 install dlpack
-    wget http://archive.ubuntu.com/ubuntu/pool/universe/d/dlpack/libdlpack-dev_0.6-1_amd64.deb
-    sudo dpkg -i libdlpack-dev_0.6-1_amd64.deb    
+    sudo apt install libdlpack-dev   
     ```
 
 >[!NOTE]
@@ -97,7 +94,16 @@ python rocPyDecode-docker-install.py
 
 ## Run CTest
 
-* This will run the simple videodecode sample and show pass/fail.
+* This will run python samples and show pass/fail.
+
+* Dependencies:
+
+```
+python3 -m pip install --upgrade pip
+python3 -m pip install -i https://test.pypi.org/simple hip-python
+```
+
+* Run test:
 
 ```
 cd rocPyDecode
@@ -127,7 +133,6 @@ page.
 
 * Linux
   * Ubuntu - `20.04` / `22.04`
-  * RHEL - `8` / `9`
 * ROCm:
   * rocm-core - `6.2.0.60200-crdnnh.14042`
   * amdgpu-core - `1:6.2.60200-1778439.22.04`
