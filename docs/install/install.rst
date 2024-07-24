@@ -27,7 +27,7 @@ Prerequisites
 * `ROCm-supported hardware <https://rocm.docs.amd.com/projects/install-on-linux/en/latest/reference/system-requirements.html>`_
   (``gfx908`` or higher is required)
 
-* Install ROCm 6.3.0 or later with
+* Install ROCm 6.2.0 or later with
   `amdgpu-install <https://rocm.docs.amd.com/projects/install-on-linux/en/latest/how-to/amdgpu-install.html>`_
 
   * Run: ``--usecase=rocm``

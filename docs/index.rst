@@ -31,7 +31,7 @@ The documentation is structured as follows:
 
   .. grid-item-card:: Tutorials
 
-    * `GitHub samples <https://github.com/ROCm/rocDecode/tree/develop/samples>`_
+    * `GitHub samples <https://github.com/ROCm/rocPyDecode/tree/develop/samples>`_
 
   .. grid-item-card:: How to
 
