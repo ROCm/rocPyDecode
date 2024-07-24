@@ -3,14 +3,17 @@
   :keywords: rocPyDecode, rocDecode, ROCm, API, documentation, video, decode, decoding, acceleration
 
 ********************************************************************
-rocDecode documentation
+rocPyDecode documentation
 ********************************************************************
 
-rocDecode provides APIs, utilities, and samples that you can use to easily access the video decoding
-features of your media engines (VCNs). It also allows interoperability with other compute engines on
-the GPU using Video Acceleration API (VA-API)/HIP. To learn more, see :doc:`what-is-rocPyDecode`
+The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access rocDecode APIs in 
+both Python and C/C++ languages. It works by connecting Python and C/C++ libraries, enabling function 
+calling and data passing between the two languages. The rocpydecode.so library is a wrapper that facilitates 
+the use of rocDecode APIs that are written primarily in C/C++ language within Python.
 
-The code is open and hosted at `<https://github.com/ROCm/rocDecode>`_.
+To learn more, see :doc:`what-is-rocPyDecode`
+
+The code is open and hosted at `<https://github.com/ROCm/rocPyDecode>`_.
 
 
 .. grid:: 2
@@ -18,8 +21,7 @@ The code is open and hosted at `<https://github.com/ROCm/rocDecode>`_.
 
   .. grid-item-card:: Install
 
-    * :doc:`Quick start <./install/quick-start>`
-    * :doc:`rocDecode installation <./install/install>`
+    * :doc:`rocPyDecode installation <./install/install>`
 
 
 The documentation is structured as follows:
@@ -33,18 +35,7 @@ The documentation is structured as follows:
 
   .. grid-item-card:: How to
 
-    * :doc:`Using rocDecode <how-to/using-rocdecode>`
-
-  .. grid-item-card:: Conceptual
-
-     * :doc:`Video decoding pipeline <./conceptual/video-decoding-pipeline>`
-  
-  .. grid-item-card:: Reference
-
-    * :doc:`API library <../doxygen/html/files>`
-    * :doc:`Functions <../doxygen/html/globals>`
-    * :doc:`Data structures <../doxygen/html/annotated>`
-  
+    * :doc:`Using rocPyDecode <how-to/using-rocPydecode>`
 
 To contribute to the documentation, refer to
 `Contributing to ROCm <https://rocm.docs.amd.com/en/latest/contribute/contributing.html>`_.
