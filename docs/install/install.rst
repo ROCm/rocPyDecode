@@ -126,12 +126,14 @@ If using a docker environment or any system with root access. Do NOT use sudo.
 Run tests (this requires FFmpeg dev install):
 
 Dependencies:
+
 .. code:: shell
 
   python3 -m pip install --upgrade pip
   python3 -m pip install -i https://test.pypi.org/simple hip-python
 
 Run test:
+
 .. code:: shell
 
   cd rocPyDecode
