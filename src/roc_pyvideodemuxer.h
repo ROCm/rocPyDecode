@@ -76,7 +76,6 @@ public:
         // We simply copy from the mapped memory in this example. You may get your data from network or somewhere else
         if (!buffer_size_)
             return AVERROR_EOF;
-        //std::cout << "GetData " << n_buf << " bytes" << std::endl;
         memcpy(p_buf, buf_ptr_, n_buf);
         buf_ptr_ += n_buf;
         buffer_size_ -= n_buf;
@@ -89,6 +88,3 @@ private:
     uint8_t *buf_ptr_ = nullptr;
     size_t buffer_size_ = 0; ///< size left in the buffer
 };
-
- 
-
