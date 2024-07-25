@@ -402,4 +402,5 @@ py::object PyRocVideoDecoder::PyAddDecoderSessionOverHead(int session_id, double
 py::object PyRocVideoDecoder::PyGetDecoderSessionOverHead(int session_id) {
     return py::cast(GetDecoderSessionOverHead(static_cast<std::thread::id>(session_id)));
 }
+
 #endif
