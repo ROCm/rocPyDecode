@@ -24,7 +24,7 @@ class stream_provider(object):
     def __init__(self, input_file_path: str):
         self.stream_provider = rocpydec.PyFileStreamProvider(input_file_path)
 
-    def GetFileStremProvider(self):
+    def GetFileStreamProvider(self):
          return self.stream_provider
 
 class demuxer(object):
@@ -32,7 +32,7 @@ class demuxer(object):
         if isinstance(name, str):
             self.vidmux = rocpydec.PyVideoDemuxer(name)
         elif isinstance(name, stream_provider):
-            self.vidmux = rocpydec.PyVideoDemuxer(name.GetFileStremProvider())
+            self.vidmux = rocpydec.PyVideoDemuxer(name.GetFileStreamProvider())
 
     def GetCodecId(self)-> int:
         return self.vidmux.GetCodecId() 
