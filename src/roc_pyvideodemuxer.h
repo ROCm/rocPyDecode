@@ -24,7 +24,14 @@ THE SOFTWARE.
  
 #include "video_demuxer.h"
 #include "roc_pydecode.h"
- 
+
+extern "C" {
+    #include <libavformat/avio.h>
+    #include <libavutil/file.h>
+    #include <libavutil/mem.h>
+}
+
+
 //
 // AMD Video Demuxer Python Interface class
 //
@@ -42,6 +49,45 @@ class PyVideoDemuxer : public VideoDemuxer {
         std::shared_ptr<PyPacketData> DemuxFrame();
         std::shared_ptr<PyPacketData> SeekFrame(int frame_number, int seek_mode, int seek_criteria);
         int GetCodecId();
+};
+
+/**
+ * @brief File stream provider class for demuxing data from memory
+ * 
+ */
+class PyFileStreamProvider : public VideoDemuxer::StreamProvider {
+
+public:
+    PyFileStreamProvider(const char *input_file_path) {
+        /* slurp file content into buffer */
+        int ret = av_file_map(input_file_path, &buf_ptr_, &buffer_size_, 0, NULL);
+        if (ret < 0) {
+            std::cerr << "Couldn't map input file into memory." << std::endl;
+            exit(-1);
+        }      
+    }
+
+    ~PyFileStreamProvider() {
+        av_file_unmap(buf_ptr_, buffer_size_);
+    }
+
+    // Fill in the buffer owned by the demuxer
+    int GetData(uint8_t *p_buf, int n_buf) {
+        // We simply copy from the mapped memory in this example. You may get your data from network or somewhere else
+        if (!buffer_size_)
+            return AVERROR_EOF;
+        //std::cout << "GetData " << n_buf << " bytes" << std::endl;
+        memcpy(p_buf, buf_ptr_, n_buf);
+        buf_ptr_ += n_buf;
+        buffer_size_ -= n_buf;
+        return n_buf;
+    }
+
+    size_t GetBufferSize() { return buffer_size_; };    
+
+private:
+    uint8_t *buf_ptr_ = nullptr;
+    size_t buffer_size_ = 0; ///< size left in the buffer
 };
 
  
