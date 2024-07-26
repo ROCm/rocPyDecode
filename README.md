@@ -73,37 +73,37 @@ python3 rocPyDecode-requirements.py
 
 ## rocPyDecode install
 
-* If using bare-metal, `sudo` access is needed.
+### using bare-metal
 
 ```bash
 git clone https://github.com/ROCm/rocPyDecode.git
 cd rocPyDecode
 sudo pip3 install .
 ```
+>[!NOTE]
+> `sudo` access is needed
 
-* If using a docker environment or any system with `root` access. Do **NOT** use `sudo`.
+### using docker environment
 
 ```bash
 git clone https://github.com/ROCm/rocPyDecode.git
 cd rocPyDecode
 python rocPyDecode-docker-install.py 
 ```
-
-> [!IMPORTANT] 
-> `RHEL`/`SLES` package install requires manual `FFMPEG` dev install
+>[!NOTE]
+> Do NOT use `sudo`
 
 ## Run CTest
+This will run python samples and show pass/fail.
 
-* This will run python samples and show pass/fail.
-
-* Dependencies:
+### Dependencies:
 
 ```
 python3 -m pip install --upgrade pip
 python3 -m pip install -i https://test.pypi.org/simple hip-python
 ```
 
-* Run test:
+### Run test:
 
 ```
 cd rocPyDecode

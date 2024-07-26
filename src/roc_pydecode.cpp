@@ -80,6 +80,11 @@ PYBIND11_MODULE(rocPyDecode, m) {
     // -----------------------------
     PyVideoDemuxerInitializer(m);
 
+    // ------------------------------------------------
+    // StreamProvider 'PyVideoStreamProvider' for demux
+    // ------------------------------------------------
+    PyVideoStreamProviderInitializer(m);
+
     // --------------------------------------
     // AMD Video Decoder 'PyRocVideoDecoder'
     // --------------------------------------
