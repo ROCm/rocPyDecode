@@ -28,9 +28,17 @@ using namespace std;
 void PyVideoDemuxerInitializer(py::module& m) {
         py::class_<PyVideoDemuxer, std::shared_ptr<PyVideoDemuxer>> (m, "PyVideoDemuxer")
         .def(py::init<const char*>())
+        .def(py::init<PyFileStreamProvider *>())
         .def("GetCodecId",&PyVideoDemuxer::GetCodecId,"Get Codec ID")
         .def("DemuxFrame",&PyVideoDemuxer::DemuxFrame)
         .def("SeekFrame",&PyVideoDemuxer::SeekFrame);
+}
+
+void PyVideoStreamProviderInitializer(py::module& m) {
+        py::class_<PyFileStreamProvider, std::shared_ptr<PyFileStreamProvider>> (m, "PyFileStreamProvider")
+        .def(py::init<const char*>())
+        .def("GetData",&PyFileStreamProvider::GetData,"Get IO Data")
+        .def("GetBufferSize",&PyFileStreamProvider::GetBufferSize, "Get IO Buffer size");
 }
 
 rocDecVideoCodec ConvertAVCodec2RocDecVideoCodec(int av_codec) {
