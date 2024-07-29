@@ -135,8 +135,13 @@ class decoder(object):
         return self.viddec.SetReconfigParams(flush_mode, out_file_name)
 
     def AddDecoderSessionOverHead(self, session_id, duration):
-        self.viddec.AddDecoderSessionOverHead(session_id, duration)
-        return
+        if(hasattr(self.viddec,"AddDecoderSessionOverHead")):
+            return self.viddec.AddDecoderSessionOverHead(session_id, duration)
+        else:
+            return None
 
     def GetDecoderSessionOverHead(self, session_id):
-        return self.viddec.GetDecoderSessionOverHead(session_id)
+        if(hasattr(self.viddec, "GetDecoderSessionOverHead")):
+            return self.viddec.GetDecoderSessionOverHead(session_id)
+        else:
+            return None

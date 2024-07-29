@@ -81,7 +81,10 @@ def DecProc(input_file_path, device_id, p_frames, p_fps):
 
     if (n_frame > 0 and total_dec_time > 0):
         time_per_frame = (total_dec_time / n_frame) * 1000
-        time_per_frame -= (viddec.GetDecoderSessionOverHead(os.getpid()) / n_frame) # remove the overhead
+        session_overhead = viddec.GetDecoderSessionOverHead(os.getpid())
+        if (session_overhead == None):
+            session_overhead = 0
+        time_per_frame -= (session_overhead / n_frame) # remove the overhead
         frame_per_second = n_frame / total_dec_time
         p_fps.value = frame_per_second
 

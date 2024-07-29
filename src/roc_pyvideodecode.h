@@ -106,11 +106,11 @@ class PyRocVideoDecoder : public RocVideoDecoder {
 
         // for python binding
         py::object PySetReconfigParams(int flush_mode, std::string& output_file_name_in);
-
+#if OVERHEAD_SUPPORT
         // Session overhead refers to decoder initialization and deinitialization time
         py::object PyAddDecoderSessionOverHead(int session_id, double duration);
         py::object PyGetDecoderSessionOverHead(int session_id);
-
+#endif
     private:
         size_t CalculateRgbImageSize(OutputFormatEnum& e_output_format, OutputSurfaceInfo* p_surf_info);
         std::shared_ptr <ConfigInfo> configInfo;
