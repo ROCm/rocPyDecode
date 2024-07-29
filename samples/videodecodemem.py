@@ -128,7 +128,10 @@ def Decoder(
     if (output_file_path is None):
         if (n_frame > 0 and total_dec_time > 0):
             time_per_frame = (total_dec_time / n_frame) * 1000
-            time_per_frame -= (viddec.GetDecoderSessionOverHead(session_id) / n_frame) # remove the overhead
+            session_overhead = viddec.GetDecoderSessionOverHead(session_id)
+            if (session_overhead == None):
+                session_overhead = 0
+            time_per_frame -= (session_overhead / n_frame) # remove the overhead
             frame_per_second = n_frame / total_dec_time
             print("info: avg decoding time per frame: " +"{0:0.2f}".format(round(time_per_frame, 2)) + " ms")
             print("info: avg frame per second: " +"{0:0.2f}".format(round(frame_per_second,2)) +"\n")
