@@ -11,10 +11,12 @@ The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access
   * RHEL - `8` / `9`
 
 * [ROCm-supported hardware](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/reference/system-requirements.html)
-> [!IMPORTANT] 
+
+> [!IMPORTANT]
 > `gfx908` or higher GPU required
 
 * Install ROCm `6.2.0` or later with [amdgpu-install](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/how-to/amdgpu-install.html): Required usecase - rocm
+
 > [!IMPORTANT]
 > `sudo amdgpu-install --usecase=rocm`
 
@@ -61,6 +63,7 @@ The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access
     ```
 
 >[!NOTE]
+>
 > * All package installs are shown with the `apt` package manager. Use the appropriate package manager for your operating system.
 
 ## Prerequisites setup script
@@ -74,7 +77,7 @@ python3 rocPyDecode-requirements.py
 
 ## rocPyDecode install
 
-* If using bare-metal, `sudo` access is needed.
+### using bare-metal
 
 ```bash
 git clone https://github.com/ROCm/rocPyDecode.git
@@ -82,7 +85,10 @@ cd rocPyDecode
 sudo pip3 install .
 ```
 
-* If using a docker environment or any system with `root` access. Do **NOT** use `sudo`.
+>[!NOTE]
+> `sudo` access is needed
+
+### using docker environment
 
 ```bash
 git clone https://github.com/ROCm/rocPyDecode.git
@@ -90,8 +96,27 @@ cd rocPyDecode
 python rocPyDecode-docker-install.py 
 ```
 
-> [!IMPORTANT] 
-> `RHEL`/`SLES` package install requires manual `FFMPEG` dev install
+>[!NOTE]
+> Do NOT use `sudo`
+
+## Run CTest
+
+This will run python samples and show pass/fail.
+
+### Dependencies
+
+```
+python3 -m pip install --upgrade pip
+python3 -m pip install -i https://test.pypi.org/simple hip-python
+```
+
+### Run test
+
+```
+cd rocPyDecode
+cmake .
+ctest -VV
+```
 
 ## Run Sample Scripts
 
