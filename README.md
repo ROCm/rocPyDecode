@@ -73,6 +73,10 @@ python3 rocPyDecode-requirements.py
 
 ## rocPyDecode install
 
+>[!NOTE]
+> For developers using a particular AMD GPU as target ASIC, set the below environment variable for a fast build
+> ``` export ROCPYDECODE_AMDGPU_TARGET=<gfx taregt name> ```
+
 ### using bare-metal
 
 ```bash
