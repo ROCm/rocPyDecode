@@ -78,8 +78,16 @@ else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -DNDEBUG -fPIC")
 endif()
 
+message("-- ${Cyan}     -D ROCPYDECODE_AMDGPU_TARGET=${ROCPYDECODE_AMDGPU_TARGET} [Build for specific AMD GPUs]${ColourReset}")
+
 # set amdgpu targets with vcn support
-set(DEFAULT_AMDGPU_TARGETS "gfx908;gfx90a;gfx940;gfx941;gfx942;gfx1030;gfx1031;gfx1032;gfx1100;gfx1101;gfx1102")
+option(ROCPYDECODE_AMDGPU_TARGET "AMD GPU target ASIC to build rocPyDecode" "")
+
+if (ROCPYDECODE_AMDGPU_TARGET)
+    set(DEFAULT_AMDGPU_TARGETS "${ROCPYDECODE_AMDGPU_TARGET}" CACHE STRING "Specific machine types for library to target")
+else()
+    set(DEFAULT_AMDGPU_TARGETS "gfx908;gfx90a;gfx940;gfx941;gfx942;gfx1030;gfx1031;gfx1032;gfx1100;gfx1101;gfx1102")
+endif()
 set(AMDGPU_TARGETS "${DEFAULT_AMDGPU_TARGETS}" CACHE STRING "List of specific machine types for library to target")
 
 find_package(HIP QUIET)
