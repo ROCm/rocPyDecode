@@ -6,150 +6,58 @@
 Using rocPyDecode
 ********************************************************************
 
-To learn how to use the rocDecode SDK library and its different utilities, follow these instructions:
+RocPyDecode is a python library module which allows Python decoding functionality using rocDecode C++ SDK library backend.
 
 1. API overview
 ====================================================
 
-All rocDecode APIs are exposed in the header files ``rocdecode.h`` and ``rocparser.h``. You can find
-these files in the `api` folder in the rocDecode repository.
+All rocPyDecode APIs are exposed in the header files ``decoder.py`` and ``demuxer.py``. You can find
+these files in the `pyRocVideoDecode` folder in the rocPyDecode repository.
 
-The samples use the ``RocVideoDecoder`` user class provided in ``roc_video_dec.h`` in the ``utils`` folder
-of the rocDecode repository.
+For detailed explanation of rocDecode API, please refer to `rocDecode documentation <https://rocm.docs.amd.com/projects/rocDecode/en/latest/>`.
+The samples use the ``pyRocVideoDecode`` python module to interface with the low level ``rocVideoDecode`` class in the C++ rocDecode SDK library.
 
-A video parser (defined in ``rocparser.h``) is needed to extract and decode headers from the bitstream
-in order to organize the data into a structured format for the hardware decoder. The parser is critical in
-video decoding, as it controls the decoding and display of a bitstream's individual frames and fields.
+The ``pyRocVideoDecode`` module exposes the following APIs thorugh two python classes ``PyRocVideoDecoder`` and ``PyVideoDemuxer``.
 
-The parser object in ``rocparser.h`` has three main APIs:
+class PyRocVideoDecoder (Video decoder class)
+    * ``GetDeviceinfo(self)`` -> API to get device information of the current device
+    * ``SetReconfigParams(self)`` -> API to reconfigure decoder when codec/resolution changes
+    * ``DecodeFrame(self)`` -> API to trigger decoding of a frame thorugh the low level decoder
+    * ``GetFrame(self)`` -> API to receive a decoded output frame
+    * ``SaveFrameToFile(self)`` -> API to save decoded output frame to a file
+    * ``ReleaseFrame(self)`` -> API to release decoded frame after use
+    * ``GetOutputSurfaceInfo(self)`` -> API to get the output surface information of the decoded frame
+    * ``GetNumOfFlushedFrames(self)`` -> API to get number of flushed frames during reconfigure
 
-* ``rocDecCreateVideoParser()``
-* ``rocDecParseVideoData()``
-* ``rocDecDestroyVideoParser()``
+class PyVideoDemuxer (python demuxer class)
+    * ``GetCodecId(self)`` -> API to get the Codec_id of the current stream from the demuxer
+    * ``DemuxFrame(self)`` -> API to demultiplex a frame using FFMPEG API
 
-2. Create a parser object
+2. Create a decoder
 ====================================================
 
-The ``rocDecCreateVideoParser()`` API creates a video parser object for the codec that you specify. The
-API takes ``max_num_decode_surfaces``, which determines the Decoded Picture Buffer (DPB) size for
-decoding. When creating a parser object, the application must register certain callback functions with
-the driver, which is called from the parser during decode.
+``PyRocVideoDecoder()`` in turn creates an instance of ``RocVideoDecoder()`` class and returns a handle upon successful creation. 
 
-* ``pfn_sequence_callback`` is called when the parser encounters a new sequence header. The parser
-  informs you of the minimum number of surfaces needed by the parser's DPB to successfully decode
-  the bitstream. In addition, the caller can set additional parameters, like ``max_display_delay``, to
-  control frame decoding and display.
-
-* The ``pfn_decode_picture`` callback function is triggered when a picture is set for decoding.
-
-* The ``pfn_display_picture`` callback function is triggered when a frame in display order is ready to be
-  consumed by the caller.
-
-* The ``pfn_get_sei_msg`` callback function is triggered when your Supplementation Enhancement
-  Information (SEI) message is parsed and sent back to the caller.
-
-3. Parse video data
-====================================================
-
-Elementary stream video packets extracted from the de-multiplexer are fed into the parser using the
-``rocDecParseVideoData()`` API.
-
-During this call, the parser triggers the callbacks as it encounters a new sequence header, receives
-compressed frame/field data ready to be decoded, or when it's ready to display a frame. If any of the
-callbacks return a failure, it is propagated back to the application so the decoding can be ended
-gracefully.
-
-4. Query decode capabilities
-====================================================
-
-The ``rocDecGetDecoderCaps()`` API allows you to query the capabilities of the underlying hardware
-video decoder. Decoder capabilities usually include supported codecs, maximum resolution, and
-bit-depth.
-
-The following pseudo-code illustrates the use of this API. The application handles the error
-appropriately for non-supported decoder capabilities.
-
-.. code:: cpp
-
-    RocdecDecodeCaps decode_caps;
-    memset(&decode_caps, 0, sizeof(decode_caps));
-    decode_caps.codec_type = p_video_format->codec;
-    decode_caps.chroma_format = p_video_format->chroma_format;
-    decode_caps.bit_depth_minus_8 = p_video_format->bit_depth_luma_minus8;
-
-    ROCDEC_API_CALL(rocDecGetDecoderCaps(&decode_caps));
-
-    if(!decode_caps.is_supported) {
-        ROCDEC_THROW("Rocdec:: Codec not supported on this GPU: ", ROCDEC_NOT_SUPPORTED);
-        return 0;
-    }
-
-    if ((p_video_format->coded_width > decode_caps.max_width) ||
-        (p_video_format->coded_height > decode_caps.max_height)) {
-
-        std::ostringstream errorString;
-        errorString << std::endl
-                    << "Resolution          : " << p_video_format->coded_width << "x" << p_video_format->coded_height << std::endl
-                    << "Max Supported (wxh) : " << decode_caps.max_width << "x" << decode_caps.max_height << std::endl
-                    << "Resolution not supported on this GPU ";
-
-        const std::string cErr = errorString.str();
-        ROCDEC_THROW(cErr, ROCDEC_NOT_SUPPORTED);
-        return 0;
-    }
-
-5. Create a decoder
-====================================================
-
-``rocDecCreateDecoder()`` creates an instance of the hardware video decoder object and provides you
-with a handle upon successful creation. Refer to the ``RocDecoderCreateInfo`` structure for information
-about the parameters passed for creating the decoder. For example,
-``RocDecoderCreateInfo::codec_type`` represents the codec type of the video. The decoder handle
-returned by ``rocDecCreateDecoder()`` must be retained for the entire decode session because the
-handle is passed along with the other decoding APIs. In addition, you can inform display or crop
-dimensions along with this API.
-
-6. Decode the frame
+3. Decode the frame
 ====================================================
 
 After de-multiplexing and parsing, you can decode bitstream data containing a frame/field using
 hardware.
 
-Use the ``rocDecDecodeFrame()`` API to submit a new frame for hardware decoding. Underneath the
+Use the ``DecodeFrame()`` API to submit a new frame for hardware decoding. Underneath the
 driver, the Video Acceleration API (VA-API) is used to submit compressed picture data to the driver.
 The parser extracts all the necessary information from the bitstream and fills the ``RocdecPicParams``
 structure that's appropriate for the codec. The high-level ``RocVideoDecoder`` class connects the parser
 and decoder used for all sample applications.
 
-The ``rocDecDecodeFrame()`` call takes the decoder handle and the pointer to the ``RocdecPicParams``
+The ``DecodeFrame()`` call will call the C++ ``rocDecDecodeFrame()`` call takes the decoder handle and the pointer to the ``RocdecPicParams``
 structure and initiates the video decoding using VA-API.
 
-7. Query the decoding status
+4. Prepare the decoded frame for further processing
 ====================================================
 
-After submitting a frame for decoding, you can call ``rocDecGetDecodeStatus()`` to query the decoding
-status for a given frame. A structure pointer, ``RocdecDecodeStatus*``, is filled and returned.
-
-The API inputs are:
-
-* ``decoder_handle``: A ``RocDecoder`` handler, ``rocDecDecoderHandle``.
-* ``pic_idx``: An `int` value for the ``picIdx`` for which you want a status in order to index of the picture.
-* ``decode_status``: A pointer to ``RocdecDecodeStatus`` as a return value.
-
-The API returns one of the following statuses:
-
-* Invalid (0): Decode status is not valid.
-* In Progress (1): Decoding is in progress.
-* Success (2): Decoding was successful and no errors were returned.
-* Error (8): The frame was corrupted, but the error was not concealed.
-* Error Concealed (9): The frame was corrupted and the error was concealed.
-* Displaying (10): Decode is complete, display in progress.
-
-8. Prepare the decoded frame for further processing
-====================================================
-
-The decoded frames can be used for further postprocessing using ``rocDecGetVideoFrame()``. The
-successful completion of ``rocDecGetVideoFrame()`` indicates that the decoding process is complete and
+The decoded frames can be used for further postprocessing using ``GetFrame()``. The
+successful completion of ``GetFrame()`` indicates that the decoding process is complete and
 the device memory pointer is inter-opped into the ROCm HIP address space in order to further process
 the decoded frame in device memory. The caller gets the necessary information on the output surface,
 such as YUV format, dimensions, and pitch from this call. In the high-level ``RocVideoDecoder`` class, we
@@ -176,7 +84,9 @@ Refer to the ``RocVideoDecoder`` class and
 `samples <https://github.com/ROCm/rocDecode/tree/develop/samples>`_ for details on how to use
 these APIs.
 
-9.  Reconfigure the decoder
+``PyRocVideoDecoder()`` can pass the appropriate mem_type to ``rocVideoDecoder`` class on creation.
+
+5.  Reconfigure the decoder
 ====================================================
 
 You can call ``rocDecReconfigureDecoder()`` to reuse a single decoder for multiple clips or when the
@@ -193,22 +103,10 @@ The API inputs are:
   change these values, you have to destroy and recreate the session.
 
 .. note::
+``SetReconfigParams()`` api is used to set reconfig parameters from Python to the low_lever decoder.
+  .
 
-  You must call ``rocDecReconfigureDecoder()`` during ``RocdecParserParams::pfn_sequence_callback``.
-
-10.  Destroy the decoder
+6.  Destroy the decoder
 ====================================================
 
-You must call the ``rocDecDestroyDecoder()`` to destroy the session and free up resources.
-
-The API input is:
-
-* ``decoder_handle``: A ``RocDecoder`` handler, ``rocDecDecoderHandle``.
-
-The API returns a ``RocdecDecodeStatus`` value.
-
-11.  Destroy the parser
-====================================================
-
-You must call ``rocDecDestroyVideoParser()`` to destroy the parser object and free up all allocated
-resources at the end of video decoding.
+The decoder resources will be destroyed when the Python class object is released.
