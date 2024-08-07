@@ -15,7 +15,7 @@ All rocPyDecode APIs are exposed using the header files ``decoder.py`` and ``dem
 these files in the `pyRocVideoDecode` folder in the `rocPyDecode github repository <https://github.com/ROCm/rocPyDecode>`.
 
 For detailed explanation of rocDecode API, please refer to `rocDecode documentation <https://rocm.docs.amd.com/projects/rocDecode/en/latest/>`.
-The samples use the ``pyRocVideoDecode`` python module to interface with the low level ``rocVideoDecode`` class available in the C++ rocDecode library.
+The samples uses the ``pyRocVideoDecode`` python module to interface with the low level ``rocVideoDecode`` class available in the C++ rocDecode library.
 
 The ``pyRocVideoDecode`` module exposes the following APIs thorugh two python classes ``PyRocVideoDecoder`` and ``PyVideoDemuxer``.
 
@@ -33,11 +33,11 @@ class PyVideoDemuxer (python demuxer class)
     * ``GetCodecId(self)`` -> API to get the Codec_id of the current stream from the demuxer
     * ``DemuxFrame(self)`` -> API to demultiplex a frame using FFMPEG API
 
-The workflow of ``rocPyDecode`` is exactly similar to ``rocDecode`` on the C++ library. Please refer to rocDecode documentation for further details.
+The workflow of ``rocPyDecode`` is exactly similar to the ``rocDecode`` C++ library. Please refer to rocDecode documentation for further details.
 
 2. Create a decoder instance using rocPyDecode
 ====================================================
-``PyRocVideoDecoder()`` python module creates an instance of video decoder underneath and exposed C++ APIs to python using pybind.
+``PyRocVideoDecoder()`` python module creates an instance of video decoder underneath and exposes C++ APIs to python using pybind.
 ``PyRocVideoDecoder()`` in turn creates an instance of ``RocVideoDecoder()`` class and returns a handle upon successful creation. 
 
 3. Decoding video frames using ``PyRocVideoDecoder()``
