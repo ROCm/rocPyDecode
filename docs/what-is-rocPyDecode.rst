@@ -13,18 +13,19 @@ proper power management, decoding on hardware decoders can lower the overall sys
 consumption and improve decoding performance.
 
 Using the rocPyDecode Python API, you can decode compressed video streams while keeping the resulting YUV
-frames in video memory. With decoded frames in video memory, you can run video post-processing
+frames in video memory. With decoded frames in video memory, user can run video post-processing
 using ROCm HIP, thereby avoiding unnecessary data copies via PCIe bus. You can post-process video
 frames using scaling or color conversion and augmentation kernels (on a GPU or host) in a format for
 GPU/CPU-accelerated inferencing and training.
 
-rocPyDecode API uses the rocDecode in the backend to do single or multiple instance video decoding based on the
-number of available VCNs in AMD GPU device. In addition, rocPyDecode can seemlessly interop with other machine learning
-frameworks like PyTorch to facilitate machine learning application on decoded surfaces. It also allows to use FFMpeg 
+rocPyDecode python library uses the `rocDecode C++ SDK library <https://github.com/ROCm/rocDecode>` in the backend to do 
+single or multiple instance video decoding based on the number of available VCNs in AMD GPU device. 
+In addition, rocPyDecode can seemlessly interop with other machine learning frameworks like PyTorch 
+to facilitate machine learning application on decoded surfaces. It also allows to use FFMpeg 
 demultiplexer to seek and demux packetized media file.
 
 rocDecode Python Binding, rocPyDecode, is a tool that allows users to access 
-rocDecode APIs in both Python and C/C++ languages. It works by connecting 
-Python and C/C++ libraries, enabling function calling and data passing between the two languages. 
+rocDecode APIs in Python. It is currently distributed as ``python wheel`` packages which can simply be installed using ``pip``.
+It works by connecting Python and C/C++ libraries, enabling function calling and data passing between the two languages. 
 The rocpydecode.so library is a wrapper that facilitates the use of rocDecode APIs that are 
 written primarily in C/C++ language within Python.
