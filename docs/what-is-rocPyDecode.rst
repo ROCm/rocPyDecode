@@ -18,7 +18,7 @@ using ROCm HIP, thereby avoiding unnecessary data copies via PCIe bus. You can p
 frames using scaling or color conversion and augmentation kernels (on a GPU or host) in a format for
 GPU/CPU-accelerated inferencing and training.
 
-rocPyDecode python library uses the `rocDecode C++ SDK library <https://github.com/ROCm/rocDecode>` in the backend to do 
+rocPyDecode python library uses the `rocDecode C++ SDK library <https://github.com/ROCm/rocDecode>`_ in the backend to do 
 single or multiple instance video decoding based on the number of available VCNs in AMD GPU device. 
 In addition, rocPyDecode can seemlessly interop with other machine learning frameworks like PyTorch 
 to facilitate machine learning application on decoded surfaces. It also allows to use FFMpeg 

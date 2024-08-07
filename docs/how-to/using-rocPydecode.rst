@@ -6,15 +6,15 @@
 Using rocPyDecode
 ********************************************************************
 
-RocPyDecode is a python library module which allows python decoding functionality using `rocDecode C++ SDK library <https://github.com/ROCm/rocDecode>` backend.
+RocPyDecode is a python library module which allows python decoding functionality using `rocDecode C++ SDK library <https://github.com/ROCm/rocDecode>`_ backend.
 
 1. API overview
 ====================================================
 
 All rocPyDecode APIs are exposed using the header files ``decoder.py`` and ``demuxer.py``. You can find
-these files in the `pyRocVideoDecode` folder in the `rocPyDecode github repository <https://github.com/ROCm/rocPyDecode>`.
+these files in the `pyRocVideoDecode` folder in the `rocPyDecode github repository <https://github.com/ROCm/rocPyDecode>`_.
 
-For detailed explanation of rocDecode API, please refer to `rocDecode documentation <https://rocm.docs.amd.com/projects/rocDecode/en/latest/>`.
+For detailed explanation of rocDecode API, please refer to `rocDecode documentation <https://rocm.docs.amd.com/projects/rocDecode/en/latest/>`_.
 The samples uses the ``pyRocVideoDecode`` python module to interface with the low level ``rocVideoDecode`` class available in the C++ rocDecode library.
 
 The ``pyRocVideoDecode`` module exposes the following APIs thorugh two python classes ``PyRocVideoDecoder`` and ``PyVideoDemuxer``.
