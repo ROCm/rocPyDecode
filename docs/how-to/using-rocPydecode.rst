@@ -17,14 +17,14 @@ these files in the `pyRocVideoDecode` folder in the `rocPyDecode github reposito
 For detailed explanation of rocDecode API, please refer to `rocDecode documentation <https://rocm.docs.amd.com/projects/rocDecode/en/latest/>`_.
 The samples uses the ``pyRocVideoDecode`` python module to interface with the low level ``rocVideoDecode`` class available in the C++ rocDecode library.
 
-The ``pyRocVideoDecode`` module exposes the following APIs thorugh two python classes ``PyRocVideoDecoder`` and ``PyVideoDemuxer``.
+The ``pyRocVideoDecode`` module exposes the following APIs through two python classes ``PyRocVideoDecoder`` and ``PyVideoDemuxer``.
 
 class PyRocVideoDecoder (Video decoder class)
     * ``GetDeviceinfo(self)`` -> API to get device information of the current device
     * ``SetReconfigParams(self)`` -> API to reconfigure decoder when thre is codec/resolution changes
-    * ``DecodeFrame(self)`` -> API to trigger decoding of a frame thorugh the low level decoder
+    * ``DecodeFrame(self)`` -> API to trigger decoding of a frame through the low level decoder
     * ``GetFrame(self)`` -> API to receive a decoded output frame in video memory
-    * ``SaveFrameToFile(self)`` -> API to bring back the decoded output froame to host and save it to a file
+    * ``SaveFrameToFile(self)`` -> API to bring back the decoded output frame to host and save it to a file
     * ``ReleaseFrame(self)`` -> API to release the decoded frame after use
     * ``GetOutputSurfaceInfo(self)`` -> API to get the output surface information like resolution, bit_depth and color_format of the decoded frame
     * ``GetNumOfFlushedFrames(self)`` -> API to get the number of flushed frames during reconfigure
@@ -51,8 +51,8 @@ The parser extracts all the necessary information from the bitstream and fills t
 structure that's appropriate for the codec. The high-level ``RocVideoDecoder`` class connects the parser
 and decoder used for all sample applications.
 
-The ``DecodeFrame()`` call will call the C++ ``rocDecDecodeFrame()`` call takes the decoder handle and the pointer to the ``RocdecPicParams``
-structure and initiates the video decoding using VA-API.
+The ``DecodeFrame()`` function will call the C++ ``rocDecDecodeFrame()`` api which takes the decoder handle and the pointer to 
+the ``RocdecPicParams`` structure and initiates the video decoding using VA-API.
 
 4. Using the decoded frame for further processing
 ====================================================
@@ -63,7 +63,7 @@ the device memory pointer is inter-opped into the ROCm HIP address space in orde
 the decoded frame in device memory. The caller gets the necessary information of the output surface,
 such as YUV format, dimensions, and pitch by calling the ``GetOutputSurfaceInfo()`` api call. 
 In the high-level ``RocVideoDecoder`` class, we provide four different surface_type modes for the mapped surface, as specified in
-``OutputSurfaceMemoryType``. Please refer to ``rocDecode`` documentation for further details on these modes.
+OutputSurfaceMemoryType. Please refer to rocDecode documentation for further details on these modes.
 
 .. code:: cpp
 
