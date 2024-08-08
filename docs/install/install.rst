@@ -15,14 +15,15 @@ written primarily in C/C++ language within Python.
 Supported codecs
 ========================================
 
-H.265 (HEVC) - 8 bit, and 10 bit
+ * H.265 (HEVC) - 8 bit, and 10 bit
+ * H.264 (H264) - 8 bit
 
 Prerequisites
 ========================================
 
 * Linux distribution
 
-  * Ubuntu: ``20.04``/ ``22.04``
+  * Ubuntu: ``22.04 or above``
 
 * `ROCm-supported hardware <https://rocm.docs.amd.com/projects/install-on-linux/en/latest/reference/system-requirements.html>`_
   (``gfx908`` or higher is required)
