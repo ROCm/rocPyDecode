@@ -65,16 +65,12 @@ class custom_bdist_wheel(_bdist_wheel):
 # Call CMake to configure and build the project
 build_dir = os.path.join(os.getcwd(), 'build')
 os.makedirs(build_dir, exist_ok=True)
-#check for environment variable - developer option
-amdgpu_target = os.environ.get('ROCPYDECODE_GPU_TARGET')
-if(amdgpu_target == None):
-    cmake_args=["cmake", ".", "-B"+build_dir, "-H"+os.getcwd()]
-else:
-    cmake_args=["cmake", ".", "-B"+build_dir, "-H"+os.getcwd(), "-DROCPYDECODE_GPU_TARGET="+amdgpu_target]
+cmake_args=["cmake", ".", "-B"+build_dir, "-H"+os.getcwd()]
+
 subprocess.check_call(cmake_args,cwd=os.getcwd())
 
 # Invoke cmake --build to build the project
-subprocess.check_call(['cmake', '--build', build_dir, '--config', 'Release'])
+subprocess.check_call(['cmake', '--build', build_dir, '--config', 'Release', '--parallel'])
 
 # Install the built binaries
 subprocess.check_call(['cmake', '--install', build_dir])
