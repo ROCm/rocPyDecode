@@ -20,6 +20,8 @@ subtrees:
   entries:
   - file: how-to/using-rocPydecode.rst
     title: Using rocPyDecode
+  - file: api/rocPyDecode.rst
+    title: rocPyDecode API
 
 - caption: About
   entries:
