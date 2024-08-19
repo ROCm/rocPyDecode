@@ -1,8 +1,8 @@
 .. image:: https://img.shields.io/badge/license-MIT-blue.svg
     :target: https://opensource.org/licenses/MIT
 
-**rocPyDecode** Python API
-==========================
+rocPyDecode Python API
+======================
 
 The rocPyDecode API is a ROCm rocDecode Python/C++ Binding, a tool that allows users to access rocDecode APIs in both Python and C/C++ languages. It works by connecting Python and C/C++ libraries, enabling function calling and data passing between the two languages. The *rocpydecode* library is a wrapper API that facilitates the use of rocDecode APIs that are written primarily in C/C++ language within Python.
 
@@ -56,4 +56,4 @@ API Functions and Features
 API Usage Python Sample Code
 ============================
 
-An example of how to use the ***rocPyDecode*** APIs classes and functions can be found at `GitHub <https://github.com/ROCm/rocPyDecode/tree/develop/samples>`_
+An example of how to use the rocPyDecode APIs classes and functions can be found at `GitHub <https://github.com/ROCm/rocPyDecode/tree/develop/samples>`_
