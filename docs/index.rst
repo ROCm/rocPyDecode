@@ -36,7 +36,10 @@ The documentation is structured as follows:
   .. grid-item-card:: How to
 
     * :doc:`Using rocPyDecode <how-to/using-rocPydecode>`
-    * :doc:`rocPyDecode API <api/rocPyDecode>`
+    
+  .. grid-item-card:: Reference
+    
+    * :doc:`rocPyDecode API <reference/rocPyDecode>`
 
 To contribute to the documentation, refer to
 `Contributing to ROCm <https://rocm.docs.amd.com/en/latest/contribute/contributing.html>`_.
