@@ -42,6 +42,7 @@ class demuxer(object):
 
     def SeekFrame(self, frame_number, seek_mode, seek_criteria):
          return self.vidmux.SeekFrame(frame_number, seek_mode, seek_criteria)
-    
 
-     
+    def GetBitDepth(self):
+        return self.vidmux.GetBitDepth()
+
