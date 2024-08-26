@@ -1,41 +1,40 @@
-.. image:: https://img.shields.io/badge/license-MIT-blue.svg
-    :target: https://opensource.org/licenses/MIT
+.. meta::
+  :description: rocPyDecode API documentation
+  :keywords: rocPyDecode, rocDecode, ROCm, API, documentation, video, decode, decoding, acceleration
 
-**rocPyDecode** Python API
-==========================
+**********************
+rocPyDecode Python API
+**********************
 
-The rocPyDecode API is a ROCm rocDecode Python/C++ Binding, a tool that allows users to access rocDecode APIs in both Python and C/C++ languages. It works by connecting Python and C/C++ libraries, enabling function calling and data passing between the two languages. The *rocpydecode* library is a wrapper API that facilitates the use of rocDecode APIs that are written primarily in C/C++ language within Python.
+The rocPyDecode API is a ROCm rocDecode Python/C++ Binding, a tool that lets you access rocDecode APIs in both Python and C/C++ languages. It works by connecting Python and C/C++ libraries, enabling function calling and data passing between the two languages. The ``rocpydecode`` library is a wrapper API that uses the rocDecode C/C++ language APIs within a Python wrapper.
 
-The rocPyDecode API main classes are a decoder class and a demuxer class. 
+.. image:: ../data/reference/rocPyDecodeArch.png
+
+The rocPyDecode API main classes are a decoder class and a demuxer class. All rocPyDecode APIs are exposed using the header files ``decoder.py`` and ``demuxer.py``. You can find these files in the `pyRocVideoDecode <https://github.com/ROCm/rocPyDecode/blob/develop/pyRocVideoDecode>`_ folder in the rocPyDecode github repository.
 
 The decoder class
-=================
+==================
 
-The decoder class contains all the decoder member API functions the developers need to decode a video frames.
+The decoder class contains member API functions used to decode video frames.
 
-* :doc:`rocPyDecode Class <deCoderClass>`
+* :doc:`Decoder Class <deCoderClass>`
 
 The demuxer class
-=================
+==================
 
-The demuxer class contains all needed demuxing API functions to demux the input video before decoding it.
+The demuxer class contains API functions used to demux input video frames before decoding them.
 
 * :doc:`Demuxer Class <deMuxerClass>`
 
 rocPyDecode Structures
-======================
+=======================
 
-The rocPyDecode generic structures are used in some API calls to set, get or retrieve related elements.  
+The rocPyDecode generic structures described here are used in some decode or demuxer API calls to set, get or retrieve related elements.  
 
-* :doc:`Structures Classess <structures>`
-
-rocPyDecode API Architecture
-============================
-
-.. image:: rocPyDecodeArch.png
+* :doc:`Structures <structures>`
 
 API Functions and Features
-==========================
+===========================
 - **Parser Support:**
   Yes
 - **Feature:**
@@ -53,7 +52,7 @@ API Functions and Features
 - **Resolution:**
   4K for H.264, 8K for HEVC 
 
-API Usage Python Sample Code
-============================
+rocPyDecode API Usage Examples
+==============================
 
-An example of how to use the ***rocPyDecode*** APIs classes and functions can be found at `GitHub <https://github.com/ROCm/rocPyDecode/tree/develop/samples>`_
+Examples of how to use the rocPyDecode API classes and functions can be found at `rocPyDecode/samples <https://github.com/ROCm/rocPyDecode/tree/develop/samples>`_.

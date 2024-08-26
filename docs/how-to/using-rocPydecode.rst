@@ -37,11 +37,12 @@ The workflow of ``rocPyDecode`` is exactly similar to the ``rocDecode`` C++ libr
 
 2. Create a decoder instance using rocPyDecode
 ====================================================
+
 ``PyRocVideoDecoder()`` python module creates an instance of video decoder underneath and exposes C++ APIs to python using pybind.
 ``PyRocVideoDecoder()`` in turn creates an instance of ``RocVideoDecoder()`` class and returns a handle upon successful creation. 
 
 3. Decoding video frames using ``PyRocVideoDecoder()``
-====================================================
+======================================================
 
 After de-multiplexing and parsing, the user can decode bitstream data containing a frame/field in hardware.
 
