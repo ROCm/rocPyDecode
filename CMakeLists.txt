@@ -21,7 +21,7 @@
 #
 ################################################################################
 
-cmake_minimum_required (VERSION 3.5)
+cmake_minimum_required (VERSION 3.12)
 
 set(VERSION "0.1.0")
 set(CMAKE_CXX_STANDARD 17)
@@ -83,12 +83,17 @@ message("-- ${Cyan}     -D ROCPYDECODE_AMDGPU_TARGET=${ROCPYDECODE_AMDGPU_TARGET
 # set amdgpu targets with vcn support
 option(ROCPYDECODE_AMDGPU_TARGET "AMD GPU target ASIC to build rocPyDecode" "")
 
-if (ROCPYDECODE_AMDGPU_TARGET)
-    set(DEFAULT_AMDGPU_TARGETS "${ROCPYDECODE_AMDGPU_TARGET}" CACHE STRING "Specific machine types for library to target")
+set(DEFAULT_AMDGPU_TARGETS "gfx908;gfx90a;gfx940;gfx941;gfx942;gfx1030;gfx1031;gfx1032;gfx1100;gfx1101;gfx1102")
+
+# Set AMDGPU_TARGETS
+if(DEFINED ENV{AMDGPU_TARGETS})
+    set(AMDGPU_TARGETS $ENV{AMDGPU_TARGETS} CACHE STRING "List of specific machine types for library to target")
+elseif(AMDGPU_TARGETS)
+    message("-- ${White}${PROJECT_NAME} -- AMDGPU_TARGETS set with -D option${ColourReset}")
 else()
-    set(DEFAULT_AMDGPU_TARGETS "gfx908;gfx90a;gfx940;gfx941;gfx942;gfx1030;gfx1031;gfx1032;gfx1100;gfx1101;gfx1102")
+    set(AMDGPU_TARGETS "${DEFAULT_AMDGPU_TARGETS}" CACHE STRING "List of specific machine types for library to target")
 endif()
-set(AMDGPU_TARGETS "${DEFAULT_AMDGPU_TARGETS}" CACHE STRING "List of specific machine types for library to target")
+message("-- ${White}${PROJECT_NAME} -- AMDGPU_TARGETS: ${AMDGPU_TARGETS}${ColourReset}")
 
 find_package(HIP QUIET)
 find_package(FFmpeg QUIET)
