@@ -38,8 +38,8 @@ The documentation is structured as follows:
     * :doc:`rocPyDecode API <reference/rocPyDecode>`
 
       * :doc:`rocPyDecode Structs <reference/structures>`
-      * :doc:`Decode Class <reference/deCoderClass>`
-      * :doc:`Demuxer CLass <reference/deMuxerClass>`
+      * :doc:`Decode Class <reference/decoderClass>`
+      * :doc:`Demuxer CLass <reference/demuxerClass>`
 
   .. grid-item-card:: Tutorials
 

@@ -25,8 +25,8 @@ subtrees:
     - entries:
       - file: reference/structures.rst
         title: rocPyDecode Structs
-      - file: reference/deCoderClass.rst
-      - file: reference/deMuxerClass.rst
+      - file: reference/decoderClass.rst
+      - file: reference/demuxerClass.rst
 
 - caption: Tutorials
   entries:

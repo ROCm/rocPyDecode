@@ -17,14 +17,14 @@ The decoder class
 
 The decoder class contains member API functions used to decode video frames.
 
-* :doc:`Decoder Class <deCoderClass>`
+* :doc:`Decoder Class <decoderClass>`
 
 The demuxer class
 ==================
 
 The demuxer class contains API functions used to demux input video frames before decoding them.
 
-* :doc:`Demuxer Class <deMuxerClass>`
+* :doc:`Demuxer Class <demuxerClass>`
 
 rocPyDecode Structures
 =======================

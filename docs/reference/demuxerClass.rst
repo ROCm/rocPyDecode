@@ -87,7 +87,7 @@ Example:
 	
 		not_seeking = False
 
-		seek_frame = 100     # seek 100 frames
+		seek_frame = 100     # seek to the 100th frames
 		seek_mode = 0        # by exact frame number
 		seek_criteria = 0    # by frame number
 		

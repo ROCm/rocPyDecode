@@ -66,7 +66,7 @@ Example:
 			# release frame
 			viddec.ReleaseFrame(packet)
 
-			if (packet.frame_size <= 0):  EOF: no more to decode
+			if (packet.frame_size <= 0):  # EOF: no more to decode
 				break
 
 				

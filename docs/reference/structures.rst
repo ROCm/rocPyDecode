@@ -20,7 +20,7 @@ The following are the structures that are used in API calls:
 Packet structure
 ================
 
-The packet structure contains information related to the demuxed frames from the original input video. The packet is passed to the decoder functions to...
+The packet structure contains information related to the demuxed frames from the original input video. The packet is passed to the decoder APIs for further processing, which uses and updates the information in the same structure.
 
 - **end_of_stream**: Boolean flag, indicates demuxing reach end of stream when 'True'  
 - **pkt_flags**: Integer value indicate the status of the packet  
@@ -44,7 +44,7 @@ Example:
 ConfigInfo structure
 ============================
 
-The ConfigInfo structure contains information related to the curent GPU device to...
+The ConfigInfo structure members are used to describe the current GPU device-related information to be obtained by the rocPyDecode APIs.
 
 - **device_name**: String Contains the device name  
 - **gcn_arch_name**: String Contains the GPU architecture name  
@@ -66,7 +66,7 @@ Example:
 Dim structure
 =============
 
-The Dim structure provides the dimensions of the...
+The Dim structure allows specifying the dimensions of a video frame to be used in frame scaling via the rocPyDecode APIs.
 
 - **width**: Integer value contains the width  
 - **height**: Integer value contains the height  
@@ -91,7 +91,7 @@ Example:
 Rect structure
 ==============
 
-The Rect structure provides the left-top and bottom-right coordinates of the area of interest to the...
+The Rect structure provides the top-left and bottom-right coordinates of the area of interest to be passed to the rocPyDecode APIs.
 
 - **left**: Integer value contains the left column of a rectangle
 - **top**: Integer value contains the top row of a rectangle
