@@ -50,6 +50,7 @@ void PyRocVideoDecoderInitializer(py::module& m) {
         .def("InitMd5",&PyRocVideoDecoder::PyInitMd5)
         .def("FinalizeMd5",&PyRocVideoDecoder::PyFinalizeMd5)
         .def("UpdateMd5ForFrame",&PyRocVideoDecoder::PyUpdateMd5ForFrame)
+        .def("IsCodecSupported",&PyRocVideoDecoder::PyCodecSupported)
 // TODO: Change after merging with mainline #if ROCDECODE_CHECK_VERSION(0,6,0)
 #if OVERHEAD_SUPPORT
         .def("AddDecoderSessionOverHead",&PyRocVideoDecoder::PyAddDecoderSessionOverHead)
@@ -388,6 +389,12 @@ py::int_ PyRocVideoDecoder::PyGetFrameSize() {
 // for python binding
 py::int_ PyRocVideoDecoder::PyGetStride() {
     return py::int_(static_cast<int>(GetSurfaceStride()));
+}
+
+// for python binding
+py::object PyRocVideoDecoder::PyCodecSupported(int device_id, rocDecVideoCodec codec_id, uint32_t bit_depth) {
+    bool ret = CodecSupported(device_id, codec_id, bit_depth);
+    return py::cast(ret);
 }
 
 // TODO: Change after merging with mainline #if ROCDECODE_CHECK_VERSION(0,6,0)

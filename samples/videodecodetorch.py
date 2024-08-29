@@ -35,6 +35,11 @@ def Decoder(
     # Get GPU device information
     cfg = viddec.GetGpuInfo()
 
+    # check if codec is supported
+    if (viddec.IsCodecSupported(device_id, codec_id, demuxer.GetBitDepth()) == False):
+        print("ERROR: Codec is not supported on this GPU " + cfg.device_name)
+        exit()
+
     #  print some GPU info out
     print("\ninfo: Input file: " +
           input_file_path +
