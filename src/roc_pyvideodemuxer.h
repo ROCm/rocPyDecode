@@ -49,6 +49,7 @@ class PyVideoDemuxer : public VideoDemuxer {
         std::shared_ptr<PyPacketData> DemuxFrame();
         std::shared_ptr<PyPacketData> SeekFrame(int frame_number, int seek_mode, int seek_criteria);
         int GetCodecId();
+        uint32_t PyGetBitDepth();
 };
 
 /**

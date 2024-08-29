@@ -145,3 +145,6 @@ class decoder(object):
             return self.viddec.GetDecoderSessionOverHead(session_id)
         else:
             return None
+
+    def IsCodecSupported(self, device_id, codec_id, bit_depth):
+        return self.viddec.IsCodecSupported(device_id, codec_id, bit_depth)
