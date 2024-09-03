@@ -10,7 +10,7 @@ The rocPyDecode API is a ROCm rocDecode Python/C++ Binding, a tool that lets you
 
 .. image:: ../data/reference/rocPyDecodeArch.png
 
-The rocPyDecode API main classes are a decoder class and a demuxer class. All rocPyDecode APIs are exposed using the header files ``decoder.py`` and ``demuxer.py``. You can find these files in the `pyRocVideoDecode <https://github.com/ROCm/rocPyDecode/blob/develop/pyRocVideoDecode>`_ folder in the rocPyDecode github repository.
+The rocPyDecode API main classes are a decoder class and a demuxer class. All rocPyDecode APIs are exposed using the API files ``decoder.py`` and ``demuxer.py``. You can find these files in the `pyRocVideoDecode <https://github.com/ROCm/rocPyDecode/blob/develop/pyRocVideoDecode>`_ folder in the rocPyDecode github repository. The demuxer.py class is a python class that binds to the C++ class PyVideoDemuxer, and the decoder.py class binds to the C++ PyRocVideoDecoder class. The class names are differentiated to help distinguish between the Python and C++ classes.
 
 The decoder class
 ==================
