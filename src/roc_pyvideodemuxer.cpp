@@ -25,6 +25,15 @@ THE SOFTWARE.
 
 using namespace std;
 
+std::map<std::string, int> av_codec_map = { {"mpeg1", AV_CODEC_ID_MPEG1VIDEO},
+                                             {"mpeg2", AV_CODEC_ID_MPEG2VIDEO},
+                                             {"mpeg4", AV_CODEC_ID_MPEG4},
+                                             {"h264",  AV_CODEC_ID_H264},
+                                             {"hevc",  AV_CODEC_ID_VP8},
+                                             {"h264",  AV_CODEC_ID_VP9},
+                                             {"hevc",  AV_CODEC_ID_MJPEG},
+                                             {"av1",  AV_CODEC_ID_AV1} };
+
 void PyVideoDemuxerInitializer(py::module& m) {
         py::class_<PyVideoDemuxer, std::shared_ptr<PyVideoDemuxer>> (m, "PyVideoDemuxer")
         .def(py::init<const char*>())
@@ -43,6 +52,15 @@ void PyVideoStreamProviderInitializer(py::module& m) {
 
 rocDecVideoCodec ConvertAVCodec2RocDecVideoCodec(int av_codec) {
     return AVCodec2RocDecVideoCodec((AVCodecID)av_codec);
+}
+
+rocDecVideoCodec ConvertAVCodecString2RocDecVideoCodec(std::string& codec_name) {
+    if (av_codec_map.find(codec_name) == av_codec_map.end()) {
+        return AVCodec2RocDecVideoCodec((AVCodecID)-1);
+    } else {
+        int av_codec = av_codec_map.at(codec_name);
+        return AVCodec2RocDecVideoCodec((AVCodecID)av_codec);
+    }
 }
 
 void PyVideoDemuxer::InitPacket() {
