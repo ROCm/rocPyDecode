@@ -1,5 +1,5 @@
 .. meta::
-  :description: Install rocPyDecode
+  :description: rocPyDecode Installation documentation
   :keywords: install, rocPyDecode, AMD, ROCm
 
 ********************************************************************
@@ -13,16 +13,17 @@ The rocpydecode.so library is a wrapper that facilitates the use of rocDecode AP
 written primarily in C/C++ language within Python.
 
 Supported codecs
-========================================
+================
 
-H.265 (HEVC) - 8 bit, and 10 bit
+ * H.265 (HEVC) - 8 bit, and 10 bit
+ * H.264 (H264) - 8 bit
 
 Prerequisites
-========================================
+=============
 
 * Linux distribution
 
-  * Ubuntu: ``20.04``/ ``22.04``
+  * Ubuntu: ``22.04 or above``
 
 * `ROCm-supported hardware <https://rocm.docs.amd.com/projects/install-on-linux/en/latest/reference/system-requirements.html>`_
   (``gfx908`` or higher is required)
@@ -31,7 +32,7 @@ Prerequisites
   `amdgpu-install <https://rocm.docs.amd.com/projects/install-on-linux/en/latest/how-to/amdgpu-install.html>`_
 
   * Run: ``--usecase=rocm``
-  * To install rocDecode with minimum requirements, follow the :doc:`quick start instructions <./quick-start>`
+  * To install rocDecode with minimum requirements, follow the :doc:`rocDecode QuickStart Guide<rocdecode:install/quick-start>`
 
 * CMake 3.5 or later
 
@@ -86,7 +87,7 @@ Prerequisites
     sudo apt install libstdc++-12-dev
 
 Prerequisites setup script
-----------------------------------------------------------------------------------------------------------
+--------------------------
 
 For your convenience, we provide the setup script, rocPyDecode-requirements.py,
 which installs all required dependencies. Run this script only once.
@@ -97,13 +98,6 @@ which installs all required dependencies. Run this script only once.
 
 Installation instructions
 ========================================
-
-To install rocPyDecode, you can use :ref:`source-install`.
-
-.. _source-install:
-
-Source install
-------------------------------------------------------------------------------------------------------------
 
 To build rocPyDecode from source, run:
 
@@ -142,9 +136,8 @@ Run test:
 
 To run tests with verbose option, use ``make test ARGS="-VV"``.
 
-
 Hardware capabilities
-===================================================
+=====================
 
 The following table shows the codec support and capabilities of the VCN for each supported GPU
 architecture.

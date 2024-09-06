@@ -27,8 +27,16 @@ The parser object in ``rocparser.h`` has three main APIs:
 * ``rocDecParseVideoData()``
 * ``rocDecDestroyVideoParser()``
 
-2. Create a parser object
+The workflow of ``rocPyDecode`` is exactly similar to the ``rocDecode`` C++ library. Please refer to rocDecode documentation for further details.
+
+2. Create a decoder instance using rocPyDecode
 ====================================================
+
+``PyRocVideoDecoder()`` python module creates an instance of video decoder underneath and exposes C++ APIs to python using pybind.
+``PyRocVideoDecoder()`` in turn creates an instance of ``RocVideoDecoder()`` class and returns a handle upon successful creation. 
+
+3. Decoding video frames using ``PyRocVideoDecoder()``
+======================================================
 
 The ``rocDecCreateVideoParser()`` API creates a video parser object for the codec that you specify. The
 API takes ``max_num_decode_surfaces``, which determines the Decoded Picture Buffer (DPB) size for
