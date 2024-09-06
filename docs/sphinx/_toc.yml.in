@@ -1,5 +1,6 @@
 defaults:
   numbered: False
+  maxdepth: 6
 root: index
 subtrees:
 - entries:
@@ -11,15 +12,26 @@ subtrees:
   - file: install/install.md
     title: Installation guide
 
-- caption: Tutorials
-  entries:
-  - url: https://github.com/ROCm/rocPyDecode/tree/develop/samples
-    title: GitHub samples
-
 - caption: How to
   entries:
   - file: how-to/using-rocPydecode.rst
     title: Using rocPyDecode
+
+- caption: Reference
+  entries:
+  - file: reference/rocPyDecode.rst
+    title: rocPyDecode API
+    subtrees:
+    - entries:
+      - file: reference/structures.rst
+        title: rocPyDecode Structs
+      - file: reference/decoderClass.rst
+      - file: reference/demuxerClass.rst
+
+- caption: Tutorials
+  entries:
+  - url: https://github.com/ROCm/rocPyDecode/tree/develop/samples
+    title: GitHub samples
 
 - caption: About
   entries:
