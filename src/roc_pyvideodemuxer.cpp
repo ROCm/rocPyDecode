@@ -29,9 +29,10 @@ std::map<std::string, int> av_codec_map = { {"mpeg1", AV_CODEC_ID_MPEG1VIDEO},
                                              {"mpeg2", AV_CODEC_ID_MPEG2VIDEO},
                                              {"mpeg4", AV_CODEC_ID_MPEG4},
                                              {"h264",  AV_CODEC_ID_H264},
-                                             {"hevc",  AV_CODEC_ID_VP8},
-                                             {"h264",  AV_CODEC_ID_VP9},
-                                             {"hevc",  AV_CODEC_ID_MJPEG},
+                                             {"h265",  AV_CODEC_ID_H265},
+                                             {"vp8",  AV_CODEC_ID_VP8},
+                                             {"vp9",  AV_CODEC_ID_VP9},
+                                             {"mjpeg",  AV_CODEC_ID_MJPEG},
                                              {"av1",  AV_CODEC_ID_AV1} };
 
 void PyVideoDemuxerInitializer(py::module& m) {
