@@ -41,7 +41,8 @@ void PyVideoDemuxerInitializer(py::module& m) {
         .def(py::init<PyFileStreamProvider *>())
         .def("GetCodecId",&PyVideoDemuxer::GetCodecId,"Get Codec ID")
         .def("DemuxFrame",&PyVideoDemuxer::DemuxFrame)
-        .def("SeekFrame",&PyVideoDemuxer::SeekFrame);
+        .def("SeekFrame",&PyVideoDemuxer::SeekFrame)
+        .def("GetBitDepth",&PyVideoDemuxer::PyGetBitDepth);
 }
 
 void PyVideoStreamProviderInitializer(py::module& m) {
@@ -114,4 +115,8 @@ shared_ptr<PyPacketData> PyVideoDemuxer::SeekFrame(int frame_number, int seek_mo
 
 int PyVideoDemuxer::GetCodecId() {
     return GetCodecID();
+}
+
+uint32_t PyVideoDemuxer::PyGetBitDepth() {
+    return GetBitDepth();
 }

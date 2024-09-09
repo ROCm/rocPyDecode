@@ -1,6 +1,6 @@
 .. meta::
   :description: rocPyDecode documentation
-  :keywords: rocPyDecode, rocDecode, ROCm, API, documentation, video, decode, decoding, acceleration
+  :keywords: rocPyDecode, rocDecode, ROCm, documentation, video, decode, decoding, acceleration
 
 ********************************************************************
 rocPyDecode documentation
@@ -29,13 +29,21 @@ The documentation is structured as follows:
 .. grid:: 2
   :gutter: 3
 
-  .. grid-item-card:: Tutorials
-
-    * `GitHub samples <https://github.com/ROCm/rocPyDecode/tree/develop/samples>`_
-
   .. grid-item-card:: How to
 
     * :doc:`Using rocPyDecode <how-to/using-rocPydecode>`
+    
+  .. grid-item-card:: Reference
+    
+    * :doc:`rocPyDecode API <reference/rocPyDecode>`
+
+      * :doc:`rocPyDecode Structs <reference/structures>`
+      * :doc:`Decode Class <reference/decoderClass>`
+      * :doc:`Demuxer CLass <reference/demuxerClass>`
+
+  .. grid-item-card:: Tutorials
+
+    * `GitHub samples <https://github.com/ROCm/rocPyDecode/tree/develop/samples>`_
 
 To contribute to the documentation, refer to
 `Contributing to ROCm <https://rocm.docs.amd.com/en/latest/contribute/contributing.html>`_.
