@@ -90,8 +90,7 @@ Prerequisites
 Prerequisites setup script
 --------------------------
 
-For your convenience, we provide the setup script, rocPyDecode-requirements.py,
-which installs all required dependencies. Run this script only once.
+For your convenience, a setup script has been provided which installs all required dependencies, ``rocPyDecode-requirements.py``. Run this script only once.
 
 .. code:: shell
 
