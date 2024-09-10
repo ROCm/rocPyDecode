@@ -32,7 +32,6 @@ Prerequisites
   `amdgpu-install <https://rocm.docs.amd.com/projects/install-on-linux/en/latest/how-to/amdgpu-install.html>`_
 
   * Run: ``--usecase=rocm``
-  * To install rocDecode with minimum requirements, follow the :doc:`rocDecode QuickStart Guide<rocdecode:install/quick-start>`
 
 * CMake 3.5 or later
 
@@ -53,6 +52,8 @@ Prerequisites
     sudo apt install pybind11-dev
 
 * rocDecode
+
+  * To install rocDecode with minimum requirements, follow the :doc:`rocDecode QuickStart Guide<rocdecode:install/quick-start>`
 
   .. code:: shell
 
