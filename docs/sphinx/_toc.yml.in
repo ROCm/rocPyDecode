@@ -31,7 +31,7 @@ subtrees:
 - caption: Tutorials
   entries:
   - url: https://github.com/ROCm/rocPyDecode/tree/develop/samples
-    title: GitHub samples
+    title: rocPyDecode samples
 
 - caption: About
   entries:

@@ -23,7 +23,7 @@ Prerequisites
 
 * Linux distribution
 
-  * Ubuntu: ``22.04 or above``
+  * Ubuntu: 22.04 and later
 
 * `ROCm-supported hardware <https://rocm.docs.amd.com/projects/install-on-linux/en/latest/reference/system-requirements.html>`_
   (``gfx908`` or higher is required)
@@ -101,7 +101,7 @@ Installation instructions
 
 To build rocPyDecode from source, run:
 
-If using bare-metal, sudo access is needed.
+If using bare metal, sudo access is needed.
 
 .. code:: shell
 

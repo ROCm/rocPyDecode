@@ -8,8 +8,9 @@ rocPyDecode documentation
 
 The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access rocDecode APIs in 
 both Python and C/C++ languages. It works by connecting Python and C/C++ libraries, enabling function 
-calling and data passing between the two languages. The rocpydecode.so library is a wrapper that facilitates 
-the use of rocDecode APIs that are written primarily in C/C++ language within Python.
+calling and data passing between the two languages. The ``rocpydecode.so`` library is a wrapper that facilitates 
+the use of rocDecode APIs that are written primarily in C/C++ language within Python. 
+See the :doc:`rocDecode documentation <rocdecode:index>` for more information. 
 
 To learn more, see :doc:`what-is-rocPyDecode`
 
@@ -43,7 +44,7 @@ The documentation is structured as follows:
 
   .. grid-item-card:: Tutorials
 
-    * `GitHub samples <https://github.com/ROCm/rocPyDecode/tree/develop/samples>`_
+    * `rocPyDecode samples <https://github.com/ROCm/rocPyDecode/tree/develop/samples>`_
 
 To contribute to the documentation, refer to
 `Contributing to ROCm <https://rocm.docs.amd.com/en/latest/contribute/contributing.html>`_.
