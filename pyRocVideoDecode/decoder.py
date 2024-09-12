@@ -22,9 +22,12 @@ import rocPyDecode as rocpydec
 import rocPyDecode.decTypes as dectypes
 import numpy as np
 
-
 def GetRocDecCodecID(codec_id) -> dectypes.rocDecVideoCodec:
-    rocCodecId = rocpydec.AVCodec2RocDecVideoCodec(codec_id)
+    rocCodecId = None
+    if isinstance(codec_id, int):
+        rocCodecId = rocpydec.AVCodec2RocDecVideoCodec(codec_id)
+    if isinstance(codec_id, str):
+        rocCodecId = rocpydec.AVCodecString2RocDecVideoCodec(codec_id)
     return rocCodecId
 
 
