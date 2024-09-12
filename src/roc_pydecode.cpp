@@ -30,7 +30,7 @@ PYBIND11_MODULE(rocPyDecode, m) {
 
     // convert betweeen demuxer & decoder
     m.def("AVCodec2RocDecVideoCodec", &ConvertAVCodec2RocDecVideoCodec, "Convert AVCodecID to rocDecVideoCodec ID");
-
+    m.def("AVCodecString2RocDecVideoCodec", &ConvertAVCodecString2RocDecVideoCodec, "Convert AVCodec string to rocDecVideoCodec ID");
     
     m.def("GetRocPyDecPacket", [](int pts, int size, unsigned long int buffer_ptr) {
         std::shared_ptr<PyPacketData> packet = make_shared<PyPacketData>();
