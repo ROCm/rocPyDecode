@@ -39,6 +39,8 @@ PYBIND11_MODULE(rocPyDecode, m) {
         return packet;
     }, "Convert packet info from user to rocPyDecode's PyPacketData");
 
+    m.def("AVCodecString2RocDecVideoCodec", &ConvertAVCodecString2RocDecVideoCodec, "Convert AVCodec string to rocDecVideoCodec ID");
+
     // ------
     // Types:
     // ------
