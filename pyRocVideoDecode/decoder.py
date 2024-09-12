@@ -29,6 +29,7 @@ def GetRocDecCodecID(codec_id) -> dectypes.rocDecVideoCodec:
         rocCodecId = rocpydec.AVCodec2RocDecVideoCodec(codec_id)
     if isinstance(codec_id, str):
         rocCodecId = rocpydec.AVCodecString2RocDecVideoCodec(codec_id)
+    return rocCodecId
 
 def GetRectangle(crop_rect: dict) -> rocpydec.Rect:
     p_crop_rect = rocpydec.Rect()
