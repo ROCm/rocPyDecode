@@ -71,8 +71,6 @@ struct ConfigInfo {
 void PyVideoDemuxerInitializer(py::module& m);
 void PyVideoStreamProviderInitializer(py::module& m);
 rocDecVideoCodec ConvertAVCodec2RocDecVideoCodec(int av_codec);
-rocDecVideoCodec ConvertAVCodecString2RocDecVideoCodec(std::string codec_name);
-
 
 // defined in roc_pyvideodecoder.cpp
 void PyRocVideoDecoderInitializer(py::module& m);
