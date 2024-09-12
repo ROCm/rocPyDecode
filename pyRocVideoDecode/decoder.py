@@ -48,6 +48,9 @@ def GetOutputSurfaceInfo():
     surf_info_struct = rocpydec.OutputSurfaceInfo()
     return surf_info_struct
 
+def GetRocPyDecPacket(pts, size, buffer_ptr):
+    #pts_us = int(pts * 1000 * 1000)  #TBD: if needed in microseconds
+    return rocpydec.GetRocPyDecPacket(0 if pts == None else int(pts), size, buffer_ptr)
 
 class decoder(object):
     def __init__(

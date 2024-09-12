@@ -30,6 +30,14 @@ PYBIND11_MODULE(rocPyDecode, m) {
 
     // convert betweeen demuxer & decoder
     m.def("AVCodec2RocDecVideoCodec", &ConvertAVCodec2RocDecVideoCodec, "Convert AVCodecID to rocDecVideoCodec ID");
+    
+    m.def("GetRocPyDecPacket", [](int pts, int size, unsigned long int buffer_ptr) {
+        std::shared_ptr<PyPacketData> packet = make_shared<PyPacketData>();
+        packet->frame_pts = static_cast<int64_t>(pts);
+        packet->frame_size = static_cast<int64_t>(size);
+        packet->frame_adrs = reinterpret_cast<uintptr_t>(buffer_ptr);
+        return packet;
+    }, "Convert packet info from user to rocPyDecode's PyPacketData");
 
     // ------
     // Types:
@@ -133,7 +141,7 @@ PYBIND11_MODULE(rocPyDecode, m) {
         .def_readwrite("frame_adrs_rgb", &PyPacketData::frame_adrs_rgb)
         .def_readwrite("frame_adrs_resized", &PyPacketData::frame_adrs_resized)
         .def_readwrite("extBuf",        &PyPacketData::extBuf)
-        
+
         // DL Pack Tensor
         .def_property_readonly("shape", [](std::shared_ptr<PyPacketData>& self) {
             return self->extBuf->shape();
@@ -159,5 +167,5 @@ PYBIND11_MODULE(rocPyDecode, m) {
         .def_readwrite("gcn_arch_name", &ConfigInfo::gcn_arch_name)
         .def_readwrite("pci_bus_id",    &ConfigInfo::pci_bus_id)
         .def_readwrite("pci_domain_id", &ConfigInfo::pci_domain_id)
-        .def_readwrite("pci_device_id", &ConfigInfo::pci_device_id);            
+        .def_readwrite("pci_device_id", &ConfigInfo::pci_device_id);
 }
