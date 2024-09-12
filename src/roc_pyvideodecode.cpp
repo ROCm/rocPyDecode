@@ -171,7 +171,7 @@ py::object PyRocVideoDecoder::PyGetFrame(PyPacketData& packet) {
         uint32_t height = GetHeight();    
         uint32_t surf_stride = GetSurfaceStride(); 
         std::string type_str(static_cast<const char*>("|u1"));
-        std::vector<size_t> shape{ static_cast<size_t>(height * 1.5), static_cast<size_t>(width)}; // NV12
+        std::vector<size_t> shape{ static_cast<size_t>(height), static_cast<size_t>(width)}; // NV12
         std::vector<size_t> stride{ static_cast<size_t>(surf_stride), 1};
         packet.extBuf->LoadDLPack(shape, stride, type_str, (void *)packet.frame_adrs);
     }

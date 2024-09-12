@@ -29,7 +29,7 @@ std::map<std::string, int> av_codec_map = { {"mpeg1", AV_CODEC_ID_MPEG1VIDEO},
                                              {"mpeg2", AV_CODEC_ID_MPEG2VIDEO},
                                              {"mpeg4", AV_CODEC_ID_MPEG4},
                                              {"h264",  AV_CODEC_ID_H264},
-                                             {"h265",  AV_CODEC_ID_H265},
+                                             {"h265",  AV_CODEC_ID_HEVC},
                                              {"vp8",  AV_CODEC_ID_VP8},
                                              {"vp9",  AV_CODEC_ID_VP9},
                                              {"mjpeg",  AV_CODEC_ID_MJPEG},
@@ -56,7 +56,7 @@ rocDecVideoCodec ConvertAVCodec2RocDecVideoCodec(int av_codec) {
     return AVCodec2RocDecVideoCodec((AVCodecID)av_codec);
 }
 
-rocDecVideoCodec ConvertAVCodecString2RocDecVideoCodec(std::string& codec_name) {
+rocDecVideoCodec ConvertAVCodecString2RocDecVideoCodec(std::string codec_name) {
     if (av_codec_map.find(codec_name) == av_codec_map.end()) {
         return AVCodec2RocDecVideoCodec((AVCodecID)-1);
     } else {
