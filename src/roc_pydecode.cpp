@@ -33,10 +33,14 @@ PYBIND11_MODULE(rocPyDecode, m) {
     m.def("AVCodecString2RocDecVideoCodec", &ConvertAVCodecString2RocDecVideoCodec, "Convert AVCodec string to rocDecVideoCodec ID");
     
     m.def("GetRocPyDecPacket", [](int pts, int size, unsigned long int buffer_ptr) {
+        std::mutex mutex;
         std::shared_ptr<PyPacketData> packet = make_shared<PyPacketData>();
-        packet->frame_pts = static_cast<int64_t>(pts);
-        packet->frame_size = static_cast<int64_t>(size);
-        packet->frame_adrs = reinterpret_cast<uintptr_t>(buffer_ptr);
+        {
+            std::unique_lock<std::mutex> lock(mutex);
+            packet->frame_pts = static_cast<int64_t>(pts);
+            packet->bitstream_size = static_cast<int64_t>(size);
+            packet->bitstream_adrs = reinterpret_cast<uintptr_t>(buffer_ptr);
+        }
         return packet;
     }, "Convert packet info from user to rocPyDecode's PyPacketData");
 
@@ -141,6 +145,8 @@ PYBIND11_MODULE(rocPyDecode, m) {
         .def_readwrite("frame_pts",     &PyPacketData::frame_pts)
         .def_readwrite("frame_size",    &PyPacketData::frame_size)
         .def_readwrite("frame_adrs",    &PyPacketData::frame_adrs)
+        .def_readwrite("bitstream_size",    &PyPacketData::bitstream_size)
+        .def_readwrite("bitstream_adrs",    &PyPacketData::bitstream_adrs)
         .def_readwrite("frame_adrs_rgb", &PyPacketData::frame_adrs_rgb)
         .def_readwrite("frame_adrs_resized", &PyPacketData::frame_adrs_resized)
         .def_readwrite("extBuf",        &PyPacketData::extBuf)
