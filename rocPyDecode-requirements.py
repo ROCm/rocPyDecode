@@ -180,4 +180,8 @@ elif "redhat" in platfromInfo:
             ERROR_CHECK(os.system('sudo '+linuxFlag+' '+linuxSystemInstall +
                     ' '+linuxSystemInstall_check+' install '+ coreRPMPackages[i]))
 
-print("\rocPyDecode Dependencies Installed with rocPyDecode-setup.py V-"+__version__+"\n")
+# add python-hip for perf tests (moved from CMakeLists.txt of the 'samples' folder)
+ERROR_CHECK(os.system('python3 -m pip install --upgrade pip'))
+ERROR_CHECK(os.system('python3 -m pip install -i https://test.pypi.org/simple hip-python'))
+
+print("rocPyDecode Dependencies Installed with rocPyDecode-requirements.py V-"+__version__+"\n")
