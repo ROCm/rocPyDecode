@@ -33,14 +33,9 @@ PYBIND11_MODULE(rocPyDecode, m) {
     m.def("AVCodecString2RocDecVideoCodec", &ConvertAVCodecString2RocDecVideoCodec, "Convert AVCodec string to rocDecVideoCodec ID");
     
     m.def("GetRocPyDecPacket", [](int pts, int size, unsigned long int buffer_ptr) {
-        std::mutex mutex;
-        std::shared_ptr<PyPacketData> packet = make_shared<PyPacketData>();
-        {
-            std::unique_lock<std::mutex> lock(mutex);
-            packet->frame_pts = static_cast<int64_t>(pts);
-            packet->bitstream_size = static_cast<int64_t>(size);
-            packet->bitstream_adrs = reinterpret_cast<uintptr_t>(buffer_ptr);
-        }
+        packet->frame_pts = static_cast<int64_t>(pts);
+        packet->bitstream_size = static_cast<int64_t>(size);
+        packet->bitstream_adrs = reinterpret_cast<uintptr_t>(buffer_ptr);
         return packet;
     }, "Convert packet info from user to rocPyDecode's PyPacketData");
 
