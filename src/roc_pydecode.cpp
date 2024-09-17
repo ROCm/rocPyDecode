@@ -38,8 +38,7 @@ PYBIND11_MODULE(rocPyDecode, m) {
         packet->bitstream_size = static_cast<int64_t>(size);
         // process py::buffer object to an address ptr for bitstream
         py::buffer_info buffer_info = buffer.request();
-        void *buffer_ptr = buffer_info.ptr;
-        packet->bitstream_adrs = reinterpret_cast<uintptr_t>(buffer_ptr);
+        packet->bitstream_adrs = reinterpret_cast<uintptr_t>(buffer_info.ptr);
         return packet;
     }, "Convert packet info from user to rocPyDecode's PyPacketData");
 
