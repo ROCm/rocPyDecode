@@ -138,7 +138,7 @@ def Decoder(
         # increament frames counter
         n_frame += n_frame_returned
 
-        if (packet.frame_size <= 0):  # EOF: no more to decode
+        if (packet.bitstream_size <= 0):  # EOF: no more to decode
             break
 
     # beyond the decoding loop

@@ -50,7 +50,9 @@ struct PyPacketData {
     int       pkt_flags;
     int64_t   frame_pts;
     int64_t   frame_size;
+    int64_t   bitstream_size;
     uintptr_t frame_adrs;       // yuv frame address
+    uintptr_t bitstream_adrs;
     uintptr_t frame_adrs_rgb;   // rgb frame address
     uintptr_t frame_adrs_resized; // new resized yuv frame
     std::shared_ptr<BufferInterface> extBuf;

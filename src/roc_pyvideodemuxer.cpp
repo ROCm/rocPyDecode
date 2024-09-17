@@ -68,9 +68,11 @@ rocDecVideoCodec ConvertAVCodecString2RocDecVideoCodec(std::string codec_name) {
 void PyVideoDemuxer::InitPacket() {
     currentPacket.reset(new PyPacketData());    
     currentPacket.get()->frame_adrs = 0;
+    currentPacket.get()->bitstream_adrs = 0;
     currentPacket.get()->frame_adrs_rgb = 0;
     currentPacket.get()->pkt_flags = 0;
     currentPacket.get()->frame_size = 0;
+    currentPacket.get()->bitstream_size = 0;
     currentPacket.get()->frame_pts = 0;
     currentPacket.get()->end_of_stream = false;
     currentPacket.get()->extBuf.reset(new BufferInterface());
@@ -82,8 +84,8 @@ shared_ptr<PyPacketData> PyVideoDemuxer::DemuxFrame() {
     int64_t pts = 0;
         
     bool ret = Demux(&p_video, &video_size, &pts);
-    currentPacket.get()->frame_adrs = reinterpret_cast<std::uintptr_t>(p_video);
-    currentPacket.get()->frame_size = video_size;
+    currentPacket.get()->bitstream_adrs = reinterpret_cast<std::uintptr_t>(p_video);
+    currentPacket.get()->bitstream_size = video_size;
     currentPacket.get()->frame_pts = pts;
     currentPacket.get()->end_of_stream = !ret;
     return currentPacket;
@@ -106,8 +108,8 @@ shared_ptr<PyPacketData> PyVideoDemuxer::SeekFrame(int frame_number, int seek_mo
       exit(1);
     }
 
-    currentPacket.get()->frame_adrs = reinterpret_cast<std::uintptr_t>(p_video);
-    currentPacket.get()->frame_size = video_size;
+    currentPacket.get()->bitstream_adrs = reinterpret_cast<std::uintptr_t>(p_video);
+    currentPacket.get()->bitstream_size = video_size;
     currentPacket.get()->frame_pts = video_seek.out_frame_pts_;
     currentPacket.get()->end_of_stream = !ret;
     return currentPacket;

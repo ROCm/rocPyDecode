@@ -153,9 +153,9 @@ PyRocVideoDecoder::~PyRocVideoDecoder() {
 }
 
 int PyRocVideoDecoder::PyDecodeFrame(PyPacketData& packet) {
-    if(packet.frame_size == 0)
+    if(packet.bitstream_size == 0)
         packet.pkt_flags |= ROCDEC_PKT_ENDOFSTREAM;
-    int decoded_frame_count = DecodeFrame(reinterpret_cast<const uint8_t *>(packet.frame_adrs), static_cast<size_t>(packet.frame_size), packet.pkt_flags, packet.frame_pts);
+    int decoded_frame_count = DecodeFrame(reinterpret_cast<const uint8_t *>(packet.bitstream_adrs), static_cast<size_t>(packet.bitstream_size), packet.pkt_flags, packet.frame_pts);
     return decoded_frame_count;
 }
  

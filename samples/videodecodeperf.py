@@ -76,7 +76,7 @@ def DecProc(input_file_path, device_id, p_frames, p_fps):
         # increament frames counter
         n_frame += n_frame_returned
 
-        if (packet.frame_size <= 0):  # EOF: no more to decode
+        if (packet.bitstream_size <= 0):  # EOF: no more to decode
             break
 
     # beyond the decoding loop
