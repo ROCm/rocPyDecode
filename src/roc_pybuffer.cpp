@@ -60,7 +60,10 @@ py::tuple BufferInterface::strides() const {
 }
 
 std::string BufferInterface::dtype() const {
-    return std::string("|u1");
+    if (m_dlTensor->dtype.code == kDLUInt && m_dlTensor->dtype.bits == 8)
+        return std::string("|u1");
+    else if (m_dlTensor->dtype.code == kDLUInt && m_dlTensor->dtype.bits == 16)
+        return std::string("|u2");
 }
 
 void *BufferInterface::data() const {
@@ -133,8 +136,8 @@ void PyExportInitializer(py::module& m) {
 
 int BufferInterface::LoadDLPack(std::vector<size_t>& _shape, std::vector<size_t>& _stride, uint32_t bit_depth, std::string& _type_str, void* _data) {
     
-    m_dlTensor->byte_offset = 0;    
-    m_dlTensor->device.device_type = kDLROCM;   // TODO: infer the device type from the memory buffer    
+    m_dlTensor->byte_offset = 0;
+    m_dlTensor->device.device_type = kDLROCM;   // TODO: infer the device type from the memory buffer
     m_dlTensor->device.device_id = 0;           // TODO: infer the device id   from the memory buffer
 
     // Convert data
@@ -143,18 +146,21 @@ int BufferInterface::LoadDLPack(std::vector<size_t>& _shape, std::vector<size_t>
     m_dlTensor->data = ptr;
 
     // Convert DataType
-    if (_type_str != "|u1" && _type_str != "B") {  // TODO: can also be other letters
+    if (_type_str != "|u1" && _type_str != "|u2") {  // TODO: can also be other letters
         throw std::runtime_error("Could not create DL Pack tensor! Invalid typstr: " + _type_str);
         return -1;
     }
-    int itemSizeDT = sizeof(uint8_t); 
-    
+
+    int itemSizeDT;
+
+    m_dlTensor->dtype.code = kDLUInt;
+
     if (bit_depth == 8) {
-        m_dlTensor->dtype.code = kDLUInt;  
         m_dlTensor->dtype.bits = 8;
+        itemSizeDT = sizeof(uint8_t);
     } else if (bit_depth == 10) {
-        m_dlTensor->dtype.code = kDLInt;  // TODO: add support for 12-bit when required
         m_dlTensor->dtype.bits = 16;
+        itemSizeDT = sizeof(uint16_t);
     }
     m_dlTensor->dtype.lanes = 1;
 
@@ -177,6 +183,6 @@ int BufferInterface::LoadDLPack(std::vector<size_t>& _shape, std::vector<size_t>
             return -1;
         }
         m_dlTensor->strides[i] /= itemSizeDT;
-    }    
+    }
     return 0;
 }
