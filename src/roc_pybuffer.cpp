@@ -131,14 +131,14 @@ void PyExportInitializer(py::module& m) {
     BufferInterface::Export(m);
 }
 
-int BufferInterface::LoadDLPack(std::vector<size_t>& _shape, std::vector<size_t>& _stride, std::string& _type_str, void* _data) {
+int BufferInterface::LoadDLPack(std::vector<size_t>& _shape, std::vector<size_t>& _stride, uint32_t bit_depth, std::string& _type_str, void* _data) {
     
     m_dlTensor->byte_offset = 0;    
     m_dlTensor->device.device_type = kDLROCM;   // TODO: infer the device type from the memory buffer    
     m_dlTensor->device.device_id = 0;           // TODO: infer the device id   from the memory buffer
 
     // Convert data
-    void* ptr = _data; 
+    void* ptr = _data;
     CheckValidBuffer(ptr);
     m_dlTensor->data = ptr;
 
@@ -149,8 +149,13 @@ int BufferInterface::LoadDLPack(std::vector<size_t>& _shape, std::vector<size_t>
     }
     int itemSizeDT = sizeof(uint8_t); 
     
-    m_dlTensor->dtype.code = kDLUInt;
-    m_dlTensor->dtype.bits = 8;
+    if (bit_depth == 8) {
+        m_dlTensor->dtype.code = kDLUInt;  
+        m_dlTensor->dtype.bits = 8;
+    } else if (bit_depth == 10) {
+        m_dlTensor->dtype.code = kDLInt;  // TODO: add support for 12-bit when required
+        m_dlTensor->dtype.bits = 16;
+    }
     m_dlTensor->dtype.lanes = 1;
 
     // Convert ndim

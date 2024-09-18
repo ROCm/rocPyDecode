@@ -51,6 +51,7 @@ void PyRocVideoDecoderInitializer(py::module& m) {
         .def("FinalizeMd5",&PyRocVideoDecoder::PyFinalizeMd5)
         .def("UpdateMd5ForFrame",&PyRocVideoDecoder::PyUpdateMd5ForFrame)
         .def("IsCodecSupported",&PyRocVideoDecoder::PyCodecSupported)
+        .def("GetBitDepth",&PyRocVideoDecoder::PyGetBitDepth)
 // TODO: Change after merging with mainline #if ROCDECODE_CHECK_VERSION(0,6,0)
 #if OVERHEAD_SUPPORT
         .def("AddDecoderSessionOverHead",&PyRocVideoDecoder::PyAddDecoderSessionOverHead)
@@ -169,11 +170,19 @@ py::object PyRocVideoDecoder::PyGetFrame(PyPacketData& packet) {
     if((reinterpret_cast<uint8_t*>(packet.frame_adrs) != nullptr) && (frame_size > 0)) {
         uint32_t width = GetWidth();
         uint32_t height = GetHeight();    
-        uint32_t surf_stride = GetSurfaceStride(); 
+        uint32_t surf_stride = GetSurfaceStride();
+        uint32_t bit_depth = GetBitDepth();
         std::string type_str(static_cast<const char*>("|u1"));
         std::vector<size_t> shape{ static_cast<size_t>(height), static_cast<size_t>(width)};
-        std::vector<size_t> stride{ static_cast<size_t>(surf_stride), 1};
-        packet.extBuf->LoadDLPack(shape, stride, type_str, (void *)packet.frame_adrs);
+        std::vector<size_t> stride;
+        // TODO: add for bit depth = 12 when required
+        if (bit_depth == 8) {
+           stride.push_back(static_cast<size_t>(surf_stride));
+        } else if (bit_depth == 10) {
+            stride.push_back(static_cast<size_t>(surf_stride / 2));
+        }
+        stride.push_back(1);
+        packet.extBuf->LoadDLPack(shape, stride, bit_depth, type_str, (void *)packet.frame_adrs);
     }
     return py::cast(packet.frame_pts);
 }
@@ -230,10 +239,12 @@ py::object PyRocVideoDecoder::PyGetFrameRgb(PyPacketData& packet, int rgb_format
             uint32_t width = GetWidth();
             uint32_t height = GetHeight();
             uint32_t surf_stride = post_proc->GetRgbStride(e_output_format, surf_info);
+            uint32_t bit_depth = GetBitDepth();
             std::string type_str(static_cast<const char*>("|u1"));
             std::vector<size_t> shape{ static_cast<size_t>(height), static_cast<size_t>(width), 3}; // 3 rgb channels
             std::vector<size_t> stride{ static_cast<size_t>(surf_stride), 1, 0}; // python assumes same dim for both shape & strides
-            packet.extBuf->LoadDLPack(shape, stride, type_str, (void *)frame_ptr_rgb);
+            //todo: check stride based on bit depth as in case of PyGetFrame
+            packet.extBuf->LoadDLPack(shape, stride, bit_depth, type_str, (void *)frame_ptr_rgb);
         }
     }
     return py::cast(packet.frame_pts);
@@ -395,6 +406,10 @@ py::int_ PyRocVideoDecoder::PyGetStride() {
 py::object PyRocVideoDecoder::PyCodecSupported(int device_id, rocDecVideoCodec codec_id, uint32_t bit_depth) {
     bool ret = CodecSupported(device_id, codec_id, bit_depth);
     return py::cast(ret);
+}
+
+uint32_t PyRocVideoDecoder::PyGetBitDepth() {
+    return GetBitDepth();
 }
 
 // TODO: Change after merging with mainline #if ROCDECODE_CHECK_VERSION(0,6,0)
