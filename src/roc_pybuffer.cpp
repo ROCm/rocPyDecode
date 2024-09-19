@@ -60,9 +60,9 @@ py::tuple BufferInterface::strides() const {
 }
 
 std::string BufferInterface::dtype() const {
-    if (m_dlTensor->dtype.code == kDLUInt && m_dlTensor->dtype.bits == 8)
+    if (m_dlTensor->dtype.bits == 8)
         return std::string("|u1");
-    else if (m_dlTensor->dtype.code == kDLUInt && m_dlTensor->dtype.bits == 16)
+    else if (m_dlTensor->dtype.bits == 16)
         return std::string("|u2");
 }
 

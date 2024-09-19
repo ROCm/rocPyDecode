@@ -183,7 +183,7 @@ py::object PyRocVideoDecoder::PyGetFrame(PyPacketData& packet) {
             stride.push_back(static_cast<size_t>(surf_stride));
             stride.push_back(sizeof(uint16_t));
         }
-        std::vector<size_t> shape{ static_cast<size_t>(height * 1.5), static_cast<size_t>(width)};      //height is multiplied by 1.5 for interleaved YUV
+        std::vector<size_t> shape{ static_cast<size_t>(height * 1.5), static_cast<size_t>(width)};      //height is multiplied by 1.5 for NV12 format
         packet.extBuf->LoadDLPack(shape, stride, bit_depth, type_str, (void *)packet.frame_adrs);
     }
     return py::cast(packet.frame_pts);
