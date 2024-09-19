@@ -154,3 +154,6 @@ class decoder(object):
 
     def IsCodecSupported(self, device_id, codec_id, bit_depth):
         return self.viddec.IsCodecSupported(device_id, codec_id, bit_depth)
+    
+    def GetBitDepth(self):
+        return self.viddec.GetBitDepth()

@@ -110,6 +110,8 @@ class PyRocVideoDecoder : public RocVideoDecoder {
         // for python binding
         py::object PyCodecSupported(int device_id, rocDecVideoCodec codec_id, uint32_t bit_depth);
 
+        uint32_t PyGetBitDepth();
+
 #if OVERHEAD_SUPPORT
         // Session overhead refers to decoder initialization and deinitialization time
         py::object PyAddDecoderSessionOverHead(int session_id, double duration);
