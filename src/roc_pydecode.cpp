@@ -148,8 +148,21 @@ PYBIND11_MODULE(rocPyDecode, m) {
         .def_readwrite("frame_adrs_rgb", &PyPacketData::frame_adrs_rgb)
         .def_readwrite("frame_adrs_resized", &PyPacketData::frame_adrs_resized)
         .def_readwrite("extBuf",        &PyPacketData::extBuf)
+        .def_readwrite("extBufYuv",        &PyPacketData::extBufYuv)
 
         // DL Pack Tensor
+        .def_property_readonly("shapeY", [](std::shared_ptr<PyPacketData>& self) {
+            return self->extBufYuv[0]->shape();
+            }, "Get the shape of the Y plane buffer as an array")
+        .def_property_readonly("shapeUV", [](std::shared_ptr<PyPacketData>& self) {
+            return self->extBufYuv[1]->shape();
+            }, "Get the shape of the U plane buffer as an array")
+        .def_property_readonly("shapeU", [](std::shared_ptr<PyPacketData>& self) {
+            return self->extBufYuv[1]->shape();
+            }, "Get the shape of the U plane buffer as an array")
+        .def_property_readonly("shapeV", [](std::shared_ptr<PyPacketData>& self) {
+            return self->extBufYuv[2]->shape();
+            }, "Get the shape of the V plane buffer as an array")
         .def_property_readonly("shape", [](std::shared_ptr<PyPacketData>& self) {
             return self->extBuf->shape();
             }, "Get the shape of the buffer as an array")

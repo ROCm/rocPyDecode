@@ -117,6 +117,24 @@ The following are full list of arguments that can be passed to the sample.
 -crop CROP_RECT, --crop_rect CROP_RECT        : Crop rectangle (left, top, right, bottom) - optional, default: None (no cropping)
 ```
 
+## videodecodetorch_yuv.py
+
+This sample demuxes & decode frames from a video file, and convert it to pytorch tensor via DLPack, each component in a separate tensor. Optionally you can save it to a file, specifying saving the chroma plane U/V with -y no, otherwise will save the luma plane. \
+To run this python sample script, you need to provide input video file full path name, other arguments are optional.
+
+### Arguments
+The following are full list of arguments that can be passed to the sample.
+```bash
+-h, --help                                    : Show detail help message and exit
+-i INPUT, --input INPUT                       : Input File Path - required
+-o OUTPUT, --output OUTPUT                    : Output File Path - optional
+-y YPLANE, --yplane YPLANE                    : Save which Plane Y or U/V- optional, default 'yes' to save the Y plane, 'no' means save the U/V plane
+-d DEVICE, --device DEVICE                    : GPU device ID - optional, default - 0
+-m MEM_TYPE, --mem_type MEM_TYPE              : Memory Type of output surfce - 0: Internal 1: dev_copied 2: host_copied - optional, default 1
+-z ZERO_LATENCY, --zero_latency ZERO_LATENCY  : Force zero latency - [options: yes,no], default: no
+-crop CROP_RECT, --crop_rect CROP_RECT        : Crop rectangle (left, top, right, bottom) - optional, default: None (no cropping)
+```
+
 ## videodecodetorch_resnet50.py
 
 This sample demuxes & decode frames from a video file, converts each frame to pytorch tensor via DLPack. \
