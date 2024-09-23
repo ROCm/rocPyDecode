@@ -20,6 +20,8 @@
 
 import subprocess
 import os
+import shutil
+import glob
 from setuptools import setup, find_packages
 from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 
@@ -55,6 +57,24 @@ def get_rocm_rev():
         print("An error occurred:", e)
     return "0" # error, can't get the rev
 
+def copy_roc_decode():
+    # default directory for ROCm shared libraries
+    lib_dir = '/opt/rocm/lib'
+    # find all versions of librocdecode
+    lib_files = glob.glob(os.path.join(lib_dir, 'librocdecode.so*'))
+    if lib_files:
+        # Prepare the destination directory within the build folder
+        dest_dir = os.path.join(os.getcwd(), 'pyRocVideoDecode', 'libs')
+        os.makedirs(dest_dir, exist_ok=True)
+        # copy first found library and strip version info in name
+        for lib_file in lib_files:
+            dest_lib_name = 'librocdecode.so'
+            shutil.copy(lib_file, os.path.join(dest_dir, dest_lib_name))
+            print(f"Copied {lib_file} to {os.path.join(dest_dir, dest_lib_name)}")
+            break  # Copy the first found version and exit loop
+    else:
+        print(f"No rocDecode shared library found in {lib_dir}. Skipping copy.")
+
 class custom_bdist_wheel(_bdist_wheel):
     def get_tag(self):
         python, abi, plat = super().get_tag()
@@ -75,6 +95,9 @@ subprocess.check_call(['cmake', '--build', build_dir, '--config', 'Release', '--
 # Install the built binaries
 subprocess.check_call(['cmake', '--install', build_dir])
 
+# Copy rocDecode shared library if it exists
+copy_roc_decode()
+
 setup(
       name='rocPyDecode',
       description='AMD ROCm Video Decoder Library',
@@ -84,7 +107,7 @@ setup(
       license='MIT License',
       packages=['pyRocVideoDecode'],
       package_dir={'pyRocVideoDecode':'pyRocVideoDecode'},
-      package_data={"pyRocVideoDecode":["__init__.pyi"]},
+      package_data={"pyRocVideoDecode":["__init__.pyi", "libs/*.so"]},
       cmdclass={'bdist_wheel': custom_bdist_wheel,},
       )
 
