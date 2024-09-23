@@ -51,6 +51,7 @@ void PyRocVideoDecoderInitializer(py::module& m) {
         .def("FinalizeMd5",&PyRocVideoDecoder::PyFinalizeMd5)
         .def("UpdateMd5ForFrame",&PyRocVideoDecoder::PyUpdateMd5ForFrame)
         .def("IsCodecSupported",&PyRocVideoDecoder::PyCodecSupported)
+        .def("GetBitDepth",&PyRocVideoDecoder::PyGetBitDepth)
 // TODO: Change after merging with mainline #if ROCDECODE_CHECK_VERSION(0,6,0)
 #if OVERHEAD_SUPPORT
         .def("AddDecoderSessionOverHead",&PyRocVideoDecoder::PyAddDecoderSessionOverHead)
@@ -110,7 +111,7 @@ py::object PyRocVideoDecoder::PySetReconfigParams(int flush_mode, std::string& o
 
 void PyRocVideoDecoder::InitConfigStructure() {
     // init config struct
-    configInfo.reset(new ConfigInfo());    
+    configInfo.reset(new ConfigInfo());
     configInfo.get()->device_name = std::string("");
     configInfo.get()->gcn_arch_name = std::string("");
     configInfo.get()->pci_bus_id = 0;
@@ -163,17 +164,27 @@ int PyRocVideoDecoder::PyDecodeFrame(PyPacketData& packet) {
 py::object PyRocVideoDecoder::PyGetFrame(PyPacketData& packet) {
     int frame_size = GetFrameSize();
     int64_t pts = packet.frame_pts;
-    packet.frame_adrs = reinterpret_cast<std::uintptr_t>(GetFrame(&pts));   
+    packet.frame_adrs = reinterpret_cast<std::uintptr_t>(GetFrame(&pts));
     packet.frame_pts = pts;
     // Load DLPack Tensor
     if((reinterpret_cast<uint8_t*>(packet.frame_adrs) != nullptr) && (frame_size > 0)) {
         uint32_t width = GetWidth();
-        uint32_t height = GetHeight();    
-        uint32_t surf_stride = GetSurfaceStride(); 
-        std::string type_str(static_cast<const char*>("|u1"));
-        std::vector<size_t> shape{ static_cast<size_t>(height), static_cast<size_t>(width)};
-        std::vector<size_t> stride{ static_cast<size_t>(surf_stride), 1};
-        packet.extBuf->LoadDLPack(shape, stride, type_str, (void *)packet.frame_adrs);
+        uint32_t height = GetHeight();
+        uint32_t surf_stride = GetSurfaceStride();
+        uint32_t bit_depth = GetBitDepth();
+        std::string type_str;
+        std::vector<size_t> stride;
+        if (bit_depth == 8) {
+            type_str = static_cast<const char*>("|u1");
+            stride.push_back(static_cast<size_t>(surf_stride));
+            stride.push_back(sizeof(uint8_t));
+        } else if (bit_depth == 10) {
+            type_str = static_cast<const char*>("|u2");
+            stride.push_back(static_cast<size_t>(surf_stride));
+            stride.push_back(sizeof(uint16_t));
+        }
+        std::vector<size_t> shape{ static_cast<size_t>(height * 1.5), static_cast<size_t>(width)};      //height is multiplied by 1.5 for NV12 format
+        packet.extBuf->LoadDLPack(shape, stride, bit_depth, type_str, (void *)packet.frame_adrs);
     }
     return py::cast(packet.frame_pts);
 }
@@ -230,10 +241,11 @@ py::object PyRocVideoDecoder::PyGetFrameRgb(PyPacketData& packet, int rgb_format
             uint32_t width = GetWidth();
             uint32_t height = GetHeight();
             uint32_t surf_stride = post_proc->GetRgbStride(e_output_format, surf_info);
+            uint32_t bit_depth = GetBitDepth();
             std::string type_str(static_cast<const char*>("|u1"));
             std::vector<size_t> shape{ static_cast<size_t>(height), static_cast<size_t>(width), 3}; // 3 rgb channels
             std::vector<size_t> stride{ static_cast<size_t>(surf_stride), 1, 0}; // python assumes same dim for both shape & strides
-            packet.extBuf->LoadDLPack(shape, stride, type_str, (void *)frame_ptr_rgb);
+            packet.extBuf->LoadDLPack(shape, stride, bit_depth, type_str, (void *)frame_ptr_rgb);
         }
     }
     return py::cast(packet.frame_pts);
@@ -303,13 +315,13 @@ uintptr_t PyRocVideoDecoder::PyResizeFrame(PyPacketData& packet, Dim *resized_di
 }
 
 // for python binding (can not move it to header for py)
-py::object PyRocVideoDecoder::PyGetNumOfFlushedFrames() { 
+py::object PyRocVideoDecoder::PyGetNumOfFlushedFrames() {
     int32_t ret = GetNumOfFlushedFrames();
     return py::cast(ret);
 }
 
 // for python binding
-py::object PyRocVideoDecoder::PyReleaseFrame(PyPacketData& packet) {  
+py::object PyRocVideoDecoder::PyReleaseFrame(PyPacketData& packet) {
     bool ret = ReleaseFrame(packet.frame_pts);
     return py::cast(ret);
 }
@@ -357,14 +369,14 @@ py::object PyRocVideoDecoder::PyInitMd5() {
 }
 
 // for python binding
-py::object PyRocVideoDecoder::PyUpdateMd5ForFrame(uintptr_t& surf_mem, uintptr_t& surface_info) {  
+py::object PyRocVideoDecoder::PyUpdateMd5ForFrame(uintptr_t& surf_mem, uintptr_t& surface_info) {
     if(surface_info && surf_mem)
         UpdateMd5ForFrame((void *)surf_mem, reinterpret_cast<OutputSurfaceInfo*>(surface_info));
     return py::cast<py::none>(Py_None);
 }
 
 // for python binding
-py::object PyRocVideoDecoder::PyFinalizeMd5(uintptr_t& digest_back) {    
+py::object PyRocVideoDecoder::PyFinalizeMd5(uintptr_t& digest_back) {
     uint8_t * digest;
     FinalizeMd5(&digest);
     memcpy(reinterpret_cast<uint8_t*>(digest_back), digest,  sizeof(uint8_t) * 16);
@@ -372,17 +384,17 @@ py::object PyRocVideoDecoder::PyFinalizeMd5(uintptr_t& digest_back) {
 }
 
 // for python binding
-py::int_ PyRocVideoDecoder::PyGetWidth() {    
+py::int_ PyRocVideoDecoder::PyGetWidth() {
     return py::int_(static_cast<int>(GetWidth()));
 }
 
 // for python binding
-py::int_ PyRocVideoDecoder::PyGetHeight() {    
+py::int_ PyRocVideoDecoder::PyGetHeight() {
     return py::int_(static_cast<int>(GetHeight()));
 }
 
 // for python binding
-py::int_ PyRocVideoDecoder::PyGetFrameSize() {    
+py::int_ PyRocVideoDecoder::PyGetFrameSize() {
     return py::int_(static_cast<int>(GetFrameSize()));
 }
 
@@ -395,6 +407,10 @@ py::int_ PyRocVideoDecoder::PyGetStride() {
 py::object PyRocVideoDecoder::PyCodecSupported(int device_id, rocDecVideoCodec codec_id, uint32_t bit_depth) {
     bool ret = CodecSupported(device_id, codec_id, bit_depth);
     return py::cast(ret);
+}
+
+uint32_t PyRocVideoDecoder::PyGetBitDepth() {
+    return GetBitDepth();
 }
 
 // TODO: Change after merging with mainline #if ROCDECODE_CHECK_VERSION(0,6,0)
