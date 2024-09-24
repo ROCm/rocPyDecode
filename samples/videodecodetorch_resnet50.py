@@ -92,7 +92,7 @@ def Decoder(
                 continue
 
             # using torch tensor
-            img_tensor = torch.from_dlpack(packet.extBuf.__dlpack__(packet))
+            img_tensor = torch.from_dlpack(packet.extBufYuv[0].__dlpack__(packet))
 
             # save tensors to file, with original decoded Size
             if (output_file_path is not None):
@@ -102,8 +102,8 @@ def Decoder(
                     img_tensor.data_ptr(),
                     viddec.GetWidth(),
                     viddec.GetHeight(),
-                    rgb_format, 
-                    surface_info)
+                    surface_info,
+                    rgb_format)
 
             # for inference
             img_tensor.resize_(3, target_h, target_w)

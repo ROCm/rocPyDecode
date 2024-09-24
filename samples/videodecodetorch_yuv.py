@@ -73,7 +73,7 @@ def Decoder(
         for i in range(n_frame_returned):
 
             surface_info = viddec.GetOutputSurfaceInfo()
-            viddec.GetFrameYuv(packet, surface_info)
+            viddec.GetFrameYuv(packet, surface_info, True) # 'True' for splitting YUV into Y and UV planes
 
             # Y Plane torch tensor
             y_tensor = torch.from_dlpack(packet.extBufYuv[0].__dlpack__(packet))
@@ -86,21 +86,13 @@ def Decoder(
             # save Y or UV tensor to file, with original decoded Size
             if (output_file_path is not None):
                 surface_info = viddec.GetOutputSurfaceInfo()
-                if save_y_plane:
-                    viddec.SavePlaneTensorToFile(
-                        (output_file_path + "_y_plane.yuv"),
-                        y_tensor.data_ptr(),
-                        packet.extBufYuv[0].shape[1], # width
-                        packet.extBufYuv[0].shape[0], # height
-                        surface_info)
-                else:
-                    viddec.SavePlaneTensorToFile(
-                        (output_file_path + "_uv_plane.yuv"),
-                        uv_tensor.data_ptr(),
-                        packet.extBufYuv[1].shape[1], # width
-                        packet.extBufYuv[1].shape[0], # height                    
-                        surface_info)
-                    
+                viddec.SaveTensorToFile(
+                    (output_file_path + "_y_plane.yuv"),
+                    y_tensor.data_ptr(),
+                    packet.extBufYuv[0].shape[1], # width
+                    packet.extBufYuv[0].shape[0], # height
+                    surface_info)
+
             # release frame
             viddec.ReleaseFrame(packet)
 
@@ -207,7 +199,6 @@ if __name__ == "__main__":
     mem_type = args.mem_type
     b_force_zero_latency = args.zero_latency.upper()
     crop_rect = args.crop_rect
-    save_y_plane = args.yplane.upper()
 
     # handel params
     mem_type = 1 if (mem_type < 0 or mem_type > 2) else mem_type
@@ -226,5 +217,4 @@ if __name__ == "__main__":
         device_id,
         mem_type,
         b_force_zero_latency,
-        crop_rect,
-        save_y_plane)
+        crop_rect)

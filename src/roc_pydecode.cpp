@@ -147,7 +147,6 @@ PYBIND11_MODULE(rocPyDecode, m) {
         .def_readwrite("bitstream_adrs",    &PyPacketData::bitstream_adrs)
         .def_readwrite("frame_adrs_rgb", &PyPacketData::frame_adrs_rgb)
         .def_readwrite("frame_adrs_resized", &PyPacketData::frame_adrs_resized)
-        .def_readwrite("extBuf",        &PyPacketData::extBuf)
         .def_readwrite("extBufYuv",        &PyPacketData::extBufYuv)
 
         // DL Pack Tensor
@@ -164,16 +163,16 @@ PYBIND11_MODULE(rocPyDecode, m) {
             return self->extBufYuv[2]->shape();
             }, "Get the shape of the V plane buffer as an array")
         .def_property_readonly("shape", [](std::shared_ptr<PyPacketData>& self) {
-            return self->extBuf->shape();
+            return self->extBufYuv[0]->shape();
             }, "Get the shape of the buffer as an array")
         .def_property_readonly("strides", [](std::shared_ptr<PyPacketData>& self) {
-                return self->extBuf->strides();
+                return self->extBufYuv[0]->strides();
             }, "Get the strides of the buffer")
         .def_property_readonly("dtype", [](std::shared_ptr<PyPacketData>& self) {
-                return self->extBuf->dtype();
+                return self->extBufYuv[0]->dtype();
             }, "Get the data type of the buffer")
         .def("__dlpack__", [](std::shared_ptr<PyPacketData>& self, py::object stream) {
-            return self->extBuf->dlpack(stream);
+            return self->extBufYuv[0]->dlpack(stream);
             }, py::arg("stream") = NULL, "Export the buffer as a DLPack tensor")
         .def("__dlpack_device__", [](std::shared_ptr<PyPacketData>& self) {
                 return py::make_tuple(py::int_(static_cast<int>(DLDeviceType::kDLROCM)),

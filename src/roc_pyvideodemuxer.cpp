@@ -75,7 +75,6 @@ void PyVideoDemuxer::InitPacket() {
     currentPacket.get()->bitstream_size = 0;
     currentPacket.get()->frame_pts = 0;
     currentPacket.get()->end_of_stream = false;
-    currentPacket.get()->extBuf.reset(new BufferInterface());
 }
 
 shared_ptr<PyPacketData> PyVideoDemuxer::DemuxFrame() {

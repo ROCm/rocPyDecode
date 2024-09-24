@@ -70,19 +70,20 @@ def Decoder(
         n_frame_returned = viddec.DecodeFrame(packet)
 
         for i in range(n_frame_returned):
-            viddec.GetFrame(packet)
 
-            # using torch tensor
-            img_tensor = torch.from_dlpack(packet.extBuf.__dlpack__(packet))
+            surface_info = viddec.GetOutputSurfaceInfo()
+            viddec.GetFrameYuv(packet, surface_info)
+
+            # Yuv (NV12) Plane torch tensor
+            yuv_tensor = torch.from_dlpack(packet.extBufYuv[0].__dlpack__(packet))
 
             # TODO: some tensor work
 
             # save tensors to file, with original decoded Size
             if (output_file_path is not None):
-                surface_info = viddec.GetOutputSurfaceInfo()
                 viddec.SaveFrameToFile(
                     output_file_path,
-                    img_tensor.data_ptr(),
+                    yuv_tensor.data_ptr(),
                     surface_info)
 
             # release frame
@@ -114,10 +115,10 @@ def Decoder(
             print("info: frame count= ", n_frame)
 
     # print tensor details
-    print("Tensor Shape:   ", packet.extBuf.shape)
-    print("Tensor Strides: ", packet.extBuf.strides)
-    print("Tensor dType:   ", packet.extBuf.dtype)
-    print("Tensor Device:  ", packet.extBuf.__dlpack_device__(), "\n")
+    print("Tensor Shape:   ", packet.extBufYuv[0].shape)
+    print("Tensor Strides: ", packet.extBufYuv[0].strides)
+    print("Tensor dType:   ", packet.extBufYuv[0].dtype)
+    print("Tensor Device:  ", packet.extBufYuv[0].__dlpack_device__(), "\n")
 
 
 if __name__ == "__main__":

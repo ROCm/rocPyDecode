@@ -54,10 +54,7 @@ class PyRocVideoDecoder : public RocVideoDecoder {
         int PyDecodeFrame(PyPacketData& packet);
 
         // for python binding
-        py::object PyGetFrame(PyPacketData& packet);
-
-        // for python binding
-        py::object PyGetFrameYuv(PyPacketData& packet, uintptr_t& surface_info);
+        py::object PyGetFrameYuv(PyPacketData& packet, uintptr_t& surface_info, bool SeparateYuvPlanes = false);
 
         // for python binding
         py::object PyGetFrameRgb(PyPacketData& packet, int rgb_format);
@@ -78,9 +75,7 @@ class PyRocVideoDecoder : public RocVideoDecoder {
         py::object PySaveFrameToFile(std::string& output_file_name_in, uintptr_t& surf_mem, uintptr_t& surface_info);
 
         // for python binding
-        py::object PySaveTensorToFile(std::string& output_file_name_in, uintptr_t& surf_mem, int width, int height, int rgb_format, uintptr_t& surf_info);
-
-        py::object PySavePlaneTensorToFile(std::string& output_file_name_in, uintptr_t& surf_mem, int width, int height, uintptr_t& in_surf_info);
+        py::object PySaveTensorToFile(std::string& output_file_name_in, uintptr_t& surf_mem, int width, int height, uintptr_t& in_surf_info, int rgb_format = -1);
 
         // for python binding
         uintptr_t PyGetOutputSurfaceInfo();

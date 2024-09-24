@@ -83,12 +83,8 @@ class decoder(object):
     def DecodeFrame(self, packet) -> int:
         return self.viddec.DecodeFrame(packet)
 
-    def GetFrame(self, packet):
-        pts = self.viddec.GetFrame(packet)
-        return pts
-
-    def GetFrameYuv(self, packet, surface_info):
-        pts = self.viddec.GetFrameYuv(packet, surface_info)
+    def GetFrameYuv(self, packet, surface_info, separate_planes = False):
+        pts = self.viddec.GetFrameYuv(packet, surface_info, separate_planes)
         return pts
 
     def GetFrameRgb(self, packet, rgb_format):
@@ -120,11 +116,8 @@ class decoder(object):
     def SaveFrameToFile(self, output_file_path, frame_adrs, surface_info):
         return self.viddec.SaveFrameToFile( output_file_path, frame_adrs, surface_info)
 
-    def SaveTensorToFile(self, output_file_path, frame_adrs, width, height, rgb_format, surface_info):
-        return self.viddec.SaveTensorToFile(output_file_path, frame_adrs, width, height, rgb_format, surface_info)
-
-    def SavePlaneTensorToFile(self, output_file_path, frame_adrs, width, height, surface_info):
-        return self.viddec.SavePlaneTensorToFile(output_file_path, frame_adrs, width, height, surface_info)
+    def SaveTensorToFile(self, output_file_path, frame_adrs, width, height, surface_info, rgb_format = -1):
+        return self.viddec.SaveTensorToFile(output_file_path, frame_adrs, width, height, surface_info, rgb_format)
 
     def ReleaseFrame(self, packet):
         self.viddec.ReleaseFrame(packet)
