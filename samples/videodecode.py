@@ -27,7 +27,15 @@ def Decoder(
     codec_id = dec.GetRocDecCodecID(demuxer.GetCodecId())
 
     # decoder instance
-    viddec = dec.decoder(codec_id, device_id)
+    viddec = dec.decoder(
+        codec_id,
+        device_id,
+        mem_type,
+        b_force_zero_latency,
+        crop_rect,
+        0,
+        0,
+        1000)
 
     # Get GPU device information
     cfg = viddec.GetGpuInfo()

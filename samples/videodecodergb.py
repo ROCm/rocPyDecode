@@ -22,7 +22,7 @@ def Decoder(
     codec_id = dec.GetRocDecCodecID(demuxer.GetCodecId())
 
     # decoder instance
-    viddec = dec.decoder(codec_id, device_id)
+    viddec = dec.decoder(codec_id)
 
     # Get GPU device information
     cfg = viddec.GetGpuInfo()
