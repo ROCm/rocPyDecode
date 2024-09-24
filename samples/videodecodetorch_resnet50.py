@@ -93,7 +93,7 @@ def Decoder(
                 continue
 
             # using torch tensor
-            rgb_tensor = torch.from_dlpack(packet.extBuf[0].__dlpack__(packet))
+            rgb_tensor = torch.from_dlpack(packet.ext_buf[0].__dlpack__(packet))
 
             # save tensors to file, with original decoded Size
             if (output_file_path is not None):

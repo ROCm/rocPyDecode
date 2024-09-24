@@ -73,7 +73,7 @@ def Decoder(
             viddec.GetFrameYuv(packet)
 
             # Yuv (NV12) Plane torch tensor
-            yuv_tensor = torch.from_dlpack(packet.extBuf[0].__dlpack__(packet))
+            yuv_tensor = torch.from_dlpack(packet.ext_buf[0].__dlpack__(packet))
 
             # TODO: some tensor work
 
@@ -112,10 +112,10 @@ def Decoder(
             print("info: frame count= ", n_frame)
 
     # print tensor details
-    print("Tensor Shape:   ", packet.extBuf[0].shape)
-    print("Tensor Strides: ", packet.extBuf[0].strides)
-    print("Tensor dType:   ", packet.extBuf[0].dtype)
-    print("Tensor Device:  ", packet.extBuf[0].__dlpack_device__(), "\n")
+    print("Tensor Shape:   ", packet.ext_buf[0].shape)
+    print("Tensor Strides: ", packet.ext_buf[0].strides)
+    print("Tensor dType:   ", packet.ext_buf[0].dtype)
+    print("Tensor Device:  ", packet.ext_buf[0].__dlpack_device__(), "\n")
 
 
 if __name__ == "__main__":

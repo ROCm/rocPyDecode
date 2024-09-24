@@ -74,10 +74,10 @@ def Decoder(
             viddec.GetFrameYuv(packet, True) # 'True' for splitting YUV into Y and UV planes
 
             # Y Plane torch tensor
-            y_tensor = torch.from_dlpack(packet.extBuf[0].__dlpack__(packet))
+            y_tensor = torch.from_dlpack(packet.ext_buf[0].__dlpack__(packet))
 
             # U/V Plane torch tensor
-            uv_tensor = torch.from_dlpack(packet.extBuf[1].__dlpack__(packet))
+            uv_tensor = torch.from_dlpack(packet.ext_buf[1].__dlpack__(packet))
 
             # TODO: some tensor work
  
@@ -118,15 +118,15 @@ def Decoder(
             print("info: frame count= ", n_frame)
 
     # print tensor details
-    print("Y Tensor Shape:   ", packet.extBuf[0].shape)
-    print("Y Tensor Strides: ", packet.extBuf[0].strides)
-    print("Y Tensor dType:   ", packet.extBuf[0].dtype)
-    print("Y Tensor Device:  ", packet.extBuf[0].__dlpack_device__(), "\n")
+    print("Y Tensor Shape:   ", packet.ext_buf[0].shape)
+    print("Y Tensor Strides: ", packet.ext_buf[0].strides)
+    print("Y Tensor dType:   ", packet.ext_buf[0].dtype)
+    print("Y Tensor Device:  ", packet.ext_buf[0].__dlpack_device__(), "\n")
 
-    print("UV Tensor Shape:   ", packet.extBuf[1].shape)
-    print("UV Tensor Strides: ", packet.extBuf[1].strides)
-    print("UV Tensor dType:   ", packet.extBuf[1].dtype)
-    print("UV Tensor Device:  ", packet.extBuf[1].__dlpack_device__(), "\n")
+    print("UV Tensor Shape:   ", packet.ext_buf[1].shape)
+    print("UV Tensor Strides: ", packet.ext_buf[1].strides)
+    print("UV Tensor dType:   ", packet.ext_buf[1].dtype)
+    print("UV Tensor Device:  ", packet.ext_buf[1].__dlpack_device__(), "\n")
 
 if __name__ == "__main__":
 

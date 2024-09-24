@@ -182,21 +182,21 @@ py::object PyRocVideoDecoder::PyGetFrameYuv(PyPacketData& packet, bool SeparateY
             stride.push_back(static_cast<size_t>(surf_stride));
             stride.push_back(sizeof(uint16_t));
         }
-        // for NV12 format (also YUV444 & P016 when supported), Y always in extBuf vector index [0]
+        // for NV12 format (also YUV444 & P016 when supported), Y always in ext_buf vector index [0]
         // The tensor shape->height will be all the Yuv planes if user specify 'FALSE' in 'SeparateYuvPlanes' argument
         float plane_height_multiplier = SeparateYuvPlanes ? 1.0 : 1.5; // 1.5 for YUV NV12
         std::vector<size_t> shape{ static_cast<size_t>(height * plane_height_multiplier), static_cast<size_t>(width)};
-        packet.extBuf[0]->LoadDLPack(shape, stride, bit_depth, type_str, (void *)packet.frame_adrs);
+        packet.ext_buf[0]->LoadDLPack(shape, stride, bit_depth, type_str, (void *)packet.frame_adrs);
         if (SeparateYuvPlanes) {
             // get surface format
             OutputSurfaceInfo* p_surf_info;
             bool ret = GetOutputSurfaceInfo(&p_surf_info);
             if (ret) {
-                // for NV12 only the UV interleaved in one tensor: extBuf vector index [1]
+                // for NV12 only the UV interleaved in one tensor: ext_buf vector index [1]
                 if (p_surf_info->surface_format == rocDecVideoSurfaceFormat_NV12) {
                     std::vector<size_t> shape{ static_cast<size_t>(height >> 1), static_cast<size_t>(width)};
                     uintptr_t uv_offset = p_surf_info->output_pitch * p_surf_info->output_vstride; // count for possible padding
-                    packet.extBuf[1]->LoadDLPack(shape, stride, bit_depth, type_str, (void *)(packet.frame_adrs + uv_offset));
+                    packet.ext_buf[1]->LoadDLPack(shape, stride, bit_depth, type_str, (void *)(packet.frame_adrs + uv_offset));
                 } else {
                     cout << "surf fmt: " << p_surf_info->surface_format << " [not supported]" << "\n";
                 }
@@ -262,7 +262,7 @@ py::object PyRocVideoDecoder::PyGetFrameRgb(PyPacketData& packet, int rgb_format
             std::string type_str(static_cast<const char*>("|u1"));
             std::vector<size_t> shape{ static_cast<size_t>(height), static_cast<size_t>(width), 3}; // 3 rgb channels
             std::vector<size_t> stride{ static_cast<size_t>(surf_stride), 1, 0}; // python assumes same dim for both shape & strides
-            packet.extBuf[0]->LoadDLPack(shape, stride, bit_depth, type_str, (void *)frame_ptr_rgb);
+            packet.ext_buf[0]->LoadDLPack(shape, stride, bit_depth, type_str, (void *)frame_ptr_rgb);
         }
     }
     return py::cast(packet.frame_pts);
