@@ -70,9 +70,7 @@ def Decoder(
         n_frame_returned = viddec.DecodeFrame(packet)
 
         for i in range(n_frame_returned):
-
-            surface_info = viddec.GetOutputSurfaceInfo()
-            viddec.GetFrameYuv(packet, surface_info)
+            viddec.GetFrameYuv(packet)
 
             # Yuv (NV12) Plane torch tensor
             yuv_tensor = torch.from_dlpack(packet.extBufYuv[0].__dlpack__(packet))
@@ -83,8 +81,7 @@ def Decoder(
             if (output_file_path is not None):
                 viddec.SaveFrameToFile(
                     output_file_path,
-                    yuv_tensor.data_ptr(),
-                    surface_info)
+                    yuv_tensor.data_ptr())
 
             # release frame
             viddec.ReleaseFrame(packet)
@@ -182,7 +179,7 @@ if __name__ == "__main__":
     crop_rect = args.crop_rect
 
     # handel params
-    mem_type = 1 if (mem_type < 0 or mem_type > 2) else mem_type
+    mem_type = 0 if (mem_type < 0 or mem_type > 2) else mem_type
     b_force_zero_latency = True if b_force_zero_latency == 'YES' else False
     if not os.path.exists(input_file_path):  # Input file (must exist)
         print("ERROR: input file doesn't exist.")

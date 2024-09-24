@@ -94,7 +94,7 @@ def Decoder(
         n_frame_returned = viddec.DecodeFrame(packet)
 
         for i in range(n_frame_returned):
-            viddec.GetFrame(packet)
+            viddec.GetFrameYuv(packet)
 
             if (resize_dim is not None):
                 surface_info = viddec.GetOutputSurfaceInfo()
@@ -108,8 +108,7 @@ def Decoder(
                     resized_surface_info = viddec.GetResizedOutputSurfaceInfo()
                     viddec.SaveFrameToFile(output_file_path, packet.frame_adrs_resized, resized_surface_info)
                 else:
-                    surface_info = viddec.GetOutputSurfaceInfo()
-                    viddec.SaveFrameToFile(output_file_path, packet.frame_adrs, surface_info)
+                    viddec.SaveFrameToFile(output_file_path, packet.frame_adrs)
 
             # release frame
             viddec.ReleaseFrame(packet)
@@ -245,7 +244,7 @@ if __name__ == "__main__":
             exit()
 
     # handle params
-    mem_type = 1 if (mem_type < 0 or mem_type > 2) else mem_type
+    mem_type = 0 if (mem_type < 0 or mem_type > 2) else mem_type
     b_force_zero_latency = True if b_force_zero_latency == 'YES' else False
     if not os.path.exists(input_file_path):  # Input file (must exist)
         print("ERROR: input file doesn't exist.")

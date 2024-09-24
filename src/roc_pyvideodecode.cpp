@@ -41,7 +41,6 @@ void PyRocVideoDecoderInitializer(py::module& m) {
         .def("GetStride",&PyRocVideoDecoder::PyGetStride)
         .def("GetFrameSize",&PyRocVideoDecoder::PyGetFrameSize)
         .def("SaveFrameToFile",&PyRocVideoDecoder::PySaveFrameToFile)
-        .def("SaveTensorToFile",&PyRocVideoDecoder::PySaveTensorToFile)
         .def("ReleaseFrame",&PyRocVideoDecoder::PyReleaseFrame)
         .def("GetOutputSurfaceInfo",&PyRocVideoDecoder::PyGetOutputSurfaceInfo)
         .def("GetResizedOutputSurfaceInfo",&PyRocVideoDecoder::PyGetResizedOutputSurfaceInfo)
@@ -161,7 +160,7 @@ int PyRocVideoDecoder::PyDecodeFrame(PyPacketData& packet) {
 }
 
 // for python binding
-py::object PyRocVideoDecoder::PyGetFrameYuv(PyPacketData& packet, uintptr_t& surface_info, bool SeparateYuvPlanes) {
+py::object PyRocVideoDecoder::PyGetFrameYuv(PyPacketData& packet, bool SeparateYuvPlanes) {
     int frame_size = GetFrameSize();
     int64_t pts = packet.frame_pts;
     packet.frame_adrs = reinterpret_cast<std::uintptr_t>(GetFrame(&pts));
@@ -188,16 +187,19 @@ py::object PyRocVideoDecoder::PyGetFrameYuv(PyPacketData& packet, uintptr_t& sur
         float plane_height_multiplier = SeparateYuvPlanes ? 1.0 : 1.5; // 1.5 for YUV NV12
         std::vector<size_t> shape{ static_cast<size_t>(height * plane_height_multiplier), static_cast<size_t>(width)};
         packet.extBufYuv[0]->LoadDLPack(shape, stride, bit_depth, type_str, (void *)packet.frame_adrs);
-        if(SeparateYuvPlanes) {
+        if (SeparateYuvPlanes) {
             // get surface format
-            OutputSurfaceInfo * p_surf_info = reinterpret_cast<OutputSurfaceInfo*>(surface_info);
-            // for NV12 only the UV interleaved in one tensor: extBufYuv vector index [1]
-            if(p_surf_info->surface_format == rocDecVideoSurfaceFormat_NV12) {
-                std::vector<size_t> shape{ static_cast<size_t>(height/2), static_cast<size_t>(width)};
-                uintptr_t u_offset = static_cast<uintptr_t>(height * width * ((bit_depth==8) ? sizeof(uint8_t) : sizeof(uint16_t))); // actual bytes/mem offset
-                packet.extBufYuv[1]->LoadDLPack(shape, stride, bit_depth, type_str, (void *)(packet.frame_adrs + u_offset));
-            } else {
-                cout << "surf fmt: " << p_surf_info->surface_format << " [not supported]" << "\n";
+            OutputSurfaceInfo* p_surf_info;
+            bool ret = GetOutputSurfaceInfo(&p_surf_info);
+            if (ret) {
+                // for NV12 only the UV interleaved in one tensor: extBufYuv vector index [1]
+                if (p_surf_info->surface_format == rocDecVideoSurfaceFormat_NV12) {
+                    std::vector<size_t> shape{ static_cast<size_t>(height >> 1), static_cast<size_t>(width)};
+                    uintptr_t u_offset = p_surf_info->output_pitch * p_surf_info->output_vstride; // count for possible padding
+                    packet.extBufYuv[1]->LoadDLPack(shape, stride, bit_depth, type_str, (void *)(packet.frame_adrs + u_offset));
+                } else {
+                    cout << "surf fmt: " << p_surf_info->surface_format << " [not supported]" << "\n";
+                }
             }
         }
     }
@@ -342,30 +344,22 @@ py::object PyRocVideoDecoder::PyReleaseFrame(PyPacketData& packet) {
 }
 
 // for python binding
-py::object PyRocVideoDecoder::PySaveFrameToFile(std::string& output_file_name_in, uintptr_t& surf_mem, uintptr_t& surface_info) {     
-    std::string output_file_name = output_file_name_in.c_str();   
-    if(surf_mem && surface_info) {
-        SaveFrameToFile(output_file_name, (void *)surf_mem, reinterpret_cast<OutputSurfaceInfo*>(surface_info));
+py::object PyRocVideoDecoder::PySaveFrameToFile(std::string& output_file_name_in, uintptr_t& surf_mem, uintptr_t& surface_info, int rgb_format) {
+    std::string output_file_name = output_file_name_in.c_str();
+    OutputSurfaceInfo *p_surf_info;
+    bool ret = true;
+    if (surface_info)
+        p_surf_info = reinterpret_cast<OutputSurfaceInfo*>(surface_info);
+    else
+        ret = GetOutputSurfaceInfo(&p_surf_info);
+    if(surf_mem && ret) {
+        size_t image_size = 0; // 0 == rgb frame
+        if (rgb_format >= 0) { // -1 == YUV frame
+            OutputFormatEnum e_output_format = (OutputFormatEnum)rgb_format;
+            image_size = CalculateRgbImageSize(e_output_format, p_surf_info);
+        }
+        SaveFrameToFile(output_file_name, (void *)surf_mem, p_surf_info, image_size);
     }
-    return py::cast<py::none>(Py_None);
-}
-
-// for python binding
-py::object PyRocVideoDecoder::PySaveTensorToFile(std::string& output_file_name_in, uintptr_t& surf_mem, int width, int height, uintptr_t& in_surf_info, int rgb_format) {
-    OutputFormatEnum e_output_format = (OutputFormatEnum)rgb_format;
-    if(surf_mem == 0 || width <= 0 || height <= 0 || in_surf_info == 0)
-        return py::cast<py::none>(Py_None);
-    OutputSurfaceInfo* surf_info = reinterpret_cast<OutputSurfaceInfo*>(in_surf_info);
-    size_t image_size = 0;
-    if(rgb_format!=-1) { // -1 to calc YUV size
-        image_size = CalculateRgbImageSize(e_output_format, surf_info);
-    } else {
-        uint32_t bit_depth = surf_info->bit_depth;
-        surf_info->output_width = width;
-        surf_info->output_height = height;
-        image_size = width * height * ((bit_depth==8) ? sizeof(uint8_t) : sizeof(uint16_t));
-    }
-    SaveFrameToFile(output_file_name_in, (void *)surf_mem, surf_info, image_size);
     return py::cast<py::none>(Py_None);
 }
 

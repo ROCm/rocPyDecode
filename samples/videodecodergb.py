@@ -79,13 +79,11 @@ def Decoder(
             # save decoded rgb frame to file
             if (output_file_path is not None):
                 surface_info = viddec.GetOutputSurfaceInfo()
-                viddec.SaveTensorToFile(
+                viddec.SaveFrameToFile(
                     output_file_path,
                     packet.frame_adrs_rgb,
-                    viddec.GetWidth(),
-                    viddec.GetHeight(),
-                    rgb_format,
-                    surface_info)
+                    surface_info,
+                    rgb_format) # providing rgb_format to save as RGB
 
             # release frame
             viddec.ReleaseFrame(packet)
@@ -185,7 +183,7 @@ if __name__ == "__main__":
     rgb_format = args.rgb_format
 
     # handel params
-    mem_type = 1 if (mem_type < 0 or mem_type > 2) else mem_type
+    mem_type = 0 if (mem_type < 0 or mem_type > 2) else mem_type
     b_force_zero_latency = True if b_force_zero_latency == 'YES' else False
     rgb_format = 3 if (rgb_format != 1 and rgb_format != 3) else rgb_format
     if not os.path.exists(input_file_path):  # Input file (must exist)

@@ -13,8 +13,7 @@ def Decoder(
         device_id,
         mem_type,
         b_force_zero_latency,
-        crop_rect,
-        save_y_plane):
+        crop_rect):
 
     # demuxer instance
     demuxer = dmx.demuxer(input_file_path)
@@ -72,8 +71,7 @@ def Decoder(
 
         for i in range(n_frame_returned):
 
-            surface_info = viddec.GetOutputSurfaceInfo()
-            viddec.GetFrameYuv(packet, surface_info, True) # 'True' for splitting YUV into Y and UV planes
+            viddec.GetFrameYuv(packet, True) # 'True' for splitting YUV into Y and UV planes
 
             # Y Plane torch tensor
             y_tensor = torch.from_dlpack(packet.extBufYuv[0].__dlpack__(packet))
@@ -86,11 +84,9 @@ def Decoder(
             # save Y or UV tensor to file, with original decoded Size
             if (output_file_path is not None):
                 surface_info = viddec.GetOutputSurfaceInfo()
-                viddec.SaveTensorToFile(
-                    (output_file_path + "_y_plane.yuv"),
+                viddec.SaveFrameToFile(
+                    output_file_path,
                     y_tensor.data_ptr(),
-                    packet.extBufYuv[0].shape[1], # width
-                    packet.extBufYuv[0].shape[0], # height
                     surface_info)
 
             # release frame
@@ -201,9 +197,8 @@ if __name__ == "__main__":
     crop_rect = args.crop_rect
 
     # handel params
-    mem_type = 1 if (mem_type < 0 or mem_type > 2) else mem_type
+    mem_type = 0 if (mem_type < 0 or mem_type > 2) else mem_type
     b_force_zero_latency = True if b_force_zero_latency == 'YES' else False
-    save_y_plane = True if save_y_plane == 'YES' else False
     if not os.path.exists(input_file_path):  # Input file (must exist)
         print("ERROR: input file doesn't exist.")
         exit()
