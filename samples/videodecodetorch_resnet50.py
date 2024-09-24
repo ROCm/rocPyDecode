@@ -78,6 +78,7 @@ def Decoder(
     # -----------------
     n_frame = 0
     total_dec_time = 0.0
+    output_format = dec.GetOutputFormat(rgb_format)
 
     while True:
         start_time = datetime.datetime.now()
@@ -92,27 +93,25 @@ def Decoder(
                 continue
 
             # using torch tensor
-            img_tensor = torch.from_dlpack(packet.extBuf.__dlpack__(packet))
+            rgb_tensor = torch.from_dlpack(packet.ext_buf[0].__dlpack__(packet))
 
             # save tensors to file, with original decoded Size
             if (output_file_path is not None):
                 surface_info = viddec.GetOutputSurfaceInfo()
-                viddec.SaveTensorToFile(
+                viddec.SaveFrameToFile(
                     output_file_path,
-                    img_tensor.data_ptr(),
-                    viddec.GetWidth(),
-                    viddec.GetHeight(),
-                    rgb_format, 
-                    surface_info)
+                    rgb_tensor.data_ptr(),
+                    surface_info,
+                    output_format)
 
             # for inference
-            img_tensor.resize_(3, target_h, target_w)
-            img_tensor = img_tensor.type(dtype=torch.cuda.FloatTensor)
-            img_tensor = torch.divide(img_tensor, 255.0)
+            rgb_tensor.resize_(3, target_h, target_w)
+            rgb_tensor = rgb_tensor.type(dtype=torch.cuda.FloatTensor)
+            rgb_tensor = torch.divide(rgb_tensor, 255.0)
             data_transforms = torchvision.transforms.Normalize(
                 mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
             )
-            surface_tensor = data_transforms(img_tensor)
+            surface_tensor = data_transforms(rgb_tensor)
             input_batch = surface_tensor.unsqueeze(0).to("cuda")
 
             # Run inference.

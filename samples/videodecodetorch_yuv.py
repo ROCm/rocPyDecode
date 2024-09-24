@@ -1,9 +1,10 @@
-import pyRocVideoDecode.decoder as dec
-import pyRocVideoDecode.demuxer as dmx
 import datetime
 import sys
 import argparse
 import os.path
+import torch
+import pyRocVideoDecode.decoder as dec
+import pyRocVideoDecode.demuxer as dmx
 
 
 def Decoder(
@@ -12,16 +13,10 @@ def Decoder(
         device_id,
         mem_type,
         b_force_zero_latency,
-        crop_rect,
-        seek_frame,
-        seek_mode,
-        seek_criteria,
-        resize_dim):
+        crop_rect):
 
-    # create file stream provider object
-    stream_provider = dmx.stream_provider(input_file_path)
     # demuxer instance
-    demuxer = dmx.demuxer(stream_provider)
+    demuxer = dmx.demuxer(input_file_path)
 
     # get the used coded id
     codec_id = dec.GetRocDecCodecID(demuxer.GetCodecId())
@@ -63,52 +58,36 @@ def Decoder(
           str(cfg.pci_device_id))
     print("info: decoding started, please wait! \n")
 
-    # set reconfiguration params based on user arguments
-    flush_mode = 0
-    if (output_file_path is not None):
-        flush_mode = 1
-
-    viddec.SetReconfigParams(flush_mode, output_file_path if (output_file_path is not None) else str(""))
-
     # -----------------
     # The decoding loop
     # -----------------
     n_frame = 0
     total_dec_time = 0.0
-    frame_is_resized = False
-    not_seeking = True if (seek_frame == -1) else False
-    session_id = 0
-
-    if (resize_dim is not None):
-        resize_dim = None if(resize_dim[0] == 0 or resize_dim[1] == 0) else resize_dim
 
     while True:
         start_time = datetime.datetime.now()
-
-        if(not_seeking):
-            packet = demuxer.DemuxFrame()
-        else:
-            packet = demuxer.SeekFrame(seek_frame, seek_mode, seek_criteria)
-            not_seeking = True
-
+        packet = demuxer.DemuxFrame()
         n_frame_returned = viddec.DecodeFrame(packet)
 
         for i in range(n_frame_returned):
-            viddec.GetFrameYuv(packet)
 
-            if (resize_dim is not None):
-                surface_info = viddec.GetOutputSurfaceInfo()
-                if(viddec.ResizeFrame(packet, resize_dim, surface_info) != 0):
-                    frame_is_resized = True
-                else:
-                    frame_is_resized = False
+            viddec.GetFrameYuv(packet, True) # 'True' for splitting YUV into Y and UV planes
 
+            # Y Plane torch tensor
+            y_tensor = torch.from_dlpack(packet.ext_buf[0].__dlpack__(packet))
+
+            # U/V Plane torch tensor
+            uv_tensor = torch.from_dlpack(packet.ext_buf[1].__dlpack__(packet))
+
+            # TODO: some tensor work
+ 
+            # save Y or UV tensor to file, with original decoded Size
             if (output_file_path is not None):
-                if (frame_is_resized):
-                    resized_surface_info = viddec.GetResizedOutputSurfaceInfo()
-                    viddec.SaveFrameToFile(output_file_path, packet.frame_adrs_resized, resized_surface_info)
-                else:
-                    viddec.SaveFrameToFile(output_file_path, packet.frame_adrs)
+                surface_info = viddec.GetOutputSurfaceInfo()
+                viddec.SaveFrameToFile(
+                    output_file_path,
+                    y_tensor.data_ptr(),
+                    surface_info)
 
             # release frame
             viddec.ReleaseFrame(packet)
@@ -132,15 +111,22 @@ def Decoder(
     if (output_file_path is None):
         if (n_frame > 0 and total_dec_time > 0):
             time_per_frame = (total_dec_time / n_frame) * 1000
-            session_overhead = viddec.GetDecoderSessionOverHead(session_id)
-            if (session_overhead == None):
-                session_overhead = 0
-            time_per_frame -= (session_overhead / n_frame) # remove the overhead
             frame_per_second = n_frame / total_dec_time
             print("info: avg decoding time per frame: " +"{0:0.2f}".format(round(time_per_frame, 2)) + " ms")
             print("info: avg frame per second: " +"{0:0.2f}".format(round(frame_per_second,2)) +"\n")
         else:
             print("info: frame count= ", n_frame)
+
+    # print tensor details
+    print("Y Tensor Shape:   ", packet.ext_buf[0].shape)
+    print("Y Tensor Strides: ", packet.ext_buf[0].strides)
+    print("Y Tensor dType:   ", packet.ext_buf[0].dtype)
+    print("Y Tensor Device:  ", packet.ext_buf[0].__dlpack_device__(), "\n")
+
+    print("UV Tensor Shape:   ", packet.ext_buf[1].shape)
+    print("UV Tensor Strides: ", packet.ext_buf[1].strides)
+    print("UV Tensor dType:   ", packet.ext_buf[1].dtype)
+    print("UV Tensor Device:  ", packet.ext_buf[1].__dlpack_device__(), "\n")
 
 if __name__ == "__main__":
 
@@ -159,6 +145,14 @@ if __name__ == "__main__":
         type=str,
         help='Output File Path - optional',
         required=False)
+    parser.add_argument(
+        '-y',
+        '--yplane',
+        type=str,
+        default='yes',
+        choices=['yes', 'no'],        
+        help='Save which Plane Y or U/V- optional, default \'yes\' to save the Y plane, \'no\' means save the U/V plane',
+        required=False)    
     parser.add_argument(
         '-d',
         '--device',
@@ -188,35 +182,7 @@ if __name__ == "__main__":
         type=int,
         help='Crop rectangle (left, top, right, bottom), optional, default: no cropping',
         required=False)
-    parser.add_argument(
-        '-s',
-        '--seek',
-        type=int,
-        default=-1,
-        help='seek this number of frames, optional, default: no seek',
-        required=False)
-    parser.add_argument(
-        '-sm',
-        '--seek_mode',
-        type=int,
-        default=1,
-        help='seek mode, 0 - by exact frame number, 1 - by previous key frame, optional, default: 1 - by previous key frame',
-        required=False)
-    parser.add_argument(
-        '-sc',
-        '--seek_criteria',
-        type=int,
-        default=0,
-        help='seek criteria, 0 - by frame number, 1 - by time stamp, optional, default: 0 - by frame number',
-        required=False)
-    parser.add_argument(    
-        '-resize',
-        '--resize_dim',
-        nargs=2,
-        type=int,
-        help='Width & Height of new frame, optional, default: no resizing',
-        required=False)
-    
+
     try:
         args = parser.parse_args()
     except BaseException:
@@ -229,26 +195,16 @@ if __name__ == "__main__":
     mem_type = args.mem_type
     b_force_zero_latency = args.zero_latency.upper()
     crop_rect = args.crop_rect
-    seek_frame = args.seek
-    seek_mode = args.seek_mode
-    seek_criteria = args.seek_criteria
-    resize_dim = args.resize_dim
-    
-    # validate the seek: mode/criteria
-    if(seek_frame > 0):
-        if(seek_mode != 0 and seek_mode != 1):
-            print("Error: Invalid seek mode value.")
-            exit()
-        if(seek_criteria != 0 and seek_criteria != 1):
-            print("Error: Invalid seek criteria value.")
-            exit()
 
-    # handle params
+    # handel params
     mem_type = 0 if (mem_type < 0 or mem_type > 3) else mem_type
     b_force_zero_latency = True if b_force_zero_latency == 'YES' else False
     if not os.path.exists(input_file_path):  # Input file (must exist)
         print("ERROR: input file doesn't exist.")
         exit()
+
+    # torch GPU
+    print("\nPyTorch Using: ", torch.cuda.get_device_name(0))
 
     Decoder(
         input_file_path,
@@ -256,8 +212,4 @@ if __name__ == "__main__":
         device_id,
         mem_type,
         b_force_zero_latency,
-        crop_rect,
-        seek_frame,
-        seek_mode,
-        seek_criteria,
-        resize_dim)
+        crop_rect)

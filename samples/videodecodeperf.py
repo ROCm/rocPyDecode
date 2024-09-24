@@ -27,7 +27,7 @@ def DecProc(input_file_path, device_id, p_frames, p_fps):
     # decoder instance
     viddec = dec.decoder(
         device_id = device_id,
-        mem_type = 1,
+        mem_type = 3,
         codec = codec_id,
         b_force_zero_latency = False,
         crop_rect = None,
