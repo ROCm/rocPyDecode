@@ -58,14 +58,14 @@ def GetRocPyDecPacket(pts, size, buffer):
 class decoder(object):
     def __init__(
             self,
-            device_id,
-            mem_type,
             codec,
-            b_force_zero_latency,
-            crop_rect,
-            max_width,
-            max_height,
-            clk_rate):
+            device_id = 0,
+            mem_type = 0,
+            b_force_zero_latency = False,
+            crop_rect = None,
+            max_width = 0,
+            max_height = 0,
+            clk_rate = 1000):
         p_crop_rect = GetRectangle(crop_rect)
         self.viddec = rocpydec.PyRocVideoDecoder(
             device_id,
