@@ -74,10 +74,10 @@ def Decoder(
             viddec.GetFrameYuv(packet, True) # 'True' for splitting YUV into Y and UV planes
 
             # Y Plane torch tensor
-            y_tensor = torch.from_dlpack(packet.extBufYuv[0].__dlpack__(packet))
+            y_tensor = torch.from_dlpack(packet.extBuf[0].__dlpack__(packet))
 
             # U/V Plane torch tensor
-            uv_tensor = torch.from_dlpack(packet.extBufYuv[1].__dlpack__(packet))
+            uv_tensor = torch.from_dlpack(packet.extBuf[1].__dlpack__(packet))
 
             # TODO: some tensor work
  
@@ -118,15 +118,15 @@ def Decoder(
             print("info: frame count= ", n_frame)
 
     # print tensor details
-    print("Y Tensor Shape:   ", packet.extBufYuv[0].shape)
-    print("Y Tensor Strides: ", packet.extBufYuv[0].strides)
-    print("Y Tensor dType:   ", packet.extBufYuv[0].dtype)
-    print("Y Tensor Device:  ", packet.extBufYuv[0].__dlpack_device__(), "\n")
+    print("Y Tensor Shape:   ", packet.extBuf[0].shape)
+    print("Y Tensor Strides: ", packet.extBuf[0].strides)
+    print("Y Tensor dType:   ", packet.extBuf[0].dtype)
+    print("Y Tensor Device:  ", packet.extBuf[0].__dlpack_device__(), "\n")
 
-    print("UV Tensor Shape:   ", packet.extBufYuv[1].shape)
-    print("UV Tensor Strides: ", packet.extBufYuv[1].strides)
-    print("UV Tensor dType:   ", packet.extBufYuv[1].dtype)
-    print("UV Tensor Device:  ", packet.extBufYuv[1].__dlpack_device__(), "\n")
+    print("UV Tensor Shape:   ", packet.extBuf[1].shape)
+    print("UV Tensor Strides: ", packet.extBuf[1].strides)
+    print("UV Tensor dType:   ", packet.extBuf[1].dtype)
+    print("UV Tensor Device:  ", packet.extBuf[1].__dlpack_device__(), "\n")
 
 if __name__ == "__main__":
 
@@ -197,7 +197,7 @@ if __name__ == "__main__":
     crop_rect = args.crop_rect
 
     # handel params
-    mem_type = 0 if (mem_type < 0 or mem_type > 2) else mem_type
+    mem_type = 0 if (mem_type < 0 or mem_type > 3) else mem_type
     b_force_zero_latency = True if b_force_zero_latency == 'YES' else False
     if not os.path.exists(input_file_path):  # Input file (must exist)
         print("ERROR: input file doesn't exist.")

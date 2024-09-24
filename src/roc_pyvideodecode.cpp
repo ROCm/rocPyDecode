@@ -182,21 +182,21 @@ py::object PyRocVideoDecoder::PyGetFrameYuv(PyPacketData& packet, bool SeparateY
             stride.push_back(static_cast<size_t>(surf_stride));
             stride.push_back(sizeof(uint16_t));
         }
-        // for NV12 format (also YUV444 & P016 when supported), Y always in extBufYuv vector index [0]
+        // for NV12 format (also YUV444 & P016 when supported), Y always in extBuf vector index [0]
         // The tensor shape->height will be all the Yuv planes if user specify 'FALSE' in 'SeparateYuvPlanes' argument
         float plane_height_multiplier = SeparateYuvPlanes ? 1.0 : 1.5; // 1.5 for YUV NV12
         std::vector<size_t> shape{ static_cast<size_t>(height * plane_height_multiplier), static_cast<size_t>(width)};
-        packet.extBufYuv[0]->LoadDLPack(shape, stride, bit_depth, type_str, (void *)packet.frame_adrs);
+        packet.extBuf[0]->LoadDLPack(shape, stride, bit_depth, type_str, (void *)packet.frame_adrs);
         if (SeparateYuvPlanes) {
             // get surface format
             OutputSurfaceInfo* p_surf_info;
             bool ret = GetOutputSurfaceInfo(&p_surf_info);
             if (ret) {
-                // for NV12 only the UV interleaved in one tensor: extBufYuv vector index [1]
+                // for NV12 only the UV interleaved in one tensor: extBuf vector index [1]
                 if (p_surf_info->surface_format == rocDecVideoSurfaceFormat_NV12) {
                     std::vector<size_t> shape{ static_cast<size_t>(height >> 1), static_cast<size_t>(width)};
-                    uintptr_t u_offset = p_surf_info->output_pitch * p_surf_info->output_vstride; // count for possible padding
-                    packet.extBufYuv[1]->LoadDLPack(shape, stride, bit_depth, type_str, (void *)(packet.frame_adrs + u_offset));
+                    uintptr_t uv_offset = p_surf_info->output_pitch * p_surf_info->output_vstride; // count for possible padding
+                    packet.extBuf[1]->LoadDLPack(shape, stride, bit_depth, type_str, (void *)(packet.frame_adrs + uv_offset));
                 } else {
                     cout << "surf fmt: " << p_surf_info->surface_format << " [not supported]" << "\n";
                 }
@@ -262,7 +262,7 @@ py::object PyRocVideoDecoder::PyGetFrameRgb(PyPacketData& packet, int rgb_format
             std::string type_str(static_cast<const char*>("|u1"));
             std::vector<size_t> shape{ static_cast<size_t>(height), static_cast<size_t>(width), 3}; // 3 rgb channels
             std::vector<size_t> stride{ static_cast<size_t>(surf_stride), 1, 0}; // python assumes same dim for both shape & strides
-            packet.extBufYuv[0]->LoadDLPack(shape, stride, bit_depth, type_str, (void *)frame_ptr_rgb);
+            packet.extBuf[0]->LoadDLPack(shape, stride, bit_depth, type_str, (void *)frame_ptr_rgb);
         }
     }
     return py::cast(packet.frame_pts);
@@ -344,7 +344,7 @@ py::object PyRocVideoDecoder::PyReleaseFrame(PyPacketData& packet) {
 }
 
 // for python binding
-py::object PyRocVideoDecoder::PySaveFrameToFile(std::string& output_file_name_in, uintptr_t& surf_mem, uintptr_t& surface_info, int rgb_format) {
+py::object PyRocVideoDecoder::PySaveFrameToFile(std::string& output_file_name_in, uintptr_t& surf_mem, uintptr_t& surface_info, OutputFormatEnum e_output_format) {
     std::string output_file_name = output_file_name_in.c_str();
     OutputSurfaceInfo *p_surf_info;
     bool ret = true;
@@ -353,9 +353,8 @@ py::object PyRocVideoDecoder::PySaveFrameToFile(std::string& output_file_name_in
     else
         ret = GetOutputSurfaceInfo(&p_surf_info);
     if(surf_mem && ret) {
-        size_t image_size = 0; // 0 == rgb frame
-        if (rgb_format >= 0) { // -1 == YUV frame
-            OutputFormatEnum e_output_format = (OutputFormatEnum)rgb_format;
+        size_t image_size = 0; // 0 size == rgb frame
+        if (e_output_format != OutputFormatEnum::native) { // native == YUV frame
             image_size = CalculateRgbImageSize(e_output_format, p_surf_info);
         }
         SaveFrameToFile(output_file_name, (void *)surf_mem, p_surf_info, image_size);

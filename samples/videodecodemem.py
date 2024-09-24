@@ -244,7 +244,7 @@ if __name__ == "__main__":
             exit()
 
     # handle params
-    mem_type = 0 if (mem_type < 0 or mem_type > 2) else mem_type
+    mem_type = 0 if (mem_type < 0 or mem_type > 3) else mem_type
     b_force_zero_latency = True if b_force_zero_latency == 'YES' else False
     if not os.path.exists(input_file_path):  # Input file (must exist)
         print("ERROR: input file doesn't exist.")

@@ -73,7 +73,7 @@ def Decoder(
             viddec.GetFrameYuv(packet)
 
             # Yuv (NV12) Plane torch tensor
-            yuv_tensor = torch.from_dlpack(packet.extBufYuv[0].__dlpack__(packet))
+            yuv_tensor = torch.from_dlpack(packet.extBuf[0].__dlpack__(packet))
 
             # TODO: some tensor work
 
@@ -112,10 +112,10 @@ def Decoder(
             print("info: frame count= ", n_frame)
 
     # print tensor details
-    print("Tensor Shape:   ", packet.extBufYuv[0].shape)
-    print("Tensor Strides: ", packet.extBufYuv[0].strides)
-    print("Tensor dType:   ", packet.extBufYuv[0].dtype)
-    print("Tensor Device:  ", packet.extBufYuv[0].__dlpack_device__(), "\n")
+    print("Tensor Shape:   ", packet.extBuf[0].shape)
+    print("Tensor Strides: ", packet.extBuf[0].strides)
+    print("Tensor dType:   ", packet.extBuf[0].dtype)
+    print("Tensor Device:  ", packet.extBuf[0].__dlpack_device__(), "\n")
 
 
 if __name__ == "__main__":
@@ -179,7 +179,7 @@ if __name__ == "__main__":
     crop_rect = args.crop_rect
 
     # handel params
-    mem_type = 0 if (mem_type < 0 or mem_type > 2) else mem_type
+    mem_type = 0 if (mem_type < 0 or mem_type > 3) else mem_type
     b_force_zero_latency = True if b_force_zero_latency == 'YES' else False
     if not os.path.exists(input_file_path):  # Input file (must exist)
         print("ERROR: input file doesn't exist.")

@@ -72,7 +72,7 @@ class PyRocVideoDecoder : public RocVideoDecoder {
         std::shared_ptr<ConfigInfo> PyGetDeviceinfo();
         
         // for python binding
-        py::object PySaveFrameToFile(std::string& output_file_name_in, uintptr_t& surf_mem, uintptr_t& surface_info, int rgb_format = -1);
+        py::object PySaveFrameToFile(std::string& output_file_name_in, uintptr_t& surf_mem, uintptr_t& surface_info, OutputFormatEnum e_output_format = OutputFormatEnum::native);
 
         // for python binding
         uintptr_t PyGetOutputSurfaceInfo();

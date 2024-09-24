@@ -78,6 +78,7 @@ def Decoder(
     # -----------------
     n_frame = 0
     total_dec_time = 0.0
+    output_format = dec.GetOutputFormat(rgb_format)
 
     while True:
         start_time = datetime.datetime.now()
@@ -92,7 +93,7 @@ def Decoder(
                 continue
 
             # using torch tensor
-            rgb_tensor = torch.from_dlpack(packet.extBufYuv[0].__dlpack__(packet))
+            rgb_tensor = torch.from_dlpack(packet.extBuf[0].__dlpack__(packet))
 
             # save tensors to file, with original decoded Size
             if (output_file_path is not None):
@@ -101,7 +102,7 @@ def Decoder(
                     output_file_path,
                     rgb_tensor.data_ptr(),
                     surface_info,
-                    rgb_format) # providing rgb_format to save as RGB
+                    output_format)
 
             # for inference
             rgb_tensor.resize_(3, target_h, target_w)

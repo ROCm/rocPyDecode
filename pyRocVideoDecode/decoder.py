@@ -23,6 +23,10 @@ import rocPyDecode.decTypes as dectypes
 import numpy as np
 
 
+def GetOutputFormat(rgb_format) -> dectypes.OutputFormatEnum:
+    out_format = dectypes.OutputFormatEnum(rgb_format)
+    return out_format
+
 def GetRocDecCodecID(codec_id) -> dectypes.rocDecVideoCodec:
     rocCodecId = None
     if isinstance(codec_id, int):
@@ -113,8 +117,8 @@ class decoder(object):
     def GetResizedOutputSurfaceInfo(self):
         return self.viddec.GetResizedOutputSurfaceInfo()
 
-    def SaveFrameToFile(self, output_file_path, frame_adrs, surface_info = 0, rgb_format = -1):
-        return self.viddec.SaveFrameToFile( output_file_path, frame_adrs, surface_info, rgb_format)
+    def SaveFrameToFile(self, output_file_path, frame_adrs, surface_info = 0, output_format:dectypes.OutputFormatEnum = dectypes.OutputFormatEnum.native):
+        return self.viddec.SaveFrameToFile( output_file_path, frame_adrs, surface_info, output_format)
 
     def ReleaseFrame(self, packet):
         self.viddec.ReleaseFrame(packet)
