@@ -177,7 +177,7 @@ if "Ubuntu" in platfromInfo:
                     ' '+linuxSystemInstall_check+' install pybind11-dev'))
     else:
         # for python3.11+ -- pybind11 v2.13
-        ERROR_CHECK(os.system('wget wget http://launchpadlibrarian.net/747564571/pybind11-dev_2.13.5-1_all.deb'))
+        ERROR_CHECK(os.system('wget http://launchpadlibrarian.net/747564571/pybind11-dev_2.13.5-1_all.deb'))
         ERROR_CHECK(os.system('sudo '+linuxFlag+' '+linuxSystemInstall +
                     ' '+linuxSystemInstall_check+' install ./pybind11-dev_2.13.5-1_all.deb'))
 
