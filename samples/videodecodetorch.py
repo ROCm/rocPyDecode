@@ -62,20 +62,18 @@ def Decoder(
         n_frame_returned = viddec.DecodeFrame(packet)
 
         for i in range(n_frame_returned):
-            viddec.GetFrame(packet)
+            viddec.GetFrameYuv(packet)
 
-            # using torch tensor
-            img_tensor = torch.from_dlpack(packet.extBuf.__dlpack__(packet))
+            # Yuv (NV12) Plane torch tensor
+            yuv_tensor = torch.from_dlpack(packet.ext_buf[0].__dlpack__(packet))
 
             # TODO: some tensor work
 
             # save tensors to file, with original decoded Size
             if (output_file_path is not None):
-                surface_info = viddec.GetOutputSurfaceInfo()
                 viddec.SaveFrameToFile(
                     output_file_path,
-                    img_tensor.data_ptr(),
-                    surface_info)
+                    yuv_tensor.data_ptr())
 
             # release frame
             viddec.ReleaseFrame(packet)
@@ -106,10 +104,10 @@ def Decoder(
             print("info: frame count= ", n_frame)
 
     # print tensor details
-    print("Tensor Shape:   ", packet.extBuf.shape)
-    print("Tensor Strides: ", packet.extBuf.strides)
-    print("Tensor dType:   ", packet.extBuf.dtype)
-    print("Tensor Device:  ", packet.extBuf.__dlpack_device__(), "\n")
+    print("Tensor Shape:   ", packet.ext_buf[0].shape)
+    print("Tensor Strides: ", packet.ext_buf[0].strides)
+    print("Tensor dType:   ", packet.ext_buf[0].dtype)
+    print("Tensor Device:  ", packet.ext_buf[0].__dlpack_device__(), "\n")
 
 
 if __name__ == "__main__":
@@ -173,7 +171,7 @@ if __name__ == "__main__":
     crop_rect = args.crop_rect
 
     # handel params
-    mem_type = 1 if (mem_type < 0 or mem_type > 2) else mem_type
+    mem_type = 0 if (mem_type < 0 or mem_type > 3) else mem_type
     b_force_zero_latency = True if b_force_zero_latency == 'YES' else False
     if not os.path.exists(input_file_path):  # Input file (must exist)
         print("ERROR: input file doesn't exist.")

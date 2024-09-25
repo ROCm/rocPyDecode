@@ -23,6 +23,10 @@ import rocPyDecode.decTypes as dectypes
 import numpy as np
 
 
+def GetOutputFormat(rgb_format) -> dectypes.OutputFormatEnum:
+    out_format = dectypes.OutputFormatEnum(rgb_format)
+    return out_format
+
 def GetRocDecCodecID(codec_id) -> dectypes.rocDecVideoCodec:
     rocCodecId = None
     if isinstance(codec_id, int):
@@ -83,8 +87,8 @@ class decoder(object):
     def DecodeFrame(self, packet) -> int:
         return self.viddec.DecodeFrame(packet)
 
-    def GetFrame(self, packet):
-        pts = self.viddec.GetFrame(packet)
+    def GetFrameYuv(self, packet, separate_planes = False):
+        pts = self.viddec.GetFrameYuv(packet, separate_planes)
         return pts
 
     def GetFrameRgb(self, packet, rgb_format):
@@ -113,11 +117,8 @@ class decoder(object):
     def GetResizedOutputSurfaceInfo(self):
         return self.viddec.GetResizedOutputSurfaceInfo()
 
-    def SaveFrameToFile(self, output_file_path, frame_adrs, surface_info):
-        return self.viddec.SaveFrameToFile( output_file_path, frame_adrs, surface_info)
-
-    def SaveTensorToFile(self, output_file_path, frame_adrs, width, height, rgb_format, surface_info):
-        return self.viddec.SaveTensorToFile(output_file_path, frame_adrs, width, height, rgb_format, surface_info)
+    def SaveFrameToFile(self, output_file_path, frame_adrs, surface_info = 0, output_format:dectypes.OutputFormatEnum = dectypes.OutputFormatEnum.native):
+        return self.viddec.SaveFrameToFile( output_file_path, frame_adrs, surface_info, output_format)
 
     def ReleaseFrame(self, packet):
         self.viddec.ReleaseFrame(packet)
