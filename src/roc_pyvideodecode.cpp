@@ -193,7 +193,7 @@ py::object PyRocVideoDecoder::PyGetFrameYuv(PyPacketData& packet, bool SeparateY
             bool ret = GetOutputSurfaceInfo(&p_surf_info);
             if (ret) {
                 // for NV12 only the UV interleaved in one tensor: ext_buf vector index [1]
-                if (p_surf_info->surface_format == rocDecVideoSurfaceFormat_NV12) {
+                if (p_surf_info->surface_format == rocDecVideoSurfaceFormat_NV12 || p_surf_info->surface_format == rocDecVideoSurfaceFormat_P016) {
                     std::vector<size_t> shape{ static_cast<size_t>(height >> 1), static_cast<size_t>(width)};
                     uintptr_t uv_offset = p_surf_info->output_pitch * p_surf_info->output_vstride; // count for possible padding
                     packet.ext_buf[1]->LoadDLPack(shape, stride, bit_depth, type_str, (void *)(packet.frame_adrs + uv_offset));
