@@ -28,9 +28,9 @@ def Decoder(
 
     # decoder instance
     viddec = dec.decoder(
+        codec_id,
         device_id,
         mem_type,
-        codec_id,
         b_force_zero_latency,
         crop_rect,
         0,

@@ -25,15 +25,7 @@ def DecProc(input_file_path, device_id, p_frames, p_fps):
     codec_id = dec.GetRocDecCodecID(demuxer.GetCodecId())
 
     # decoder instance
-    viddec = dec.decoder(
-        device_id = device_id,
-        mem_type = 3,
-        codec = codec_id,
-        b_force_zero_latency = False,
-        crop_rect = None,
-        max_width = 0,
-        max_height = 0,
-        clk_rate = 1000)
+    viddec = dec.decoder(codec_id, device_id, mem_type = 3)
 
     # Get GPU device information
     cfg = viddec.GetGpuInfo()
