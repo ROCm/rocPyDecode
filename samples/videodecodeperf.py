@@ -114,7 +114,7 @@ if __name__ == "__main__":
         '-m',
         '--mem_type',
         type=int,
-        default=1,
+        default=3,
         help='mem_type of output surfce - 0: Internal 1: dev_copied 2: host_copied 3: MEM not mapped, optional, default 3',
         required=False)
     try:
