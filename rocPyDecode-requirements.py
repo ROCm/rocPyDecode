@@ -130,7 +130,6 @@ commonPackages = [
     'unzip',
     'pkg-config',
     'inxi',
-    'python3',
     'python3-pip'
 ]
 
@@ -139,8 +138,7 @@ coreDebianPackages = [
     'rocdecode',
     'rocdecode-dev',
     'rocdecode-test',
-    'python3-dev',
-    'pybind11-dev',
+    #'pybind11-dev',
     'libdlpack-dev'
 ]
 
@@ -151,7 +149,6 @@ coreRPMPackages = [
     'rocdecode',
     'rocdecode-devel',
     'rocdecode-test',
-    'python3-devel'
 ]
 
 # update
@@ -172,6 +169,17 @@ if "Ubuntu" in platfromInfo:
         for i in range(len(coreDebianPackages)):
             ERROR_CHECK(os.system('sudo '+linuxFlag+' '+linuxSystemInstall +
                     ' '+linuxSystemInstall_check+' install '+ coreDebianPackages[i]))
+    
+    #check python version to install pybind11
+    if sys.version_info.minor == 10:
+        # for python3.10 -- default pybind11 v2.9
+        ERROR_CHECK(os.system('sudo '+linuxFlag+' '+linuxSystemInstall +
+                    ' '+linuxSystemInstall_check+' install pybind11-dev'))
+    else:
+        # for python3.11+ -- pybind11 v2.13
+        ERROR_CHECK(os.system('wget http://launchpadlibrarian.net/747564571/pybind11-dev_2.13.5-1_all.deb'))
+        ERROR_CHECK(os.system('sudo '+linuxFlag+' '+linuxSystemInstall +
+                    ' '+linuxSystemInstall_check+' install ./pybind11-dev_2.13.5-1_all.deb'))
 
 elif "redhat" in platfromInfo:
     # core RPM packages
