@@ -17,7 +17,7 @@ def HipCheck(call_result):
         raise RuntimeError(str(err))
     return result
 
-def DecProc(input_file_path, device_id, p_frames, p_fps):
+def DecProc(input_file_path, device_id, p_frames, p_fps, user_mem_type):
     # demuxer instance
     demuxer = dmx.demuxer(input_file_path)
 
@@ -25,7 +25,7 @@ def DecProc(input_file_path, device_id, p_frames, p_fps):
     codec_id = dec.GetRocDecCodecID(demuxer.GetCodecId())
 
     # decoder instance
-    viddec = dec.decoder(codec_id, device_id, mem_type = 3)
+    viddec = dec.decoder(codec_id, device_id, user_mem_type)
 
     # Get GPU device information
     cfg = viddec.GetGpuInfo()
@@ -110,6 +110,13 @@ if __name__ == "__main__":
         default=4,
         help='Num of parallel runs - optional, default 4',
         required=False)
+    parser.add_argument(
+        '-m',
+        '--mem_type',
+        type=int,
+        default=1,
+        help='mem_type of output surfce - 0: Internal 1: dev_copied 2: host_copied 3: MEM not mapped, optional, default 3',
+        required=False)
     try:
         args = parser.parse_args()
     except BaseException:
@@ -119,9 +126,11 @@ if __name__ == "__main__":
     input_file_path = args.input
     device_id = args.device
     num_process = args.num_process
+    user_mem_type = args.mem_type
     sd = 0
 
     # handle params
+    user_mem_type = 3 if (user_mem_type < 0 or user_mem_type > 3) else user_mem_type
     if not os.path.exists(input_file_path):  # Input file (must exist)
         print("ERROR: input file doesn't exist.")
         exit()
@@ -166,7 +175,7 @@ if __name__ == "__main__":
     p_fps = Value('f', 0.0)
 
     for i in range(0, num_process):
-        p = Process(target=DecProc, args=(input_file_path, v_device_id[i], p_frames, p_fps))
+        p = Process(target=DecProc, args=(input_file_path, v_device_id[i], p_frames, p_fps, user_mem_type))
         p.start()
         processes.append(p)
 
