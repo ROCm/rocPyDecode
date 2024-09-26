@@ -11,13 +11,13 @@ The torch python sample requires pytorch for ROCm, which can be installed as fol
 
 - If using bare-metal, `sudo` access is needed.
 ```bash
-    pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.0
+    pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.2
     sudo reboot 
 ```
 
 - If using a docker environment or any system with `root` access, no need for reboot.
 ```bash
-    pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.0
+    pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.2
 ```
 
 The performance sample requires python HIP, which can be installed as follows:
@@ -39,7 +39,7 @@ The following are full list of arguments that can be passed to the sample.
 -i INPUT, --input INPUT                          : Input File Path - required
 -o OUTPUT, --output OUTPUT                       : Output File Path - optional
 -d DEVICE, --device DEVICE                       : GPU device ID - optional, default - 0
--m MEM_TYPE, --mem_type MEM_TYPE                 : Memory Type of output surfce - 0: Internal 1: dev_copied 2: host_copied - optional, default 1
+-m MEM_TYPE, --mem_type MEM_TYPE                 : Memory Type of output surfce - 0: Internal 1: dev_copied 2: host_copied 3: MEM not mapped - optional, default 0
 -z ZERO_LATENCY, --zero_latency ZERO_LATENCY     : Force zero latency - [options: yes,no], default: no
 -crop CROP_RECT, --crop_rect CROP_RECT           : Crop rectangle (left, top, right, bottom) - optional, default: None (no cropping)
 -s SEEK, --seek SEEK                             : seek this number of frames, optional, default: no seek
@@ -63,6 +63,7 @@ The following are full list of arguments that can be passed to the sample.
 -h, --help                                                  : Show detail help message and exit
 -i INPUT, --input INPUT                                     : Input File Path - required
 -d DEVICE, --device DEVICE                                  : GPU device ID - optional, default - 0
+-m MEM_TYPE, --mem_type MEM_TYPE                            : Memory Type of output surfce - 0: Internal 1: dev_copied 2: host_copied 3: MEM not mapped - optional, default 3
 -t Number of Processes, --num_process Number of Processes   : Number of Processes - optional, default 4
 ```
 
@@ -77,7 +78,7 @@ The following are full list of arguments that can be passed to the sample.
 -i INPUT, --input INPUT                       : Input File Path - required
 -o OUTPUT, --output OUTPUT                    : Output File Path - optional
 -d DEVICE, --device DEVICE                    : GPU device ID - optional, default - 0
--m MEM_TYPE, --mem_type MEM_TYPE              : Memory Type of output surfce - 0: Internal 1: dev_copied 2: host_copied - optional, default 1
+-m MEM_TYPE, --mem_type MEM_TYPE              : Memory Type of output surfce - 0: Internal 1: dev_copied 2: host_copied 3: MEM not mapped - optional, default 0
 -z ZERO_LATENCY, --zero_latency ZERO_LATENCY  : Force zero latency - [options: yes,no], default: no
 -crop CROP_RECT, --crop_rect CROP_RECT        : Crop rectangle (left, top, right, bottom) - optional, default: None (no cropping)
 -of RGB_FORMAT, --rgb_format RGB_FORMAT       : Rgb Format to use - 1:bgr, 3:rgb, converts decoded YUV frame to Tensor in RGB format, optional, default: 3
@@ -94,7 +95,7 @@ The following are full list of arguments that can be passed to the sample.
 -i INPUT, --input INPUT                       : Input File Path - required
 -o OUTPUT, --output OUTPUT                    : Output File Path - optional
 -d DEVICE, --device DEVICE                    : GPU device ID - optional, default - 0
--m MEM_TYPE, --mem_type MEM_TYPE              : Memory Type of output surfce - 0: Internal 1: dev_copied 2: host_copied - optional, default 1
+-m MEM_TYPE, --mem_type MEM_TYPE              : Memory Type of output surfce - 0: Internal 1: dev_copied 2: host_copied 3: MEM not mapped - optional, default 0
 -z ZERO_LATENCY, --zero_latency ZERO_LATENCY  : Force zero latency - [options: yes,no], default: no
 -crop CROP_RECT, --crop_rect CROP_RECT        : Crop rectangle (left, top, right, bottom) - optional, default: None (no cropping)
 -of RGB_FORMAT, --rgb_format RGB_FORMAT       : Rgb Format to use - 1:bgr, 3:rgb, converts decoded YUV frame to Tensor in RGB format, optional, default: 3
@@ -112,7 +113,7 @@ The following are full list of arguments that can be passed to the sample.
 -i INPUT, --input INPUT                       : Input File Path - required
 -o OUTPUT, --output OUTPUT                    : Output File Path - optional
 -d DEVICE, --device DEVICE                    : GPU device ID - optional, default - 0
--m MEM_TYPE, --mem_type MEM_TYPE              : Memory Type of output surfce - 0: Internal 1: dev_copied 2: host_copied - optional, default 1
+-m MEM_TYPE, --mem_type MEM_TYPE              : Memory Type of output surfce - 0: Internal 1: dev_copied 2: host_copied 3: MEM not mapped - optional, default 0
 -z ZERO_LATENCY, --zero_latency ZERO_LATENCY  : Force zero latency - [options: yes,no], default: no
 -crop CROP_RECT, --crop_rect CROP_RECT        : Crop rectangle (left, top, right, bottom) - optional, default: None (no cropping)
 ```
@@ -129,7 +130,7 @@ The following are full list of arguments that can be passed to the sample.
 -i INPUT, --input INPUT                       : Input File Path - required
 -o OUTPUT, --output OUTPUT                    : Output File Path - optional
 -d DEVICE, --device DEVICE                    : GPU device ID - optional, default - 0
--m MEM_TYPE, --mem_type MEM_TYPE              : Memory Type of output surfce - 0: Internal 1: dev_copied 2: host_copied - optional, default 1
+-m MEM_TYPE, --mem_type MEM_TYPE              : Memory Type of output surfce - 0: Internal 1: dev_copied 2: host_copied 3: MEM not mapped - optional, default 0
 -z ZERO_LATENCY, --zero_latency ZERO_LATENCY  : Force zero latency - [options: yes,no], default: no
 -crop CROP_RECT, --crop_rect CROP_RECT        : Crop rectangle (left, top, right, bottom) - optional, default: None (no cropping)
 ```
