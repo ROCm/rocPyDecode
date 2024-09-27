@@ -22,15 +22,7 @@ def Decoder(
     codec_id = dec.GetRocDecCodecID(demuxer.GetCodecId())
 
     # decoder instance
-    viddec = dec.decoder(
-        device_id,
-        mem_type,
-        codec_id,
-        b_force_zero_latency,
-        crop_rect,
-        0,
-        0,
-        1000)
+    viddec = dec.decoder(codec_id)
 
     # Get GPU device information
     cfg = viddec.GetGpuInfo()
@@ -63,6 +55,7 @@ def Decoder(
     # -----------------
     n_frame = 0
     total_dec_time = 0.0
+    output_format = dec.GetOutputFormat(rgb_format)
 
     while True:
         start_time = datetime.datetime.now()
@@ -79,13 +72,11 @@ def Decoder(
             # save decoded rgb frame to file
             if (output_file_path is not None):
                 surface_info = viddec.GetOutputSurfaceInfo()
-                viddec.SaveTensorToFile(
+                viddec.SaveFrameToFile(
                     output_file_path,
                     packet.frame_adrs_rgb,
-                    viddec.GetWidth(),
-                    viddec.GetHeight(),
-                    rgb_format,
-                    surface_info)
+                    surface_info,
+                    output_format)
 
             # release frame
             viddec.ReleaseFrame(packet)
@@ -145,7 +136,7 @@ if __name__ == "__main__":
         '--mem_type',
         type=int,
         default=1,
-        help='mem_type of output surfce - 0: Internal 1: dev_copied 2: host_copied optional, default 1',
+        help='mem_type of output surfce - 0: Internal 1: dev_copied 2: host_copied 3: MEM not mapped, optional, default 0',
         required=False)
     parser.add_argument(
         '-z',
@@ -185,14 +176,13 @@ if __name__ == "__main__":
     rgb_format = args.rgb_format
 
     # handel params
-    mem_type = 1 if (mem_type < 0 or mem_type > 2) else mem_type
+    mem_type = 0 if (mem_type < 0 or mem_type > 3) else mem_type
     b_force_zero_latency = True if b_force_zero_latency == 'YES' else False
     rgb_format = 3 if (rgb_format != 1 and rgb_format != 3) else rgb_format
     if not os.path.exists(input_file_path):  # Input file (must exist)
         print("ERROR: input file doesn't exist.")
         exit()
 
-    print("rgb_format: ", rgb_format)
     Decoder(
         input_file_path,
         output_file_path,

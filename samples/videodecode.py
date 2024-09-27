@@ -28,9 +28,9 @@ def Decoder(
 
     # decoder instance
     viddec = dec.decoder(
+        codec_id,
         device_id,
         mem_type,
-        codec_id,
         b_force_zero_latency,
         crop_rect,
         0,
@@ -107,7 +107,7 @@ def Decoder(
         n_frame_returned = viddec.DecodeFrame(packet)
 
         for i in range(n_frame_returned):
-            viddec.GetFrame(packet)
+            viddec.GetFrameYuv(packet)
             if (b_generate_md5):
                 surface_info = viddec.GetOutputSurfaceInfo()
                 viddec.UpdateMd5ForFrame(packet.frame_adrs, surface_info)
@@ -124,8 +124,7 @@ def Decoder(
                     resized_surface_info = viddec.GetResizedOutputSurfaceInfo()
                     viddec.SaveFrameToFile(output_file_path, packet.frame_adrs_resized, resized_surface_info)
                 else:
-                    surface_info = viddec.GetOutputSurfaceInfo()
-                    viddec.SaveFrameToFile(output_file_path, packet.frame_adrs, surface_info)
+                    viddec.SaveFrameToFile(output_file_path, packet.frame_adrs)
 
             # release frame
             viddec.ReleaseFrame(packet)
@@ -209,7 +208,7 @@ if __name__ == "__main__":
         '--mem_type',
         type=int,
         default=1,
-        help='mem_type of output surfce - 0: Internal 1: dev_copied 2: host_copied optional, default 1',
+        help='mem_type of output surfce - 0: Internal 1: dev_copied 2: host_copied 3: MEM not mapped, optional, default 0',
         required=False)
     parser.add_argument(
         '-z',
@@ -297,7 +296,7 @@ if __name__ == "__main__":
             exit()
 
     # handle params
-    mem_type = 1 if (mem_type < 0 or mem_type > 2) else mem_type
+    mem_type = 0 if (mem_type < 0 or mem_type > 3) else mem_type
     b_force_zero_latency = True if b_force_zero_latency == 'YES' else False
     b_generate_md5 = True if b_generate_md5 == 'YES' else False
     if not os.path.exists(input_file_path):  # Input file (must exist)
