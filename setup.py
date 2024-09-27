@@ -76,17 +76,18 @@ subprocess.check_call(['cmake', '--build', build_dir, '--config', 'Release', '--
 subprocess.check_call(['cmake', '--install', build_dir])
 
 setup(
-      name='rocPyDecode',
-      description='AMD ROCm Video Decoder Library',
-      url='https://github.com/ROCm/rocPyDecode',
-      version='1.0.0' + '.' + get_rocm_rev(),
-      author='AMD',
-      license='MIT License',
-      packages=['pyRocVideoDecode'],
-      package_dir={'pyRocVideoDecode':'pyRocVideoDecode'},
-      package_data={"pyRocVideoDecode":["__init__.pyi"]},
-      cmdclass={'bdist_wheel': custom_bdist_wheel,},
-      )
+    name='rocPyDecode',
+    description='AMD ROCm Video Decoder Library',
+    url='https://github.com/ROCm/rocPyDecode',
+    version='1.0.0' + '.' + get_rocm_rev(),
+    author='AMD',
+    license='MIT License',
+    include_package_data=True,
+    packages=['pyRocVideoDecode', 'samples'],
+    package_dir={'pyRocVideoDecode':'pyRocVideoDecode', 'pyRocVideoDecode/samples':'samples'},
+    package_data={"pyRocVideoDecode":["__init__.pyi"]},
+    cmdclass={'bdist_wheel': custom_bdist_wheel,},
+    )
 
 # Test built binaries -- TBD: Optional
 # subprocess.check_call(['ctest', '--test-dir', build_dir, '-VV'])
