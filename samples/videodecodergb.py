@@ -136,7 +136,7 @@ if __name__ == "__main__":
         '--mem_type',
         type=int,
         default=1,
-        help='mem_type of output surfce - 0: Internal 1: dev_copied 2: host_copied optional, default 1',
+        help='mem_type of output surfce - 0: Internal 1: dev_copied 2: host_copied 3: MEM not mapped, optional, default 0',
         required=False)
     parser.add_argument(
         '-z',
@@ -183,7 +183,6 @@ if __name__ == "__main__":
         print("ERROR: input file doesn't exist.")
         exit()
 
-    print("rgb_format: ", rgb_format)
     Decoder(
         input_file_path,
         output_file_path,
