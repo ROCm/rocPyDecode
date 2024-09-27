@@ -64,6 +64,7 @@ std::string BufferInterface::dtype() const {
         return std::string("|u1");
     else if (m_dlTensor->dtype.bits == 16)
         return std::string("|u2");
+    return std::string("|u1"); // non-void function must ret value
 }
 
 void *BufferInterface::data() const {

@@ -9,7 +9,7 @@ if os.path.exists('dist'):
     shutil.rmtree('dist')
 
 # Build the source distribution and wheel
-subprocess.run(['python3', 'setup.py', 'sdist', 'bdist_wheel', 'install'], check=True)
+subprocess.run(['python3', 'setup.py', 'bdist_wheel', 'sdist', 'install'], check=True)
 
 # Verify the content of the created wheel
 wheel_dir = os.path.join('dist')
