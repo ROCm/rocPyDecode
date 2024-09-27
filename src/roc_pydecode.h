@@ -55,9 +55,11 @@ struct PyPacketData {
     uintptr_t bitstream_adrs;
     uintptr_t frame_adrs_rgb;   // rgb frame address
     uintptr_t frame_adrs_resized; // new resized yuv frame
-    std::shared_ptr<BufferInterface> extBuf;
+    std::vector<std::shared_ptr<BufferInterface>> ext_buf;
     PyPacketData(){
-        extBuf = std::make_shared<BufferInterface>();
+        ext_buf.push_back(std::make_shared<BufferInterface>()); //index[0]: always Y Tensor
+        ext_buf.push_back(std::make_shared<BufferInterface>()); //index[1]: UV tensor in case of NV12, otherwise only U tensor when YUV444/P016 is supported
+        ext_buf.push_back(std::make_shared<BufferInterface>()); //index[2]: not-used in case of NV12, otherwise V tensor when YUV444/P016 is supported
     }
 };
 
