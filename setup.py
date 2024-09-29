@@ -103,6 +103,15 @@ vdu_utils = get_relative_path(decoder_class_folder, current_folder)
 os.environ["CC"] = rocm_path+'/bin/hipcc'
 os.environ["CXX"] = rocm_path+'/bin/hipcc'
 
+# Define the extension module
+ext_modules = [Extension('rocPyDecode',
+    sources=['src/roc_pydecode.cpp','src/roc_pybuffer.cpp','src/roc_pydlpack.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp',src_utils+'/colorspace_kernels.cpp', src_utils+'/resize_kernels.cpp', vdu_utils+'/roc_video_dec.cpp'],
+    include_dirs=[rocDecode_Headers,utils_folder,decoder_class_folder,HIP_Headers,pybind11_Headers],
+    extra_compile_args=['-D__HIP_PLATFORM_AMD__','-Wno-sign-compare','-Wno-reorder','-Wno-int-in-bool-context', '-Wno-unused-variable','-Wno-missing-braces','-Wno-unused-private-field','-Wno-unused-function'],
+    distclass=BinaryDistribution,
+    library_dirs=[rocm_path+'/lib/'],
+    libraries=['rocdecode','avcodec','avformat','avutil'])]
+
 setup(
     name='rocPyDecode',
     description='AMD ROCm Video Decoder Library',
@@ -115,14 +124,7 @@ setup(
     package_dir={'pyRocVideoDecode':'pyRocVideoDecode', 'samples':'samples'},
     package_data={"pyRocVideoDecode":["__init__.pyi"], 'rocPyDecode': ['*.so']},  # Include .so files in the package
     cmdclass={'bdist_wheel': custom_bdist_wheel,},
-    ext_modules=
-    [Extension('rocPyDecode',
-    sources=['src/roc_pydecode.cpp','src/roc_pybuffer.cpp','src/roc_pydlpack.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp',src_utils+'/colorspace_kernels.cpp', src_utils+'/resize_kernels.cpp', vdu_utils+'/roc_video_dec.cpp'],
-    include_dirs=[rocDecode_Headers,utils_folder,decoder_class_folder,HIP_Headers,pybind11_Headers],
-    extra_compile_args=['-D__HIP_PLATFORM_AMD__','-Wno-sign-compare','-Wno-reorder','-Wno-int-in-bool-context', '-Wno-unused-variable','-Wno-missing-braces','-Wno-unused-private-field','-Wno-unused-function'],
-    distclass=BinaryDistribution,
-    library_dirs=[rocm_path+'/lib/','/usr/local/lib/','/usr/lib/x86_64-linux-gnu/'],
-    libraries=['rocdecode','avcodec','avformat','avutil'])],
+    ext_modules=ext_modules,
     )
 
 # Test built binaries -- TBD: Optional
