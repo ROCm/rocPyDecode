@@ -29,8 +29,7 @@ else:
     import subprocess
 
 __copyright__ = "Copyright (c) 2024, AMD ROCm rocPyDecode"
-__version__ = "1.0.0"
-__email__ = "mivisionx.support@amd.com"
+__version__ = "0.2.0"
 __status__ = "Shipping"
 
 # error check calls
