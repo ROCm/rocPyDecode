@@ -89,11 +89,11 @@ def get_relative_path(target_path, current_folder):
 
 # pickup cmake path location(s)
 with open('export_path', 'r') as file:
-    rocDecode_Headers = file.readline().strip() # rocDecode H
+    rocdecode_headers = file.readline().strip() # rocDecode H
     utils_folder = file.readline().strip() # UTIL
     decoder_class_folder = file.readline().strip() # Video Decode
-    HIP_Headers = file.readline().strip() # HIP
-    pybind11_Headers = file.readline().strip() #  pybind11
+    hip_headers = file.readline().strip() # HIP
+    pybind11_headers = file.readline().strip() #  pybind11
     rocm_path = file.readline().strip() #  ROCM_PATH
 # bring in reltaive path
 current_folder = str(os.system('pwd'))
@@ -106,7 +106,7 @@ os.environ["CXX"] = rocm_path+'/bin/hipcc'
 # Define the extension module
 ext_modules = [Extension('rocPyDecode',
     sources=['src/roc_pydecode.cpp','src/roc_pybuffer.cpp','src/roc_pydlpack.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp',src_utils+'/colorspace_kernels.cpp', src_utils+'/resize_kernels.cpp', vdu_utils+'/roc_video_dec.cpp'],
-    include_dirs=[rocDecode_Headers,utils_folder,decoder_class_folder,HIP_Headers,pybind11_Headers],
+    include_dirs=[rocdecode_headers,utils_folder,decoder_class_folder,hip_headers,pybind11_headers],
     extra_compile_args=['-D__HIP_PLATFORM_AMD__','-Wno-sign-compare','-Wno-reorder','-Wno-int-in-bool-context', '-Wno-unused-variable','-Wno-missing-braces','-Wno-unused-private-field','-Wno-unused-function'],
     distclass=BinaryDistribution,
     library_dirs=[rocm_path+'/lib/'],
@@ -120,8 +120,8 @@ setup(
     author='AMD',
     license='MIT License',
     include_package_data=True,
-    packages=['pyRocVideoDecode', 'samples'],
-    package_dir={'pyRocVideoDecode':'pyRocVideoDecode', 'samples':'samples'},
+    packages=['pyRocVideoDecode', 'pyRocVideoDecode/samples'],
+    package_dir={'pyRocVideoDecode':'pyRocVideoDecode', 'pyRocVideoDecode/samples':'samples'},
     package_data={"pyRocVideoDecode":["__init__.pyi"], 'rocPyDecode': ['*.so']},  # Include .so files in the package
     cmdclass={'bdist_wheel': custom_bdist_wheel,},
     ext_modules=ext_modules,
