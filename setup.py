@@ -20,8 +20,15 @@
 
 import subprocess
 import os
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, Extension
 from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
+from setuptools.dist import Distribution
+
+class BinaryDistribution(Distribution):
+    """Distribution which always forces a binary package with platform name"""
+    @classmethod
+    def has_ext_modules(self):
+        return True
 
 def get_rev_based_on_os():
     os.system("cat /etc/os-release | grep ID= > os_release")
@@ -75,18 +82,50 @@ subprocess.check_call(['cmake', '--build', build_dir, '--config', 'Release', '--
 # Install the built binaries
 subprocess.check_call(['cmake', '--install', build_dir])
 
+# Calculate Relative Path, to avoid error: arguments must *always* be /-separated paths relative to the setup.py directory
+def get_relative_path(target_path, current_folder):
+    relative_path = str(os.path.relpath(target_path, current_folder))
+    return relative_path
+
+# pickup cmake path location(s)
+with open('export_path', 'r') as file:
+    rocdecode_headers = file.readline().strip() # rocDecode H
+    utils_folder = file.readline().strip() # UTIL
+    decoder_class_folder = file.readline().strip() # Video Decode
+    hip_headers = file.readline().strip() # HIP
+    pybind11_headers = file.readline().strip() #  pybind11
+    rocm_path = file.readline().strip() #  ROCM_PATH
+# bring in reltaive path
+current_folder = str(os.system('pwd'))
+src_utils = get_relative_path(utils_folder, current_folder)
+vdu_utils = get_relative_path(decoder_class_folder, current_folder)
+# use compiler recognize the kernel code
+os.environ["CC"] = rocm_path+'/bin/hipcc'
+os.environ["CXX"] = rocm_path+'/bin/hipcc'
+
+# Define the extension module
+ext_modules = [Extension('rocPyDecode',
+    sources=['src/roc_pydecode.cpp','src/roc_pybuffer.cpp','src/roc_pydlpack.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp',src_utils+'/colorspace_kernels.cpp', src_utils+'/resize_kernels.cpp', vdu_utils+'/roc_video_dec.cpp'],
+    include_dirs=[rocdecode_headers,utils_folder,decoder_class_folder,hip_headers,pybind11_headers],
+    extra_compile_args=['-D__HIP_PLATFORM_AMD__','-Wno-sign-compare','-Wno-reorder','-Wno-int-in-bool-context', '-Wno-unused-variable','-Wno-missing-braces','-Wno-unused-private-field','-Wno-unused-function'],
+    distclass=BinaryDistribution,
+    library_dirs=[rocm_path+'/lib/'],
+    libraries=['rocdecode','avcodec','avformat','avutil'])]
+
 setup(
-      name='rocPyDecode',
-      description='AMD ROCm Video Decoder Library',
-      url='https://github.com/ROCm/rocPyDecode',
-      version='1.0.0' + '.' + get_rocm_rev(),
-      author='AMD',
-      license='MIT License',
-      packages=['pyRocVideoDecode'],
-      package_dir={'pyRocVideoDecode':'pyRocVideoDecode'},
-      package_data={"pyRocVideoDecode":["__init__.pyi"]},
-      cmdclass={'bdist_wheel': custom_bdist_wheel,},
-      )
+    name='rocPyDecode',
+    description='AMD ROCm Video Decoder Library',
+    url='https://github.com/ROCm/rocPyDecode',
+    version='1.0.0' + '.' + get_rocm_rev(),
+    author='AMD',
+    license='MIT License',
+    include_package_data=True,
+    packages=['pyRocVideoDecode', 'pyRocVideoDecode/samples'],
+    package_dir={'pyRocVideoDecode':'pyRocVideoDecode', 'pyRocVideoDecode/samples':'samples'},
+    package_data={"pyRocVideoDecode":["__init__.pyi"], 'rocPyDecode': ['*.so']},  # Include .so files in the package
+    cmdclass={'bdist_wheel': custom_bdist_wheel,},
+    ext_modules=ext_modules,
+    )
 
 # Test built binaries -- TBD: Optional
 # subprocess.check_call(['ctest', '--test-dir', build_dir, '-VV'])
