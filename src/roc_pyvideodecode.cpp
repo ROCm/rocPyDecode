@@ -421,10 +421,10 @@ py::int_ PyRocVideoDecoder::PyGetStride() {
 
 // for python binding
 py::object PyRocVideoDecoder::PyCodecSupported(int device_id, rocDecVideoCodec codec_id, uint32_t bit_depth) {
-#if defined(HIP_VERSION_MINOR) && HIP_VERSION_MINOR < 3
-    bool ret = true; // TODO: remove the whole #if directive when ROCM 6.3 is public, only keep CodecSupported()
-#else
+#if CODEC_SUPPORTED_CHECK
     bool ret = CodecSupported(device_id, codec_id, bit_depth);
+#else
+    bool ret = true; // TODO: remove the whole #if CODEC_SUPPORTED_CHECK directive when ROCM 6.3 is public, only keep CodecSupported()
 #endif
     return py::cast(ret);
 }
