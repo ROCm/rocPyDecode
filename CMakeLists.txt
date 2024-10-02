@@ -152,7 +152,7 @@ if(HIP_FOUND AND rocDecode_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
         PREFIX "${PYTHON_MODULE_PREFIX}"
         SUFFIX "${PYTHON_MODULE_EXTENSION}"
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}")
-    set(TARGET_PYMODULE_NAME "${PYTHON_MODULE_PREFIX}${TARGET_NAME}${PYTHON_MODULE_EXTENSION}")                                              
+    set(TARGET_PYMODULE_NAME "${PYTHON_MODULE_PREFIX}${TARGET_NAME}${PYTHON_MODULE_EXTENSION}")
 
     foreach (filename ${pyfiles})
         get_filename_component(target "${filename}" REALPATH)
@@ -170,7 +170,7 @@ if(HIP_FOUND AND rocDecode_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
     message("-- ${BoldBlue}rocPyDecode Install Path -- ${CMAKE_INSTALL_PREFIX_PYTHON}${ColourReset}")
 
     # export needed path as variables
-    file(WRITE ./export_path "${ROCM_PATH}/include/rocdecode/\n" "${ROCM_PATH}/share/rocdecode/utils/\n" "${ROCM_PATH}/share/rocdecode/utils/rocvideodecode/\n" "${HIP_INCLUDE_DIRS}\n" "${pybind11_INCLUDE_DIRS}\n" "${ROCM_PATH}\n")
+    file(WRITE ./export_path "${ROCM_PATH}/include/rocdecode/\n" "${ROCM_PATH}/share/rocdecode/utils/\n" "${ROCM_PATH}/share/rocdecode/utils/rocvideodecode/\n" "${HIP_INCLUDE_DIRS}\n" "${ROCM_PATH}\n")
 
     # make test with CTest
     enable_testing()
