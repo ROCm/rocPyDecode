@@ -20,6 +20,7 @@
 
 import subprocess
 import os
+import pybind11
 from setuptools import setup, find_packages, Extension
 from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 from setuptools.dist import Distribution
@@ -77,10 +78,10 @@ cmake_args=["cmake", ".", "-B"+build_dir, "-H"+os.getcwd()]
 subprocess.check_call(cmake_args,cwd=os.getcwd())
 
 # Invoke cmake --build to build the project
-subprocess.check_call(['cmake', '--build', build_dir, '--config', 'Release', '--parallel'])
+subprocess.check_call(['cmake', '--build', build_dir, '--config', 'Release', '--parallel'],cwd=os.getcwd())
 
 # Install the built binaries
-subprocess.check_call(['cmake', '--install', build_dir])
+subprocess.check_call(['cmake', '--install', build_dir],cwd=os.getcwd())
 
 # Calculate Relative Path, to avoid error: arguments must *always* be /-separated paths relative to the setup.py directory
 def get_relative_path(target_path, current_folder):
@@ -93,10 +94,10 @@ with open('export_path', 'r') as file:
     utils_folder = file.readline().strip() # UTIL
     decoder_class_folder = file.readline().strip() # Video Decode
     hip_headers = file.readline().strip() # HIP
-    pybind11_headers = file.readline().strip() #  pybind11
     rocm_path = file.readline().strip() #  ROCM_PATH
-# bring in reltaive path
-current_folder = str(os.system('pwd'))
+pybind11_headers = pybind11.get_include() #  pybind11
+# bring in relative path
+current_folder = str(os.getcwd())
 src_utils = get_relative_path(utils_folder, current_folder)
 vdu_utils = get_relative_path(decoder_class_folder, current_folder)
 # use compiler recognize the kernel code
