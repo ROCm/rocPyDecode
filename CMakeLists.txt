@@ -151,6 +151,13 @@ if(HIP_FOUND AND rocDecode_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
         target_compile_definitions(${TARGET_NAME} PUBLIC OVERHEAD_SUPPORT=0)
     endif()
 
+    # TODO: remove after ROCDECODE_CHECK_VERSION macro is pushed to mainline
+    if(${ROCDECODE_MAJOR_VERSION} VERSION_GREATER_EQUAL "0" AND ${ROCDECODE_MINOR_VERSION} VERSION_GREATER_EQUAL "7" AND ${ROCDECODE_MICRO_VERSION} VERSION_GREATER_EQUAL "0")
+        target_compile_definitions(${TARGET_NAME} PUBLIC CODEC_SUPPORTED_CHECK=1)
+    else()
+        target_compile_definitions(${TARGET_NAME} PUBLIC CODEC_SUPPORTED_CHECK=0)
+    endif()
+
     set_target_properties(${TARGET_NAME} PROPERTIES
         PREFIX "${PYTHON_MODULE_PREFIX}"
         SUFFIX "${PYTHON_MODULE_EXTENSION}"
