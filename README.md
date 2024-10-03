@@ -86,7 +86,7 @@ sudo pip3 install .
 ### creating python distribution wheel
 
 ```bash
-# the generated .whl file can be located under subfolder ./dist/
+# the generated .whl file will be located under subfolder ./dist/
 git clone https://github.com/ROCm/rocPyDecode.git
 cd rocPyDecode
 # Create/Build the wheel and install it
