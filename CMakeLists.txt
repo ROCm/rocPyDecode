@@ -105,6 +105,9 @@ message("-- ${Green}NOTE: rocPyDecode requires Python3, Found --  ${Python3_EXEC
 find_package(pybind11 REQUIRED)
 message("-- ${Green}NOTE: rocPyDecode requires pybind11, Found --  ${pybind11_INCLUDE_DIRS} ${ColourReset}")
 
+find_package(dlpack REQUIRED)
+message("-- ${Green}NOTE: rocPyDecode requires dlpack, Found")
+
 if(HIP_FOUND AND rocDecode_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG_FOUND)
 
     # avoid setting the default installation path to /usr/local
