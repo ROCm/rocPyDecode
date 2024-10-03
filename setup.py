@@ -20,7 +20,6 @@
 
 import subprocess
 import os
-import pybind11
 from setuptools import setup, find_packages, Extension
 from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 from setuptools.dist import Distribution
@@ -95,7 +94,6 @@ with open('export_path', 'r') as file:
     decoder_class_folder = file.readline().strip() # Video Decode
     hip_headers = file.readline().strip() # HIP
     rocm_path = file.readline().strip() #  ROCM_PATH
-pybind11_headers = pybind11.get_include() #  pybind11
 # bring in relative path
 current_folder = str(os.getcwd())
 src_utils = get_relative_path(utils_folder, current_folder)
@@ -107,7 +105,7 @@ os.environ["CXX"] = rocm_path+'/bin/hipcc'
 # Define the extension module
 ext_modules = [Extension('rocPyDecode',
     sources=['src/roc_pydecode.cpp','src/roc_pybuffer.cpp','src/roc_pydlpack.cpp','src/roc_pyvideodecode.cpp','src/roc_pyvideodemuxer.cpp',src_utils+'/colorspace_kernels.cpp', src_utils+'/resize_kernels.cpp', vdu_utils+'/roc_video_dec.cpp'],
-    include_dirs=[rocdecode_headers,utils_folder,decoder_class_folder,hip_headers,pybind11_headers],
+    include_dirs=[rocdecode_headers,utils_folder,decoder_class_folder,hip_headers],
     extra_compile_args=['-D__HIP_PLATFORM_AMD__','-Wno-sign-compare','-Wno-reorder','-Wno-int-in-bool-context', '-Wno-unused-variable','-Wno-missing-braces','-Wno-unused-private-field','-Wno-unused-function'],
     distclass=BinaryDistribution,
     library_dirs=[rocm_path+'/lib/'],
