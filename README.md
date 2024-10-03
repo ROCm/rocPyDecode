@@ -83,6 +83,20 @@ sudo pip3 install .
 >[!NOTE]
 > `sudo` access is needed
 
+### creating python distribution wheel
+
+```bash
+# the generated .whl file will be located under subfolder ./dist/
+git clone https://github.com/ROCm/rocPyDecode.git
+cd rocPyDecode
+# Create/Build the wheel and install it
+sudo python3 build_rocpydecode_wheel.py
+# alternative method
+sudo python3 setup.py bdist_wheel
+```
+>[!NOTE]
+> `sudo` access is needed
+
 ### using docker environment
 
 ```bash
