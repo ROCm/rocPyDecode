@@ -105,6 +105,9 @@ message("-- ${Green}NOTE: rocPyDecode requires Python3, Found --  ${Python3_EXEC
 find_package(pybind11 REQUIRED)
 message("-- ${Green}NOTE: rocPyDecode requires pybind11, Found --  ${pybind11_INCLUDE_DIRS} ${ColourReset}")
 
+find_package(dlpack REQUIRED)
+message("-- ${Green}NOTE: rocPyDecode requires dlpack, Found")
+
 if(HIP_FOUND AND rocDecode_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG_FOUND)
 
     # avoid setting the default installation path to /usr/local
@@ -148,6 +151,13 @@ if(HIP_FOUND AND rocDecode_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
         target_compile_definitions(${TARGET_NAME} PUBLIC OVERHEAD_SUPPORT=0)
     endif()
 
+    # TODO: remove after ROCDECODE_CHECK_VERSION macro is pushed to mainline
+    if(${ROCDECODE_MAJOR_VERSION} VERSION_GREATER_EQUAL "0" AND ${ROCDECODE_MINOR_VERSION} VERSION_GREATER_EQUAL "7" AND ${ROCDECODE_MICRO_VERSION} VERSION_GREATER_EQUAL "0")
+        target_compile_definitions(${TARGET_NAME} PUBLIC CODEC_SUPPORTED_CHECK=1)
+    else()
+        target_compile_definitions(${TARGET_NAME} PUBLIC CODEC_SUPPORTED_CHECK=0)
+    endif()
+
     set_target_properties(${TARGET_NAME} PROPERTIES
         PREFIX "${PYTHON_MODULE_PREFIX}"
         SUFFIX "${PYTHON_MODULE_EXTENSION}"
@@ -168,9 +178,6 @@ if(HIP_FOUND AND rocDecode_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
     message("-- ${Green}ROCm Video Decode Library Python Binding - rocPyDecode module added ${ColourReset}")
     message("-- ${BoldBlue}rocPyDecode Version -- ${VERSION}${ColourReset}")
     message("-- ${BoldBlue}rocPyDecode Install Path -- ${CMAKE_INSTALL_PREFIX_PYTHON}${ColourReset}")
-
-    # export needed path as variables
-    file(WRITE ./export_path "${ROCM_PATH}/include/rocdecode/\n" "${ROCM_PATH}/share/rocdecode/utils/\n" "${ROCM_PATH}/share/rocdecode/utils/rocvideodecode/\n" "${HIP_INCLUDE_DIRS}\n" "${ROCM_PATH}\n")
 
     # make test with CTest
     enable_testing()
