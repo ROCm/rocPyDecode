@@ -179,9 +179,6 @@ if(HIP_FOUND AND rocDecode_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
     message("-- ${BoldBlue}rocPyDecode Version -- ${VERSION}${ColourReset}")
     message("-- ${BoldBlue}rocPyDecode Install Path -- ${CMAKE_INSTALL_PREFIX_PYTHON}${ColourReset}")
 
-    # export needed path as variables
-    file(WRITE ./export_path "${ROCM_PATH}/include/rocdecode/\n" "${ROCM_PATH}/share/rocdecode/utils/\n" "${ROCM_PATH}/share/rocdecode/utils/rocvideodecode/\n" "${HIP_INCLUDE_DIRS}\n" "${ROCM_PATH}\n")
-
     # make test with CTest
     enable_testing()
     include(CTest)
