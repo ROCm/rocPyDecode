@@ -19,7 +19,7 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
                 cd build
                 cmake ..
                 make -j
-                sudo make install
+                make install
                 cd ../..
 
                 echo Build rocPyDecode - ${buildTypeDir}
@@ -32,13 +32,14 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
                 cd build
                 cmake ..
                 make
-                sudo make install
+                make install
                 cd ../..
 
                 pip3 install pybind11[global]
-                python3 -m pip install pybind11[global]
 
-                sudo python3 rocPyDecode-docker-install.py
+                sudo mkdir -p /opt/rocm/share/rocdecode/utils
+
+                python3 rocPyDecode-docker-install.py
 
                 pip3 freeze
                 pip3 show rocPyDecode
