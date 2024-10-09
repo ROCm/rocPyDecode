@@ -84,4 +84,4 @@ else:
     os.system('python3 setup.py install')
 
 # how to test
-print("\nTo test rocPyDecode run the following command:\n","python3 samples/videodecode.py -i data/videos/AMD_driving_virtual_20-H265.mp4","\n")
+print("\nTo test rocPyDecode run the following command:\n","python3 samples/videodecode.py -i /opt/rocm/share/rocdecode/video/AMD_driving_virtual_20-H265.mp4","\n")
