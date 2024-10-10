@@ -40,9 +40,6 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
                 sudo mkdir -p /opt/rocm/share/rocdecode/utils
 
                 sudo python3 rocPyDecode-docker-install.py
-
-                sudo pip3 freeze
-                sudo pip3 show rocPyDecode
                 """
 
     platform.runCommand(this, command)
