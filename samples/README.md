@@ -39,7 +39,7 @@ The following are full list of arguments that can be passed to the sample.
 -i INPUT, --input INPUT                          : Input File Path - required
 -o OUTPUT, --output OUTPUT                       : Output File Path - optional
 -d DEVICE, --device DEVICE                       : GPU device ID - optional, default - 0
--m MEM_TYPE, --mem_type MEM_TYPE                 : Memory Type of output surfce - 0: Internal 1: dev_copied 2: host_copied 3: MEM not mapped - optional, default 0
+-m MEM_TYPE, --mem_type MEM_TYPE                 : Memory Type of output surface - 0: Internal 1: dev_copied 2: host_copied 3: MEM not mapped - optional, default 0
 -z ZERO_LATENCY, --zero_latency ZERO_LATENCY     : Force zero latency - [options: yes,no], default: no
 -crop CROP_RECT, --crop_rect CROP_RECT           : Crop rectangle (left, top, right, bottom) - optional, default: None (no cropping)
 -s SEEK, --seek SEEK                             : seek this number of frames, optional, default: no seek
@@ -63,7 +63,7 @@ The following are full list of arguments that can be passed to the sample.
 -h, --help                                                  : Show detail help message and exit
 -i INPUT, --input INPUT                                     : Input File Path - required
 -d DEVICE, --device DEVICE                                  : GPU device ID - optional, default - 0
--m MEM_TYPE, --mem_type MEM_TYPE                            : Memory Type of output surfce - 0: Internal 1: dev_copied 2: host_copied 3: MEM not mapped - optional, default 3
+-m MEM_TYPE, --mem_type MEM_TYPE                            : Memory Type of output surface - 0: Internal 1: dev_copied 2: host_copied 3: MEM not mapped - optional, default 3
 -t Number of Processes, --num_process Number of Processes   : Number of Processes - optional, default 4
 ```
 
@@ -78,7 +78,7 @@ The following are full list of arguments that can be passed to the sample.
 -i INPUT, --input INPUT                       : Input File Path - required
 -o OUTPUT, --output OUTPUT                    : Output File Path - optional
 -d DEVICE, --device DEVICE                    : GPU device ID - optional, default - 0
--m MEM_TYPE, --mem_type MEM_TYPE              : Memory Type of output surfce - 0: Internal 1: dev_copied 2: host_copied 3: MEM not mapped - optional, default 0
+-m MEM_TYPE, --mem_type MEM_TYPE              : Memory Type of output surface - 0: Internal 1: dev_copied 2: host_copied 3: MEM not mapped - optional, default 0
 -z ZERO_LATENCY, --zero_latency ZERO_LATENCY  : Force zero latency - [options: yes,no], default: no
 -crop CROP_RECT, --crop_rect CROP_RECT        : Crop rectangle (left, top, right, bottom) - optional, default: None (no cropping)
 -of RGB_FORMAT, --rgb_format RGB_FORMAT       : Rgb Format to use - 1:bgr, 3:rgb, converts decoded YUV frame to Tensor in RGB format, optional, default: 3
@@ -95,7 +95,7 @@ The following are full list of arguments that can be passed to the sample.
 -i INPUT, --input INPUT                       : Input File Path - required
 -o OUTPUT, --output OUTPUT                    : Output File Path - optional
 -d DEVICE, --device DEVICE                    : GPU device ID - optional, default - 0
--m MEM_TYPE, --mem_type MEM_TYPE              : Memory Type of output surfce - 0: Internal 1: dev_copied 2: host_copied 3: MEM not mapped - optional, default 0
+-m MEM_TYPE, --mem_type MEM_TYPE              : Memory Type of output surface - 0: Internal 1: dev_copied 2: host_copied 3: MEM not mapped - optional, default 0
 -z ZERO_LATENCY, --zero_latency ZERO_LATENCY  : Force zero latency - [options: yes,no], default: no
 -crop CROP_RECT, --crop_rect CROP_RECT        : Crop rectangle (left, top, right, bottom) - optional, default: None (no cropping)
 -of RGB_FORMAT, --rgb_format RGB_FORMAT       : Rgb Format to use - 1:bgr, 3:rgb, converts decoded YUV frame to Tensor in RGB format, optional, default: 3
@@ -113,7 +113,7 @@ The following are full list of arguments that can be passed to the sample.
 -i INPUT, --input INPUT                       : Input File Path - required
 -o OUTPUT, --output OUTPUT                    : Output File Path - optional
 -d DEVICE, --device DEVICE                    : GPU device ID - optional, default - 0
--m MEM_TYPE, --mem_type MEM_TYPE              : Memory Type of output surfce - 0: Internal 1: dev_copied 2: host_copied 3: MEM not mapped - optional, default 0
+-m MEM_TYPE, --mem_type MEM_TYPE              : Memory Type of output surface - 0: Internal 1: dev_copied 2: host_copied 3: MEM not mapped - optional, default 0
 -z ZERO_LATENCY, --zero_latency ZERO_LATENCY  : Force zero latency - [options: yes,no], default: no
 -crop CROP_RECT, --crop_rect CROP_RECT        : Crop rectangle (left, top, right, bottom) - optional, default: None (no cropping)
 ```
@@ -130,7 +130,7 @@ The following are full list of arguments that can be passed to the sample.
 -i INPUT, --input INPUT                       : Input File Path - required
 -o OUTPUT, --output OUTPUT                    : Output File Path - optional
 -d DEVICE, --device DEVICE                    : GPU device ID - optional, default - 0
--m MEM_TYPE, --mem_type MEM_TYPE              : Memory Type of output surfce - 0: Internal 1: dev_copied 2: host_copied 3: MEM not mapped - optional, default 0
+-m MEM_TYPE, --mem_type MEM_TYPE              : Memory Type of output surface - 0: Internal 1: dev_copied 2: host_copied 3: MEM not mapped - optional, default 0
 -z ZERO_LATENCY, --zero_latency ZERO_LATENCY  : Force zero latency - [options: yes,no], default: no
 -crop CROP_RECT, --crop_rect CROP_RECT        : Crop rectangle (left, top, right, bottom) - optional, default: None (no cropping)
 ```
@@ -147,4 +147,28 @@ The following are full list of arguments that can be passed to the sample.
 -h, --help                                    : Show detail help message and exit
 -i INPUT, --input INPUT                       : Input File Path - required
 -d DEVICE, --device DEVICE                    : GPU device ID - optional, default - 0
+```
+
+## videodecode_mpi.py
+
+This sample uses MPI to allow scalability while decoding video files. It scale the decoding by distributing it to local cores, or to what the user provide as MPI parameters. To run this python sample script, you need to provide input video file full path name, other arguments are optional. Proceed the python command with mpirun or mpiexec -n X, where X is the count of the processes/cores to use, or mpirun --hostfile filename, where filename is the file that contains all other external nodes information, please refer to MPI documentation. If the -ssh argument provided to the python example it will copy results from other nodes and collect them in local temp folder, where the -o with a file name should be provided.
+
+### Prerequisite
+
+* Install mpi4py and av:
+    * sudo apt-get install -y python3-mpi4py
+    * sudo pip3 install av
+
+### Example of shell command
+This command will invoke the mpi to run the python example on 4 cores (locally), and collect the frames into one file named outputfile.yuv
+* mpiexec -n 4 python3 samples/videodecode_mpi.py -i data/videos/AMD_driving_virtual_20-AV1.mp4 -o outputfile.yuv -ssh yes
+
+### Arguments
+The following are full list of arguments that can be passed to the sample.
+```bash
+-h, --help                                    : Show detail help message and exit
+-i INPUT, --input INPUT                       : Input File Path - required
+-o OUTPUT, --output OUTPUT                    : Output File Path - optional
+-dbg USR_DBG, --usr_dbg USR_DBG               : Print out some debug information - [options: yes,no], default: no
+-ssh USE_SSH, --use_ssh USE_SSH               : Use ssh scp to copy decoded frames, this example way of consumption - [options: yes,no], default: no
 ```
