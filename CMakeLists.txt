@@ -102,6 +102,21 @@ find_package(rocDecode QUIET)
 find_package(Python3 QUIET COMPONENTS Interpreter Development)
 message("-- ${Green}NOTE: rocPyDecode requires Python3, Found --  ${Python3_EXECUTABLE} ${ColourReset}")
 
+# get the pybind installation folder and pass it to the find package
+execute_process(
+    COMMAND sudo find / -name "pybind11Config.cmake" -not -path "*docker*"
+    OUTPUT_VARIABLE PYBIND11_FILE_PATH
+    ERROR_VARIABLE ERROR_OUTPUT
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+execute_process(
+    COMMAND sudo dirname ${PYBIND11_FILE_PATH}
+    OUTPUT_VARIABLE PYBIND11_INSTALLATION_FOLDER_LOCATION
+    ERROR_VARIABLE ERROR_OUTPUT
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+# pass it to the find package
+list(APPEND CMAKE_PREFIX_PATH ${PYBIND11_INSTALLATION_FOLDER_LOCATION})
 find_package(pybind11 REQUIRED)
 message("-- ${Green}NOTE: rocPyDecode requires pybind11, Found --  ${pybind11_INCLUDE_DIRS} ${ColourReset}")
 
@@ -111,10 +126,10 @@ message("-- ${Green}NOTE: rocPyDecode requires dlpack, Found")
 if(HIP_FOUND AND rocDecode_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG_FOUND)
 
     # avoid setting the default installation path to /usr/local
-    if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-        message("-- ${Green}NOTE: rocPyDecode default installation path -- ${Python3_STDARCH} ${ColourReset}")
-        set(CMAKE_INSTALL_PREFIX_PYTHON ${Python3_STDARCH} CACHE PATH "rocPyDecode PyBind default installation path" FORCE)
-    endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    # if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    message("-- ${Green}NOTE: rocPyDecode default installation path -- ${Python3_STDARCH} ${ColourReset}")
+    set(CMAKE_INSTALL_PREFIX_PYTHON ${Python3_STDARCH} CACHE PATH "rocPyDecode PyBind default installation path" FORCE)
+    # endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
     # HIP

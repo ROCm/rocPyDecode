@@ -139,7 +139,7 @@ coreDebianPackages = [
     'rocdecode-dev',
     'rocdecode-test',
     'python3-dev',
-    'pybind11-dev',
+    #'pybind11-dev', # use 'pip3 install pybind11' instead
     'libdlpack-dev'
 ]
 
