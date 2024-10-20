@@ -23,35 +23,31 @@
 
 execute_process(
     COMMAND sudo find / -name "pybind11Config.cmake" -not -path "*docker*"
-    OUTPUT_VARIABLE PYBIND11_CMAKE_FILE_PATH 
-    ERROR_VARIABLE ERROR_OUTPUT
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-execute_process(
-    COMMAND sudo dirname ${PYBIND11_CMAKE_FILE_PATH}
     OUTPUT_VARIABLE PYBIND11_CMAKE_FOLDER
     ERROR_VARIABLE ERROR_OUTPUT
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
+string(REPLACE "\n" ";" FOLDER_LINES "${PYBIND11_CMAKE_FOLDER}")
+list(GET FOLDER_LINES 0 PYBIND11_FOLDER_FOUND)
+get_filename_component(PYBIND11_FOLDER_FOUND "${PYBIND11_FOLDER_FOUND}/.." ABSOLUTE)
+message("-- ${Green}Found pybind11 folder:${PYBIND11_FOLDER_FOUND}${ColourReset}")
+get_filename_component(PACKAGE_PREFIX_DIR "${PYBIND11_FOLDER_FOUND}/../../../" ABSOLUTE)
 
-get_filename_component(PACKAGE_PREFIX_DIR "${PYBIND11_CMAKE_FOLDER}/../../../" ABSOLUTE)
- 
 # Location of pybind11/pybind11.h this will be relative
 set(pybind11_INCLUDE_DIR "${PACKAGE_PREFIX_DIR}/include")
-
 set(pybind11_LIBRARY "")
 set(pybind11_DEFINITIONS USING_pybind11)
 set(pybind11_VERSION_TYPE "")
 
 check_required_components(pybind11)
 
-include("${PYBIND11_CMAKE_FOLDER}/pybind11Targets.cmake")
+include("${PYBIND11_FOLDER_FOUND}/pybind11Targets.cmake")
 
 # Easier to use / remember
 add_library(pybind11::headers IMPORTED INTERFACE)
 set_target_properties(pybind11::headers PROPERTIES INTERFACE_LINK_LIBRARIES pybind11::pybind11_headers)
 
-include("${PYBIND11_CMAKE_FOLDER}/pybind11Common.cmake")
+include("${PYBIND11_FOLDER_FOUND}/pybind11Common.cmake")
 
 set(pybind11_FOUND TRUE)
 
