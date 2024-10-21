@@ -115,10 +115,10 @@ endif()
 if(HIP_FOUND AND rocDecode_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG_FOUND)
 
     # avoid setting the default installation path to /usr/local
-    # if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    message("-- ${Green}NOTE: rocPyDecode default installation path -- ${Python3_STDARCH} ${ColourReset}")
-    set(CMAKE_INSTALL_PREFIX_PYTHON ${Python3_STDARCH} CACHE PATH "rocPyDecode PyBind default installation path" FORCE)
-    # endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+        message("-- ${Green}NOTE: rocPyDecode default installation path -- ${Python3_STDARCH} ${ColourReset}")
+        set(CMAKE_INSTALL_PREFIX_PYTHON ${Python3_STDARCH} CACHE PATH "rocPyDecode PyBind default installation path" FORCE)
+    endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
     # HIP
