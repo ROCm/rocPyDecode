@@ -28,8 +28,8 @@ find_package(Python3 QUIET)
 # rocPyDecode tests
 if(Python3_FOUND)
     # add python-hip for perf tests
-    execute_process(COMMAND ${Python3_EXECUTABLE} -m pip install --upgrade pip)
-    execute_process(COMMAND ${Python3_EXECUTABLE} -m pip install -i https://test.pypi.org/simple hip-python)
+    execute_process(COMMAND ${Python3_EXECUTABLE} -m pip install --upgrade pip OUTPUT_VARIABLE PIP_VERSION ERROR_VARIABLE PIP_ERROR RESULT_VARIABLE PIP_RESULT)
+    execute_process(COMMAND ${Python3_EXECUTABLE} -m pip install -i https://test.pypi.org/simple hip-python OUTPUT_VARIABLE PIP_VERSION ERROR_VARIABLE PIP_ERROR RESULT_VARIABLE PIP_RESULT)
 
     #run tests
     add_test(NAME video_decode_python_H265

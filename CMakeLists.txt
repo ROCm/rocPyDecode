@@ -103,10 +103,14 @@ find_package(Python3 QUIET COMPONENTS Interpreter Development)
 message("-- ${Green}NOTE: rocPyDecode requires Python3, Found --  ${Python3_EXECUTABLE} ${ColourReset}")
 
 find_package(pybind11 REQUIRED)
-message("-- ${Green}NOTE: rocPyDecode requires pybind11, Found --  ${pybind11_INCLUDE_DIRS} ${ColourReset}")
+if(pybind11_FOUND)
+    message("-- ${Green}NOTE: rocPyDecode requires pybind11, Found --  ${pybind11_INCLUDE_DIRS} ${ColourReset}")
+endif()
 
 find_package(dlpack REQUIRED)
-message("-- ${Green}NOTE: rocPyDecode requires dlpack, Found")
+if(dlpack_FOUND)
+    message("-- ${Green}NOTE: rocPyDecode requires dlpack, Found")
+endif()
 
 if(HIP_FOUND AND rocDecode_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG_FOUND)
 
