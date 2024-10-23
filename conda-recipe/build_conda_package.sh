@@ -15,8 +15,10 @@ conda update conda -y
 # finally the build pkg
 conda install conda-build -y
 
-# assumes the meta.yaml file on same folder, build the package
+# the wheel must be created first and saved in 'dist' folder
+cd ..
+python3 setup.py bdist_wheel
+cd conda-recipe/
+
+# cond build here assumes the meta.yaml file on same folder
 conda build .
-
-
-
