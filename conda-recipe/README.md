@@ -2,6 +2,7 @@
 
 ## Prerequisites
 * conda or mini-conda installed
+* rocPyDecode wheel
 
 If you do not have conda or mini-conda installed you can use following steps to install it:
 
@@ -21,6 +22,13 @@ If you do not have conda or mini-conda installed you can use following steps to 
     # finally the build pkg
     conda install conda-build -y
 ```
+To create the required rocPyDecode wheel:
+```bash
+    # change directory to rocPyDecode main folder, then execute this command
+    # if using docker (not bare-metal) do not use 'sudo'
+    sudo python3 setup.py bdist_wheel   # this will create the .whl file under 'dist' subfolder
+```
+
 ## Building conda package
 
 Change directory to rocPyDecode subfolder 'conda-recipe', then execute the conda build command:
