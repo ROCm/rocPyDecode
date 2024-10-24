@@ -21,39 +21,42 @@
 # #
 # ################################################################################
 
-execute_process(
-    COMMAND sudo find / -name "pybind11Config.cmake" -not -path "*docker*"
-    OUTPUT_VARIABLE PYBIND11_CMAKE_FOLDER
-    ERROR_VARIABLE ERROR_OUTPUT
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-string(REPLACE "\n" ";" FOLDER_LINES "${PYBIND11_CMAKE_FOLDER}")
-list(GET FOLDER_LINES 0 PYBIND11_FOLDER_FOUND)
-get_filename_component(PYBIND11_FOLDER_FOUND "${PYBIND11_FOLDER_FOUND}/.." ABSOLUTE)
-message("-- ${Green}Found pybind11 folder:${PYBIND11_FOLDER_FOUND}${ColourReset}")
-get_filename_component(PACKAGE_PREFIX_DIR "${PYBIND11_FOLDER_FOUND}/../../../" ABSOLUTE)
+string(REGEX REPLACE "^([0-9]+\\.[0-9]+).*" "\\1" PYTHON_VERSION_SHORT "${Python3_VERSION}")
 
-# Location of pybind11/pybind11.h this will be relative
-set(pybind11_INCLUDE_DIR "${PACKAGE_PREFIX_DIR}/include")
 set(pybind11_LIBRARY "")
 set(pybind11_DEFINITIONS USING_pybind11)
 set(pybind11_VERSION_TYPE "")
 
+find_path(pybind11_INCLUDE_DIR
+        NAMES pybind11/pybind11.h
+        HINTS
+        /usr/local/lib/
+        /usr/lib/
+        /usr/bin/
+        /usr/local/lib/python${PYTHON_VERSION_SHORT}/dist-packages/pybind11/
+        /usr/local/lib/python${PYTHON_VERSION_SHORT}/dist-packages/pybind11/include/
+        /usr/local/lib/python${PYTHON_VERSION_SHORT}/dist-packages/pybind11/share/cmake/
+        ${Python3_EXECUTABLE}
+        PATHS
+        /usr/local/lib/python${PYTHON_VERSION_SHORT}/dist-packages/pybind11/
+        /usr/local/lib/python${PYTHON_VERSION_SHORT}/dist-packages/pybind11/include/
+        /usr/local/lib/python${PYTHON_VERSION_SHORT}/dist-packages/pybind11/share/cmake/
+        ${Python3_EXECUTABLE}
+)
+set(pybind11_INCLUDE_DIRS ${pybind11_INCLUDE_DIR})
+get_filename_component(PYBIND11_CMAKE_FOLDER "${pybind11_INCLUDE_DIRS}/../share/cmake/pybind11/" ABSOLUTE)
+message(STATUS "pybind11: ${pybind11_INCLUDE_DIR} (found version \"${pybind11_VERSION}${pybind11_VERSION_TYPE}\") -- PYBIND11_CMAKE_FOLDER: ${PYBIND11_CMAKE_FOLDER}")
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(pybind11
+        FOUND_VAR pybind11_FOUND
+        REQUIRED_VARS pybind11_INCLUDE_DIR
+)
+message(STATUS "pybind11 was FOUND: ${pybind11_FOUND} --- HEADERS: ${pybind11_INCLUDE_DIR}"  )
+mark_as_advanced(pybind11_FOUND)
+
 check_required_components(pybind11)
-
-include("${PYBIND11_FOLDER_FOUND}/pybind11Targets.cmake")
-
-# Easier to use / remember
+include("${PYBIND11_CMAKE_FOLDER}/pybind11Targets.cmake")
 add_library(pybind11::headers IMPORTED INTERFACE)
 set_target_properties(pybind11::headers PROPERTIES INTERFACE_LINK_LIBRARIES pybind11::pybind11_headers)
-
-include("${PYBIND11_FOLDER_FOUND}/pybind11Common.cmake")
-
-set(pybind11_FOUND TRUE)
-
-if(NOT pybind11_FIND_QUIETLY)
-  message(
-    STATUS
-      "Found pybind11: ${pybind11_INCLUDE_DIR} (found version \"${pybind11_VERSION}${pybind11_VERSION_TYPE}\")"
-  )
-endif()
+include("${PYBIND11_CMAKE_FOLDER}/pybind11Common.cmake")
