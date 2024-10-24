@@ -38,11 +38,10 @@ Change directory to rocPyDecode subfolder 'conda-recipe', then execute the conda
 ```
 ## Location of rocPyDecode conda package
 
-After successful build from the previous step the generated conda package will be on the following path(es):
+After successful build from the previous step the generated conda package will be on the following path:
 
 ```bash
-    /root/miniconda3/pkgs/rocpydecode-0.2.0-py312_0.tar.bz2
-    /root/miniconda3/conda-bld/linux-64/rocpydecode-0.2.0-py313_0.tar.bz2
+    /root/miniconda3/conda-bld/linux-64/rocpydecode-0.2.0-py310_0.tar.bz2
  ```
 
 ## Installing rocPyDecode conda package
@@ -50,23 +49,40 @@ After successful build from the previous step the generated conda package will b
 To install the generated package use the following command:
 
 ```bash
+    # default
     conda install --use-local rocpydecode
+
+    # or target the exact bz2 package
+    conda install --use-local /root/miniconda3/conda-bld/linux-64/rocpydecode-0.2.0-py310_0.tar.bz2
 ```
 
 ## Installing rocPyDecode package on conda virtual environment
 
 To install rocPyDecode conda package on virtual environment use the following commands:
 ```bash
-    conda create -n test_env python=3.10  # Specify the Python version if necessary
-    conda activate test_env
+    # create conda virtual env
+    conda create -n test_env_10 python=3.10  # Specify Python version
+    conda activate test_env_10  # activate the env
+
     # when inside the env
     conda install --use-local rocpydecode
+    pip3 install numpy # needed to test sample
 
-    # when not in use to deactivate the env
-    deactivate
+    # test using provided samples (specify the location of the .py and .mp4 files)
+    python3 videodecode.py -i AMD_driving_virtual_20-H265.mp4
+
+    # when env not in use, deactivate it
+    conda deactivate
 ```
 
+## Building rocPyDecode conda package using .sh script
+* build_conda_package.sh
 
+The provided 'build_conda_package.sh' script contains all necessary steps to install miniconda, making sure the wheel has been created, and finally create conda package. To follow the steps below to run the script on bash shell:
+```bash
+    chmod 777 build_conda_package.sh    # chmod to execute
+    ./build_conda_package.sh            # execute the script
+```
 
 
 
