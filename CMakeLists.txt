@@ -83,7 +83,7 @@ message("-- ${Cyan}     -D ROCPYDECODE_AMDGPU_TARGET=${ROCPYDECODE_AMDGPU_TARGET
 # set amdgpu targets with vcn support
 option(ROCPYDECODE_AMDGPU_TARGET "AMD GPU target ASIC to build rocPyDecode" "")
 
-set(DEFAULT_AMDGPU_TARGETS "gfx908;gfx90a;gfx940;gfx941;gfx942;gfx1030;gfx1031;gfx1032;gfx1100;gfx1101;gfx1102")
+set(DEFAULT_AMDGPU_TARGETS "gfx908;gfx90a;gfx942;gfx1030;gfx1031;gfx1032;gfx1100;gfx1101;gfx1102")
 
 # Set AMDGPU_TARGETS
 if(DEFINED ENV{AMDGPU_TARGETS})
