@@ -86,7 +86,7 @@ setup(
     name='rocPyDecode',
     description='AMD ROCm Video Decoder Library',
     url='https://github.com/ROCm/rocPyDecode',
-    version='0.2.0' + '.' + get_rocm_rev(),
+    version='0.3.0' + '.' + get_rocm_rev(),
     author='AMD',
     license='MIT License',
     include_package_data=True,
