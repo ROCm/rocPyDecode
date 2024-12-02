@@ -1,6 +1,6 @@
 package:
   name: rocpydecode  # package name
-  version: "0.2.0"   # package version
+  version: "0.3.0"   # package version
 
 source:
   path: ../dist  # Directory containing the wheel

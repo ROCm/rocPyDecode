@@ -34,11 +34,13 @@ Prerequisites
   * Run: ``--usecase=rocm``
   * To install rocDecode with minimum requirements, follow the :doc:`rocDecode QuickStart Guide<rocdecode:install/quick-start>`
 
-* CMake 3.5 or later
+* CMake 3.12 or later
 
   .. code:: shell
 
     sudo apt install cmake
+
+* AMD Clang++ Version `18.0.0` or later - installed with ROCm
 
 * Python3 and Python3 PIP
 

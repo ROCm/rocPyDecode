@@ -20,7 +20,7 @@
 # SOFTWARE.
 #
 # ##############################################################################
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.12)
 
 set(Python3_FIND_VIRTUALENV FIRST)
 find_package(Python3 QUIET)

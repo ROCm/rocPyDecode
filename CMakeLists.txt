@@ -21,24 +21,29 @@
 #
 ################################################################################
 
-cmake_minimum_required (VERSION 3.12)
+cmake_minimum_required(VERSION 3.12)
 
-set(VERSION "0.2.0")
+# ROCM Path
+if(DEFINED ENV{ROCM_PATH})
+    set(ROCM_PATH $ENV{ROCM_PATH} CACHE PATH "Default ROCm installation path")
+elseif(ROCM_PATH)
+    message("-- INFO:ROCM_PATH Set -- ${ROCM_PATH}")
+else()
+    set(ROCM_PATH /opt/rocm CACHE PATH "Default ROCm installation path")
+endif()
+# Set AMD Clang as default compiler
+if (NOT DEFINED CMAKE_CXX_COMPILER AND EXISTS "${ROCM_PATH}/bin/amdclang++")
+    set(CMAKE_C_COMPILER ${ROCM_PATH}/bin/amdclang)
+    set(CMAKE_CXX_COMPILER ${ROCM_PATH}/bin/amdclang++)
+endif()
+
+set(VERSION "0.3.0")
 set(CMAKE_CXX_STANDARD 17)
 
 # Set Project Version and Language
 project(rocPyDecode VERSION ${VERSION} LANGUAGES CXX)
 
 set(TARGET_NAME rocPyDecode)
-
-# ROCM Path
-if(DEFINED ENV{ROCM_PATH})
-    set(ROCM_PATH $ENV{ROCM_PATH} CACHE PATH "${White}${PROJECT_NAME}: Default ROCm installation path${ColourReset}")
-elseif(ROCM_PATH)
-    message("-- ${White}${PROJECT_NAME} :ROCM_PATH Set -- ${ROCM_PATH}${ColourReset}")
-else()
-    set(ROCM_PATH /opt/rocm CACHE PATH "${White}${PROJECT_NAME}: Default ROCm installation path${ColourReset}")
-endif()
 
 # rocPyDecode build type
 set(DEFAULT_BUILD_TYPE "Release")
@@ -59,7 +64,6 @@ endif()
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 list(APPEND CMAKE_PREFIX_PATH ${ROCM_PATH}/hip ${ROCM_PATH})
-set(CMAKE_CXX_COMPILER ${ROCM_PATH}/lib/llvm/bin/clang++)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "${DEFAULT_BUILD_TYPE}" CACHE STRING "rocPyDecode Default Build Type" FORCE)
@@ -69,8 +73,7 @@ endif()
 if(CMAKE_BUILD_TYPE MATCHES Debug)
     # -O0 -- Don't Optimize output file
     # -gdwarf-4  -- generate debugging information, dwarf-4 for making valgrind work
-    # -Og -- Optimize for debugging experience rather than speed or size
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -gdwarf-4 -Og")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -gdwarf-4")
 else()
     # -O3       -- Optimize output file 
     # -DNDEBUG  -- turn off asserts 

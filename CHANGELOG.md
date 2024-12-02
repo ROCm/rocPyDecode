@@ -2,6 +2,21 @@
 
 Full documentation for for rocPyDecode is available at [https://rocm.docs.amd.com/projects/rocPyDecode/en/latest/](https://rocm.docs.amd.com/projects/rocPyDecode/en/latest/)
 
+## (Unreleased) rocPyDecode 0.3.0
+
+### Added
+
+### Changed
+
+* AMD Clang is now the default CXX and C compiler.
+
+### Removed
+
+### Optimized
+
+### Resolved issues
+
+
 ## rocPyDecode 0.2.0 for ROCm 6.3
 
 ### Added
@@ -56,13 +71,3 @@ Full documentation for for rocPyDecode is available at [https://rocm.docs.amd.co
 * Supported codecs - adding check if the input video codec is supported
 * Setup to produce python wheel for end-user
 
-### Tested configurations
-
-* Linux
-  * Ubuntu - `20.04` / `22.04`
-  * RHEL - `8` / `9`
-  * SLES - `15 SP5`
-* ROCm:
-  * rocm-core - `6.2.0.60200-66`
-  * amdgpu-core - `1:6.2.60200-2009582`
-* rocDecode - version `0.6.0'
