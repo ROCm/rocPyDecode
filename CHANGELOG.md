@@ -2,7 +2,7 @@
 
 Full documentation for for rocPyDecode is available at [https://rocm.docs.amd.com/projects/rocPyDecode/en/latest/](https://rocm.docs.amd.com/projects/rocPyDecode/en/latest/)
 
-## (unreleased) rocPyDecode 0.3.0
+## (Unreleased) rocPyDecode 0.3.0
 
 ### Added
 
