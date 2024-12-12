@@ -61,7 +61,7 @@ def runTestCommand (platform, project) {
                 set -ex
                 export HOME=/home/jenkins
                 echo make samples
-                sudo pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.0
+                sudo pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.2
                 cd ${project.paths.project_build_prefix}
                 echo \$PYTHONPATH
                 LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/opt/rocm/lib${libLocation} sudo python3 samples/videodecode.py
