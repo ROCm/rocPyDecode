@@ -10,7 +10,7 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
     def command = """#!/usr/bin/env bash
                 set -ex
                 
-                cd ${project.paths.project_build_prefix}
+                cd ${project.paths.project_build_prefix}/..
                 
                 echo Build rocDecode
                 rm -rf rocDecode
@@ -25,7 +25,7 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
                 cd ../..
 
                 echo Build rocPyDecode - ${buildTypeDir}
-                
+                cd ${project.paths.project_build_prefix}
                 wget https://github.com/dmlc/dlpack/archive/refs/tags/v0.6.tar.gz
                 tar -xvf v0.6.tar.gz
                 cd dlpack-0.6
