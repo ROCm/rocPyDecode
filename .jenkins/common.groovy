@@ -63,7 +63,7 @@ def runTestCommand (platform, project) {
     def command = """#!/usr/bin/env bash
                 set -ex
                 export HOME=/home/jenkins
-                export LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64/:/usr/local/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
+                export LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64/:/usr/local/lib/x86_64-linux-gnu:\$LD_LIBRARY_PATH
                 echo make samples
                 sudo pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.2
                 cd ${project.paths.project_build_prefix}
