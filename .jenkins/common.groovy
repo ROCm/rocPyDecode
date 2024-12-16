@@ -17,12 +17,12 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
                 rm -rf rocDecode
                 git clone http://github.com/ROCm/rocDecode.git
                 cd rocDecode
-                sudo python3 rocDecode-setup.py
+                python3 rocDecode-setup.py
                 mkdir build
                 cd build
-                sudo cmake ..
-                sudo make -j
-                sudo make install
+                cmake ..
+                make -j
+                make install
                 cd ../..
 
                 echo Build rocPyDecode - ${buildTypeDir}
@@ -34,16 +34,16 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
                 cd dlpack-0.6
                 mkdir build
                 cd build
-                sudo cmake ..
-                sudo make
-                sudo make install
+                cmake ..
+                make
+                make install
                 cd ../..
 
-                sudo pip3 install pybind11[global]
+                pip3 install pybind11[global]
 
-                sudo mkdir -p /opt/rocm/share/rocdecode/utils
+                mkdir -p /opt/rocm/share/rocdecode/utils
 
-                sudo python3 rocPyDecode-docker-install.py
+                python3 rocPyDecode-docker-install.py
                 """
 
     platform.runCommand(this, command)
@@ -65,10 +65,10 @@ def runTestCommand (platform, project) {
                 export HOME=/home/jenkins
                 export LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64/:/usr/local/lib/x86_64-linux-gnu:\$LD_LIBRARY_PATH
                 echo make samples
-                sudo pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.2
+                pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.2
                 cd ${project.paths.project_build_prefix}
                 echo \$PYTHONPATH
-                LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/opt/rocm/lib${libLocation} sudo python3 samples/videodecode.py
+                LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/opt/rocm/lib${libLocation} python3 samples/videodecode.py
                 """
 
     platform.runCommand(this, command)
