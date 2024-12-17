@@ -4,11 +4,21 @@
 def runCompileCommand(platform, project, jobName, boolean debug=false, boolean staticLibrary=false) {
     project.paths.construct_build_prefix()
 
+    String libLocation = ''
+    if (platform.jenkinsLabel.contains('rhel')) {
+        libLocation = ':/usr/local/lib:/usr/local/lib/x86_64-linux-gnu'
+    }
+    else if (platform.jenkinsLabel.contains('sles')) {
+        libLocation = ':/usr/local/lib:/usr/local/lib/x86_64-linux-gnu'
+    }
+
     String buildTypeArg = debug ? '-DCMAKE_BUILD_TYPE=Debug' : '-DCMAKE_BUILD_TYPE=Release'
     String buildTypeDir = debug ? 'debug' : 'release'
     
     def command = """#!/usr/bin/env bash
                 set -ex
+
+                export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/opt/rocm/lib${libLocation}
                 
                 echo Build rocDecode
                 pwd
@@ -50,20 +60,19 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
 }
 
 def runTestCommand (platform, project) {
-
     String libLocation = ''
 
     if (platform.jenkinsLabel.contains('rhel')) {
-        libLocation = ':/usr/local/lib'
+        libLocation = ':/usr/local/lib:/usr/local/lib/x86_64-linux-gnu'
     }
     else if (platform.jenkinsLabel.contains('sles')) {
-        libLocation = ':/usr/local/lib'
+        libLocation = ':/usr/local/lib:/usr/local/lib/x86_64-linux-gnu'
     }
 
     def command = """#!/usr/bin/env bash
                 set -ex
                 export HOME=/home/jenkins
-                export LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64/:/usr/local/lib/x86_64-linux-gnu:\$LD_LIBRARY_PATH
+                export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/opt/rocm/lib${libLocation}
                 echo make samples
                 sudo pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.2
                 cd ${project.paths.project_build_prefix}
