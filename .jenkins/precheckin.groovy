@@ -44,10 +44,10 @@ def runCI =
 ci: { 
     String urlJobName = auxiliary.getTopJobName(env.BUILD_URL)
 
-    def propertyList = []
+    def propertyList = ["compute-rocm-dkms-no-npi-hipclang":[pipelineTriggers([cron('0 1 * * 0')])]]
     auxiliary.appendPropertyList(propertyList)
 
-    def jobNameList = []
+    def jobNameList = ["compute-rocm-dkms-no-npi-hipclang":([rhel9:['gfx1101'], sles15sp1:['gfx908'], ubuntu22:['gfx942'], ubuntu24:['gfx90a']])]
     auxiliary.appendJobNameList(jobNameList)
 
     propertyList.each 
@@ -65,6 +65,13 @@ ci: {
             stage(jobName) {
                 runCI(nodeDetails, jobName)
             }
+        }
+    }
+
+    if(!jobNameList.keySet().contains(urlJobName)) {
+        properties(auxiliary.addCommonProperties([pipelineTriggers([cron('0 1 * * *')])]))
+        stage(urlJobName) {
+            runCI([ubuntu22:['gfx942']], urlJobName)
         }
     }
 }
