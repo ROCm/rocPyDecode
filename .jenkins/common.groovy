@@ -49,7 +49,7 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
                 sudo make install
                 cd ../..
 
-                sudo pip3 install pybind11[global]
+                sudo pip3 install pybind11[global] --break-system-packages
 
                 sudo mkdir -p /opt/rocm/share/rocdecode/utils
 
