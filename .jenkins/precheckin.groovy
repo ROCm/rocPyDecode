@@ -48,7 +48,7 @@ ci: {
     auxiliary.appendPropertyList(propertyList)
 
     def jobNameList = ["compute-rocm-dkms-no-npi-hipclang":([rhel9:['gfx1101'], sles15sp1:['gfx908'], ubuntu22:['gfx942'], ubuntu24:['gfx90a']])]
-    auxiliary.appendJobNameList(jobNameList)
+    jobNameList.appendJobNameList(jobNameList)
 
     propertyList.each 
     {
