@@ -69,12 +69,15 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
 
 def runTestCommand (platform, project) {
     String libLocation = ''
-
+    String breakSystemPackages = ""
     if (platform.jenkinsLabel.contains('rhel')) {
         libLocation = ':/usr/local/lib:/usr/local/lib/x86_64-linux-gnu'
     }
     else if (platform.jenkinsLabel.contains('sles')) {
         libLocation = ':/usr/local/lib:/usr/local/lib/x86_64-linux-gnu'
+    }
+    else if (platform.jenkinsLabel.contains('ubuntu24')) {
+        breakSystemPackages = "--break-system-packages"
     }
 
     def command = """#!/usr/bin/env bash
