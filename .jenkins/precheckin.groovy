@@ -45,10 +45,10 @@ ci: {
     String urlJobName = auxiliary.getTopJobName(env.BUILD_URL)
 
     def propertyList = ["compute-rocm-dkms-no-npi-hipclang":[pipelineTriggers([cron('0 1 * * 0')])]]
-    auxiliary.appendPropertyList(propertyList)
+    propertyList = auxiliary.appendPropertyList(propertyList)
 
     def jobNameList = ["compute-rocm-dkms-no-npi-hipclang":([rhel9:['gfx1101'], sles15sp1:['gfx908'], ubuntu22:['gfx942'], ubuntu24:['gfx90a']])]
-    jobNameList.appendJobNameList(jobNameList)
+    jobNameList = auxiliary.appendJobNameList(jobNameList)
 
     propertyList.each 
     {
