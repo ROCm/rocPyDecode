@@ -5,11 +5,17 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
     project.paths.construct_build_prefix()
 
     String libLocation = ''
+    String installPip = "python3 -m pip install --upgrade pip"
+    String breakSystemPackages = ""
     if (platform.jenkinsLabel.contains('rhel')) {
         libLocation = ':/usr/local/lib:/usr/local/lib/x86_64-linux-gnu'
     }
     else if (platform.jenkinsLabel.contains('sles')) {
         libLocation = ':/usr/local/lib:/usr/local/lib/x86_64-linux-gnu'
+    }
+    else if (platform.jenkinsLabel.contains('ubuntu24')) {
+        installPip = "sudo apt install python3-pip"
+        breakSystemPackages = "--break-system-packages"
     }
 
     String buildTypeArg = debug ? '-DCMAKE_BUILD_TYPE=Debug' : '-DCMAKE_BUILD_TYPE=Release'
@@ -50,8 +56,8 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
                 cd ../..
 
                 sudo python3 --version
-                sudo apt install python3-pip
-                sudo pip3 install pybind11[global] --break-system-packages
+                ${installPip}
+                sudo pip3 install pybind11[global] ${breakSystemPackages}
 
                 sudo mkdir -p /opt/rocm/share/rocdecode/utils
 
@@ -76,7 +82,7 @@ def runTestCommand (platform, project) {
                 export HOME=/home/jenkins
                 export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/opt/rocm/lib${libLocation}
                 echo make samples
-                sudo pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.2
+                sudo pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.2 ${breakSystemPackages}
                 cd ${project.paths.project_build_prefix}
                 echo \$PYTHONPATH
                 LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/opt/rocm/lib${libLocation} sudo python3 samples/videodecode.py
