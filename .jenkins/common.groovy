@@ -50,7 +50,7 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
                 cd ../..
 
                 sudo python3 --version
-                sudo python3 -m pip install --upgrade pip --break-system-packages
+                sudo apt install python3-pip
                 sudo pip3 install pybind11[global] --break-system-packages
 
                 sudo mkdir -p /opt/rocm/share/rocdecode/utils
