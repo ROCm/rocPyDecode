@@ -4,11 +4,27 @@
 def runCompileCommand(platform, project, jobName, boolean debug=false, boolean staticLibrary=false) {
     project.paths.construct_build_prefix()
 
+    String libLocation = ''
+    String installPip = "python3 -m pip install --upgrade pip"
+    String breakSystemPackages = ""
+    if (platform.jenkinsLabel.contains('rhel')) {
+        libLocation = ':/usr/local/lib:/usr/local/lib/x86_64-linux-gnu'
+    }
+    else if (platform.jenkinsLabel.contains('sles')) {
+        libLocation = ':/usr/local/lib:/usr/local/lib/x86_64-linux-gnu'
+    }
+    else if (platform.jenkinsLabel.contains('ubuntu24')) {
+        installPip = "sudo apt install python3-pip"
+        breakSystemPackages = "--break-system-packages"
+    }
+
     String buildTypeArg = debug ? '-DCMAKE_BUILD_TYPE=Debug' : '-DCMAKE_BUILD_TYPE=Release'
     String buildTypeDir = debug ? 'debug' : 'release'
     
     def command = """#!/usr/bin/env bash
                 set -ex
+
+                export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/opt/rocm/lib${libLocation}
                 
                 echo Build rocDecode
                 pwd
@@ -39,7 +55,9 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
                 sudo make install
                 cd ../..
 
-                sudo pip3 install pybind11[global]
+                sudo python3 --version
+                ${installPip}
+                sudo pip3 install pybind11[global] ${breakSystemPackages}
 
                 sudo mkdir -p /opt/rocm/share/rocdecode/utils
 
@@ -50,22 +68,24 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
 }
 
 def runTestCommand (platform, project) {
-
     String libLocation = ''
-
+    String breakSystemPackages = ""
     if (platform.jenkinsLabel.contains('rhel')) {
-        libLocation = ':/usr/local/lib'
+        libLocation = ':/usr/local/lib:/usr/local/lib/x86_64-linux-gnu'
     }
     else if (platform.jenkinsLabel.contains('sles')) {
-        libLocation = ':/usr/local/lib'
+        libLocation = ':/usr/local/lib:/usr/local/lib/x86_64-linux-gnu'
+    }
+    else if (platform.jenkinsLabel.contains('ubuntu24')) {
+        breakSystemPackages = "--break-system-packages"
     }
 
     def command = """#!/usr/bin/env bash
                 set -ex
                 export HOME=/home/jenkins
-                export LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64/:/usr/local/lib/x86_64-linux-gnu:\$LD_LIBRARY_PATH
+                export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/opt/rocm/lib${libLocation}
                 echo make samples
-                sudo pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.2
+                sudo pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.2 ${breakSystemPackages}
                 cd ${project.paths.project_build_prefix}
                 echo \$PYTHONPATH
                 LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/opt/rocm/lib${libLocation} sudo python3 samples/videodecode.py
