@@ -40,7 +40,7 @@ if(Python3_FOUND)
     execute_process(COMMAND ${Python3_EXECUTABLE} -m pip install --upgrade pip OUTPUT_VARIABLE PIP_VERSION ERROR_VARIABLE PIP_ERROR RESULT_VARIABLE PIP_RESULT)
     execute_process(COMMAND ${Python3_EXECUTABLE} -m pip install -i https://test.pypi.org/simple hip-python OUTPUT_VARIABLE PIP_VERSION ERROR_VARIABLE PIP_ERROR RESULT_VARIABLE PIP_RESULT)
 
-    #run tests
+    # run tests
     add_test(NAME video_decode_python_H265
             COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/samples/videodecode.py
             -i ${ROCM_PATH}/share/rocdecode/video/AMD_driving_virtual_20-H265.mp4
@@ -62,10 +62,19 @@ if(Python3_FOUND)
             COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/samples/videodecodeperf.py
             -i ${ROCM_PATH}/share/rocdecode/video/AMD_driving_virtual_20-H264.mp4
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
     if(${ROCDECODE_MAJOR_VERSION} VERSION_GREATER_EQUAL "0" AND ${ROCDECODE_MINOR_VERSION} VERSION_GREATER_EQUAL "7" AND ${ROCDECODE_MICRO_VERSION} VERSION_GREATER_EQUAL "0")
         add_test(NAME video_decode_python_AV1
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/samples/videodecode.py
         -i ${ROCM_PATH}/share/rocdecode/video/AMD_driving_virtual_20-AV1.mp4
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}) 
-    endif() 
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    endif()
+
+    if(${ROCDECODE_MAJOR_VERSION} VERSION_GREATER_EQUAL "0" AND ${ROCDECODE_MINOR_VERSION} VERSION_GREATER_EQUAL "10" AND ${ROCDECODE_MICRO_VERSION} VERSION_GREATER_EQUAL "0")
+        add_test(NAME video_decode_python_AV9
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/samples/videodecode.py
+        -i ${ROCM_PATH}/share/rocdecode/video/AMD_driving_virtual_20-VP9.ivf
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    endif()
+
 endif(Python3_FOUND)
