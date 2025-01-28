@@ -6,7 +6,7 @@
 rocPyDecode prerequisites
 ********************************************************************
 
-rocPyDecode requires Ubuntu 20.04 or 22.04, and ROCm 6.2 or later running on `accelerators based on the CDNA architecture <https://rocm.docs.amd.com/projects/install-on-linux/en/latest/reference/system-requirements.html>`_.
+rocPyDecode requires Ubuntu 22.04 or 24.04, and ROCm 6.3 or later running on `accelerators based on the CDNA architecture <https://rocm.docs.amd.com/projects/install-on-linux/en/latest/reference/system-requirements.html>`_.
 
 ROCm needs to be installed using the `AMDGPU installer <https://rocm.docs.amd.com/projects/install-on-linux/en/latest/how-to/amdgpu-install.html>`_ with the ``rocm`` usecase:
 
@@ -16,14 +16,13 @@ ROCm needs to be installed using the `AMDGPU installer <https://rocm.docs.amd.co
     
 rocPyDecode has the following prerequisites:
 
-* CMake 3.5 or later
+* CMake 3.12 or later
 * Python3 and Python3 PIP
 * PyBind11
 * rocDecode
 * pkg-config
 * FFmpeg runtime and headers
 * DLPack
-* libstdc++-12-dev on Ubuntu 22.04
 * NumPy, for running tests and samples
 
-All prerequisites with the exception of NumPy and libstdc++-12-dev are installed with the `rocPyDecode-requirements.py <https://github.com/ROCm/rocPyDecode/blob/develop/rocPyDecode-requirements.py>`_ script. NumPy can be installed with ``pip``, and libstdc++-12-dev can be installed with a Linux package installer.
+All prerequisites with the exception of NumPy are installed with the `rocPyDecode-requirements.py <https://github.com/ROCm/rocPyDecode/blob/develop/rocPyDecode-requirements.py>`_ script. NumPy can be installed with ``pip``, and libstdc++-12-dev can be installed with a Linux package installer.

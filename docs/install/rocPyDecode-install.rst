@@ -10,7 +10,7 @@ The rocPyDecode source code and its installation scripts are available from the 
 
 The develop branch is the default branch. The develop branch is intended for users who want to preview new features or contribute to the rocPyDecode code base. If you don't intend to preview new features or contribute to the codebase, clone the rocPyDecode branch that corresponds to your version of ROCm.
 
-rocPyDecode requires ROCm 6.2 or later running on `accelerators based on the CDNA architecture <https://rocm.docs.amd.com/projects/install-on-linux/en/latest/reference/system-requirements.html>`_ with Ubuntu 20.04 or 22.04.
+rocPyDecode requires ROCm 6.3 or later running on `accelerators based on the CDNA architecture <https://rocm.docs.amd.com/projects/install-on-linux/en/latest/reference/system-requirements.html>`_ with Ubuntu 22.04 or 24.04.
 
 ROCm must be installed using the `AMDGPU installer <https://rocm.docs.amd.com/projects/install-on-linux/en/latest/how-to/amdgpu-install.html>`_ with the ``rocm`` usecase.
 
