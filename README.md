@@ -42,7 +42,7 @@ The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access
 * [DLPack](https://pypi.org/project/dlpack/)
   
   ```shell
-    sudo apt install libdlpack-dev
+  sudo apt install libdlpack-dev
   ```
 
 * Python3 and Python3 PIP
