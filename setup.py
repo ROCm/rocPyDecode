@@ -83,7 +83,7 @@ subprocess.check_call(['cmake', '--build', build_dir, '--config', 'Release', '--
 subprocess.check_call(['cmake', '--install', build_dir],cwd=os.getcwd())
 
 setup(
-    name='rocPyDecode',
+    name='amd_rocPyDecode_instinct',
     description='AMD ROCm Video Decoder Library',
     url='https://github.com/ROCm/rocPyDecode',
     version='0.3.1' + '.' + get_rocm_rev(),
