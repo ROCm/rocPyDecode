@@ -165,5 +165,5 @@ page.
 * Linux distribution
   * Ubuntu - `22.04` / `24.04`
 * ROCm: rocm-core - `6.3.0.60300`
-* CMake - Version `3.12`+
 * AMD Clang++ - Version `18.0.0`+
+* CMake - Version `3.12`+
