@@ -95,9 +95,8 @@ if(rocDecode_FOUND)
         set(ROCDECODE_MINOR_VERSION ${CMAKE_MATCH_1} CACHE INTERNAL "")
         string(REGEX MATCH "ROCDECODE_MICRO_VERSION ([0-9]*)" _ ${ROCDECODE_VERSION_FILE})
         set(ROCDECODE_MICRO_VERSION ${CMAKE_MATCH_1} CACHE INTERNAL "")
-        message("-- ${White}Using rocDecode --  \n\tLibraries:${rocDecode_LIBRARIES} 
-                                                \tIncludes:${rocDecode_INCLUDE_DIRS}
-                                                \tVersion:${ROCDECODE_MAJOR_VERSION}.${ROCDECODE_MINOR_VERSION}.${ROCDECODE_MICRO_VERSION}${ColourReset}")
+        message("-- ${White}Using rocDecode --\n\tLibraries:${rocDecode_LIBRARIES}\n\tIncludes:${rocDecode_INCLUDE_DIRS}${ColourReset}")
+        message("-- ${White}\tVersion:${ROCDECODE_MAJOR_VERSION}.${ROCDECODE_MINOR_VERSION}.${ROCDECODE_MICRO_VERSION}${ColourReset}")
     else()
         set(ROCDECODE_MAJOR_VERSION 0)
         set(ROCDECODE_MINOR_VERSION 0)
