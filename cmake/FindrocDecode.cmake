@@ -80,7 +80,6 @@ find_package_handle_standard_args( rocDecode
         rocDecode_LIBRARIES
         rocDecode_LIBRARIES_DIRS
 )
-
 set(rocDecode_FOUND ${rocDecode_FOUND} CACHE INTERNAL "")
 set(rocDecode_LIBRARIES ${rocDecode_LIBRARIES} CACHE INTERNAL "")
 set(rocDecode_INCLUDE_DIRS ${rocDecode_INCLUDE_DIRS} CACHE INTERNAL "")
@@ -96,8 +95,9 @@ if(rocDecode_FOUND)
         set(ROCDECODE_MINOR_VERSION ${CMAKE_MATCH_1} CACHE INTERNAL "")
         string(REGEX MATCH "ROCDECODE_MICRO_VERSION ([0-9]*)" _ ${ROCDECODE_VERSION_FILE})
         set(ROCDECODE_MICRO_VERSION ${CMAKE_MATCH_1} CACHE INTERNAL "")
-        message("-- ${White}Using rocDecode -- \n\tLibraries:${rocDecode_LIBRARIES} \n\tIncludes:${rocDecode_INCLUDE_DIRS}
-            \n\tVersion:${ROCDECODE_MAJOR_VERSION}.${ROCDECODE_MINOR_VERSION}.${ROCDECODE_MICRO_VERSION}${ColourReset}")
+        message("-- ${White}Using rocDecode --  \n\tLibraries:${rocDecode_LIBRARIES} 
+                                                \n\tIncludes:${rocDecode_INCLUDE_DIRS}
+                                                \n\tVersion:${ROCDECODE_MAJOR_VERSION}.${ROCDECODE_MINOR_VERSION}.${ROCDECODE_MICRO_VERSION}${ColourReset}")
     else()
         set(ROCDECODE_MAJOR_VERSION 0)
         set(ROCDECODE_MINOR_VERSION 0)

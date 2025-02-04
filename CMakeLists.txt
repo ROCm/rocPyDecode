@@ -22,7 +22,6 @@
 ################################################################################
 
 cmake_minimum_required(VERSION 3.12)
-
 # ROCM Path
 if(DEFINED ENV{ROCM_PATH})
     set(ROCM_PATH $ENV{ROCM_PATH} CACHE PATH "Default ROCm installation path")
@@ -32,20 +31,36 @@ else()
     set(ROCM_PATH /opt/rocm CACHE PATH "Default ROCm installation path")
 endif()
 # Set AMD Clang as default compiler
-if (NOT DEFINED CMAKE_CXX_COMPILER AND EXISTS "${ROCM_PATH}/bin/amdclang++")
+if (NOT DEFINED CMAKE_CXX_COMPILER)
     set(CMAKE_C_COMPILER ${ROCM_PATH}/bin/amdclang)
     set(CMAKE_CXX_COMPILER ${ROCM_PATH}/bin/amdclang++)
 endif()
-
-set(VERSION "0.3.1")
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED On)
+
+set(VERSION "0.4.0")
 
 # Set Project Version and Language
 project(rocPyDecode VERSION ${VERSION} LANGUAGES CXX)
-
 set(TARGET_NAME rocPyDecode)
 
-# rocPyDecode build type
+set(CMAKE_INSTALL_LIBDIR "lib" CACHE STRING "Library install directory")
+set(CMAKE_INSTALL_INCLUDEDIR "include" CACHE STRING "Include install directory")
+include(GNUInstallDirs)
+
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR})
+
+find_program(MAKE_NSIS_EXE makensis)
+find_program(RPMBUILD_EXE rpmbuild)
+find_program(DPKG_EXE dpkg)
+
+# avoid setting the default installation path to /usr/local
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    set(CMAKE_INSTALL_PREFIX ${ROCM_PATH} CACHE PATH "rocDecode default installation path" FORCE)
+endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+
 set(DEFAULT_BUILD_TYPE "Release")
 set(ENHANCED_MESSAGE ON)
 
@@ -61,6 +76,8 @@ if(ENHANCED_MESSAGE)
     set(Cyan "${Esc}[36m")
     set(White "${Esc}[37m")
 endif()
+message("-- ${BoldBlue}rocPyDecode Version -- ${VERSION}${ColourReset}")
+message("-- ${BoldBlue}rocPyDecode Install Path -- ${CMAKE_INSTALL_PREFIX}${ColourReset}")
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 list(APPEND CMAKE_PREFIX_PATH ${ROCM_PATH}/hip ${ROCM_PATH})
@@ -108,25 +125,48 @@ else()
 endif()
 message("-- ${White}${PROJECT_NAME} -- AMD GPU_TARGETS: ${GPU_TARGETS}${ColourReset}")
 
+set(BUILD_ROCPYDECODE true)
+
+# Find Dependency
 find_package(HIP QUIET)
-find_package(FFmpeg QUIET)
 find_package(rocDecode QUIET)
-
 find_package(Python3 QUIET COMPONENTS Interpreter Development)
-message("-- ${Green}NOTE: rocPyDecode requires Python3, Found --  ${Python3_EXECUTABLE} ${ColourReset}")
+find_package(pybind11 QUIET)
+find_package(dlpack QUIET)
+find_package(FFmpeg QUIET)
 
-find_package(pybind11 REQUIRED)
-if(pybind11_FOUND)
-    message("-- ${Green}NOTE: rocPyDecode requires pybind11, Found --  ${pybind11_INCLUDE_DIRS} ${ColourReset}")
+# HIP
+if(NOT HIP_FOUND)
+    set(BUILD_ROCPYDECODE false)
+    message("-- ${Yellow}NOTE: {PROJECT_NAME} library requires HIP, Not Found ${ColourReset}")
+endif()
+# rocDecode
+if(NOT rocDecode_FOUND)
+    set(BUILD_ROCPYDECODE false)
+    message("-- ${Yellow}NOTE: {PROJECT_NAME} library requires rocDecode, Not Found ${ColourReset}")
+endif()
+# Python3
+if(NOT Python3_FOUND)
+    set(BUILD_ROCPYDECODE false)
+    message("-- ${Yellow}NOTE: {PROJECT_NAME} library requires Python3, Not Found ${ColourReset}")	
+endif()
+# pybind11
+if(NOT pybind11_FOUND)
+    set(BUILD_ROCPYDECODE false)
+    message("-- ${Yellow}NOTE: {PROJECT_NAME} library requires pybind11, Not Found ${ColourReset}")	
+endif()
+# dlpack
+if(NOT dlpack_FOUND)
+    set(BUILD_ROCPYDECODE false)
+    message("-- ${Yellow}NOTE: {PROJECT_NAME} library requires dlpack, Not Found ${ColourReset}")	
+endif()
+# FFmpeg
+if(NOT FFMPEG_FOUND)
+    set(BUILD_ROCPYDECODE false)
+    message("-- ${Yellow}NOTE: {PROJECT_NAME} library requires FFmpeg, Not Found ${ColourReset}")	
 endif()
 
-find_package(dlpack REQUIRED)
-if(dlpack_FOUND)
-    message("-- ${Green}NOTE: rocPyDecode requires dlpack, Found")
-endif()
-
-if(HIP_FOUND AND rocDecode_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG_FOUND)
-
+if(BUILD_ROCPYDECODE)
     # avoid setting the default installation path to /usr/local
     if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
         message("-- ${Green}NOTE: rocPyDecode default installation path -- ${Python3_STDARCH} ${ColourReset}")
@@ -136,18 +176,21 @@ if(HIP_FOUND AND rocDecode_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
 
     # HIP
     set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} hip::device)
-    # FFMPEG
-    include_directories(${AVUTIL_INCLUDE_DIR} ${AVCODEC_INCLUDE_DIR} ${AVFORMAT_INCLUDE_DIR})
-    set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${FFMPEG_LIBRARIES})
     # rocDecode
     include_directories(${rocDecode_INCLUDE_DIRS}
-                        ${ROCM_PATH}/share/rocdecode/utils
-                        ${ROCM_PATH}/share/rocdecode/utils/rocvideodecode)
+        ${ROCM_PATH}/share/rocdecode/utils
+        ${ROCM_PATH}/share/rocdecode/utils/rocvideodecode)
     set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${rocDecode_LIBRARIES})
     # Python3
     include_directories(${Python3_INCLUDE_DIRS})
     # PyBind11
     include_directories(${pybind11_INCLUDE_DIRS})
+    # dlPack
+    include_directories(${dlpack_INCLUDE_DIR})
+    set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${dlpack_LIBRARIES})
+    # FFMPEG
+    include_directories(${AVUTIL_INCLUDE_DIR} ${AVCODEC_INCLUDE_DIR} ${AVFORMAT_INCLUDE_DIR})
+    set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${FFMPEG_LIBRARIES})
     # rocPyDecode include
     include_directories(src)
 
@@ -190,7 +233,10 @@ if(HIP_FOUND AND rocDecode_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
     endforeach (filename)
 
     #install rocPyDecode pybind libs
-    install(FILES ${CMAKE_BINARY_DIR}/${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}/${TARGET_PYMODULE_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX_PYTHON} COMPONENT runtime)
+    install(FILES ${CMAKE_BINARY_DIR}/${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}/${TARGET_PYMODULE_NAME} DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT runtime)
+    install(DIRECTORY pyRocVideoDecode DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT runtime)
+    install(FILES samples/*.py DESTINATION ${CMAKE_INSTALL_LIBDIR}/pyRocVideoDecode COMPONENT runtime)
+    install(FILES samples/README.md DESTINATION ${CMAKE_INSTALL_LIBDIR}/pyRocVideoDecode COMPONENT runtime)
 
     message("-- ${Green}ROCm Video Decode Library Python Binding - rocPyDecode module added ${ColourReset}")
     message("-- ${BoldBlue}rocPyDecode Version -- ${VERSION}${ColourReset}")
@@ -205,6 +251,130 @@ if(HIP_FOUND AND rocDecode_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
     enable_testing()
     include(CTest)
     add_subdirectory(samples)
+
+    # set package information
+    set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+    set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+    set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+    set(CPACK_PACKAGE_VERSION "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
+    set(CPACK_PACKAGE_LICENSE "MIT")
+    # TBD: Change to generic support email
+    set(CPACK_PACKAGE_CONTACT "rocPyDecode Support <mivisionx.support@amd.com>")
+    set(CPACK_PACKAGE_VENDOR "AMD ROCm")
+    set(CPACK_PACKAGE_GROUP "Development/Tools")
+    set(CPACK_PACKAGE_HOMEPAGE "https://github.com/ROCm/rocPyDecode")
+
+    if(ENABLE_ASAN_PACKAGING)
+        set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "AMD rocPyDecode address sanitizer libraries")
+        set(CPACK_RPM_PACKAGE_SUMMARY "AMD rocPyDecode address sanitizer libraries")
+    else()
+        set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "AMD rocPyDecode is a python high performance video decode SDK for AMD GPUs")
+        set(CPACK_RPM_PACKAGE_SUMMARY "AMD rocPyDecode is a python high performance video decode SDK for AMD GPUs")
+    endif()
+
+    if(DEFINED ENV{ROCM_LIBPATCH_VERSION})
+        set(CPACK_PACKAGE_VERSION "${CPACK_PACKAGE_VERSION}.$ENV{ROCM_LIBPATCH_VERSION}")
+    endif()
+
+    # Set the dependent packages
+    set(ROCPYDECODE_DEBIAN_PACKAGE_LIST  "rocdecode-dev")
+    set(ROCPYDECODE_RPM_PACKAGE_LIST  "rocdecode-devel")
+
+    # '%{?dist}' breaks manual builds on debian systems due to empty Provides
+    execute_process(
+        COMMAND rpm --eval %{?dist}
+        RESULT_VARIABLE PROC_RESULT
+        OUTPUT_VARIABLE EVAL_RESULT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if(PROC_RESULT EQUAL "0" AND NOT EVAL_RESULT STREQUAL "")
+        string(APPEND CPACK_RPM_PACKAGE_RELEASE "%{?dist}")
+    endif()
+
+    # set package 
+    set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
+    set(CPACK_DEBIAN_PACKAGE_HOMEPAGE ${CPACK_PACKAGE_HOMEPAGE})
+    set(CPACK_RPM_PACKAGE_URL ${CPACK_PACKAGE_HOMEPAGE})
+    set(CPACK_RPM_PACKAGE_AUTOREQPROV "no")
+    # Debian package
+    set(CPACK_DEB_COMPONENT_INSTALL ON)
+    set(CPACK_DEBIAN_PACKAGE_NAME "${PROJECT_NAME}")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "rocm-core, ${ROCPYDECODE_DEBIAN_PACKAGE_LIST}")
+    # Debian package - specific variable for ASAN
+    set(CPACK_DEBIAN_ASAN_PACKAGE_NAME "${PROJECT_NAME}-asan" )
+    set(CPACK_DEBIAN_ASAN_PACKAGE_DEPENDS "rocm-core-asan, ${ROCPYDECODE_DEBIAN_PACKAGE_LIST}" )
+    # Debian package - Test
+    set(CPACK_DEBIAN_TEST_PACKAGE_NAME "${PROJECT_NAME}-test" )
+    set(CPACK_DEBIAN_TEST_PACKAGE_DEPENDS "rocm-core, ${CPACK_DEBIAN_PACKAGE_NAME}" )
+    # RPM package
+    set(CPACK_RPM_COMPONENT_INSTALL ON)
+    set(CPACK_RPM_PACKAGE_NAME "${PROJECT_NAME}")
+    set(CPACK_RPM_PACKAGE_REQUIRES "rocm-core, ${ROCPYDECODE_RPM_PACKAGE_LIST}")
+    set(CPACK_RPM_PACKAGE_LICENSE "MIT" )
+    # RPM package specific variable for ASAN
+    set(CPACK_RPM_ASAN_PACKAGE_NAME "${PROJECT_NAME}-asan" )
+    set(CPACK_RPM_ASAN_PACKAGE_REQUIRES "rocm-core-asan, ${ROCPYDECODE_RPM_PACKAGE_LIST}" )
+    # RPM package specific variable for Test
+    set(CPACK_RPM_TEST_PACKAGE_NAME "${PROJECT_NAME}-test" )
+    set(CPACK_RPM_TEST_PACKAGE_REQUIRES "rocm-core, ${CPACK_RPM_PACKAGE_NAME}" )
+
+    if(NOT ROCM_DEP_ROCMCORE)
+        string(REGEX REPLACE ",? ?rocm-core," "" CPACK_RPM_PACKAGE_REQUIRES ${CPACK_RPM_PACKAGE_REQUIRES})
+        string(REGEX REPLACE ",? ?rocm-core-asan," "" CPACK_RPM_ASAN_PACKAGE_REQUIRES ${CPACK_RPM_ASAN_PACKAGE_REQUIRES})
+        string(REGEX REPLACE ",? ?rocm-core," "" CPACK_RPM_TEST_PACKAGE_REQUIRES ${CPACK_RPM_TEST_PACKAGE_REQUIRES})
+        string(REGEX REPLACE ",? ?rocm-core," "" CPACK_DEBIAN_PACKAGE_DEPENDS ${CPACK_DEBIAN_PACKAGE_DEPENDS})
+        string(REGEX REPLACE ",? ?rocm-core-asan," "" CPACK_DEBIAN_ASAN_PACKAGE_DEPENDS ${CPACK_DEBIAN_ASAN_PACKAGE_DEPENDS})
+        string(REGEX REPLACE ",? ?rocm-core," "" CPACK_DEBIAN_TEST_PACKAGE_DEPENDS ${CPACK_DEBIAN_TEST_PACKAGE_DEPENDS})
+    endif()
+
+    if(ENABLE_ASAN_PACKAGING)
+        # ASAN Package requires asan component with only libraries and license file
+        set(CPACK_COMPONENTS_ALL asan)
+    else()
+        set(CPACK_COMPONENTS_ALL runtime test)
+    endif()
+
+    set(CPACK_DEBIAN_FILE_NAME "DEB-DEFAULT")
+    set(CPACK_RPM_FILE_NAME "RPM-DEFAULT")
+    set(CPACK_DEBIAN_PACKAGE_RELEASE "local")
+    set(CPACK_RPM_PACKAGE_RELEASE "local")
+
+    if(DEFINED ENV{CPACK_DEBIAN_PACKAGE_RELEASE})
+        set(CPACK_DEBIAN_PACKAGE_RELEASE $ENV{CPACK_DEBIAN_PACKAGE_RELEASE})
+    endif()
+    if(DEFINED ENV{CPACK_RPM_PACKAGE_RELEASE})
+        set(CPACK_RPM_PACKAGE_RELEASE $ENV{CPACK_RPM_PACKAGE_RELEASE})
+    endif()
+
+    set(CPACK_GENERATOR "TGZ;ZIP")
+    if(EXISTS ${MAKE_NSIS_EXE})
+        list(APPEND CPACK_GENERATOR "NSIS")
+    endif()
+    if(EXISTS ${RPMBUILD_EXE})
+        list(APPEND CPACK_GENERATOR "RPM")
+        message("-- ${White}rocPyDecode .rpm Package Requirements -- ${CPACK_RPM_PACKAGE_REQUIRES}${ColourReset}")
+        message("-- ${White}rocPyDecode .rpm Test Package Requirements -- ${CPACK_RPM_TEST_PACKAGE_REQUIRES}${ColourReset}")
+    endif()
+    if(EXISTS ${DPKG_EXE})
+        list(APPEND CPACK_GENERATOR "DEB")
+        message("-- ${White}rocPyDecode .deb Package Requirements -- ${CPACK_DEBIAN_PACKAGE_DEPENDS}${ColourReset}")
+        message("-- ${White}rocPyDecode .deb Test Package Requirements -- ${CPACK_DEBIAN_TEST_PACKAGE_DEPENDS}${ColourReset}")
+    endif()
+
+    include(CPack)
+
+    cpack_add_component(runtime
+                    DISPLAY_NAME "rocPyDecode Package"
+                    DESCRIPTION "AMD rocPyDecode is a python high performance video decode SDK for AMD GPUs")
+
+    cpack_add_component(asan
+                    DISPLAY_NAME "rocPyDecode ASAN Package"
+                    DESCRIPTION "AMD rocDecode is a python high performance video decode SDK for AMD GPUs")
+
+    cpack_add_component(test
+                    DISPLAY_NAME "rocPyDecode Test Package"
+                    DESCRIPTION "AMD rocDecode is a python high performance video decode SDK for AMD GPUs")
+
 else()
     message("-- ${Red}WARNING: rocPyDecode module excluded - Dependency Failure${ColourReset}")
     # Python3

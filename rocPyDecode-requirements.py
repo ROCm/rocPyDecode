@@ -155,16 +155,18 @@ coreDebianPackages = [
     'rocdecode-test',
     'python3-dev',
     'python3-pip',
+    'python3-pybind11',
     'libdlpack-dev'
 ]
 
 # core RPM packages
-# TODO: dlpack/ pybind11-devel package
+# TODO: dlpack package missing in RPM
 coreRPMPackages = [
     'rocdecode',
     'rocdecode-devel',
     'rocdecode-test',
     'python3-devel',
+    'python3-pybind11',
     'python3-pip'
 ]
 
