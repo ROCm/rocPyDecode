@@ -41,8 +41,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED On)
 set(VERSION "0.4.0")
 
 # Set Project Version and Language
-project(rocPyDecode VERSION ${VERSION} LANGUAGES CXX)
-set(TARGET_NAME rocPyDecode)
+project(rocpydecode VERSION ${VERSION} LANGUAGES CXX)
+set(TARGET_NAME rocpydecode)
 
 set(CMAKE_INSTALL_LIBDIR "lib" CACHE STRING "Library install directory")
 set(CMAKE_INSTALL_INCLUDEDIR "include" CACHE STRING "Include install directory")
@@ -235,8 +235,7 @@ if(BUILD_ROCPYDECODE)
     #install rocPyDecode pybind libs
     install(FILES ${CMAKE_BINARY_DIR}/${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}/${TARGET_PYMODULE_NAME} DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT runtime)
     install(DIRECTORY pyRocVideoDecode DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT runtime)
-    install(FILES samples/*.py DESTINATION ${CMAKE_INSTALL_LIBDIR}/pyRocVideoDecode COMPONENT runtime)
-    install(FILES samples/README.md DESTINATION ${CMAKE_INSTALL_LIBDIR}/pyRocVideoDecode COMPONENT runtime)
+    install(DIRECTORY samples DESTINATION ${CMAKE_INSTALL_LIBDIR}/pyRocVideoDecode COMPONENT runtime)
 
     message("-- ${Green}ROCm Video Decode Library Python Binding - rocPyDecode module added ${ColourReset}")
     message("-- ${BoldBlue}rocPyDecode Version -- ${VERSION}${ColourReset}")
