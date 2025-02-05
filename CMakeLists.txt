@@ -165,7 +165,6 @@ if(NOT FFMPEG_FOUND)
 endif()
 
 if(BUILD_ROCPYDECODE)
-
     # HIP
     set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} hip::device)
     # rocDecode
@@ -177,9 +176,6 @@ if(BUILD_ROCPYDECODE)
     include_directories(${Python3_INCLUDE_DIRS})
     # PyBind11
     include_directories(${pybind11_INCLUDE_DIRS})
-    # dlPack
-    include_directories(${dlpack_INCLUDE_DIR})
-    set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${dlpack_LIBRARIES})
     # FFMPEG
     include_directories(${AVUTIL_INCLUDE_DIR} ${AVCODEC_INCLUDE_DIR} ${AVFORMAT_INCLUDE_DIR})
     set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${FFMPEG_LIBRARIES})
@@ -277,7 +273,8 @@ if(BUILD_ROCPYDECODE)
     endif()
 
     # Set the dependent packages
-    set(ROCPYDECODE_DEBIAN_PACKAGE_LIST  "rocdecode-dev, python3-dev, python3-pip")
+    set(ROCPYDECODE_DEBIAN_PACKAGE_LIST  "rocdecode-dev, libdlpack-dev, python3-dev, python3-pip")
+    # TBD: libdlpack-devel not available
     set(ROCPYDECODE_RPM_PACKAGE_LIST  "rocdecode-devel, python3-devel, python3-pip")
 
     # '%{?dist}' breaks manual builds on debian systems due to empty Provides
@@ -298,31 +295,32 @@ if(BUILD_ROCPYDECODE)
     set(CPACK_RPM_PACKAGE_AUTOREQPROV "no")
     # Debian package
     set(CPACK_DEB_COMPONENT_INSTALL ON)
-    set(CPACK_DEBIAN_PACKAGE_NAME "${PROJECT_NAME}")
-    set(CPACK_DEBIAN_PACKAGE_DEPENDS "rocm-core, ${ROCPYDECODE_DEBIAN_PACKAGE_LIST}")
+    set(CPACK_DEBIAN_RUNTIME_PACKAGE_NAME "${PROJECT_NAME}")
+    set(CPACK_DEBIAN_RUNTIME_PACKAGE_DEPENDS "rocm-core, ${ROCPYDECODE_DEBIAN_PACKAGE_LIST}")
+    set(CPACK_DEBIAN_RUNTIME_PACKAGE_LICENSE "MIT" )
     # Debian package - specific variable for ASAN
     set(CPACK_DEBIAN_ASAN_PACKAGE_NAME "${PROJECT_NAME}-asan" )
     set(CPACK_DEBIAN_ASAN_PACKAGE_DEPENDS "rocm-core-asan, ${ROCPYDECODE_DEBIAN_PACKAGE_LIST}" )
     # Debian package - Test
     set(CPACK_DEBIAN_TEST_PACKAGE_NAME "${PROJECT_NAME}-test" )
-    set(CPACK_DEBIAN_TEST_PACKAGE_DEPENDS "rocm-core, ${CPACK_DEBIAN_PACKAGE_NAME}" )
+    set(CPACK_DEBIAN_TEST_PACKAGE_DEPENDS "rocm-core, ${CPACK_DEBIAN_RUNTIME_PACKAGE_NAME}" )
     # RPM package
     set(CPACK_RPM_COMPONENT_INSTALL ON)
-    set(CPACK_RPM_PACKAGE_NAME "${PROJECT_NAME}")
-    set(CPACK_RPM_PACKAGE_REQUIRES "rocm-core, ${ROCPYDECODE_RPM_PACKAGE_LIST}")
-    set(CPACK_RPM_PACKAGE_LICENSE "MIT" )
+    set(CPACK_RPM_RUNTIME_PACKAGE_NAME "${PROJECT_NAME}")
+    set(CPACK_RPM_RUNTIME_PACKAGE_REQUIRES "rocm-core, ${ROCPYDECODE_RPM_PACKAGE_LIST}")
+    set(CPACK_RPM_RUNTIME_PACKAGE_LICENSE "MIT" )
     # RPM package specific variable for ASAN
     set(CPACK_RPM_ASAN_PACKAGE_NAME "${PROJECT_NAME}-asan" )
     set(CPACK_RPM_ASAN_PACKAGE_REQUIRES "rocm-core-asan, ${ROCPYDECODE_RPM_PACKAGE_LIST}" )
     # RPM package specific variable for Test
     set(CPACK_RPM_TEST_PACKAGE_NAME "${PROJECT_NAME}-test" )
-    set(CPACK_RPM_TEST_PACKAGE_REQUIRES "rocm-core, ${CPACK_RPM_PACKAGE_NAME}" )
+    set(CPACK_RPM_TEST_PACKAGE_REQUIRES "rocm-core, ${CPACK_RPM_RUNTIME_PACKAGE_NAME}" )
 
     if(NOT ROCM_DEP_ROCMCORE)
-        string(REGEX REPLACE ",? ?rocm-core," "" CPACK_RPM_PACKAGE_REQUIRES ${CPACK_RPM_PACKAGE_REQUIRES})
+        string(REGEX REPLACE ",? ?rocm-core," "" CPACK_RPM_RUNTIME_PACKAGE_REQUIRES ${CPACK_RPM_RUNTIME_PACKAGE_REQUIRES})
         string(REGEX REPLACE ",? ?rocm-core-asan," "" CPACK_RPM_ASAN_PACKAGE_REQUIRES ${CPACK_RPM_ASAN_PACKAGE_REQUIRES})
         string(REGEX REPLACE ",? ?rocm-core," "" CPACK_RPM_TEST_PACKAGE_REQUIRES ${CPACK_RPM_TEST_PACKAGE_REQUIRES})
-        string(REGEX REPLACE ",? ?rocm-core," "" CPACK_DEBIAN_PACKAGE_DEPENDS ${CPACK_DEBIAN_PACKAGE_DEPENDS})
+        string(REGEX REPLACE ",? ?rocm-core," "" CPACK_DEBIAN_RUNTIME_PACKAGE_DEPENDS ${CPACK_DEBIAN_RUNTIME_PACKAGE_DEPENDS})
         string(REGEX REPLACE ",? ?rocm-core-asan," "" CPACK_DEBIAN_ASAN_PACKAGE_DEPENDS ${CPACK_DEBIAN_ASAN_PACKAGE_DEPENDS})
         string(REGEX REPLACE ",? ?rocm-core," "" CPACK_DEBIAN_TEST_PACKAGE_DEPENDS ${CPACK_DEBIAN_TEST_PACKAGE_DEPENDS})
     endif()
@@ -352,12 +350,12 @@ if(BUILD_ROCPYDECODE)
     endif()
     if(EXISTS ${RPMBUILD_EXE})
         list(APPEND CPACK_GENERATOR "RPM")
-        message("-- ${White}rocPyDecode .rpm Package Requirements -- ${CPACK_RPM_PACKAGE_REQUIRES}${ColourReset}")
+        message("-- ${White}rocPyDecode .rpm Package Requirements -- ${CPACK_RPM_RUNTIME_PACKAGE_REQUIRES}${ColourReset}")
         message("-- ${White}rocPyDecode .rpm Test Package Requirements -- ${CPACK_RPM_TEST_PACKAGE_REQUIRES}${ColourReset}")
     endif()
     if(EXISTS ${DPKG_EXE})
         list(APPEND CPACK_GENERATOR "DEB")
-        message("-- ${White}rocPyDecode .deb Package Requirements -- ${CPACK_DEBIAN_PACKAGE_DEPENDS}${ColourReset}")
+        message("-- ${White}rocPyDecode .deb Package Requirements -- ${CPACK_DEBIAN_RUNTIME_PACKAGE_DEPENDS}${ColourReset}")
         message("-- ${White}rocPyDecode .deb Test Package Requirements -- ${CPACK_DEBIAN_TEST_PACKAGE_DEPENDS}${ColourReset}")
     endif()
 
