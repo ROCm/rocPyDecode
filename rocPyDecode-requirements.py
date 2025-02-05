@@ -192,11 +192,8 @@ elif "redhat" in platformInfo:
             ERROR_CHECK(os.system('sudo '+linuxFlag+' '+linuxSystemInstall +
                     ' '+linuxSystemInstall_check+' install '+ coreRPMPackages[i]))
 
-# make sure we have pybind11 installed via pip
-ERROR_CHECK(os.system('sudo pip3 install pybind11'))
 GREEN = "\033[32m"
 RESET = "\033[0m"
-print(f"{GREEN}pybind11 {RESET}successfully installed.\n")
 
 # done
 BOLD = '\033[1m'

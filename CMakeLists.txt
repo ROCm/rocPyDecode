@@ -139,7 +139,7 @@ if(NOT HIP_FOUND)
     message("-- ${Yellow}NOTE: {PROJECT_NAME} library requires HIP, Not Found ${ColourReset}")
 endif()
 # rocDecode
-if(NOT rocDecode_FOUND)
+if(NOT ROCDECODE_FOUND)
     set(BUILD_ROCPYDECODE false)
     message("-- ${Yellow}NOTE: {PROJECT_NAME} library requires rocDecode, Not Found ${ColourReset}")
 endif()
@@ -169,10 +169,10 @@ if(BUILD_ROCPYDECODE)
     # HIP
     set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} hip::device)
     # rocDecode
-    include_directories(${rocDecode_INCLUDE_DIRS}
+    include_directories(${ROCDECODE_INCLUDE_DIR}
         ${ROCM_PATH}/share/rocdecode/utils
         ${ROCM_PATH}/share/rocdecode/utils/rocvideodecode)
-    set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${rocDecode_LIBRARIES})
+    set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${ROCDECODE_LIBRARY})
     # Python3
     include_directories(${Python3_INCLUDE_DIRS})
     # PyBind11
@@ -197,14 +197,14 @@ if(BUILD_ROCPYDECODE)
     message("-- ${White}rocPyDecode -- CMAKE_CXX_FLAGS:${CMAKE_CXX_FLAGS}${ColourReset}")
 
     # TODO: remove after ROCDECODE_CHECK_VERSION macro is pushed to mainline
-    if(${ROCDECODE_MAJOR_VERSION} VERSION_GREATER_EQUAL "0" AND ${ROCDECODE_MINOR_VERSION} VERSION_GREATER_EQUAL "6" AND ${ROCDECODE_MICRO_VERSION} VERSION_GREATER_EQUAL "0")
+    if(${ROCDECODE_VER_MAJOR} VERSION_GREATER_EQUAL "0" AND ${ROCDECODE_VER_MINOR} VERSION_GREATER_EQUAL "6" AND ${ROCDECODE_VER_MICRO} VERSION_GREATER_EQUAL "0")
         target_compile_definitions(${TARGET_NAME} PUBLIC OVERHEAD_SUPPORT=1)
     else()
         target_compile_definitions(${TARGET_NAME} PUBLIC OVERHEAD_SUPPORT=0)
     endif()
 
     # TODO: remove after ROCDECODE_CHECK_VERSION macro is pushed to mainline
-    if(${ROCDECODE_MAJOR_VERSION} VERSION_GREATER_EQUAL "0" AND ${ROCDECODE_MINOR_VERSION} VERSION_GREATER_EQUAL "7" AND ${ROCDECODE_MICRO_VERSION} VERSION_GREATER_EQUAL "0")
+    if(${ROCDECODE_VER_MAJOR} VERSION_GREATER_EQUAL "0" AND ${ROCDECODE_VER_MINOR} VERSION_GREATER_EQUAL "7" AND ${ROCDECODE_VER_MICRO} VERSION_GREATER_EQUAL "0")
         target_compile_definitions(${TARGET_NAME} PUBLIC CODEC_SUPPORTED_CHECK=1)
     else()
         target_compile_definitions(${TARGET_NAME} PUBLIC CODEC_SUPPORTED_CHECK=0)
