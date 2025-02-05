@@ -150,9 +150,7 @@ commonPackages = [
 
 # Debian packages
 coreDebianPackages = [
-    'rocdecode',
     'rocdecode-dev',
-    'rocdecode-test',
     'python3-dev',
     'python3-pip',
     'python3-pybind11',
@@ -162,9 +160,7 @@ coreDebianPackages = [
 # core RPM packages
 # TODO: dlpack package missing in RPM
 coreRPMPackages = [
-    'rocdecode',
     'rocdecode-devel',
-    'rocdecode-test',
     'python3-devel',
     'python3-pybind11',
     'python3-pip'
@@ -192,9 +188,4 @@ elif "redhat" in platformInfo:
             ERROR_CHECK(os.system('sudo '+linuxFlag+' '+linuxSystemInstall +
                     ' '+linuxSystemInstall_check+' install '+ coreRPMPackages[i]))
 
-GREEN = "\033[32m"
-RESET = "\033[0m"
-
-# done
-BOLD = '\033[1m'
-print(f"{GREEN}{BOLD}rocPyDecode Dependencies Installed {RESET}with rocPyDecode-setup.py V-"+__version__+"\n")
+print("rocPyDecode Dependencies Installed with rocPyDecode-setup.py V-"+__version__)
