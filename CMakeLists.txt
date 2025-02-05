@@ -31,7 +31,7 @@ else()
     set(ROCM_PATH /opt/rocm CACHE PATH "Default ROCm installation path")
 endif()
 # Set AMD Clang as default compiler
-if (NOT DEFINED CMAKE_CXX_COMPILER)
+if(NOT DEFINED CMAKE_CXX_COMPILER)
     set(CMAKE_C_COMPILER ${ROCM_PATH}/bin/amdclang)
     set(CMAKE_CXX_COMPILER ${ROCM_PATH}/bin/amdclang++)
 endif()
@@ -98,11 +98,6 @@ else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -DNDEBUG -fPIC")
 endif()
 
-message("-- ${Cyan}     -D ROCPYDECODE_AMDGPU_TARGET=${ROCPYDECODE_AMDGPU_TARGET} [Build for specific AMD GPUs]${ColourReset}")
-
-# set amdgpu targets with vcn support
-option(ROCPYDECODE_AMDGPU_TARGET "AMD GPU target ASIC to build rocPyDecode" "")
-
 # Set supported GPU Targets
 set(DEFAULT_GPU_TARGETS "gfx908;gfx90a;gfx942;gfx1030;gfx1031;gfx1032;gfx1100;gfx1101;gfx1102;gfx1200;gfx1201")
 
@@ -125,9 +120,11 @@ else()
 endif()
 message("-- ${White}${PROJECT_NAME} -- AMD GPU_TARGETS: ${GPU_TARGETS}${ColourReset}")
 
+# rocPyDecode build
 set(BUILD_ROCPYDECODE true)
+set(CMAKE_SKIP_BUILD_RPATH TRUE)
 
-# Find Dependency
+# Find dependencies
 find_package(HIP QUIET)
 find_package(rocDecode QUIET)
 find_package(Python3 QUIET COMPONENTS Interpreter Development)
@@ -167,12 +164,6 @@ if(NOT FFMPEG_FOUND)
 endif()
 
 if(BUILD_ROCPYDECODE)
-    # avoid setting the default installation path to /usr/local
-    if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-        message("-- ${Green}NOTE: rocPyDecode default installation path -- ${Python3_STDARCH} ${ColourReset}")
-        set(CMAKE_INSTALL_PREFIX_PYTHON ${Python3_STDARCH} CACHE PATH "rocPyDecode PyBind default installation path" FORCE)
-    endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
     # HIP
     set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} hip::device)
@@ -239,11 +230,13 @@ if(BUILD_ROCPYDECODE)
     install(FILES ${CPACK_RESOURCE_FILE_LICENSE} DESTINATION ${CMAKE_INSTALL_DOCDIR}-asan COMPONENT asan)
 
     #install rocPyDecode pybind libs
+    install(FILES ${CMAKE_BINARY_DIR}/${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}/${TARGET_PYMODULE_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX_PYTHON})
     install(FILES ${CMAKE_BINARY_DIR}/${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}/${TARGET_PYMODULE_NAME} DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT runtime)
     install(DIRECTORY pyRocVideoDecode DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT runtime)
     install(DIRECTORY samples DESTINATION ${CMAKE_INSTALL_LIBDIR}/pyRocVideoDecode COMPONENT runtime)
     # Test - Installed
     install(DIRECTORY ${CMAKE_SOURCE_DIR}/tests DESTINATION ${CMAKE_INSTALL_DATADIR}/rocpydecode COMPONENT test)
+    install(DIRECTORY ${CMAKE_SOURCE_DIR}/cmake DESTINATION ${CMAKE_INSTALL_DATADIR}/rocpydecode COMPONENT test)
 
     message("-- ${Green}ROCm Video Decode Library Python Binding - rocPyDecode module added ${ColourReset}")
     message("-- ${BoldBlue}rocPyDecode Version -- ${VERSION}${ColourReset}")
@@ -257,7 +250,7 @@ if(BUILD_ROCPYDECODE)
     # make test with CTest
     enable_testing()
     include(CTest)
-    add_subdirectory(samples)
+    add_subdirectory(tests)
 
     # set package information
     set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
