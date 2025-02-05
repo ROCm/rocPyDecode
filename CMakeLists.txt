@@ -38,6 +38,7 @@ endif()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED On)
 
+# lib version - NOTE: update version across multiple files
 set(VERSION "0.4.0")
 
 # Set Project Version and Language
@@ -122,7 +123,7 @@ message("-- ${White}${PROJECT_NAME} -- AMD GPU_TARGETS: ${GPU_TARGETS}${ColourRe
 
 # rocPyDecode build
 set(BUILD_ROCPYDECODE true)
-set(CMAKE_SKIP_BUILD_RPATH TRUE)
+set(CMAKE_SKIP_BUILD_RPATH true)
 
 # Find dependencies
 find_package(HIP QUIET)
@@ -276,8 +277,8 @@ if(BUILD_ROCPYDECODE)
     endif()
 
     # Set the dependent packages
-    set(ROCPYDECODE_DEBIAN_PACKAGE_LIST  "rocdecode-dev")
-    set(ROCPYDECODE_RPM_PACKAGE_LIST  "rocdecode-devel")
+    set(ROCPYDECODE_DEBIAN_PACKAGE_LIST  "rocdecode-dev, python3-dev, python3-pip")
+    set(ROCPYDECODE_RPM_PACKAGE_LIST  "rocdecode-devel, python3-devel, python3-pip")
 
     # '%{?dist}' breaks manual builds on debian systems due to empty Provides
     execute_process(
