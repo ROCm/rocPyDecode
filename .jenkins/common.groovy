@@ -67,7 +67,7 @@ def runPackageCommand(platform, project) {
         packageType = 'rpm'
         packageInfo = 'rpm -qlp'
         packageDetail = 'rpm -qi'
-        packageRunTime = 'rocpydecode-*'
+        packageRunTime = 'rocpydecode_*'
 
         if (platform.jenkinsLabel.contains('sles')) {
             osType = 'sles'
@@ -87,7 +87,7 @@ def runPackageCommand(platform, project) {
         packageType = 'deb'
         packageInfo = 'dpkg -c'
         packageDetail = 'dpkg -I'
-        packageRunTime = 'rocpydecode-*'
+        packageRunTime = 'rocpydecode_*'
 
         if (platform.jenkinsLabel.contains('ubuntu20')) {
             osType = 'ubuntu20'
