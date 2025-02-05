@@ -58,7 +58,7 @@ find_program(DPKG_EXE dpkg)
 
 # avoid setting the default installation path to /usr/local
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    set(CMAKE_INSTALL_PREFIX ${ROCM_PATH} CACHE PATH "rocDecode default installation path" FORCE)
+    set(CMAKE_INSTALL_PREFIX ${ROCM_PATH} CACHE PATH "rocPyDecode default installation path" FORCE)
 endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 
 set(DEFAULT_BUILD_TYPE "Release")
@@ -376,11 +376,11 @@ if(BUILD_ROCPYDECODE)
 
     cpack_add_component(asan
                     DISPLAY_NAME "rocPyDecode ASAN Package"
-                    DESCRIPTION "AMD rocDecode is a python high performance video decode SDK for AMD GPUs")
+                    DESCRIPTION "AMD rocPyDecode is a python high performance video decode SDK for AMD GPUs")
 
     cpack_add_component(test
                     DISPLAY_NAME "rocPyDecode Test Package"
-                    DESCRIPTION "AMD rocDecode is a python high performance video decode SDK for AMD GPUs")
+                    DESCRIPTION "AMD rocPyDecode is a python high performance video decode SDK for AMD GPUs")
 
 else()
     message("-- ${Red}WARNING: rocPyDecode - missing core dependencies${ColourReset}")
