@@ -232,10 +232,18 @@ if(BUILD_ROCPYDECODE)
         configure_file("${filename}" "${CMAKE_BINARY_DIR}/${TARGET_NAME}/${ITEM_PATH_REL}" COPYONLY)
     endforeach (filename)
 
+    # set license information
+    set(CPACK_RPM_PACKAGE_LICENSE    "MIT")
+    set(CPACK_RESOURCE_FILE_LICENSE  "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt")
+    install(FILES ${CPACK_RESOURCE_FILE_LICENSE} DESTINATION ${CMAKE_INSTALL_DOCDIR} COMPONENT runtime) 
+    install(FILES ${CPACK_RESOURCE_FILE_LICENSE} DESTINATION ${CMAKE_INSTALL_DOCDIR}-asan COMPONENT asan)
+
     #install rocPyDecode pybind libs
     install(FILES ${CMAKE_BINARY_DIR}/${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}/${TARGET_PYMODULE_NAME} DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT runtime)
     install(DIRECTORY pyRocVideoDecode DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT runtime)
     install(DIRECTORY samples DESTINATION ${CMAKE_INSTALL_LIBDIR}/pyRocVideoDecode COMPONENT runtime)
+    # Test - Installed
+    install(DIRECTORY ${CMAKE_SOURCE_DIR}/tests DESTINATION ${CMAKE_INSTALL_DATADIR}/rocpydecode COMPONENT test)
 
     message("-- ${Green}ROCm Video Decode Library Python Binding - rocPyDecode module added ${ColourReset}")
     message("-- ${BoldBlue}rocPyDecode Version -- ${VERSION}${ColourReset}")
@@ -375,17 +383,6 @@ if(BUILD_ROCPYDECODE)
                     DESCRIPTION "AMD rocDecode is a python high performance video decode SDK for AMD GPUs")
 
 else()
-    message("-- ${Red}WARNING: rocPyDecode module excluded - Dependency Failure${ColourReset}")
-    # Python3
-    if(NOT Python3_FOUND)
-        message("-- ${Yellow}NOTE: rocPyDecode pybind requires Python3, Not Found${ColourReset}")
-    endif()
-    # PyBind11
-    if(NOT pybind11_FOUND)
-        message("-- ${Yellow}NOTE: rocPyDecode requires pybind11, Not Found${ColourReset}")	
-    endif()
-    # rocDecode
-    if(NOT rocDecode_FOUND)
-        message("-- ${Yellow}NOTE: rocPyDecode requires rocDecode, Not Found${ColourReset}")	
-    endif()
+    message("-- ${Red}WARNING: rocPyDecode - missing core dependencies${ColourReset}")
+    message("-- ${Red}WARNING: Install missing dependencies and retry${ColourReset}")
 endif()
