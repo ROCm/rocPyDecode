@@ -26,6 +26,8 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
                 make -j\$(nproc)
                 sudo make install
                 ldd -v /opt/rocm/lib/rocpydecode.*.so
+                cd ../../
+                sudo python3 build_rocpydecode_wheel.py
                 """
 
     platform.runCommand(this, command)
