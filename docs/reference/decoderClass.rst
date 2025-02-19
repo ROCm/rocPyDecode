@@ -5,7 +5,7 @@
 .. _decoder_section:
 
 *************************
-Decoder Class
+rocPyDecode decoder class
 *************************
 
 Instantiation

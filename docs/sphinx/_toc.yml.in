@@ -14,10 +14,20 @@ subtrees:
   - file: install/rocPyDecode-install
     title: Installing rocPyDecode
 
+- caption: Conceptual
+  entries:
+  - file: conceptual/rocPyDecode-mem-types.rst
+    title: rocPyDecode surface data memory locations
+
 - caption: How to
   entries:
   - file: how-to/using-rocPydecode.rst
-    title: Using rocPyDecode
+    title: Use rocPyDecode
+
+- caption: Tutorials
+  entries:
+  - url: https://github.com/ROCm/rocPyDecode/tree/develop/samples
+    title: rocPyDecode samples
 
 - caption: Reference
   entries:
@@ -31,11 +41,6 @@ subtrees:
         title: rocPyDecode Structs
       - file: reference/decoderClass.rst
       - file: reference/demuxerClass.rst
-
-- caption: Tutorials
-  entries:
-  - url: https://github.com/ROCm/rocPyDecode/tree/develop/samples
-    title: rocPyDecode samples
 
 - caption: About
   entries:

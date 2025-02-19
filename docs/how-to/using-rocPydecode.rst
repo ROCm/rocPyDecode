@@ -6,101 +6,192 @@
 Using rocPyDecode
 ********************************************************************
 
-RocPyDecode is a python library module which allows python decoding functionality using `rocDecode C++ SDK library <https://github.com/ROCm/rocDecode>`_ backend.
+Two rocPyDecode classes, |demuxer|_ and |decoder|_, contain the APIs needed to demultiplex and decode a video file. These can be found in ``rocPyVidecode.demuxer.py`` and ``rocPyVideoDecode.decoder.py``, respectively.
 
-1. API overview
-====================================================
+.. |demuxer| replace:: ``demuxer``
+.. _demuxer: https://rocm.docs.amd.com/projects/rocPyDecode/en/latest/reference/demuxerClass.html
 
-All rocPyDecode APIs are exposed using the header files ``decoder.py`` and ``demuxer.py``. You can find
-these files in the `pyRocVideoDecode` folder in the `rocPyDecode github repository <https://github.com/ROCm/rocPyDecode>`_.
+.. |decoder| replace:: ``decoder``
+.. _decoder: https://rocm.docs.amd.com/projects/rocPyDecode/en/latest/reference/decoderClass.html
 
-For detailed explanation of rocDecode API, please refer to `rocDecode documentation <https://rocm.docs.amd.com/projects/rocDecode/en/latest/>`_.
-The samples uses the ``pyRocVideoDecode`` python module to interface with the low level ``rocVideoDecode`` class available in the C++ rocDecode library.
+Before decoding a video file with rocPyDecode, a ``demuxer`` and a ``decoder`` need to be instantiated.
 
-The ``pyRocVideoDecode`` module exposes the following APIs through two python classes ``PyRocVideoDecoder`` and ``PyVideoDemuxer``.
+The demuxer and decoder instances are used together to decode the video file.
 
-class PyRocVideoDecoder (Video decoder class)
-    * ``GetDeviceinfo(self)`` -> API to get device information of the current device
-    * ``SetReconfigParams(self)`` -> API to reconfigure decoder when thre is codec/resolution changes
-    * ``DecodeFrame(self)`` -> API to trigger decoding of a frame through the low level decoder
-    * ``GetFrame(self)`` -> API to receive a decoded output frame in video memory
-    * ``SaveFrameToFile(self)`` -> API to bring back the decoded output frame to host and save it to a file
-    * ``ReleaseFrame(self)`` -> API to release the decoded frame after use
-    * ``GetOutputSurfaceInfo(self)`` -> API to get the output surface information like resolution, bit_depth and color_format of the decoded frame
-    * ``GetNumOfFlushedFrames(self)`` -> API to get the number of flushed frames during reconfigure
+Import both the ``pyRocVideoDecode.decoder`` and ``pyRocVideoDecode.demuxer`` modules:
 
-class PyVideoDemuxer (python demuxer class)
-    * ``GetCodecId(self)`` -> API to get the Codec_id of the current stream from the demuxer
-    * ``DemuxFrame(self)`` -> API to demultiplex a frame using FFMPEG API
+.. code:: python
 
-The workflow of ``rocPyDecode`` is exactly similar to the ``rocDecode`` C++ library. Please refer to rocDecode documentation for further details.
+    import pyRocVideoDecode.decoder as dec
+    import pyRocVideoDecode.demuxer as dmx
 
-2. Create a decoder instance using rocPyDecode
-====================================================
+Instantiate the demuxer by passing the path to the video file:
 
-``PyRocVideoDecoder()`` python module creates an instance of video decoder underneath and exposes C++ APIs to python using pybind.
-``PyRocVideoDecoder()`` in turn creates an instance of ``RocVideoDecoder()`` class and returns a handle upon successful creation. 
+.. code:: python
 
-3. Decoding video frames using ``PyRocVideoDecoder()``
-======================================================
+	demuxer = dmx.demuxer(input_file_path)
 
-After de-multiplexing and parsing, the user can decode bitstream data containing a frame/field in hardware.
+Instantiate the decoder using the ``decoder()`` function. The input file's codec ID needs to be passed to the decoder to instantiate it.
 
-Use the ``DecodeFrame()`` API to submit a new frame for hardware decoding. Underneath the
-driver, the Video Acceleration API (VA-API) is used to submit compressed picture data to the driver.
-The parser extracts all the necessary information from the bitstream and fills the ``RocdecPicParams``
-structure that's appropriate for the codec. The high-level ``RocVideoDecoder`` class connects the parser
-and decoder used for all sample applications.
+The codec ID is obtained by passing the output of ``demuxer.GetCodecId()`` to the ``GetRocDecCodecID()`` function in ``pyRocVideoDecode.decoder``.
 
-The ``DecodeFrame()`` function will call the C++ ``rocDecDecodeFrame()`` api which takes the decoder handle and the pointer to 
-the ``RocdecPicParams`` structure and initiates the video decoding using VA-API.
+.. code:: python
 
-4. Using the decoded frame for further processing
-====================================================
+    codec_id = dec.GetRocDecCodecID(demuxer.GetCodecId())
 
-The decoded frames can be used for further postprocessing using ``GetFrame()`` API. The
-successful completion of ``GetFrame()`` indicates that the decoding process is complete and
-the device memory pointer is inter-opped into the ROCm HIP address space in order to further process
-the decoded frame in device memory. The caller gets the necessary information of the output surface,
-such as YUV format, dimensions, and pitch by calling the ``GetOutputSurfaceInfo()`` api call. 
-In the high-level ``RocVideoDecoder`` class, we provide four different surface_type modes for the mapped surface, as specified in
-OutputSurfaceMemoryType. Please refer to rocDecode documentation for further details on these modes.
+The following is the complete list of parameters for ``decoder()``. Only ``codec_id`` is required. All other parameters are optional.
 
-.. code:: cpp
+.. list-table:: 
+    :widths: 15 65 20
+    :header-rows: 1
 
-    typedef enum OutputSurfaceMemoryType_enum {
-        OUT_SURFACE_MEM_DEV_INTERNAL = 0,      /**<  Internal interopped decoded surface memory **/
-        OUT_SURFACE_MEM_DEV_COPIED = 1,        /**<  decoded output will be copied to a separate device memory **/
-        OUT_SURFACE_MEM_HOST_COPIED = 2        /**<  decoded output will be copied to a separate host memory **/
-        OUT_SURFACE_MEM_NOT_MAPPED = 3         /**<  decoded output is not available (interop won't be used): useful for decode only performance app*/
-    } OutputSurfaceMemoryType;
+    *   - Parameter
+        - Description 
+        - Default value
+    
+    *   - ``codec_id``
+        - The video file's codec ID. Use ``dec.GetRocDecCodecID(demuxer.GetCodecId())`` to get the codec ID.
+        - No default. A value needs to be provided.
 
+    *   - ``device_id``
+        - The GPU device ID. 
+        - Default 0
+    
+    *   - ``mem_type``
+        - The memory type where the surface data, such as the decoded frames, resides. |br| |br| Set it to 0 if the surface data is stored internally on memory shared by the GPU and CPU. |br| |br| Set it to 1 if the surface data resides on the GPU. |br| |br| Set it to 2 if the surface data resides on the CPU. |br| |br| See :doc:`rocPyDecode memory types <../conceptual/rocPyDecode-mem-types>` for details.
+        - Default 1, data resides on the GPU
 
-If the mapped surface type is ``OUT_SURFACE_MEM_DEV_INTERNAL``, the direct pointer to the decoded
-surface is provided. You must call ``ReleaseFrame()`` (``RocVideoDecoder`` class). If the requested surface
-type is ``OUT_SURFACE_MEM_DEV_COPIED`` or ``OUT_SURFACE_MEM_HOST_COPIED``, the internal
-decoded frame is copied to another buffer, either in device memory or host memory. After that, it's
-immediately unmapped for re-use by the ``RocVideoDecoder`` class.
+    *   - ``b_force_zero_latency``
+        - Set to ``True`` to force zero latency.
+        - Default ``False``
 
-``PyRocVideoDecoder()`` can pass the appropriate mem_type to ``rocVideoDecoder`` class on creation.
+    *   - ``crop_rect``
+        - The dimensions of the crop rectangle, ``(left, top, right, bottom)``. See :ref:`Rect structure` for more details.
+        - Default ``None``, no cropping
 
-Refer to the ``PyRocVideoDecoder`` class and
-`samples <https://github.com/ROCm/rocPyDecode/tree/develop/samples>`_ for details on how to use
-these APIs and various use-case examples
+    *   - ``max_width``    
+        - Max width
+        - Default 0
+
+    *   - ``max_height``  
+        - Max height
+        - Default 0
+
+    *   - ``clk_rate``    
+        - Clock rate
+        - Default 1000  
 
 
-5.  Reconfiguring the decoder
-====================================================
+.. |br| raw:: html
 
-``SetReconfigParams()`` api is used to set reconfig parameters from Python to the low_level video decoder.
+      </br>
 
-The C++ library uses ``rocDecReconfigureDecoder()`` to reuse a single decoder for multiple clips or when the
-video resolution changes during the decode. The API currently supports resolution changes, resize
-parameter changes, and target area parameter changes for the same codec without destroying an
-ongoing decoder instance. This can improve performance and reduce overall latency.
+After instantiating the demuxer and the decoder, verify that the codec is supported using ``IsCodecSupported()``. 
+
+From the |videodecode|_ example:
+
+.. code:: python
+
+    # Instantiate a demuxer
+    demuxer = dmx.demuxer(input_file_path)
+
+    # Get the coded id
+    codec_id = dec.GetRocDecCodecID(demuxer.GetCodecId())
+
+    # Instantiate a decoder
+    viddec = dec.decoder(
+        codec_id,
+        device_id,
+        mem_type,
+        b_force_zero_latency,
+        crop_rect,
+        0,
+        0,
+        1000)
+
+    # Get the GPU device information
+    cfg = viddec.GetGpuInfo()
+
+    # Check that the codec is supported
+    if (viddec.IsCodecSupported(device_id, codec_id, demuxer.GetBitDepth()) == False):
+        print("ERROR: Codec is not supported on this GPU " + cfg.device_name)
+        exit()
+
+Before entering the decoder loop, set the flush mode with ``SetReconfigParams()``. Flushing is needed to finalize the decoding process when the video being decoded has frames with different resolutions.  The flush mode depends on whether decoded frames are written to file. 
+
+From the ``videodecode.py`` example:
+
+.. code:: python
+   
+    flush_mode = 0
+    if (output_file_path is not None):
+        flush_mode = 1
+    
+    viddec.SetReconfigParams(flush_mode, output_file_path if (output_file_path is not None) else str(""))
 
 
-6.  Destroying the decoder instance
-====================================================
+Once it's been determined that the codec is supported and the flush mode has been set, the input can be demuxed and then decoded. ``demuxer.DemuxFrame()`` demuxes frames sequentially starting at the beginning of the file. To start from a different frame, ``demuxer.SeekFrame()`` is used. Both return a packet that can be passed to the decoder. The packet contains information related to the demuxed frames, such as time stamp, YUV frame address, and  resized frame address. See :ref:`packet` for more information. 
 
-The decoder resources will be destroyed when the Python class object is released.
+The packet is passed to ``decoder.DecodeFrame()`` which updates the packet with the decoded frame information and returns the number of frames that have been decoded.
+
+From the ``videodecode.py`` example:
+
+.. code:: python 
+
+    if(not_seeking):
+        packet = demuxer.DemuxFrame()
+    else:
+        packet = demuxer.SeekFrame(seek_frame, seek_mode, seek_criteria)
+        not_seeking = True
+
+    n_frame_returned = viddec.DecodeFrame(packet)
+
+Frames can be further processed using the ``GetFrameRgb()`` and ``GetFrameYuv()`` functions. ``GetFrameRgb()`` and ``GetFrameYuv()`` return pointers to the frame packet in memory. The ``GetOutputSurfaceInfo()`` function returns information about the decoded frames that need to be passed to the processing functions. 
+
+From the ``videodecode.py`` example:
+
+.. code:: python
+
+    surface_info = viddec.GetOutputSurfaceInfo()
+    if(viddec.ResizeFrame(packet, resize_dim, surface_info) != 0):
+        frame_is_resized = True
+    else:
+        frame_is_resized = False
+
+After decoding a frame, release it with ``ReleaseFrame()``. 
+
+From the ``videodecode.py`` example:
+
+.. code:: python
+
+    for i in range(n_frame_returned):
+        viddec.GetFrameYuv(packet)
+            
+        [...]
+
+        if (resize_dim is not None):
+            surface_info = viddec.GetOutputSurfaceInfo()
+            if(viddec.ResizeFrame(packet, resize_dim, surface_info) != 0):
+                frame_is_resized = True
+            else:
+                frame_is_resized = False
+
+        if (output_file_path is not None):
+            if (frame_is_resized):
+                resized_surface_info = viddec.GetResizedOutputSurfaceInfo()
+                viddec.SaveFrameToFile(output_file_path, packet.frame_adrs_resized, resized_surface_info)
+            else:
+                viddec.SaveFrameToFile(output_file_path, packet.frame_adrs)
+
+        # release frame
+        viddec.ReleaseFrame(packet)
+
+``ReleaseFrame()`` will also flush the frame. 
+
+Decoder resources are destroyed when the Python class object is released.
+
+The rocPyDecode samples are available from the `rocPyDecode GitHub repository <https://github.com/ROCm/rocPyDecode/tree/develop/samples>`_.
+
+.. |videodecode| replace:: ``videodecode.py``
+.. _videodecode: https://github.com/ROCm/rocPyDecode/blob/develop/samples/videodecode.py
+

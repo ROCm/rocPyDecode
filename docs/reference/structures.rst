@@ -20,7 +20,7 @@ The following are the structures that are used in API calls:
 Packet structure
 ================
 
-The packet structure contains information related to the demuxed frames from the original input video. The packet is passed to the decoder APIs for further processing, which uses and updates the information in the same structure.
+The Packet structure contains information related to the demuxed frames from the original input video. The packet is passed to the decoder APIs for further processing, which uses and updates the information in the same structure.
 
 - **end_of_stream**: Boolean flag, indicates demuxing reach end of stream when 'True'  
 - **pkt_flags**: Integer value indicate the status of the packet  
@@ -86,6 +86,8 @@ Example:
 		if(viddec.ResizeFrame(packet, resize_dim, surface_info) != 0):
 
 			frame_is_resized = True
+
+.. _Rect structure:
 
 Rect structure
 ==============
