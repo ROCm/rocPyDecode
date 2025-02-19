@@ -5,63 +5,27 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
     project.paths.construct_build_prefix()
 
     String libLocation = ''
-    String installPip = "python3 -m pip install --upgrade pip"
-    String breakSystemPackages = ""
     if (platform.jenkinsLabel.contains('rhel')) {
         libLocation = ':/usr/local/lib:/usr/local/lib/x86_64-linux-gnu'
     }
     else if (platform.jenkinsLabel.contains('sles')) {
         libLocation = ':/usr/local/lib:/usr/local/lib/x86_64-linux-gnu'
     }
-    else if (platform.jenkinsLabel.contains('ubuntu24')) {
-        installPip = "sudo apt install python3-pip"
-        breakSystemPackages = "--break-system-packages"
-    }
 
     String buildTypeArg = debug ? '-DCMAKE_BUILD_TYPE=Debug' : '-DCMAKE_BUILD_TYPE=Release'
     String buildTypeDir = debug ? 'debug' : 'release'
-    
+
     def command = """#!/usr/bin/env bash
                 set -ex
-
                 export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/opt/rocm/lib${libLocation}
-                
-                echo Build rocDecode
-                pwd
-                cd ${project.paths.project_build_prefix}/..
-                pwd
-                rm -rf rocDecode
-                git clone http://github.com/ROCm/rocDecode.git
-                cd rocDecode
-                sudo python3 rocDecode-setup.py
-                mkdir build
-                cd build
-                sudo cmake ..
-                sudo make -j
-                sudo make install
-                cd ../..
-
                 echo Build rocPyDecode - ${buildTypeDir}
-                pwd
-                cd rocpydecode
-                pwd
-                wget https://github.com/dmlc/dlpack/archive/refs/tags/v0.6.tar.gz
-                tar -xvf v0.6.tar.gz
-                cd dlpack-0.6
-                mkdir build
-                cd build
-                sudo cmake ..
-                sudo make
+                cd ${project.paths.project_build_prefix}
+                sudo python3 rocPyDecode-requirements.py
+                mkdir -p build/${buildTypeDir} && cd build/${buildTypeDir}
+                cmake ${buildTypeArg} ../..
+                make -j\$(nproc)
                 sudo make install
-                cd ../..
-
-                sudo python3 --version
-                ${installPip}
-                sudo pip3 install pybind11[global] ${breakSystemPackages}
-
-                sudo mkdir -p /opt/rocm/share/rocdecode/utils
-
-                sudo python3 rocPyDecode-docker-install.py
+                ldd -v /opt/rocm/lib/rocpydecode.*.so
                 """
 
     platform.runCommand(this, command)
@@ -69,48 +33,90 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
 
 def runTestCommand (platform, project) {
     String libLocation = ''
-    String breakSystemPackages = ""
     if (platform.jenkinsLabel.contains('rhel')) {
         libLocation = ':/usr/local/lib:/usr/local/lib/x86_64-linux-gnu'
     }
     else if (platform.jenkinsLabel.contains('sles')) {
         libLocation = ':/usr/local/lib:/usr/local/lib/x86_64-linux-gnu'
     }
-    else if (platform.jenkinsLabel.contains('ubuntu24')) {
-        breakSystemPackages = "--break-system-packages"
-    }
 
     def command = """#!/usr/bin/env bash
-                set -ex
+                set -x
                 export HOME=/home/jenkins
-                export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/opt/rocm/lib${libLocation}
-                echo make samples
-                sudo pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.2 ${breakSystemPackages}
-                cd ${project.paths.project_build_prefix}
-                echo \$PYTHONPATH
-                LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/opt/rocm/lib${libLocation} sudo python3 samples/videodecode.py
+                echo Make Test
+                cd ${project.paths.project_build_prefix}/build
+                mkdir -p test && cd test
+                cmake /opt/rocm/share/rocpydecode/tests/
+                LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/opt/rocm/lib${libLocation} ctest -VV --rerun-failed --output-on-failure
+                ldd -v /opt/rocm/lib/rocpydecode.*.so
                 """
-
     platform.runCommand(this, command)
 }
 
 def runPackageCommand(platform, project) {
 
     def packageHelper = platform.makePackage(platform.jenkinsLabel, "${project.paths.project_build_prefix}/build/release")
-
+    
     String packageType = ''
     String packageInfo = ''
     String packageDetail = ''
     String osType = ''
     String packageRunTime = ''
-    
+
+    if (platform.jenkinsLabel.contains('centos') || platform.jenkinsLabel.contains('rhel') || platform.jenkinsLabel.contains('sles')) {
+        packageType = 'rpm'
+        packageInfo = 'rpm -qlp'
+        packageDetail = 'rpm -qi'
+        packageRunTime = 'rocpydecode_*'
+
+        if (platform.jenkinsLabel.contains('sles')) {
+            osType = 'sles'
+        }
+        else if (platform.jenkinsLabel.contains('centos7')) {
+            osType = 'centos7'
+        }
+        else if (platform.jenkinsLabel.contains('rhel8')) {
+            osType = 'rhel8'
+        }
+        else if (platform.jenkinsLabel.contains('rhel9')) {
+            osType = 'rhel9'
+        }
+    }
+    else
+    {
+        packageType = 'deb'
+        packageInfo = 'dpkg -c'
+        packageDetail = 'dpkg -I'
+        packageRunTime = 'rocpydecode_*'
+
+        if (platform.jenkinsLabel.contains('ubuntu20')) {
+            osType = 'ubuntu20'
+        }
+        else if (platform.jenkinsLabel.contains('ubuntu22')) {
+            osType = 'ubuntu22'
+        }
+    }
+
     def command = """#!/usr/bin/env bash
-                set -ex
+                set -x
                 export HOME=/home/jenkins
-                echo rocPyDecode Package
+                echo Make rocPyDecode Package
+                cd ${project.paths.project_build_prefix}/build/release
+                sudo make package
+                mkdir -p package
+                mv rocpydecode-test*.${packageType} package/${osType}-rocpydecode-test.${packageType}
+                mv ${packageRunTime}.${packageType} package/${osType}-rocpydecode.${packageType}
+                mv Testing/Temporary/LastTest.log ${osType}-LastTest.log
+                mv Testing/Temporary/LastTestsFailed.log ${osType}-LastTestsFailed.log
+                ${packageDetail} package/${osType}-rocpydecode-test.${packageType}
+                ${packageDetail} package/${osType}-rocpydecode.${packageType}
+                ${packageInfo} package/${osType}-rocpydecode-test.${packageType}
+                ${packageInfo} package/${osType}-rocpydecode.${packageType}
                 """
 
     platform.runCommand(this, command)
+    platform.archiveArtifacts(this, packageHelper[1])
 }
+
 
 return this

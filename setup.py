@@ -83,15 +83,15 @@ subprocess.check_call(['cmake', '--build', build_dir, '--config', 'Release', '--
 subprocess.check_call(['cmake', '--install', build_dir],cwd=os.getcwd())
 
 setup(
-    name='amd_rocPyDecode_instinct',
+    name='amd_rocpydecode_instinct',
     description='AMD ROCm Video Decoder Library',
     url='https://github.com/ROCm/rocPyDecode',
-    version='0.3.1' + '.' + get_rocm_rev(),
+    version='0.4.0' + '.' + get_rocm_rev(),
     author='AMD',
     license='MIT License',
     include_package_data=True,
     packages=[ 'pyRocVideoDecode/samples','pyRocVideoDecode',''],
-    package_dir={'pyRocVideoDecode/samples':'samples', '':'./build/rocPyDecode/' },
+    package_dir={'pyRocVideoDecode/samples':'samples', '':'./build/rocpydecode/' },
     package_data={'': ['*.so']},  # Include .so files in the package
     cmdclass={'bdist_wheel': custom_bdist_wheel,},
     )

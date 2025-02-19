@@ -2,6 +2,21 @@
 
 Full documentation for for rocPyDecode is available at [https://rocm.docs.amd.com/projects/rocPyDecode/en/latest/](https://rocm.docs.amd.com/projects/rocPyDecode/en/latest/)
 
+## (Unreleased) rocPyDecode 0.4.0
+
+### Added
+* rocpydecode package 
+
+### Changed
+
+### Removed
+
+MD5 functionality has been removed, and all APIs and samples related to MD5 functionality have also been removed.
+
+### Optimized
+
+### Resolved issues
+
 ## (Unreleased) rocPyDecode 0.3.1
 
 ### Added
@@ -30,7 +45,6 @@ All MD5 functionality, APIs, and sample code have been removed.
 ### Optimized
 
 ### Resolved issues
-
 
 ## rocPyDecode 0.2.0 for ROCm 6.3
 

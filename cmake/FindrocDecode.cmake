@@ -26,86 +26,64 @@
 # - Try to find rocDecode libraries and headers
 # Once done this will define
 #
-# rocDecode_FOUND - system has rocDecode
-# rocDecode_INCLUDE_DIRS - the rocDecode include directory
-# rocDecode_LIBRARIES - Link these to use rocDecode
+# ROCDECODE_FOUND - system has rocDecode
+# ROCDECODE_INCLUDE_DIR - the rocDecode include directory
+# ROCDECODE_LIBRARY - Link these to use rocDecode
 ################################################################################
 
-find_path(rocDecode_INCLUDE_DIRS
-    NAMES rocdecode.h rocparser.h
-    HINTS
-    $ENV{rocDecode_PATH}/include/rocdecode
-    PATHS
-    ${rocDecode_PATH}/include/rocdecode
-    /usr/local/include/
-    ${ROCM_PATH}/include/rocdecode
-)
-mark_as_advanced(rocDecode_INCLUDE_DIRS)
+# ROCM Path
+if(DEFINED ENV{ROCM_PATH})
+    set(ROCM_PATH $ENV{ROCM_PATH} CACHE PATH "Default ROCm installation path")
+elseif(ROCM_PATH)
+    message("-- INFO:ROCM_PATH Set -- ${ROCM_PATH}")
+else()
+    set(ROCM_PATH /opt/rocm CACHE PATH "Default ROCm installation path")
+endif()
 
-find_library(rocDecode_LIBRARIES
-    NAMES rocdecode
-    HINTS
-    $ENV{rocDecode_PATH}/lib
-    $ENV{rocDecode_PATH}/lib64
-    PATHS
-    ${rocDecode_PATH}/lib
-    ${rocDecode_PATH}/lib64
-    /usr/local/lib
-    ${ROCM_PATH}/lib
-)
-mark_as_advanced(rocDecode_LIBRARIES)
+# find rocDecode - library and headers
+find_path(ROCDECODE_INCLUDE_DIR NAMES rocdecode.h PATHS ${ROCM_PATH}/include/rocdecode)
+find_library(ROCDECODE_LIBRARY NAMES rocdecode HINTS ${ROCM_PATH}/lib)
+mark_as_advanced(ROCDECODE_INCLUDE_DIR)
+mark_as_advanced(ROCDECODE_LIBRARY)
 
-find_path(rocDecode_LIBRARIES_DIRS
-    NAMES rocdecode
-    HINTS
-    $ENV{rocDecode_PATH}/lib
-    $ENV{rocDecode_PATH}/lib64
-    PATHS
-    ${rocDecode_PATH}/lib
-    ${rocDecode_PATH}/lib64
-    /usr/local/lib
-    ${ROCM_PATH}/lib
-)
-mark_as_advanced(rocDecode_LIBRARIES_DIRS)
-
-if(rocDecode_LIBRARIES AND rocDecode_LIBRARIES_DIRS)
-    set(rocDecode_FOUND TRUE)
-endif( )
-
-include( FindPackageHandleStandardArgs )
-find_package_handle_standard_args( rocDecode
-    FOUND_VAR rocDecode_FOUND
-    REQUIRED_VARS
-        rocDecode_INCLUDE_DIRS
-        rocDecode_LIBRARIES
-        rocDecode_LIBRARIES_DIRS
-)
-
-set(rocDecode_FOUND ${rocDecode_FOUND} CACHE INTERNAL "")
-set(rocDecode_LIBRARIES ${rocDecode_LIBRARIES} CACHE INTERNAL "")
-set(rocDecode_INCLUDE_DIRS ${rocDecode_INCLUDE_DIRS} CACHE INTERNAL "")
-set(rocDecode_LIBRARIES_DIRS ${rocDecode_LIBRARIES_DIRS} CACHE INTERNAL "")
-
-if(rocDecode_FOUND)
-    # Find rocDecode Version
-    if (EXISTS "${rocDecode_INCLUDE_DIRS}/rocdecode_version.h")
-        file(READ "${rocDecode_INCLUDE_DIRS}/rocdecode_version.h" ROCDECODE_VERSION_FILE)
-        string(REGEX MATCH "ROCDECODE_MAJOR_VERSION ([0-9]*)" _ ${ROCDECODE_VERSION_FILE})
-        set(ROCDECODE_MAJOR_VERSION ${CMAKE_MATCH_1} CACHE INTERNAL "")
-        string(REGEX MATCH "ROCDECODE_MINOR_VERSION ([0-9]*)" _ ${ROCDECODE_VERSION_FILE})
-        set(ROCDECODE_MINOR_VERSION ${CMAKE_MATCH_1} CACHE INTERNAL "")
-        string(REGEX MATCH "ROCDECODE_MICRO_VERSION ([0-9]*)" _ ${ROCDECODE_VERSION_FILE})
-        set(ROCDECODE_MICRO_VERSION ${CMAKE_MATCH_1} CACHE INTERNAL "")
-        message("-- ${White}Using rocDecode -- \n\tLibraries:${rocDecode_LIBRARIES} \n\tIncludes:${rocDecode_INCLUDE_DIRS}
-            \n\tVersion:${ROCDECODE_MAJOR_VERSION}.${ROCDECODE_MINOR_VERSION}.${ROCDECODE_MICRO_VERSION}${ColourReset}")
-    else()
-        set(ROCDECODE_MAJOR_VERSION 0)
-        set(ROCDECODE_MINOR_VERSION 0)
-        set(ROCDECODE_MICRO_VERSION 0)
-    endif()    
+if(ROCDECODE_INCLUDE_DIR AND ROCDECODE_LIBRARY)
+    message("-- ${White}FindrocDecode -- Using rocDecode: \n\tIncludes:${ROCDECODE_INCLUDE_DIR}\n\tLib:${ROCDECODE_LIBRARY}${ColourReset}")
+    set(ROCDECODE_FOUND TRUE)
 else()
     if(rocDecode_FIND_REQUIRED)
-        message(FATAL_ERROR "{Red}FindrocDecode -- NOT FOUND${ColourReset}")
+        message(FATAL_ERROR "FindrocDecode -- Failed to find rocDecode Library")
     endif()
-    message( "-- ${Yellow}NOTE: FindrocDecode failed to find -- rocDecode${ColourReset}" )
+    message( "-- ${Yellow}NOTE: FindrocDecode failed to find rocDecode -- INSTALL rocDecode${ColourReset}" )
 endif()
+
+if(ROCDECODE_FOUND)
+    # Find rocDecode Version
+    file(READ "${ROCDECODE_INCLUDE_DIR}/rocdecode_version.h" ROCDECODE_VERSION_FILE)
+    string(REGEX MATCH "ROCDECODE_MAJOR_VERSION ([0-9]*)" _ ${ROCDECODE_VERSION_FILE})
+    set(ROCDECODE_VER_MAJOR ${CMAKE_MATCH_1})
+    string(REGEX MATCH "ROCDECODE_MINOR_VERSION ([0-9]*)" _ ${ROCDECODE_VERSION_FILE})
+    set(ROCDECODE_VER_MINOR ${CMAKE_MATCH_1})
+    string(REGEX MATCH "ROCDECODE_MICRO_VERSION ([0-9]*)" _ ${ROCDECODE_VERSION_FILE})
+    set(ROCDECODE_VER_MICRO ${CMAKE_MATCH_1})
+    message("-- ${White}Found rocDecode Version: ${ROCDECODE_VER_MAJOR}.${ROCDECODE_VER_MINOR}.${ROCDECODE_VER_MICRO}${ColourReset}")
+    mark_as_advanced(ROCDECODE_VER_MAJOR)
+    mark_as_advanced(ROCDECODE_VER_MINOR)
+    mark_as_advanced(ROCDECODE_VER_MICRO)
+endif()
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(
+    rocDecode
+    FOUND_VAR  
+        ROCDECODE_FOUND 
+    REQUIRED_VARS
+        ROCDECODE_INCLUDE_DIR
+        ROCDECODE_LIBRARY
+)
+
+set(ROCDECODE_FOUND ${ROCDECODE_FOUND} CACHE INTERNAL "")
+set(ROCDECODE_INCLUDE_DIR ${ROCDECODE_INCLUDE_DIR} CACHE INTERNAL "")
+set(ROCDECODE_LIBRARY ${ROCDECODE_LIBRARY} CACHE INTERNAL "")
+set(ROCDECODE_VER_MAJOR ${ROCDECODE_VER_MAJOR} CACHE INTERNAL "")
+set(ROCDECODE_VER_MINOR ${ROCDECODE_VER_MINOR} CACHE INTERNAL "")
+set(ROCDECODE_VER_MICRO ${ROCDECODE_VER_MICRO} CACHE INTERNAL "")

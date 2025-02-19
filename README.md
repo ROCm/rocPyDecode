@@ -54,7 +54,7 @@ The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access
 * [PyBind11](https://github.com/pybind/pybind11)
 
   ```shell
-  sudo pip3 install pybind11
+  sudo apt install python3-pybind11
   ```
 
 * [pkg-config](https://en.wikipedia.org/wiki/Pkg-config)
@@ -77,10 +77,9 @@ The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access
 >[!NOTE]
 > * All package installs are shown with the `apt` package manager. Use the appropriate package manager for your operating system.
 
-## Prerequisites setup script
+### Prerequisites setup script
 
-For your convenience, we provide the setup script, [rocPyDecode-requirements.py](rocPyDecode-requirements.py), which installs all required dependencies.\
-Run this script only once on bare metal, if using docker please see below instructions.
+For your convenience, we provide the setup script, [rocPyDecode-requirements.py](rocPyDecode-requirements.py), which installs all required dependencies. Run this script only once on bare metal, if using docker please see below instructions.
 
 ```shell
 python3 rocPyDecode-requirements.py
@@ -88,34 +87,94 @@ python3 rocPyDecode-requirements.py
 
 ## rocPyDecode install
 
-### using bare-metal
+The installation process uses the following steps:
+
+* [ROCm-supported hardware](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/reference/system-requirements.html) install verification
+
+* Install ROCm `6.3.0` or later with [amdgpu-install](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/how-to/amdgpu-install.html) with `--usecase=rocm`
+
+>[!IMPORTANT]
+> Use **either** [package install](#package-install) **or** [source install](#source-install) as described below.
+
+### Package install
+
+Install rocPyDecode runtime, and test packages.
+
+* Runtime package - `rocpydecode` only provides the python bindings for rocDecode
+* Test package - `rocpydecode-test` provides ctest to verify installation
+
+#### `Ubuntu`
+
+  ```shell
+  sudo apt-get install rocpydecode rocpydecode-test
+  ```
+
+>[!IMPORTANT]
+> Python module: To use python module, set PYTHONPATH:
+>   + `export PYTHONPATH=/opt/rocm/lib:$PYTHONPATH`
+
+### Source install
+
+To build rocPyDecode from source and install, follow the steps below:
+
+* Clone rocPyDecode source code
+
 ```shell
 git clone https://github.com/ROCm/rocPyDecode.git
+```
+
+#### CMake install
+
+* Instructions for building rocPyDecode with the **CMake**
+  + run the requirements script to install all the dependencies required:
+  ```shell
+  cd rocPyDecode
+  python3 rocPyDecode-requirements.py
+  ```
+
+  + run the below commands to build rocPyDecode:
+  ```shell
+  mkdir build && cd build
+  cmake ../
+  make -j8
+  sudo make install
+  ```
+
+  + run tests - [test option instructions](https://github.com/ROCm/MIVisionX/wiki/CTest)
+  ```shell
+  make test
+  ```
+
+>[!NOTE]
+> To run tests with verbose option, use `make test ARGS="-VV"`.
+
+#### Pip3 install
+
+```shell
 cd rocPyDecode
 sudo pip3 install .
 ```
 >[!NOTE]
-> `sudo` access is needed
+> `sudo` access is required
 
-### creating python distribution wheel
+#### Creating python distribution wheel
+* Option 1:
 ```shell
-# the generated .whl file will be located under subfolder ./dist/
-git clone https://github.com/ROCm/rocPyDecode.git
 cd rocPyDecode
-
-# Create/Build the wheel and install it
 sudo python3 build_rocpydecode_wheel.py
-
-# alternative method
+```
+* Option 2:
+```shell
+cd rocPyDecode
 sudo python3 setup.py bdist_wheel
 ```
 >[!NOTE]
-> `sudo` access is needed
+> * Generated `.whl` file will be located under subfolder `./dist/`
+> * `sudo` access is required
 
-### using docker environment
+#### docker environment install
 
 ```shell
-git clone https://github.com/ROCm/rocPyDecode.git
 cd rocPyDecode
 python rocPyDecode-docker-install.py 
 ```
@@ -128,6 +187,8 @@ python rocPyDecode-docker-install.py
 ## Run CTest
 
 This will run python samples and show pass/fail.
+>[!NOTE]
+> install rocPydecode before running tests
 
 ### Dependencies:
 ```shell
@@ -135,12 +196,28 @@ python3 -m pip install --upgrade pip
 python3 -m pip install -i https://test.pypi.org/simple hip-python
 ```
 
-### Run test:
+### Run tests with source
 ```shell
-cd rocPyDecode
-cmake .
+mkdir rocpydecode-test && cd rocpydecode-test
+cmake ../rocPyDecode/tests
 ctest -VV
 ```
+
+### Run tests with rocpydecode-test package
+
+Test package will install ctest module to test rocPyDecode. Follow below steps to test package install
+
+```shell
+mkdir rocpydecode-test && cd rocpydecode-test
+cmake /opt/rocm/share/rocpydecode/tests
+ctest -VV
+```
+>[!NOTE]
+> Make sure all required libraries are in your PATH
+> ```shell
+> export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/rocm/lib
+> export PYTHONPATH=/opt/rocm/lib:$PYTHONPATH
+> ```
 
 ## Run Sample Scripts
 
@@ -164,6 +241,9 @@ page.
 
 * Linux distribution
   * Ubuntu - `22.04` / `24.04`
-* ROCm: rocm-core - `6.3.0.60300`
-* CMake - Version `3.12`+
+* ROCm: rocm-core - `6.3.0.60300`+
 * AMD Clang++ - Version `18.0.0`+
+* CMake - Version `3.12`+
+* rocdecode-dev - `0.10.0`+
+* libdlpack-dev - `0.6-1`
+* python3-pybind11 - `2.9.1-2`

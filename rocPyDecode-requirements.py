@@ -29,38 +29,29 @@ else:
     import subprocess
 
 __copyright__ = "Copyright (c) 2024, AMD ROCm rocPyDecode"
-__version__ = "0.3.1"
+__version__ = "0.4.0"
 __status__ = "Shipping"
 
 # error check calls
-def ERROR_CHECK(call):
-    status = call
-    if(status != 0):
-        print('ERROR_CHECK failed with status:'+str(status))
+def ERROR_CHECK(waitval):
+    if(waitval != 0): # return code and signal flags
+        print('ERROR_CHECK failed with status:'+str(waitval))
         traceback.print_stack()
+        status = ((waitval >> 8) | waitval) & 255 # combine exit code and wait flags into single non-zero byte
         exit(status)
 
 # Arguments
 parser = argparse.ArgumentParser()
 parser.add_argument('--rocm_path', type=str, default='/opt/rocm',
                     help='ROCm Installation Path - optional (default:/opt/rocm) - ROCm Installation Required')
-parser.add_argument('--rocdecode', type=str, default='ON',
-                    help='rocDecode Installation - optional (default:ON) [options:ON/OFF]')
 
 args = parser.parse_args()
-
-rocdecodeInstall = args.rocdecode.upper()
 ROCM_PATH = args.rocm_path
 
+# override default path if env path set 
 if "ROCM_PATH" in os.environ:
     ROCM_PATH = os.environ.get('ROCM_PATH')
-print("\nROCm PATH set to -- " + ROCM_PATH + "\n")
-
-if rocdecodeInstall not in ('OFF', 'ON'):
-    print(
-        "ERROR: rocDecode Install Option Not Supported - [Supported Options: OFF or ON]\n")
-    parser.print_help()
-    exit()
+print("\nROCm PATH set to -- "+ROCM_PATH+"\n")
 
 # check ROCm installation
 if os.path.exists(ROCM_PATH):
@@ -72,8 +63,8 @@ else:
     print("ERROR: rocPyDecode Setup requires ROCm install\n")
     exit(-1)
 
-# get platfrom info
-platfromInfo = platform.platform()
+# get platform info
+platformInfo = platform.platform()
 
 # sudo requirement check
 sudoLocation = ''
@@ -87,33 +78,64 @@ else:
     if sudoLocation != '/usr/bin/sudo':
         status, userName = subprocess.getstatusoutput("whoami")
 
+# check os version
+os_info_data = 'NOT Supported'
+if os.path.exists('/etc/os-release'):
+    with open('/etc/os-release', 'r') as os_file:
+        os_info_data = os_file.read().replace('\n', ' ')
+        os_info_data = os_info_data.replace('"', '')
+
 # setup for Linux
 linuxSystemInstall = ''
 linuxCMake = 'cmake'
 linuxSystemInstall_check = ''
 linuxFlag = ''
-sudoValidateOption= '-v'
-if "redhat" in platfromInfo or os.path.exists('/usr/bin/yum'):
+sudoValidate = 'sudo -v'
+osUpdate = ''
+if "centos" in os_info_data or "redhat" in os_info_data or "Oracle" in os_info_data:
     linuxSystemInstall = 'yum -y'
     linuxSystemInstall_check = '--nogpgcheck'
-    if "redhat-7" in platfromInfo:
-        print("\nrocPyDecode Setup on "+platfromInfo+" is unsupported\n")
-        exit(-1)
-    if not "redhat" in platfromInfo:
-        platfromInfo = platfromInfo+'-redhat'
-elif "Ubuntu" in platfromInfo or os.path.exists('/usr/bin/apt-get'):
+    osUpdate = 'makecache'
+    if "VERSION_ID=7" in os_info_data:
+        linuxCMake = 'cmake3'
+        sudoValidate = 'sudo -k'
+        platformInfo = platformInfo+'-redhat-7'
+    elif "VERSION_ID=8" in os_info_data:
+        platformInfo = platformInfo+'-redhat-8'
+    elif "VERSION_ID=9" in os_info_data:
+        platformInfo = platformInfo+'-redhat-9'
+    else:
+        platformInfo = platformInfo+'-redhat-centos-undefined-version'
+elif "Ubuntu" in os_info_data:
     linuxSystemInstall = 'apt-get -y'
     linuxSystemInstall_check = '--allow-unauthenticated'
     linuxFlag = '-S'
-    if not "Ubuntu" in platfromInfo:
-        platfromInfo = platfromInfo+'-Ubuntu'
+    osUpdate = 'update'
+    if "VERSION_ID=20" in os_info_data:
+        platformInfo = platformInfo+'-Ubuntu-20'
+    elif "VERSION_ID=22" in os_info_data:
+        platformInfo = platformInfo+'-Ubuntu-22'
+    elif "VERSION_ID=24" in os_info_data:
+        platformInfo = platformInfo+'-Ubuntu-24'
+    else:
+        platformInfo = platformInfo+'-Ubuntu-undefined-version'
+elif "SLES" in os_info_data:
+    linuxSystemInstall = 'zypper -n'
+    linuxSystemInstall_check = '--no-gpg-checks'
+    platformInfo = platformInfo+'-SLES'
+    osUpdate = 'refresh'
+elif "Mariner" in os_info_data:
+    linuxSystemInstall = 'tdnf -y'
+    linuxSystemInstall_check = '--nogpgcheck'
+    platformInfo = platformInfo+'-Mariner'
+    osUpdate = 'makecache'
 else:
-    print("\nrocPyDecode Setup on "+platfromInfo+" is unsupported\n")
-    print("\nrocPyDecode Setup Supported on: Ubuntu 20/22; RedHat 8/9\n")
+    print("\rocPyDecode Setup on "+platformInfo+" is unsupported\n")
+    print("\rocPyDecode Setup Supported on: Ubuntu 20/22, RedHat 8/9, & SLES 15\n")
     exit(-1)
 
 # rocPyDecode Setup
-print("\nrocPyDecode Setup on: "+platfromInfo+"\n")
+print("\nrocPyDecode Setup on: "+platformInfo+"\n")
 print("\nrocPyDecode Dependencies Installation with rocPyDecode-setup.py V-"+__version__+"\n")
 
 if userName == 'root':
@@ -122,68 +144,48 @@ if userName == 'root':
 
 # source install - common package dependencies
 commonPackages = [
-    'gcc',
     'cmake',
-    'git',
-    'wget',
-    'unzip',
-    'pkg-config',
-    'inxi',
-    'python3',
-    'python3-pip'
+    'pkg-config'
 ]
 
 # Debian packages
 coreDebianPackages = [
-    'rocdecode',
     'rocdecode-dev',
-    'rocdecode-test',
     'python3-dev',
+    'python3-pip',
+    'python3-pybind11',
     'libdlpack-dev'
 ]
 
 # core RPM packages
-# TODO: dlpack/ pybind11-devel package
-
+# TODO: dlpack package missing in RPM
 coreRPMPackages = [
-    'rocdecode',
     'rocdecode-devel',
-    'rocdecode-test',
-    'python3-devel'
+    'python3-devel',
+    'python3-pybind11',
+    'python3-pip'
 ]
 
 # update
-ERROR_CHECK(os.system('sudo '+linuxFlag+' '+linuxSystemInstall +' '+linuxSystemInstall_check+' update'))
+ERROR_CHECK(os.system('sudo '+linuxFlag+' '+linuxSystemInstall +' '+linuxSystemInstall_check+' '+osUpdate))
 
 # common packages
-ERROR_CHECK(os.system('sudo -v'))
+ERROR_CHECK(os.system(sudoValidate))
 for i in range(len(commonPackages)):
     ERROR_CHECK(os.system('sudo '+linuxFlag+' '+linuxSystemInstall +
             ' '+linuxSystemInstall_check+' install '+ commonPackages[i]))
 
 # rocPyDecode Requirements
-ERROR_CHECK(os.system('sudo -v'))
-
-if "Ubuntu" in platfromInfo:
+ERROR_CHECK(os.system(sudoValidate))
+if "Ubuntu" in platformInfo:
     # core debian packages
-    if rocdecodeInstall == 'ON':
-        for i in range(len(coreDebianPackages)):
-            ERROR_CHECK(os.system('sudo '+linuxFlag+' '+linuxSystemInstall +
+    for i in range(len(coreDebianPackages)):
+        ERROR_CHECK(os.system('sudo '+linuxFlag+' '+linuxSystemInstall +
                     ' '+linuxSystemInstall_check+' install '+ coreDebianPackages[i]))
-
-elif "redhat" in platfromInfo:
+elif "redhat" in platformInfo:
     # core RPM packages
-    if rocdecodeInstall == 'ON':
-        for i in range(len(coreRPMPackages)):
+    for i in range(len(coreRPMPackages)):
             ERROR_CHECK(os.system('sudo '+linuxFlag+' '+linuxSystemInstall +
                     ' '+linuxSystemInstall_check+' install '+ coreRPMPackages[i]))
 
-# make sure we have pybind11 installed via pip
-ERROR_CHECK(os.system('sudo pip3 install pybind11'))
-GREEN = "\033[32m"
-RESET = "\033[0m"
-print(f"{GREEN}pybind11 {RESET}successfully installed.\n")
-
-# done
-BOLD = '\033[1m'
-print(f"{GREEN}{BOLD}rocPyDecode Dependencies Installed {RESET}with rocPyDecode-setup.py V-"+__version__+"\n")
+print("rocPyDecode Dependencies Installed with rocPyDecode-setup.py V-"+__version__)
