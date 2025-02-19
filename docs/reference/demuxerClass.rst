@@ -5,7 +5,7 @@
 .. _demuxer_section:
 
 *************************
-Demuxer Class
+rocPyDecode decoder class
 *************************
 
 Instantiation
