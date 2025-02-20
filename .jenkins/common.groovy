@@ -25,7 +25,7 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
                 cmake ${buildTypeArg} ../..
                 make -j\$(nproc)
                 sudo make install
-                ldd -v /opt/rocm/lib/rocpydecode.*.so
+                ldd -v /opt/rocm/lib/rocPyDecode.*.so
                 """
 
     platform.runCommand(this, command)
@@ -48,7 +48,7 @@ def runTestCommand (platform, project) {
                 mkdir -p test && cd test
                 cmake /opt/rocm/share/rocpydecode/tests/
                 LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/opt/rocm/lib${libLocation} ctest -VV --rerun-failed --output-on-failure
-                ldd -v /opt/rocm/lib/rocpydecode.*.so
+                ldd -v /opt/rocm/lib/rocPyDecode.*.so
                 """
     platform.runCommand(this, command)
 }
