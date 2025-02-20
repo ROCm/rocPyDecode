@@ -245,7 +245,7 @@ py::object PyRocVideoDecoder::PyGetFrameRgb(PyPacketData& packet, int rgb_format
         // use post process instance
         VideoPostProcess * post_proc = post_process_class;
         // Get Stream, and convert YUV 2 RGB
-        post_proc->ColorConvertYUV2RGB(reinterpret_cast<uint8_t*>(packet.frame_adrs), surf_info, frame_ptr_rgb, e_output_format, GetStream());
+        post_proc->ColorConvertYUV2RGB(reinterpret_cast<uint8_t*>(packet.frame_adrs), surf_info, frame_ptr_rgb, e_output_format, 0);
         // save the rgb ptr
         packet.frame_adrs_rgb = reinterpret_cast<std::uintptr_t>(frame_ptr_rgb);
         // Load DLPack Tensor
@@ -317,9 +317,9 @@ uintptr_t PyRocVideoDecoder::PyResizeFrame(PyPacketData& packet, Dim *resized_di
     }
     // call resize kernel, TODO: below code assumes NV12/P016 for decoded surface. Modify to take other surface formats in future
     if (surf_info->bytes_per_pixel == 2) {
-        ResizeP016(frame_ptr_resized, resized_dim->w * 2, resized_dim->w, resized_dim->h, in_yuv_frame, surf_info->output_pitch, surf_info->output_width, surf_info->output_height, (in_yuv_frame + surf_info->output_vstride * surf_info->output_pitch), nullptr, GetStream());
+        ResizeP016(frame_ptr_resized, resized_dim->w * 2, resized_dim->w, resized_dim->h, in_yuv_frame, surf_info->output_pitch, surf_info->output_width, surf_info->output_height, (in_yuv_frame + surf_info->output_vstride * surf_info->output_pitch), nullptr, 0);
     } else {
-        ResizeNv12(frame_ptr_resized, resized_dim->w, resized_dim->w, resized_dim->h, in_yuv_frame, surf_info->output_pitch, surf_info->output_width, surf_info->output_height, (in_yuv_frame + surf_info->output_vstride * surf_info->output_pitch), nullptr, GetStream());
+        ResizeNv12(frame_ptr_resized, resized_dim->w, resized_dim->w, resized_dim->h, in_yuv_frame, surf_info->output_pitch, surf_info->output_width, surf_info->output_height, (in_yuv_frame + surf_info->output_vstride * surf_info->output_pitch), nullptr, 0);
     }
     // save new resized frame address
     packet.frame_adrs_resized = reinterpret_cast<std::uintptr_t>(frame_ptr_resized);

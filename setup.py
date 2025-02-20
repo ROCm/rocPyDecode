@@ -90,8 +90,8 @@ setup(
     author='AMD',
     license='MIT License',
     include_package_data=True,
-    packages=[ 'pyRocVideoDecode/samples','pyRocVideoDecode',''],
-    package_dir={'pyRocVideoDecode/samples':'samples', '':'./build/rocpydecode/' },
+    packages=[ 'pyRocVideoDecode/samples','lib',''],
+    package_dir={'pyRocVideoDecode/samples':'samples', '':'./build/rocPyDecode/' },
     package_data={'': ['*.so']},  # Include .so files in the package
     cmdclass={'bdist_wheel': custom_bdist_wheel,},
     )
