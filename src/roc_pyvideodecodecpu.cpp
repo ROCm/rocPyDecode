@@ -181,7 +181,7 @@ py::object PyRocVideoDecoderCpu::PyGetFrameYuv(PyPacketData& packet, bool Separa
         // The tensor shape->height will be all the Yuv planes if user specify 'FALSE' in 'SeparateYuvPlanes' argument
         float plane_height_multiplier = SeparateYuvPlanes ? 1.0 : 1.5; // 1.5 for YUV NV12
         std::vector<size_t> shape{ static_cast<size_t>(height * plane_height_multiplier), static_cast<size_t>(width)};
-        packet.ext_buf[0]->LoadDLPack(shape, stride, bit_depth, type_str, (void *)packet.frame_adrs);
+        packet.ext_buf[0]->LoadDLPack(shape, stride, bit_depth, type_str, (void *)packet.frame_adrs, device_id_);
         if (SeparateYuvPlanes) {
             // get surface format
             OutputSurfaceInfo* p_surf_info;
@@ -191,7 +191,7 @@ py::object PyRocVideoDecoderCpu::PyGetFrameYuv(PyPacketData& packet, bool Separa
                 if (p_surf_info->surface_format == rocDecVideoSurfaceFormat_NV12 || p_surf_info->surface_format == rocDecVideoSurfaceFormat_P016) {
                     std::vector<size_t> shape{ static_cast<size_t>(height >> 1), static_cast<size_t>(width)};
                     uintptr_t uv_offset = p_surf_info->output_pitch * p_surf_info->output_vstride; // count for possible padding
-                    packet.ext_buf[1]->LoadDLPack(shape, stride, bit_depth, type_str, (void *)(packet.frame_adrs + uv_offset));
+                    packet.ext_buf[1]->LoadDLPack(shape, stride, bit_depth, type_str, (void *)(packet.frame_adrs + uv_offset), device_id_);
                 } else {
                     cout << "surf fmt: " << p_surf_info->surface_format << " [not supported]" << "\n";
                 }
@@ -257,7 +257,7 @@ py::object PyRocVideoDecoderCpu::PyGetFrameRgb(PyPacketData& packet, int rgb_for
             std::string type_str(static_cast<const char*>("|u1"));
             std::vector<size_t> shape{ static_cast<size_t>(height), static_cast<size_t>(width), 3}; // 3 rgb channels
             std::vector<size_t> stride{ static_cast<size_t>(surf_stride), 1, 0}; // python assumes same dim for both shape & strides
-            packet.ext_buf[0]->LoadDLPack(shape, stride, bit_depth, type_str, (void *)frame_ptr_rgb);
+            packet.ext_buf[0]->LoadDLPack(shape, stride, bit_depth, type_str, (void *)frame_ptr_rgb, device_id_);
         }
     }
     return py::cast(packet.frame_pts);
