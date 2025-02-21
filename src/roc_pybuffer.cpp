@@ -72,7 +72,6 @@ void *BufferInterface::data() const {
 }
 
 py::capsule BufferInterface::dlpack(py::object stream) const {
-    printf("I am in dlpack function\n");
     
     struct ManagerCtx {
         DLManagedTensor tensor;
