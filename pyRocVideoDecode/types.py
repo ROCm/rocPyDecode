@@ -19,32 +19,32 @@
 # THE SOFTWARE.
  
 # rocDecVideoSurfaceFormat
-from rocPyDecode.decTypes import rocDecVideoSurfaceFormat_NV12
-from rocPyDecode.decTypes import rocDecVideoSurfaceFormat_P016
-from rocPyDecode.decTypes import rocDecVideoSurfaceFormat_YUV444
-from rocPyDecode.decTypes import rocDecVideoSurfaceFormat_YUV444_16Bit
+from rocpydecode.decTypes import rocDecVideoSurfaceFormat_NV12
+from rocpydecode.decTypes import rocDecVideoSurfaceFormat_P016
+from rocpydecode.decTypes import rocDecVideoSurfaceFormat_YUV444
+from rocpydecode.decTypes import rocDecVideoSurfaceFormat_YUV444_16Bit
 
 # Video Packet Flags
-from rocPyDecode.decTypes import ROCDEC_PKT_ENDOFSTREAM
-from rocPyDecode.decTypes import ROCDEC_PKT_TIMESTAMP
-from rocPyDecode.decTypes import ROCDEC_PKT_DISCONTINUITY
-from rocPyDecode.decTypes import ROCDEC_PKT_ENDOFPICTURE
-from rocPyDecode.decTypes import ROCDEC_PKT_NOTIFY_EOS
+from rocpydecode.decTypes import ROCDEC_PKT_ENDOFSTREAM
+from rocpydecode.decTypes import ROCDEC_PKT_TIMESTAMP
+from rocpydecode.decTypes import ROCDEC_PKT_DISCONTINUITY
+from rocpydecode.decTypes import ROCDEC_PKT_ENDOFPICTURE
+from rocpydecode.decTypes import ROCDEC_PKT_NOTIFY_EOS
 
 # Video Codecs
-from rocPyDecode.decTypes import rocDecVideoCodec_AVC
-from rocPyDecode.decTypes import rocDecVideoCodec_HEVC
+from rocpydecode.decTypes import rocDecVideoCodec_AVC
+from rocpydecode.decTypes import rocDecVideoCodec_HEVC
 
 #  OutputFormatEnum - Types of images
-from rocPyDecode.decTypes import native
-from rocPyDecode.decTypes import bgr
-from rocPyDecode.decTypes import bgr48
-from rocPyDecode.decTypes import rgb
-from rocPyDecode.decTypes import rgb48
-from rocPyDecode.decTypes import bgra
-from rocPyDecode.decTypes import bgra64
-from rocPyDecode.decTypes import rgba
-from rocPyDecode.decTypes import rgba64
+from rocpydecode.decTypes import native
+from rocpydecode.decTypes import bgr
+from rocpydecode.decTypes import bgr48
+from rocpydecode.decTypes import rgb
+from rocpydecode.decTypes import rgb48
+from rocpydecode.decTypes import bgra
+from rocpydecode.decTypes import bgra64
+from rocpydecode.decTypes import rgba
+from rocpydecode.decTypes import rgba64
 
 _known_types = {
     rocDecVideoSurfaceFormat_NV12: ("rocDecVideoSurfaceFormat_NV12", rocDecVideoSurfaceFormat_NV12),

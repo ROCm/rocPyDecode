@@ -18,7 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import rocPyDecode as rocpydec
+import rocpydecode as rocpydec
 
 class stream_provider(object):
     def __init__(self, input_file_path: str):

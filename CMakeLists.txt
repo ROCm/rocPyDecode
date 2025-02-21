@@ -42,8 +42,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED On)
 set(VERSION "0.4.0")
 
 # Set Project Version and Language
-project(rocPyDecode VERSION ${VERSION} LANGUAGES CXX)
-set(TARGET_NAME rocPyDecode)
+project(rocpydecode VERSION ${VERSION} LANGUAGES CXX)
+set(TARGET_NAME rocpydecode)
 
 set(CMAKE_INSTALL_LIBDIR "lib" CACHE STRING "Library install directory")
 set(CMAKE_INSTALL_INCLUDEDIR "include" CACHE STRING "Include install directory")
@@ -277,11 +277,9 @@ if(BUILD_ROCPYDECODE)
                 set(TARGET_NAME_VERSIONED "${TARGET_NAME}.${PYTHON_INDEX}")
                 # Find python
                 find_package(Python QUIET COMPONENTS Interpreter Development)
-
-                # Extract Python include directory dynamically
+                # Extract Python include directory - very important for targeting appropriate python interpeter during compilation
                 execute_process(COMMAND ${CURRENT_PY_EXECUTABLE} -c "import sysconfig; print(sysconfig.get_path('include'))" OUTPUT_VARIABLE PYTHON_INCLUDE_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-                #add-module
+                #add-rocPyDecode-pybind11-module
                 pybind11_add_module(${TARGET_NAME_VERSIONED} MODULE ${sources})
                 target_link_libraries(${TARGET_NAME_VERSIONED} PRIVATE ${LINK_LIBRARY_LIST})
                 # include
@@ -293,7 +291,6 @@ if(BUILD_ROCPYDECODE)
                 else()
                     target_compile_definitions(${TARGET_NAME_VERSIONED} PUBLIC OVERHEAD_SUPPORT=0)
                 endif()
-
                 # TODO: remove after ROCDECODE_CHECK_VERSION macro is pushed to mainline
                 if(${ROCDECODE_VER_MAJOR} VERSION_GREATER_EQUAL "0" AND ${ROCDECODE_VER_MINOR} VERSION_GREATER_EQUAL "7" AND ${ROCDECODE_VER_MICRO} VERSION_GREATER_EQUAL "0")
                     target_compile_definitions(${TARGET_NAME_VERSIONED} PUBLIC CODEC_SUPPORTED_CHECK=1)
@@ -309,35 +306,26 @@ if(BUILD_ROCPYDECODE)
                     configure_file("${filename}" "${CMAKE_BINARY_DIR}/${TARGET_NAME_VERSIONED}/${ITEM_PATH_REL}" COPYONLY)
                 endforeach (filename)
 
-                # Get this Python site-packages directory
-                execute_process(COMMAND ${CURRENT_PY_EXECUTABLE} -c "import sysconfig; print(sysconfig.get_path('purelib'))" OUTPUT_VARIABLE SITE_PACKAGES_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
                 #Get this python .so file extension (full name)
                 execute_process(COMMAND ${CURRENT_PY_EXECUTABLE} -c "import sysconfig; print(sysconfig.get_config_var('EXT_SUFFIX'))" OUTPUT_VARIABLE PYTHON_MODULE_EXTENSION OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-                set_target_properties(${TARGET_NAME_VERSIONED} PROPERTIES
-                    PREFIX "${PYTHON_MODULE_PREFIX}"
-                    SUFFIX "${PYTHON_MODULE_EXTENSION}"
-                    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}")
+                set_target_properties(${TARGET_NAME_VERSIONED} PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}" SUFFIX "${PYTHON_MODULE_EXTENSION}" LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}")
 
-                set(TARGET_PYMODULE_NAME "${PYTHON_MODULE_PREFIX}${TARGET_NAME_VERSIONED}${PYTHON_MODULE_EXTENSION}")
-                set(TARGET_PYMODULE_NAME_TARGET "${PYTHON_MODULE_PREFIX}${TARGET_NAME}${PYTHON_MODULE_EXTENSION}")
-                set(SO_SRC ${CMAKE_BINARY_DIR}/${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}/${TARGET_PYMODULE_NAME})
-                set(SO_DST ${CMAKE_BINARY_DIR}/${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}/${TARGET_PYMODULE_NAME_TARGET})
+                set(SO_SRC ${CMAKE_BINARY_DIR}/${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}/${PYTHON_MODULE_PREFIX}${TARGET_NAME_VERSIONED}${PYTHON_MODULE_EXTENSION})
+                set(SO_DST ${CMAKE_BINARY_DIR}/${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}/${PYTHON_MODULE_PREFIX}${TARGET_NAME}${PYTHON_MODULE_EXTENSION})
 
                 message(STATUS "Building and installing rocPyDecode for ${PYTHON_VERSION}")
 
                 # Add a custom command to rename the shared library only after it's built
                 add_custom_command(TARGET ${TARGET_NAME_VERSIONED} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${SO_SRC} ${SO_DST} COMMENT "Renaming shared library after build: ${SO_SRC} -> ${SO_DST}" VERBATIM)
-                #install rocPyDecode
+                #install rocPyDecode .so
                 set(ROCPYDECODE_INSTALLED TRUE)
-                install(FILES ${SO_DST} DESTINATION ${SITE_PACKAGES_DIR} COMPONENT runtime)
-                install(DIRECTORY pyRocVideoDecode DESTINATION  ${SITE_PACKAGES_DIR} COMPONENT runtime)
-                install(DIRECTORY samples DESTINATION ${SITE_PACKAGES_DIR}/pyRocVideoDecode COMPONENT runtime)
+                install(FILES ${SO_DST} DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT runtime)
             else()
                 message(STATUS "[Python Version DOES NOT EXIST] :${PYTHON_VERSION}")
             endif() # (EXISTS ${CURRENT_PY_EXECUTABLE})
-        endforeach()
-    endif()
+        endforeach() # (PYTHON_VERSION ${PYTHON_EXECUTABLES_LIST})
+    endif() # (NOT PYTHON_EXECUTABLES_LIST STREQUAL "")
 
     # Was rocPyDecode Installed?
     if(NOT ROCPYDECODE_INSTALLED)
@@ -348,9 +336,13 @@ if(BUILD_ROCPYDECODE)
         endif()
     endif()
 
+    #install rocPyDecode API folder -and- samples folder
+    install(DIRECTORY pyRocVideoDecode DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT runtime)
+    install(DIRECTORY samples DESTINATION ${CMAKE_INSTALL_LIBDIR}/pyRocVideoDecode COMPONENT runtime)
+
     # Test - Installed
-    install(DIRECTORY ${CMAKE_SOURCE_DIR}/tests DESTINATION ${CMAKE_INSTALL_DATADIR}/rocPyDecode COMPONENT test)
-    install(DIRECTORY ${CMAKE_SOURCE_DIR}/cmake DESTINATION ${CMAKE_INSTALL_DATADIR}/rocPyDecode COMPONENT test)
+    install(DIRECTORY ${CMAKE_SOURCE_DIR}/tests DESTINATION ${CMAKE_INSTALL_DATADIR}/rocpydecode COMPONENT test)
+    install(DIRECTORY ${CMAKE_SOURCE_DIR}/cmake DESTINATION ${CMAKE_INSTALL_DATADIR}/rocpydecode COMPONENT test)
 
     message("-- ${Green}ROCm Video Decode Library Python Binding - rocPyDecode module added ${ColourReset}")
     message("-- ${BoldBlue}rocPyDecode Version -- ${VERSION}${ColourReset}")

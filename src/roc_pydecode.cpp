@@ -24,7 +24,7 @@ THE SOFTWARE.
 
 using namespace std;
 
-PYBIND11_MODULE(rocPyDecode, m) {
+PYBIND11_MODULE(rocpydecode, m) {
  
     m.doc() = "Python bindings for the C++ portions of rocDecode ..";
 
@@ -40,7 +40,7 @@ PYBIND11_MODULE(rocPyDecode, m) {
         py::buffer_info buffer_info = buffer.request();
         packet->bitstream_adrs = reinterpret_cast<uintptr_t>(buffer_info.ptr);
         return packet;
-    }, "Convert packet info from user to rocPyDecode's PyPacketData");
+    }, "Convert packet info from user to rocpydecode's PyPacketData");
 
 
 

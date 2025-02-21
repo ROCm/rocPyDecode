@@ -18,8 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import rocPyDecode as rocpydec
-import rocPyDecode.decTypes as dectypes
+import rocpydecode as rocpydec
+import rocpydecode.decTypes as dectypes
 import numpy as np
 
 
