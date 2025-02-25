@@ -135,11 +135,10 @@ void PyExportInitializer(py::module& m) {
     BufferInterface::Export(m);
 }
 
-int BufferInterface::LoadDLPack(std::vector<size_t>& _shape, std::vector<size_t>& _stride, uint32_t bit_depth, std::string& _type_str, void* _data) {
-    
+int BufferInterface::LoadDLPack(std::vector<size_t>& _shape, std::vector<size_t>& _stride, uint32_t bit_depth, std::string& _type_str, void* _data, int device_id_) {
     m_dlTensor->byte_offset = 0;
     m_dlTensor->device.device_type = kDLROCM;   // TODO: infer the device type from the memory buffer
-    m_dlTensor->device.device_id = 0;           // TODO: infer the device id   from the memory buffer
+    m_dlTensor->device.device_id = device_id_;
 
     // Convert data
     void* ptr = _data;
