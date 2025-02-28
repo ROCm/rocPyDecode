@@ -6,7 +6,7 @@
 rocPyDecode supported codecs and hardware capabilities
 ********************************************************************
 
-rocPyDecode supports the 8-bit and 10-bit H.265 (HEVC) codec, and the 8-bit H.264 (AVC) codec.
+rocPyDecode supports the 8-bit and 10-bit H.265 (HEVC) codec, the 8-bit H.264 (AVC) codec, and both 8-bit and 10-bit VP9.
 
 
 The following table shows the codec support and capabilities of the VCN for each supported GPU
