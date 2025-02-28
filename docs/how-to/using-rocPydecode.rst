@@ -39,7 +39,7 @@ The codec ID is obtained by passing the output of ``demuxer.GetCodecId()`` to th
 
     codec_id = dec.GetRocDecCodecID(demuxer.GetCodecId())
 
-The following is the complete list of parameters for ``decoder()``. Only ``codec_id`` is required. All other parameters are optional.
+The following is the complete list of parameters for ``decoder()``, codec_id is mandatory and other parameters are optional.
 
 .. list-table:: 
     :widths: 15 65 20
