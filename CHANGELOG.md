@@ -12,8 +12,7 @@ Full documentation for for rocPyDecode is available at [https://rocm.docs.amd.co
 * All MD5 functionality, APIs, and sample code have been removed.
 
 ### Resolved issues
-* FFmpeg multi-version support
-
+* Ubuntu 24.04 compile failure with FFmpeg version 5.X and above fixed
 
 ## rocPyDecode 0.2.0 for ROCm 6.3
 
