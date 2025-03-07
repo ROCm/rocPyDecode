@@ -2,34 +2,17 @@
 
 Full documentation for for rocPyDecode is available at [https://rocm.docs.amd.com/projects/rocPyDecode/en/latest/](https://rocm.docs.amd.com/projects/rocPyDecode/en/latest/)
 
-## (Unreleased) rocPyDecode 0.3.1
-
-### Added
+## rocPyDecode 0.3.1 for ROCm 6.4.0
 
 ### Changed
-
-### Removed
-
-All MD5 functionality, APIs, and sample code have been removed.
-
-### Optimized
-
-### Resolved issues
-
-## (Unreleased) rocPyDecode 0.3.0
-
-### Added
-
-### Changed
-
 * AMD Clang is now the default CXX and C compiler.
 * MD5 code moved in rocDecode to a separate class provider under utilities. This move is transparent to rocPyDecode.
 
 ### Removed
-
-### Optimized
+* All MD5 functionality, APIs, and sample code have been removed.
 
 ### Resolved issues
+* FFmpeg multi-version support
 
 
 ## rocPyDecode 0.2.0 for ROCm 6.3
