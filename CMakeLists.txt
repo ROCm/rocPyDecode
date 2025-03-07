@@ -175,6 +175,13 @@ if(HIP_FOUND AND rocDecode_FOUND AND pybind11_FOUND AND Python3_FOUND AND FFMPEG
         target_compile_definitions(${TARGET_NAME} PUBLIC CODEC_SUPPORTED_CHECK=0)
     endif()
 
+    # FFMPEG multi-version support
+    if(_FFMPEG_AVCODEC_VERSION VERSION_LESS_EQUAL 58.134.100)
+        target_compile_definitions(${TARGET_NAME_VERSIONED} PUBLIC USE_AVCODEC_GREATER_THAN_58_134=0)
+    else()
+        target_compile_definitions(${TARGET_NAME_VERSIONED} PUBLIC USE_AVCODEC_GREATER_THAN_58_134=1)
+    endif()
+
     set_target_properties(${TARGET_NAME} PROPERTIES
         PREFIX "${PYTHON_MODULE_PREFIX}"
         SUFFIX "${PYTHON_MODULE_EXTENSION}"
