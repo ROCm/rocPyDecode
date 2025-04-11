@@ -68,7 +68,7 @@ def runTestCommand (platform, project) {
                     LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/opt/rocm/lib${libLocation} ctest -VV --rerun-failed --output-on-failure
                     sudo ${packageManager} install lcov ${toolsPackage}
                     ${llvmLocation}/llvm-profdata merge -sparse rawdata/*.profraw -o rocpydecode.profdata
-                    ${llvmLocation}/llvm-cov export -object ../release/lib/rocpydecode.*.so --instr-profile=rocpydecode.profdata --format=lcov > coverage.info
+                    ${llvmLocation}/llvm-cov export -object ../release/rocpydecode/lib/*.so --instr-profile=rocpydecode.profdata --format=lcov > coverage.info
                     lcov --remove coverage.info '/opt/*' --output-file coverage.info
                     lcov --list coverage.info
                     lcov --summary  coverage.info
