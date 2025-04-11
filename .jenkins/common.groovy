@@ -22,7 +22,7 @@ def runCompileCommand(platform, project, jobName, boolean debug=false, boolean s
                 cd ${project.paths.project_build_prefix}
                 sudo python3 rocPyDecode-requirements.py
                 mkdir -p build/${buildTypeDir} && cd build/${buildTypeDir}
-                cmake cmake -D CMAKE_BUILD_TYPE=Debug -D CMAKE_CXX_FLAGS="-fprofile-instr-generate -fcoverage-mapping" ../..
+                cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-fprofile-instr-generate -fcoverage-mapping" ../..
                 make -j\$(nproc)
                 sudo make install
                 ldd -v /opt/rocm/lib/rocpydecode.*.so
