@@ -55,7 +55,7 @@ def runTestCommand (platform, project) {
     String repoUrl
     (commitSha, repoUrl) = util.getGitHubCommitInformation(project.paths.project_src_prefix)
 
-    withCredentials([string(credentialsId: "mathlibs-codecov-token-rpp", variable: 'CODECOV_TOKEN')])
+    withCredentials([string(credentialsId: "mathlibs-codecov-token-rocpydecode", variable: 'CODECOV_TOKEN')])
     {
         def command = """#!/usr/bin/env bash
                     export HOME=/home/jenkins
