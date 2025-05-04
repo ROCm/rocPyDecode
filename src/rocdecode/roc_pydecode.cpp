@@ -22,6 +22,7 @@ THE SOFTWARE.
 
 #include "common/roc_pybuffer.h"
 #include "roc_pyvideodecode.h"
+#include "common/roc_pyselftest.h"
 
 using namespace std;
 
@@ -195,4 +196,7 @@ PYBIND11_MODULE(rocpydecode, m) {
         .def_readwrite("pci_bus_id",    &ConfigInfo::pci_bus_id)
         .def_readwrite("pci_domain_id", &ConfigInfo::pci_domain_id)
         .def_readwrite("pci_device_id", &ConfigInfo::pci_device_id);
+
+    // built-in API self test
+    m.def("RunAllSelfTests", &RunAllSelfTests, "Run built‑in API self‑tests for coverage");
 }
