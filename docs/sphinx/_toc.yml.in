@@ -10,28 +10,28 @@ subtrees:
 - caption: Install
   entries:
   - file: install/rocPyDecode-prerequisites
-    title: rocPyDecode prerequisites
+    title: rocPyDecode and rocPyJPEGDecode prerequisites
   - file: install/rocPyDecode-install
-    title: Installing rocPyDecode
+    title: Installing rocPyDecode and rocPyJPEGDecode
   - file: install/rocPyDecode-cmake-install
-    title: Installing rocPyDecode with CMake
+    title: Installing rocPyDecode and rocPyJPEGDecode with CMake
   - file: install/rocPyDecode-pip-install
-    title: Installing rocPyDecode with pip
+    title: Installing rocPyDecode and rocPyJPEGDecode with pip
 
 - caption: Conceptual
   entries:
-  - file: conceptual/rocPyDecode-mem-types.rst
+  - file: conceptual/rocPyDecode-mem-types
     title: rocPyDecode surface data memory locations
 
 - caption: How to
   entries:
-  - file: how-to/using-rocPydecode.rst
+  - file: how-to/using-rocPydecode
     title: Use rocPyDecode
 
 - caption: Tutorials
   entries:
-  - url: https://github.com/ROCm/rocPyDecode/tree/develop/samples
-    title: rocPyDecode samples
+  - file: tutorials/rocPyDecode-samples 
+    title: rocPyDecode and rocPyJPEGDecode samples
 
 - caption: Reference
   entries:
@@ -41,10 +41,12 @@ subtrees:
     title: rocPyDecode API
     subtrees:
     - entries:
-      - file: reference/structures.rst
+      - file: reference/structures
         title: rocPyDecode Structures
-      - file: reference/decoderClass.rst
-      - file: reference/demuxerClass.rst
+      - file: reference/decoderClass
+      - file: reference/demuxerClass
+  - file: reference/rocPyJPEGDecode-api
+    title: rocPyJPEGDecode decoder class
 
 - caption: About
   entries:

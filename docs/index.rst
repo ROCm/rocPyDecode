@@ -18,7 +18,7 @@ rocPyJPEGDecode is installed as part of rocPyDecode but requires the installatio
 
 The rocPyDecode public repository is located at `https://github.com/ROCm/rocPyDecode <https://github.com/ROCm/rocPyDecode>`_.
 
-rocPyJPEGDecode is available from within the rocPyDecode GitHub repository at `https://github.com/spolifroni-amd/rocPyDecode/tree/develop/pyRocJpegDecode <https://github.com/spolifroni-amd/rocPyDecode/tree/develop/pyRocJpegDecode>`_.
+rocPyJPEGDecode is available from within the rocPyDecode GitHub repository at `https://github.com/ROCm/rocPyDecode/tree/develop/pyRocJpegDecode <https://github.com/ROCm/rocPyDecode/tree/develop/pyRocJpegDecode>`_.
 
 .. grid:: 2
   :gutter: 3
@@ -42,10 +42,9 @@ rocPyJPEGDecode is available from within the rocPyDecode GitHub repository at `h
     * :doc:`Use rocPyDecode <how-to/using-rocPydecode>`  
     * :doc:`Use rocPyJPEGDecode <how-to/using-rocPyJPEGDecode>`
 
-  .. grid-item-card:: Tutorials
+  .. grid-item-card:: Samples
 
-    * `rocPyDecode samples <https://github.com/ROCm/rocPyDecode/tree/develop/samples>`_   
-    * `rocPyJPEGDecode samples <https://github.com/ROCm/rocPyDecode/tree/develop/samples>`_   
+    * :doc:`rocPyDecode and rocPyJPEGDecode samples <./tutorials/rocPyDecode-samples>`  
 
 
   .. grid-item-card:: Reference
@@ -55,7 +54,8 @@ rocPyJPEGDecode is available from within the rocPyDecode GitHub repository at `h
       
       * :doc:`rocPyDecode structures <./reference/structures>`
       * :doc:`rocPyDecode decoder class <./reference/decoderClass>`
-      * :doc:`rocPyDecode demuxer CLass <./reference/demuxerClass>`
+      * :doc:`rocPyDecode demuxer class <./reference/demuxerClass>`
+      * :doc:`rocPyJPEGDecode decoder class <./reference/rocPyJPEGDecode-api>
 
 
 To contribute to the documentation, refer to
