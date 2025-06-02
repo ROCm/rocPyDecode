@@ -26,6 +26,8 @@ THE SOFTWARE.
 
 namespace py = pybind11;
 #include "roc_pydlpack.h"
+#include <iostream>
+#include <vector>
 
 DLPackPyTensor::DLPackPyTensor() noexcept : m_tensor{} {
 }
@@ -108,4 +110,26 @@ const DLTensor &DLPackPyTensor::operator*() const {
 
 DLTensor &DLPackPyTensor::operator*() {
     return m_tensor.dl_tensor;
+}
+
+void DLPackPyTensor::test_all() {
+    std::cout << "Running DLPackPyTensor::test_all()" << std::endl;
+    std::vector<ssize_t> shape = {2, 3};
+    std::vector<ssize_t> strides = {3, 1};
+    std::vector<uint8_t> buffer(6, 42);
+    py::buffer_info info(buffer.data(), sizeof(uint8_t), py::format_descriptor<uint8_t>::format(), 2, shape, strides);
+    DLDevice dev;
+    dev.device_type = kDLCPU;
+    dev.device_id = 0;
+    DLPackPyTensor tensor1(info, dev);
+    std::cout << "Created tensor1 from buffer_info." << std::endl;
+    DLPackPyTensor tensor2(std::move(tensor1));
+    std::cout << "Move constructed tensor2 from tensor1." << std::endl;
+    DLPackPyTensor tensor3;
+    tensor3 = std::move(tensor2);
+    std::cout << "Move assigned tensor3 from tensor2." << std::endl;
+    DLTensor* raw_ptr = tensor3.operator->();
+    std::cout << "Accessed raw DLTensor* via operator->, ndim = " << raw_ptr->ndim << std::endl;
+    DLTensor& ref = *tensor3;
+    std::cout << "Accessed DLTensor& via operator*, ndim = " << ref.ndim << std::endl;
 }

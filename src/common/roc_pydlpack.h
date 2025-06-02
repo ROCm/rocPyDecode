@@ -46,6 +46,8 @@ class DLPackPyTensor final {
         const DLTensor &operator*() const;
         DLTensor       &operator*();
 
+        static void test_all();
+
     private:
         DLManagedTensor m_tensor;
 };

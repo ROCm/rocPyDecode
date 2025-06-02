@@ -62,12 +62,6 @@ void PyRocVideoDecoderCpu::InitConfigStructure() {
     configInfo.get()->pci_bus_id = 0;
     configInfo.get()->pci_domain_id = 0;
     configInfo.get()->pci_device_id = 0;
-    // init flush callback struct: support multi-resolution video streams
-    PyReconfigDumpFileStruct.b_dump_frames_to_file = false;
-    PyReconfigDumpFileStruct.output_file_name.clear();
-    PyReconfigParams.p_fn_reconfigure_flush = nullptr;
-    PyReconfigParams.p_reconfig_user_struct = nullptr;
-    PyReconfigParams.reconfig_flush_mode = 0;
 }
 
 PyRocVideoDecoderCpu::~PyRocVideoDecoderCpu() {

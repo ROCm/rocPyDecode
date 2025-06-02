@@ -28,17 +28,6 @@ THE SOFTWARE.
 #include "ffmpegvideodecode/ffmpeg_video_dec.h"
 #include "rocdecode_version.h"
 
-typedef enum ReconfigFlushMode_enum {
-    RECONFIG_FLUSH_MODE_NONE = 0,               /**<  Just flush to get the frame count */
-    RECONFIG_FLUSH_MODE_DUMP_TO_FILE = 1,       /**<  The remaining frames will be dumped to file in this mode */
-} ReconfigFlushMode;
-
-// this struct is used by videodecode and videodecodeMultiFiles to dump last frames to file
-typedef struct ReconfigDumpFileStruct_t {
-    bool b_dump_frames_to_file;
-    std::string output_file_name;
-} ReconfigDumpFileStruct;
-
 //
 // AMD Video Decoder Python Interface class
 //
@@ -108,10 +97,6 @@ class PyRocVideoDecoderCpu : public FFMpegVideoDecoder {
         size_t CalculateRgbImageSize(OutputFormatEnum& e_output_format, OutputSurfaceInfo* p_surf_info);
         std::shared_ptr <ConfigInfo> configInfo;
         void InitConfigStructure();
-
-        // for flush back to support multi-resolution video streams
-        ReconfigParams PyReconfigParams;
-        ReconfigDumpFileStruct PyReconfigDumpFileStruct;
 
     protected:
         // used in frame allocation
