@@ -117,7 +117,7 @@ if(Python3_FOUND AND ROCPYDECODE_PYBIND_SCRIPTS)
   # 8 - video_decode_python_H264 test
   add_test(NAME video_decode_python_H264
             COMMAND ${Python3_EXECUTABLE} ${ROCM_PATH}/lib/pyRocVideoDecode/samples/rocdecode/videodecode.py
-            -i ${ROCM_PATH}/share/rocdecode/video/AMD_driving_virtual_20-H264.mp4
+            -i ${ROCM_PATH}/share/rocdecode/video/AMD_driving_virtual_20-H264.mp4 -resize 640 360
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
   set_property(TEST video_decode_python_H264 PROPERTY ENVIRONMENT "PYTHONPATH=${ROCM_PATH}/lib:$PYTHONPATH")
@@ -131,34 +131,41 @@ if(Python3_FOUND AND ROCPYDECODE_PYBIND_SCRIPTS)
   # 10 - video_decode_python_AV1 test
   add_test(NAME video_decode_python_AV1
       COMMAND ${Python3_EXECUTABLE} ${ROCM_PATH}/lib/pyRocVideoDecode/samples/rocdecode/videodecode.py
-      -i ${ROCM_PATH}/share/rocdecode/video/AMD_driving_virtual_20-AV1.mp4
+      -i ${ROCM_PATH}/share/rocdecode/video/AMD_driving_virtual_20-AV1.mp4 -resize 640 360
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
   set_property(TEST video_decode_python_AV1 PROPERTY ENVIRONMENT "PYTHONPATH=${ROCM_PATH}/lib:$PYTHONPATH")
   # 11 - video_decode_python_AV9 test
   add_test(NAME video_decode_python_AV9
       COMMAND ${Python3_EXECUTABLE} ${ROCM_PATH}/lib/pyRocVideoDecode/samples/rocdecode/videodecode.py
-      -i ${ROCM_PATH}/share/rocdecode/video/AMD_driving_virtual_20-VP9.ivf
+      -i ${ROCM_PATH}/share/rocdecode/video/AMD_driving_virtual_20-VP9.ivf -resize 640 360
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
   set_property(TEST video_decode_python_AV9 PROPERTY ENVIRONMENT "PYTHONPATH=${ROCM_PATH}/lib:$PYTHONPATH")
   if(TORCH_PYTHON_RESULT EQUAL 0)
-    # 12 - video_decode_python_ffmpeg test
-    add_test(NAME video_decode_python_ffmpeg
+    # 12 - video_decode_python_ffmpeg(torch) test
+    add_test(NAME video_decode_python_ffmpeg_torch
         COMMAND ${Python3_EXECUTABLE} ${ROCM_PATH}/lib/pyRocVideoDecode/samples/rocdecode/videodecodetorch_cpu_backend.py
-        -i ${ROCM_PATH}/share/rocdecode/video/AMD_driving_virtual_20-H264.mp4
+        -i ${ROCM_PATH}/share/rocdecode/video/AMD_driving_virtual_20-H264.mp4 -resize 640 360
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
-    set_property(TEST video_decode_python_ffmpeg PROPERTY ENVIRONMENT "PYTHONPATH=${ROCM_PATH}/lib:$PYTHONPATH")
+    set_property(TEST video_decode_python_ffmpeg_torch PROPERTY ENVIRONMENT "PYTHONPATH=${ROCM_PATH}/lib:$PYTHONPATH")
   endif()
-  # 13 - all_other_decoder_apis test
+  # 13 - video_decode_python_ffmpeg test
+  add_test(NAME video_decode_python_ffmpeg
+      COMMAND ${Python3_EXECUTABLE} ${ROCM_PATH}/lib/pyRocVideoDecode/samples/rocdecode/videodecode_cpu_backend.py
+      -i ${ROCM_PATH}/share/rocdecode/video/AMD_driving_virtual_20-H264.mp4 -resize 640 360
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  )
+  set_property(TEST video_decode_python_ffmpeg PROPERTY ENVIRONMENT "PYTHONPATH=${ROCM_PATH}/lib:$PYTHONPATH")
+  # 14 - all_other_decoder_apis test
   add_test(NAME all_other_decoder_apis
             COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/decoder_api_test.py
             -i ${ROCM_PATH}/share/rocdecode/video/AMD_driving_virtual_20-H264.mp4
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
   set_property(TEST all_other_decoder_apis PROPERTY ENVIRONMENT "PYTHONPATH=${ROCM_PATH}/lib:$PYTHONPATH")
-  # 14 - jpeg_decode_single_file_test
+  # 15 - jpeg_decode_single_file_test
   list(APPEND CMAKE_PREFIX_PATH ${ROCM_PATH}/lib/cmake)
   find_package(ROCJPEG QUIET)
   if(ROCJPEG_FOUND)
@@ -172,7 +179,7 @@ if(Python3_FOUND AND ROCPYDECODE_PYBIND_SCRIPTS)
                 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
           set_property(TEST jpeg_decode_python PROPERTY ENVIRONMENT "PYTHONPATH=${ROCM_PATH}/lib:$PYTHONPATH")
         endif()
-        # 15 - jpegdecodebatched_test
+        # 16 - jpegdecodebatched_test
         add_test(NAME jpeg_decode_batched_python
               COMMAND ${Python3_EXECUTABLE} ${ROCM_PATH}/lib/pyRocVideoDecode/samples/rocjpeg/jpegdecodebatched.py
               -i ${ROCM_PATH}/share/rocjpeg/images/

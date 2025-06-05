@@ -16,7 +16,8 @@ def Decoder(
         output_file_path,
         device_id,
         mem_type,
-        crop_rect):
+        crop_rect,
+        resize_dim):
 
     # demuxer instance
     demuxer = dmx.demuxer(input_file_path)
@@ -62,18 +63,27 @@ def Decoder(
     n_frame = 0
     total_dec_time = 0.0
 
+    if (resize_dim is not None):
+        resize_dim = None if(resize_dim[0] == 0 or resize_dim[1] == 0) else resize_dim
+
     while True:
         start_time = datetime.datetime.now()
         packet = demuxer.DemuxFrame()
         n_frame_returned = viddec.DecodeFrame(packet)
 
         for i in range(n_frame_returned):
-            viddec.GetFrameYuv(packet)
+            viddec.GetFrameYuv(packet, True)
 
             # Yuv (NV12) Plane torch tensor
             yuv_tensor = torch.from_dlpack(packet.ext_buf[0].__dlpack__(packet))
 
             # TODO: some tensor work
+
+            # How to resize
+            if (resize_dim is not None):
+                surface_info = viddec.GetOutputSurfaceInfo()
+                if(viddec.ResizeFrame(packet, resize_dim, surface_info) == 0):
+                    print("Failed to resize Frame.")
 
             # save tensors to file, with original decoded Size
             if (output_file_path is not None):
@@ -154,6 +164,13 @@ if __name__ == "__main__":
         type=int,
         help='Crop rectangle (left, top, right, bottom), optional, default: no cropping',
         required=False)
+    parser.add_argument(
+        '-resize',
+        '--resize_dim',
+        nargs=2,
+        type=int,
+        help='Width & Height of new frame, optional, default: no resizing',
+        required=False)
 
     try:
         args = parser.parse_args()
@@ -166,6 +183,7 @@ if __name__ == "__main__":
     device_id = args.device
     mem_type = args.mem_type
     crop_rect = args.crop_rect
+    resize_dim = args.resize_dim
 
     # handel params
     mem_type = 1
@@ -181,4 +199,5 @@ if __name__ == "__main__":
         output_file_path,
         device_id,
         mem_type,
-        crop_rect)
+        crop_rect,
+        resize_dim)

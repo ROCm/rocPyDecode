@@ -38,6 +38,8 @@ typedef struct ReconfigDumpFileStruct_t {
     std::string output_file_name;
 } ReconfigDumpFileStruct;
 
+int PyReconfigureFlushCallback(void *p_viddec_obj, uint32_t flush_mode, void * p_user_struct);
+
 //
 // AMD Video Decoder Python Interface class
 //

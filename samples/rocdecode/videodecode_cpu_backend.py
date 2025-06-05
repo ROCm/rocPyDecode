@@ -90,7 +90,7 @@ def Decoder(
         n_frame_returned = viddec.DecodeFrame(packet)
 
         for i in range(n_frame_returned):
-            viddec.GetFrameYuv(packet)
+            viddec.GetFrameYuv(packet, True)
 
             if (resize_dim is not None):
                 surface_info = viddec.GetOutputSurfaceInfo()

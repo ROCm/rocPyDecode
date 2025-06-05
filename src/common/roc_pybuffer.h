@@ -48,15 +48,12 @@ class BufferInterface final : public std::enable_shared_from_this<BufferInterfac
         py::capsule dlpack(py::object stream) const;
         int LoadDLPack(std::vector<size_t>& _shape, std::vector<size_t>& _stride, uint32_t bit_depth, std::string& _type_str, void* _data, int device_id_);
 
+        // to allow testing
+        py::tuple dlpackDevice() const;
+
     private:
         friend py::detail::type_caster<BufferInterface>;
-
         DLPackPyTensor    m_dlTensor;
-
-        // __dlpack__ implementation
-        
-        // __dlpack_device__ implementation
-        py::tuple dlpackDevice() const;
 };
 
 

@@ -139,7 +139,7 @@ py::object PyRocVideoDecoderCpu::PyGetFrameYuv(PyPacketData& packet, bool Separa
                     uintptr_t uv_offset = p_surf_info->output_pitch * p_surf_info->output_vstride; // count for possible padding
                     packet.ext_buf[1]->LoadDLPack(shape, stride, bit_depth, type_str, (void *)(packet.frame_adrs + uv_offset), device_id_);
                 } else {
-                    cout << "surf fmt: " << p_surf_info->surface_format << " [not supported]" << "\n";
+                    //cout << "surf fmt: " << p_surf_info->surface_format << " [not supported]" << "\n";
                 }
             }
         }
