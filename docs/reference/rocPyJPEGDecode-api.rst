@@ -11,7 +11,7 @@ The rocPyJpegDecode API is available in the rocDecode GitHub repository under th
 The following rocPyJpegDecode API calls are used to decode a JPEG image. 
 
 ``initialize_hip()``
-	Initializes the HIP device for decoding. The user can specify the devide to use for decoding. By default device 0 is used. 
+	Initializes the HIP device for decoding. The user can specify the device to use for decoding. By default device 0 is used. 
 	
 	``initialize_hip()`` must be called before any other call is made to the rocPyJpeg library.
 		
