@@ -3,32 +3,27 @@
   :keywords: rocPyDecode, rocDecode, ROCm, documentation, video, decode, decoding, acceleration
 
 ********************************************************************
-rocPyDecode and rocPyJPEGDecode documentation
+rocPyDecode documentation
 ********************************************************************
 
-rocPyDecode and rocPyJPEGDecode are Python bindings for the `rocDecode <https://rocm.docs.amd.com/projects/rocDecode/en/latest/>`_ and `rocJPEG <https://rocm.docs.amd.com/projects/rocJPEG/en/latest/>`_ APIs, respectively. They connect Python and C/C++ libraries, enabling function calling and data passing between the two languages.
+rocPyDecode provides Python bindings for the `rocDecode <https://rocm.docs.amd.com/projects/rocDecode/en/latest/>`_ C++ APIs, enabling function calling and data passing between C++ and Python.
 
-rocPyDecode decodes compressed video streams while keeping the resulting decoded frames in video memory, avoiding unnecessary data copies. rocPyDecode lets you use the FFMpeg demultiplexer (demuxer) to seek and demultiplex (demux) packetized media files, and integrates with machine learning frameworks such as PyTorch to facilitate machine learning on decoded surfaces.
+rocPyDecode uses the rocDecode C++ SDK library to decode video streams based on the number of available media engines (VCNs) on the GPU. 
 
-The rocPyDecode python library uses the rocDecode C++ SDK library to decode video streams based on the number of available media engines (VCNs) on the GPU. 
-
-The rocPyJPEGDecode python library uses the rocJPEG C++ SDK library to decode compressed JPEG streams while keeping the resulting YUV images in video memory. With decoded images in video memory, you can run image post-processing using ROCm HIP, thereby avoiding unnecessary data copies via PCIe bus. 
-
-rocPyJPEGDecode is installed as part of rocPyDecode but requires the installation of rocJPEG.
+rocPyJpegDecode provides Python bindings for the rocJPEG APIs and is installed as part of rocPyDecode when `rocJPEG <https://rocm.docs.amd.com/projects/rocJPEG/en/latest/>`_ is already installed on the system. 
 
 The rocPyDecode public repository is located at `https://github.com/ROCm/rocPyDecode <https://github.com/ROCm/rocPyDecode>`_.
 
-rocPyJPEGDecode is available from within the rocPyDecode GitHub repository at `https://github.com/ROCm/rocPyDecode/tree/develop/pyRocJpegDecode <https://github.com/ROCm/rocPyDecode/tree/develop/pyRocJpegDecode>`_.
 
 .. grid:: 2
   :gutter: 3
 
   .. grid-item-card:: Install
 
-    * :doc:`rocPyDecode and rocPyJPEGDecode prerequisites <./install/rocPyDecode-prerequisites>`
-    * :doc:`rocPyDecode and rocPyJPEGDecode installation overview <./install/rocPyDecode-install>`
-    * :doc:`rocPyDecode and rocPyJPEGDecode CMake installation <./install/rocPyDecode-cmake-install>`
-    * :doc:`rocPyDecode and rocPyJPEGDecode pip installation <./install/rocPyDecode-pip-install>`
+    * :doc:`rocPyDecode prerequisites <./install/rocPyDecode-prerequisites>`
+    * :doc:`rocPyDecode installation overview <./install/rocPyDecode-install>`
+    * :doc:`rocPyDecode CMake installation <./install/rocPyDecode-cmake-install>`
+    * :doc:`rocPyDecode pip installation <./install/rocPyDecode-pip-install>`
 
 .. grid:: 2
   :gutter: 3
@@ -40,22 +35,21 @@ rocPyJPEGDecode is available from within the rocPyDecode GitHub repository at `h
   .. grid-item-card:: How to
 
     * :doc:`Use rocPyDecode <how-to/using-rocPydecode>`  
-    * :doc:`Use rocPyJPEGDecode <how-to/using-rocPyJPEGDecode>`
 
   .. grid-item-card:: Samples
 
-    * :doc:`rocPyDecode and rocPyJPEGDecode samples <./tutorials/rocPyDecode-samples>`  
+    * :doc:`rocPyDecode samples <./tutorials/rocPyDecode-samples>`  
 
 
   .. grid-item-card:: Reference
 
-    * :doc:`rocDecode supported codecs and hardware <reference/rocPyDecode-codecs-and-hardware>`
+    * :doc:`rocPyDecode supported codecs and hardware <reference/rocPyDecode-codecs-and-hardware>`
     * :doc:`rocPyDecode API reference<reference/rocPyDecode>`
       
       * :doc:`rocPyDecode structures <./reference/structures>`
       * :doc:`rocPyDecode decoder class <./reference/decoderClass>`
       * :doc:`rocPyDecode demuxer class <./reference/demuxerClass>`
-      * :doc:`rocPyJPEGDecode decoder class <./reference/rocPyJPEGDecode-api>
+      * :doc:`rocPyJpegDecode decoder class <./reference/rocPyJPEGDecode-api>
 
 
 To contribute to the documentation, refer to

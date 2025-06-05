@@ -10,13 +10,13 @@ subtrees:
 - caption: Install
   entries:
   - file: install/rocPyDecode-prerequisites
-    title: rocPyDecode and rocPyJPEGDecode prerequisites
+    title: rocPyDecode prerequisites
   - file: install/rocPyDecode-install
-    title: Installing rocPyDecode and rocPyJPEGDecode
+    title: Installing rocPyDecode
   - file: install/rocPyDecode-cmake-install
-    title: Installing rocPyDecode and rocPyJPEGDecode with CMake
+    title: Installing rocPyDecode with CMake
   - file: install/rocPyDecode-pip-install
-    title: Installing rocPyDecode and rocPyJPEGDecode with pip
+    title: Installing rocPyDecode with pip
 
 - caption: Conceptual
   entries:
@@ -31,7 +31,7 @@ subtrees:
 - caption: Tutorials
   entries:
   - file: tutorials/rocPyDecode-samples 
-    title: rocPyDecode and rocPyJPEGDecode samples
+    title: rocPyDecode samples
 
 - caption: Reference
   entries:
@@ -46,7 +46,7 @@ subtrees:
       - file: reference/decoderClass
       - file: reference/demuxerClass
   - file: reference/rocPyJPEGDecode-api
-    title: rocPyJPEGDecode decoder class
+    title: rocPyJpegDecode decoder class
 
 - caption: About
   entries:

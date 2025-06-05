@@ -1,12 +1,14 @@
 .. meta::
-  :description: rocPyJPEGDecode API documentation
-  :keywords: rocPyJPEGDecode, rocDecode, rocJPEG, ROCm, API, documentation, video, decode, decoding, acceleration
+  :description: rocPyJpegDecode API documentation
+  :keywords: rocPyJpegDecode, rocDecode, rocJPEG, ROCm, API, documentation, video, decode, decoding, acceleration
 
 *********************************
-rocPyJPEGDecode Python API
+rocPyJpegDecode Python API
 *********************************
 
-The following rocPyJPEGDecode API calls are used to decode a JPEG image. 
+The rocPyJpegDecode API is available in the rocDecode GitHub repository under the `pyRocJpegDecode <https://github.com/ROCm/rocPyDecode/tree/develop/pyRocJpegDecode>`_ directory.
+
+The following rocPyJpegDecode API calls are used to decode a JPEG image. 
 
 ``initialize_hip()``
 	Initializes the HIP device for decoding. The user can specify the devide to use for decoding. By default device 0 is used. 
