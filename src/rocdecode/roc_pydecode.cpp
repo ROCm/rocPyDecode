@@ -25,10 +25,12 @@ THE SOFTWARE.
 
 using namespace std;
 
+// Testing (works only in DEBUG build)
 void TestAllClassCalls(const char* input_file);
 void TestAll_roc_pybuffer();
 void Test_DLPackPyTensor_ConstructorsAndOperators();
 void Test_PyReconfigureFlushCallback();
+void Test_CalculateRgbImageSize();
 
 PYBIND11_MODULE(rocpydecode, m) {
  
@@ -38,11 +40,12 @@ PYBIND11_MODULE(rocpydecode, m) {
     m.def("AVCodec2RocDecVideoCodec", &ConvertAVCodec2RocDecVideoCodec, "Convert AVCodecID to rocDecVideoCodec ID");
     m.def("AVCodecString2RocDecVideoCodec", &ConvertAVCodecString2RocDecVideoCodec, "Convert AVCodec string to rocDecVideoCodec ID");
     
-    // Testing in DEBUG build
+    // Testing (works only in DEBUG build)
     m.def("TestAllClassCalls", &TestAllClassCalls, "Testing  and validation");
     m.def("TestAll_roc_pybuffer", &TestAll_roc_pybuffer, "Testing  and validation");
     m.def("Test_DLPack", &Test_DLPackPyTensor_ConstructorsAndOperators, "Testing  and validation");
     m.def("Test_PyReconfigureFlushCallback", &Test_PyReconfigureFlushCallback, "Testing  and validation");
+    m.def("Test_CalculateRgbImageSize", &Test_CalculateRgbImageSize, "Testing  and validation");
 
     m.def("GetRocPyDecPacket", [](int pts, int size, py::buffer buffer) {
         std::shared_ptr<PyPacketData> packet = make_shared<PyPacketData>();

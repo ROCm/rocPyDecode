@@ -104,6 +104,8 @@ class PyRocVideoDecoder : public RocVideoDecoder {
 
         uint32_t PyGetBitDepth();
 
+        size_t CalculateRgbImageSize(OutputFormatEnum& e_output_format, OutputSurfaceInfo* p_surf_info);
+
 #if ROCDECODE_CHECK_VERSION(0,6,0)
         // Session overhead refers to decoder initialization and deinitialization time
         py::object PyAddDecoderSessionOverHead(int session_id, double duration);
@@ -111,7 +113,6 @@ class PyRocVideoDecoder : public RocVideoDecoder {
 #endif
     private:
         int device_id_;
-        size_t CalculateRgbImageSize(OutputFormatEnum& e_output_format, OutputSurfaceInfo* p_surf_info);
         std::shared_ptr <ConfigInfo> configInfo;
         void InitConfigStructure();
 

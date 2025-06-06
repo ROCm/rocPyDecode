@@ -88,13 +88,14 @@ class PyRocVideoDecoderCpu : public FFMpegVideoDecoder {
 
         uint32_t PyGetBitDepth();
 
+        size_t CalculateRgbImageSize(OutputFormatEnum& e_output_format, OutputSurfaceInfo* p_surf_info);
+
 #if ROCDECODE_CHECK_VERSION(0,6,0)
         // Session overhead refers to decoder initialization and deinitialization time
         py::object PyAddDecoderSessionOverHead(int session_id, double duration);
         py::object PyGetDecoderSessionOverHead(int session_id);
 #endif
     private:
-        size_t CalculateRgbImageSize(OutputFormatEnum& e_output_format, OutputSurfaceInfo* p_surf_info);
         std::shared_ptr <ConfigInfo> configInfo;
         void InitConfigStructure();
 

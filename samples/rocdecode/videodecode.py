@@ -20,7 +20,8 @@ def Decoder(
         seek_frame,
         seek_mode,
         seek_criteria,
-        resize_dim):
+        resize_dim,
+        separate_planes):
 
     # demuxer instance
     demuxer = dmx.demuxer(input_file_path)
@@ -96,7 +97,7 @@ def Decoder(
         n_frame_returned = viddec.DecodeFrame(packet)
 
         for i in range(n_frame_returned):
-            viddec.GetFrameYuv(packet)
+            viddec.GetFrameYuv(packet, separate_planes)
 
             if (resize_dim is not None):
                 surface_info = viddec.GetOutputSurfaceInfo()
@@ -219,6 +220,14 @@ if __name__ == "__main__":
         type=int,
         help='Width & Height of new frame, optional, default: no resizing',
         required=False)
+    parser.add_argument(
+        '-p',
+        '--planes',
+        type=str,
+        default='no',
+        choices=['yes', 'no'],
+        help='Separates the decoded image into Y, U and V Planes.',
+        required=False)
     
     try:
         args = parser.parse_args()
@@ -236,6 +245,7 @@ if __name__ == "__main__":
     seek_mode = args.seek_mode
     seek_criteria = args.seek_criteria
     resize_dim = args.resize_dim
+    separate_planes = args.planes
     
     # validate the seek: mode/criteria
     if(seek_frame > 0):
@@ -249,6 +259,7 @@ if __name__ == "__main__":
     # handle params
     mem_type = 0 if (mem_type < 0 or mem_type > 3) else mem_type
     b_force_zero_latency = True if b_force_zero_latency == 'YES' else False
+    separate_planes = True if separate_planes == 'YES' else False
     if not os.path.exists(input_file_path):  # Input file (must exist)
         print("ERROR: input file doesn't exist.")
         exit()
@@ -263,4 +274,5 @@ if __name__ == "__main__":
         seek_frame,
         seek_mode,
         seek_criteria,
-        resize_dim)
+        resize_dim,
+        separate_planes)

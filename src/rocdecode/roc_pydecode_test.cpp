@@ -11,7 +11,7 @@
 #include <memory>
 
 void TestAllClassCalls(const char* input_file) {
-#ifndef NDEBUG    
+#ifndef NDEBUG
     // here check input_file, ret if invalid str or null
     if(!input_file){
         std::cout << "ERROR: Input File Name is a nullptr, BAD argument sent." << std::endl;    
@@ -67,10 +67,11 @@ void TestAllClassCalls(const char* input_file) {
     cpu_dec.PyReleaseFrame(*pkt);
 
     std::cout << "All classes member methods calls completed successfully." << std::endl;
-#endif //#ifndef NDEBUG    
+#endif //#ifndef NDEBUG
 }
 
 void TestAll_roc_pybuffer() {
+#ifndef NDEBUG
     std::cout << "Running TestAll_roc_pybuffer()..." << std::endl;
 
     // Step 1: Create test tensor via DLPackPyTensor
@@ -119,9 +120,11 @@ void TestAll_roc_pybuffer() {
     std::cout << "LoadDLPack returned: " << ret << std::endl;
 
     std::cout << "TestAll_roc_pybuffer() completed successfully.\n";
+#endif //#ifndef NDEBUG
 }
 
 void Test_DLPackPyTensor_ConstructorsAndOperators() {
+#ifndef NDEBUG
     std::cout << "Testing DLPackPyTensor constructors and operators...\n";
 
     // Step 1: Manually create DLTensor
@@ -167,10 +170,12 @@ void Test_DLPackPyTensor_ConstructorsAndOperators() {
     std::cout << "Moved tensor shape[1]: " << moved_tensor->shape[1] << std::endl;
 
     std::cout << "All DLPackPyTensor constructor/operator tests passed.\n";
+#endif //#ifndef NDEBUG
 }
 
 // The actual test
 void Test_PyReconfigureFlushCallback() {
+#ifndef NDEBUG
     int device_id = 0;
     OutputSurfaceMemoryType mem_type = static_cast<OutputSurfaceMemoryType>(0);
     rocDecVideoCodec codec = rocDecVideoCodec_HEVC;
@@ -203,4 +208,54 @@ void Test_PyReconfigureFlushCallback() {
     // test with RECONFIG_FLUSH_MODE_NONE (won’t call SaveFrameToFile)
     flushed = PyReconfigureFlushCallback(&decoder, RECONFIG_FLUSH_MODE_NONE, &dump_struct);
     std::cout << "Flushed frames (no file save): " << flushed << std::endl;
+#endif //#ifndef NDEBUG
+}
+
+void Test_CalculateRgbImageSize() {
+#ifndef NDEBUG
+    PyRocVideoDecoderCpu decoder(0, 1, rocDecVideoCodec_HEVC);
+
+    OutputSurfaceInfo surf_info_8bit = {};
+    surf_info_8bit.bit_depth = 8;
+    surf_info_8bit.output_width = 1919;// odd to test rounding
+    surf_info_8bit.output_height = 1080;
+    OutputSurfaceInfo surf_info_10bit = {};
+    surf_info_10bit.bit_depth = 10;
+    surf_info_10bit.output_width = 1920;
+    surf_info_10bit.output_height = 1080;
+    OutputFormatEnum fmt = rgb;
+    size_t sz1 = decoder.CalculateRgbImageSize(fmt, &surf_info_8bit);
+    std::cout << "RGB 8-bit size: " << sz1 << std::endl;
+    fmt = rgba;
+    size_t sz2 = decoder.CalculateRgbImageSize(fmt, &surf_info_8bit);
+    std::cout << "RGBA 8-bit size: " << sz2 << std::endl;
+    fmt = rgb48;
+    size_t sz3 = decoder.CalculateRgbImageSize(fmt, &surf_info_10bit);
+    std::cout << "RGB48 10-bit size: " << sz3 << std::endl;
+    fmt = rgba64;
+    size_t sz4 = decoder.CalculateRgbImageSize(fmt, &surf_info_10bit);
+    std::cout << "RGBA64 10-bit size: " << sz4 << std::endl;
+    fmt = static_cast<OutputFormatEnum>(999); // should hit the fallback else in bit_depth != 8
+    size_t sz5 = decoder.CalculateRgbImageSize(fmt, &surf_info_10bit);
+    std::cout << "Unknown format 10-bit size: " << sz5 << std::endl;
+
+    PyRocVideoDecoder decoder_gpu(0, 0, rocDecVideoCodec_HEVC);
+    fmt = bgr;
+    size_t g_sz1 = decoder_gpu.CalculateRgbImageSize(fmt, &surf_info_8bit);
+    std::cout << "g_sz1 (BGR 8-bit size): " << g_sz1 << std::endl;
+    fmt = rgba;
+    size_t g_sz2 = decoder_gpu.CalculateRgbImageSize(fmt, &surf_info_8bit);
+    std::cout << "g_sz2 (RGBA 8-bit size): " << g_sz2 << std::endl;
+    fmt = rgb48;
+    size_t g_sz3 = decoder_gpu.CalculateRgbImageSize(fmt, &surf_info_10bit);
+    std::cout << "g_sz3 (RGB48 10-bit size): " << g_sz3 << std::endl;
+    fmt = rgba64;
+    size_t g_sz4 = decoder_gpu.CalculateRgbImageSize(fmt, &surf_info_10bit);
+    std::cout << "g_sz4 (RGBA64 10-bit size): " << g_sz4 << std::endl;
+    fmt = static_cast<OutputFormatEnum>(999); // intentional edge case
+    size_t g_sz5 = decoder_gpu.CalculateRgbImageSize(fmt, &surf_info_10bit);
+    std::cout << "g_sz5 (Unknown format 10-bit size): " << g_sz5 << std::endl;
+
+    std::cout << "All branches of CalculateRgbImageSize tested.\n";
+#endif //#ifndef NDEBUG
 }
