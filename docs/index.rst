@@ -49,7 +49,7 @@ The rocPyDecode public repository is located at `https://github.com/ROCm/rocPyDe
       * :doc:`rocPyDecode structures <./reference/structures>`
       * :doc:`rocPyDecode decoder class <./reference/decoderClass>`
       * :doc:`rocPyDecode demuxer class <./reference/demuxerClass>`
-      * :doc:`rocPyJpegDecode decoder class <./reference/rocPyJPEGDecode-api>
+      * :doc:`rocPyJpegDecode decoder class <./reference/rocPyJPEGDecode-api>`
 
 
 To contribute to the documentation, refer to
