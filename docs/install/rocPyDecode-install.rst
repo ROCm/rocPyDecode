@@ -22,4 +22,4 @@ The pip installation method can be used to generate Python egg and wheel files f
 
 .. note::
 
-  The deb files, tar files, and wheel files will include rocPyJpegDecode if rocJPEG was installed on the system prior to installing rocPyDecode.
+  The deb files, tar files, and wheel files will include rocPyJpegDecode if rocJPEG was installed on the system before installing rocPyDecode.
