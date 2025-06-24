@@ -159,7 +159,7 @@ set(CMAKE_SKIP_BUILD_RPATH true)
 
 # Find dependencies
 find_package(HIP QUIET)
-find_package(rocDecode QUIET)
+find_package(rocdecode QUIET)
 find_package(ROCJPEG QUIET)
 find_package(pybind11 QUIET)
 find_package(dlpack QUIET)
@@ -188,9 +188,9 @@ if(NOT HIP_FOUND)
     message("-- ${Yellow}NOTE: ${PROJECT_NAME} library requires HIP, Not Found ${ColourReset}")
 endif()
 # rocDecode
-if(NOT ROCDECODE_FOUND)
+if(NOT rocdecode_FOUND)
     set(BUILD_ROCPYDECODE false)
-    message("-- ${Yellow}NOTE: ${PROJECT_NAME} library requires rocDecode, Not Found ${ColourReset}")
+    message("-- ${Yellow}NOTE: ${PROJECT_NAME} library requires rocdecode, Not Found ${ColourReset}")
 endif()
 # rocJPEG
 if(NOT ROCJPEG_FOUND)
@@ -232,11 +232,11 @@ if(BUILD_ROCPYDECODE)
     # HIP
     set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} hip::device)
     # rocDecode
-    include_directories(${ROCDECODE_INCLUDE_DIR}
+    include_directories(${rocdecode_INCLUDE_DIR}
         ${ROCM_PATH}/include/rocdecode
         ${ROCM_PATH}/share/rocdecode/utils
         ${ROCM_PATH}/share/rocdecode/utils/rocvideodecode)
-    set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${ROCDECODE_LIBRARY})
+    set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${rocdecode_LIBRARY})
     # FFMPEG
     include_directories(${AVUTIL_INCLUDE_DIR} ${AVCODEC_INCLUDE_DIR} ${AVFORMAT_INCLUDE_DIR})
     set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${FFMPEG_LIBRARIES})
@@ -412,7 +412,7 @@ if(BUILD_ROCPYDECODE)
     # add symlinks to videos exist in rocDecode shared folder
     set(CP_SYMLINK "ln -s ${ROCM_PATH}/share/rocdecode/video/AMD_driving_virtual_20-* data/videos/.")
     execute_process(COMMAND /bin/sh -c ${CP_SYMLINK} WORKING_DIRECTORY ${CMAKE_SOURCE_DIR} RESULT_VARIABLE LN_RESULT ERROR_VARIABLE LN_ERROR)
-    message("-- ${BoldBlue}Created symlink(s) to video files exist under rocDecode shared util folder.${ColourReset}")
+    message("-- ${BoldBlue}Created symlink(s) to video files exist under rocdecode shared util folder.${ColourReset}")
 
     # make test with CTest
     enable_testing()

@@ -50,7 +50,7 @@ include(CTest)
 # add find modules
 list(APPEND CMAKE_MODULE_PATH ${ROCM_PATH}/share/rocpydecode/cmake)
 
-find_package(rocDecode REQUIRED)
+find_package(rocdecode REQUIRED)
 set(ROCPYDECODE_PYBIND_SCRIPTS OFF)
 if(EXISTS "${ROCM_PATH}/lib/pyRocVideoDecode")
   set(ROCPYDECODE_PYBIND_SCRIPTS ON)
