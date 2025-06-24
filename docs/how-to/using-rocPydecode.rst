@@ -193,5 +193,5 @@ Decoder resources are destroyed when the Python class object is released.
 The rocPyDecode samples are available from the `rocPyDecode GitHub repository <https://github.com/ROCm/rocPyDecode/tree/develop/samples>`_.
 
 .. |videodecode| replace:: ``videodecode.py``
-.. _videodecode: https://github.com/ROCm/rocPyDecode/blob/develop/samples/videodecode.py
+.. _videodecode: https://github.com/ROCm/rocPyDecode/blob/develop/samples/rocdecode/videodecode.py
 
