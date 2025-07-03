@@ -48,6 +48,7 @@ enable_testing()
 include(CTest)
 
 # add find modules
+list(APPEND CMAKE_PREFIX_PATH ${ROCM_PATH}/lib/cmake)
 list(APPEND CMAKE_MODULE_PATH ${ROCM_PATH}/share/rocpydecode/cmake)
 
 find_package(rocdecode REQUIRED)
@@ -166,7 +167,6 @@ if(Python3_FOUND AND ROCPYDECODE_PYBIND_SCRIPTS)
   )
   set_property(TEST all_other_decoder_apis PROPERTY ENVIRONMENT "PYTHONPATH=${ROCM_PATH}/lib:$PYTHONPATH")
   # 15 - jpeg_decode_single_file_test
-  list(APPEND CMAKE_PREFIX_PATH ${ROCM_PATH}/lib/cmake)
   find_package(ROCJPEG QUIET)
   if(ROCJPEG_FOUND)
     if(${ROCJPEG_VERSION_MAJOR} VERSION_GREATER "0" OR
