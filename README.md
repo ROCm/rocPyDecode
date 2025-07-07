@@ -126,16 +126,17 @@ To build rocPyDecode from source and install, follow the steps below:
 git clone https://github.com/ROCm/rocPyDecode.git
 ```
 
-#### CMake install
+* Build rocPyDecode with the **CMake**
 
-* Instructions for building rocPyDecode with the **CMake**
   + run the requirements script to install all the dependencies required:
+
   ```shell
   cd rocPyDecode
   python3 rocPyDecode-requirements.py
   ```
 
   + run the below commands to build rocPyDecode:
+
   ```shell
   mkdir build && cd build
   cmake ../
@@ -153,42 +154,7 @@ git clone https://github.com/ROCm/rocPyDecode.git
 
 >[!NOTE]
 > To run tests with verbose option, use `make test ARGS="-VV"`.
-
-#### Pip3 install
-
-```shell
-cd rocPyDecode
-sudo pip3 install .
-```
->[!NOTE]
-> `sudo` access is required
-
-#### Creating python distribution wheel
-* Option 1:
-```shell
-cd rocPyDecode
-sudo python3 build_rocpydecode_wheel.py
-```
-* Option 2:
-```shell
-cd rocPyDecode
-sudo python3 setup.py bdist_wheel
-```
->[!NOTE]
-> * Generated `.whl` file will be located under subfolder `./dist/`
-> * `sudo` access is required
-
-#### docker environment install
-
-```shell
-cd rocPyDecode
-python rocPyDecode-docker-install.py 
-```
->[!NOTE]
-> Do NOT use `sudo`
-
-### creating rocPyDecode conda package
-* Information on how to create and install rocPyDecode conda package is located [here](https://github.com/ROCm/rocPyDecode/blob/develop/conda-recipe/README.md).
+> [Alternate source install methods](https://github.com/ROCm/rocPyDecode/wiki/rocPyDecode-Alternate-Install-Methods)
 
 ## Run CTest
 
@@ -247,9 +213,11 @@ page.
 
 * Linux distribution
   * Ubuntu - `22.04` / `24.04`
-* ROCm: rocm-core - `6.3.0.60300`+
+* ROCm: rocm-core - `7.0.0`+
 * AMD Clang++ - Version `18.0.0`+
 * CMake - Version `3.12`+
-* rocdecode-dev - `0.10.0`+
+* rocdecode-dev - `1.0.0`+
+* rocjpeg-dev - `0.14.0`+
 * libdlpack-dev - `0.6-1`
 * python3-pybind11 - `2.9.1-2`
+* FFmpeg - `4.4.2` / `6.1.1`
