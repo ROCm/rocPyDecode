@@ -39,7 +39,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED On)
 
 # lib version - NOTE: update version across multiple files
-set(VERSION "0.5.0")
+set(VERSION "0.6.0")
 
 # Set Project Version and Language
 project(rocpydecode VERSION ${VERSION} LANGUAGES CXX)
@@ -161,7 +161,7 @@ set(CMAKE_SKIP_BUILD_RPATH true)
 # Find dependencies
 find_package(HIP QUIET)
 find_package(rocdecode QUIET)
-find_package(ROCJPEG QUIET)
+find_package(rocjpeg QUIET)
 find_package(pybind11 QUIET)
 find_package(dlpack QUIET)
 find_package(FFmpeg QUIET)
@@ -194,18 +194,16 @@ if(NOT rocdecode_FOUND)
     message("-- ${Yellow}NOTE: ${PROJECT_NAME} library requires rocdecode, Not Found ${ColourReset}")
 endif()
 # rocJPEG
-if(NOT ROCJPEG_FOUND)
+if(NOT rocjpeg_FOUND)
     set(ENABLE_ROCPYJPEG 0)
-    message("-- ${Yellow}NOTE: ${PROJECT_NAME} library optional rocJPEG, Not Found ${ColourReset}")
+    message("-- ${Yellow}NOTE: ${PROJECT_NAME} library optional rocjpeg, Not Found ${ColourReset}")
 else()
-    if(${ROCJPEG_VERSION_MAJOR} VERSION_GREATER "0" OR
-        (${ROCJPEG_VERSION_MAJOR} VERSION_EQUAL "0" AND ${ROCJPEG_VERSION_MINOR} VERSION_GREATER_EQUAL "11") OR
-        (${ROCJPEG_VERSION_MAJOR} VERSION_EQUAL "0" AND ${ROCJPEG_VERSION_MINOR} VERSION_EQUAL "11" AND ${ROCJPEG_VERSION_PATCH} VERSION_GREATER_EQUAL "1"))
+    if(${rocjpeg_VERSION_MAJOR} VERSION_EQUAL "1")
         set(ENABLE_ROCPYJPEG 1)
-        message("-- Found rocJPEG version ${ROCJPEG_VERSION_MAJOR}.${ROCJPEG_VERSION_MINOR}.${ROCJPEG_VERSION_PATCH} ${ColourReset}")
+        message("-- Found rocJPEG version ${rocjpeg_VERSION_MAJOR}.${rocjpeg_VERSION_MINOR}.${rocjpeg_VERSION_PATCH} ${ColourReset}")
     else()
         set(ENABLE_ROCPYJPEG 0)
-        message("-- ${Yellow}${PROJECT_NAME} -- requires rocJPEG version >= 0.11.1${ColourReset}")
+        message("-- ${Yellow}${PROJECT_NAME} -- requires rocjpeg version >= 1.0.0${ColourReset}")
     endif()
 endif()
 # Python3
@@ -248,10 +246,9 @@ if(BUILD_ROCPYDECODE)
     file(GLOB sources src/rocdecode/*.cpp src/common/*.cpp ${ROCM_PATH}/share/rocdecode/utils/*.cpp ${ROCM_PATH}/share/rocdecode/utils/rocvideodecode/*.cpp ${ROCM_PATH}/share/rocdecode/utils/ffmpegvideodecode/*.cpp)
 
     # rocJPEG
-    if(ROCJPEG_FOUND AND ENABLE_ROCPYJPEG)
-        include_directories(${ROCJPEG_INCLUDE_DIR}
-            ${ROCM_PATH}/share/rocjpeg/samples)
-        set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${ROCJPEG_LIBRARY})
+    if(rocjpeg_FOUND AND ENABLE_ROCPYJPEG)
+        include_directories(${rocjpeg_INCLUDE_DIR} ${ROCM_PATH}/share/rocjpeg/samples)
+        set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} rocjpeg::rocjpeg)
         file(GLOB pyfiles_jpeg pyRocJpegDecode/*.py pyRocJpegDecode/*.pyi)
         file(GLOB include_jpeg src/rocjpeg/*.h src/common/*.h)
         file(GLOB sources_jpeg src/rocjpeg/*.cpp src/common/*.cpp)
@@ -304,7 +301,7 @@ if(BUILD_ROCPYDECODE)
             if(USER_DEFINED)
                 string(FIND ${PYTHON_VERSION} ${PYTHON_VERSION_SUGGESTED} FOUND_INDEX)
                 if(${FOUND_INDEX} EQUAL -1)
-                   continue()
+                    continue()
                 endif()
                 message("-- ${BoldBlue}Installing ONLY for the user defined Python = ${PYTHON_VERSION_SUGGESTED}${ColourReset}")
             endif()
@@ -353,7 +350,7 @@ if(BUILD_ROCPYDECODE)
                 message(STATUS "Building and installing rocPyDecode for ${PYTHON_VERSION}")
                 install(FILES ${NAME_DST_VIDEO} DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT runtime)
 
-                if(ROCJPEG_FOUND AND ENABLE_ROCPYJPEG)
+                if(rocjpeg_FOUND AND ENABLE_ROCPYJPEG)
                     set(TARGET_NAME_JPEG_VERSIONED "${TARGET_NAME_JPEG}.${PYTHON_INDEX}")
                     #add-rocpyjpegdecode-pybind11-module
                     pybind11_add_module(${TARGET_NAME_JPEG_VERSIONED} MODULE ${sources_jpeg})

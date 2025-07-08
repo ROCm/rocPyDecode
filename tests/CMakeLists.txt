@@ -56,6 +56,11 @@ set(ROCPYDECODE_PYBIND_SCRIPTS OFF)
 if(EXISTS "${ROCM_PATH}/lib/pyRocVideoDecode")
   set(ROCPYDECODE_PYBIND_SCRIPTS ON)
 endif()
+find_package(rocjpeg QUIET)
+set(ROCJPEGDECODE_PYBIND_SCRIPTS OFF)
+if(EXISTS "${ROCM_PATH}/lib/pyRocJpegDecode")
+  set(ROCJPEGDECODE_PYBIND_SCRIPTS ON)
+endif()
 set(Python3_FIND_VIRTUALENV FIRST)
 find_package(Python3 QUIET)
 
@@ -167,26 +172,30 @@ if(Python3_FOUND AND ROCPYDECODE_PYBIND_SCRIPTS)
   )
   set_property(TEST all_other_decoder_apis PROPERTY ENVIRONMENT "PYTHONPATH=${ROCM_PATH}/lib:$PYTHONPATH")
   # 15 - jpeg_decode_single_file_test
-  find_package(ROCJPEG QUIET)
-  if(ROCJPEG_FOUND)
-    if(${ROCJPEG_VERSION_MAJOR} VERSION_GREATER "0" OR
-      (${ROCJPEG_VERSION_MAJOR} VERSION_EQUAL "0" AND ${ROCJPEG_VERSION_MINOR} VERSION_GREATER_EQUAL "11") OR
-      (${ROCJPEG_VERSION_MAJOR} VERSION_EQUAL "0" AND ${ROCJPEG_VERSION_MINOR} VERSION_EQUAL "11" AND ${ROCJPEG_VERSION_PATCH} VERSION_GREATER_EQUAL "1"))
+  if(rocjpeg_FOUND AND ROCJPEGDECODE_PYBIND_SCRIPTS)
+    if(${rocjpeg_VERSION_MAJOR} VERSION_EQUAL "1")
         if(TORCH_PYTHON_RESULT EQUAL 0)
           add_test(NAME jpeg_decode_python
                 COMMAND ${Python3_EXECUTABLE} ${ROCM_PATH}/lib/pyRocVideoDecode/samples/rocjpeg/jpegdecode.py
                 -i ${ROCM_PATH}/share/rocjpeg/images/mug_420.jpg
                 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
           set_property(TEST jpeg_decode_python PROPERTY ENVIRONMENT "PYTHONPATH=${ROCM_PATH}/lib:$PYTHONPATH")
-        endif()
+        endif(TORCH_PYTHON_RESULT EQUAL 0)
         # 16 - jpegdecodebatched_test
         add_test(NAME jpeg_decode_batched_python
               COMMAND ${Python3_EXECUTABLE} ${ROCM_PATH}/lib/pyRocVideoDecode/samples/rocjpeg/jpegdecodebatched.py
               -i ${ROCM_PATH}/share/rocjpeg/images/
               WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
         set_property(TEST jpeg_decode_batched_python PROPERTY ENVIRONMENT "PYTHONPATH=${ROCM_PATH}/lib:$PYTHONPATH")
+    endif(${rocjpeg_VERSION_MAJOR} VERSION_EQUAL "1")
+  else()
+    if(NOT rocjpeg_FOUND)
+      message("-- NOTE: ${PROJECT_NAME} rocJPEG - NOT FOUND")
     endif()
-  endif()
+    if(NOT ROCJPEGDECODE_PYBIND_SCRIPTS)
+      message("-- NOTE: ${PROJECT_NAME} requires the rocjpeg pybindings to be built and installed - NOT FOUND")
+    endif()
+  endif(rocjpeg_FOUND AND ROCJPEGDECODE_PYBIND_SCRIPTS)
 else()
   if(NOT Python3_FOUND)
     message("-- NOTE: ${PROJECT_NAME} requires Python3 - NOT FOUND")
