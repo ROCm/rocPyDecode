@@ -227,9 +227,10 @@ if(BUILD_ROCPYDECODE)
     set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} hip::device)
     # rocDecode
     include_directories(${rocdecode_INCLUDE_DIR}
-        ${ROCM_PATH}/include/rocdecode
-        ${ROCM_PATH}/share/rocdecode/utils
-        ${ROCM_PATH}/share/rocdecode/utils/rocvideodecode)
+                        ${ROCM_PATH}/include/rocdecode
+                        ${ROCM_PATH}/share/rocdecode/utils
+                        ${ROCM_PATH}/share/rocdecode/utils/rocvideodecode
+    )
     set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${rocdecode_LIBRARY})
     # FFMPEG
     include_directories(${AVUTIL_INCLUDE_DIR} ${AVCODEC_INCLUDE_DIR} ${AVFORMAT_INCLUDE_DIR})
@@ -243,7 +244,7 @@ if(BUILD_ROCPYDECODE)
     # rocJPEG
     if(rocjpeg_FOUND AND ENABLE_ROCPYJPEG)
         include_directories(${rocjpeg_INCLUDE_DIR} ${ROCM_PATH}/share/rocjpeg/samples)
-        set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} rocjpeg::rocjpeg)
+        set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${rocjpeg_LIBRARY})
         file(GLOB pyfiles_jpeg pyRocJpegDecode/*.py pyRocJpegDecode/*.pyi)
         file(GLOB include_jpeg src/rocjpeg/*.h src/common/*.h)
         file(GLOB sources_jpeg src/rocjpeg/*.cpp src/common/*.cpp)
