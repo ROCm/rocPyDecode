@@ -151,6 +151,7 @@ commonPackages = [
 # Debian packages
 coreDebianPackages = [
     'rocdecode-dev',
+    'rocjpeg-dev',
     'python3-dev',
     'python3-pip',
     'python3-pybind11',
@@ -161,6 +162,7 @@ coreDebianPackages = [
 # TODO: dlpack package missing in RPM
 coreRPMPackages = [
     'rocdecode-devel',
+    'rocjpeg-devel',
     'python3-devel',
     'python3-pybind11',
     'python3-pip'
