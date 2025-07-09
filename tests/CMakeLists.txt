@@ -221,7 +221,6 @@ if(Python3_FOUND)
   set_property(TEST all_other_decoder_apis PROPERTY ENVIRONMENT "PYTHONPATH=${ROCM_PATH}/lib:$PYTHONPATH")
   # 15 - jpeg_decode_single_file_test
   if(rocjpeg_FOUND AND JPEG_DECODE_PYBIND_SCRIPTS)
-    if(${rocjpeg_VERSION_MAJOR} VERSION_EQUAL "1")
         if(TORCH_PYTHON_RESULT EQUAL 0)
           add_test(NAME jpeg_decode_python
                 COMMAND ${Python3_EXECUTABLE} ${ROCM_PATH}/lib/pyRocVideoDecode/samples/rocjpeg/jpegdecode.py
@@ -235,7 +234,6 @@ if(Python3_FOUND)
               -i ${ROCM_PATH}/share/rocjpeg/images/
               WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
         set_property(TEST jpeg_decode_batched_python PROPERTY ENVIRONMENT "PYTHONPATH=${ROCM_PATH}/lib:$PYTHONPATH")
-    endif(${rocjpeg_VERSION_MAJOR} VERSION_EQUAL "1")
   else()
     if(NOT rocjpeg_FOUND)
       message("-- ${Yellow}NOTE: ${PROJECT_NAME} rocjpeg not found${ColourReset}")
