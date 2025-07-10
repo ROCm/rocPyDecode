@@ -42,6 +42,12 @@ The library supports multi-VCN configurations via batch decoding, making it well
   sudo apt install rocdecode-dev
   ```
 
+* [rocJPEG](https://github.com/ROCm/rocJPEG)
+
+  ```shell
+  sudo apt install rocjpeg-dev
+  ```
+
 * [DLPack](https://pypi.org/project/dlpack/)
   
   ```shell
@@ -94,7 +100,7 @@ The installation process uses the following steps:
 
 * [ROCm-supported hardware](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/reference/system-requirements.html) install verification
 
-* Install ROCm `6.3.0` or later with [amdgpu-install](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/how-to/amdgpu-install.html) with `--usecase=rocm`
+* Install ROCm `7.0.0` or later with [amdgpu-install](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/how-to/amdgpu-install.html) with `--usecase=rocm`
 
 >[!IMPORTANT]
 > Use **either** [package install](#package-install) **or** [source install](#source-install) as described below.
