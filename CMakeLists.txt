@@ -378,19 +378,14 @@ if(BUILD_ROCPYDECODE)
 
     #install rocPyDecode API folder -and- samples folder
     install(DIRECTORY pyRocVideoDecode DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT runtime)
-    install(DIRECTORY samples DESTINATION ${CMAKE_INSTALL_LIBDIR}/pyRocVideoDecode COMPONENT runtime)
-
+    install(DIRECTORY samples/rocdecode DESTINATION ${CMAKE_INSTALL_LIBDIR}/pyRocVideoDecode/samples COMPONENT runtime)
     #install rocpyjpegdecode API folder -and- samples folder
     install(DIRECTORY pyRocJpegDecode DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT runtime)
-    install(DIRECTORY samples DESTINATION ${CMAKE_INSTALL_LIBDIR}/pyRocJpegDecode COMPONENT runtime)
+    install(DIRECTORY samples/rocjpeg DESTINATION ${CMAKE_INSTALL_LIBDIR}/pyRocJpegDecode/samples COMPONENT runtime)
 
     # Test - Installed -rocpydecode
     install(DIRECTORY ${CMAKE_SOURCE_DIR}/tests DESTINATION ${CMAKE_INSTALL_DATADIR}/rocpydecode COMPONENT test)
     install(DIRECTORY ${CMAKE_SOURCE_DIR}/cmake DESTINATION ${CMAKE_INSTALL_DATADIR}/rocpydecode COMPONENT test)
-
-    # Test - Installed -rocpyjpegdecode
-    install(DIRECTORY ${CMAKE_SOURCE_DIR}/tests DESTINATION ${CMAKE_INSTALL_DATADIR}/rocpyjpegdecode COMPONENT test)
-    install(DIRECTORY ${CMAKE_SOURCE_DIR}/cmake DESTINATION ${CMAKE_INSTALL_DATADIR}/rocpyjpegdecode COMPONENT test)
 
     message("-- ${Green}ROCm Video Decode Library Python Binding - rocPyDecode module added ${ColourReset}")
     message("-- ${BoldBlue}rocPyDecode Version -- ${VERSION}${ColourReset}")
