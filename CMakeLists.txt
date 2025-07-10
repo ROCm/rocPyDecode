@@ -528,5 +528,5 @@ if(BUILD_ROCPYDECODE)
 
 else()
     message("-- ${Red}WARNING: rocPyDecode - missing core dependencies${ColourReset}")
-    message("-- ${Red}WARNING: Install missing dependencies and retry${ColourReset}")
+    message(FATAL_ERROR "ERROR: Install missing dependencies and retry")
 endif()
