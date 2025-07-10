@@ -107,14 +107,14 @@ else()
 endif(rocjpeg_FOUND)
 
 if(NOT VIDEO_DECODE_PYBIND_SCRIPTS)
-  message("-- ${Yellow}NOTE: ${PROJECT_NAME} requires the project to be built and installed before running CTests${ColourReset}")
+  message("-- ${Yellow}NOTE: ${PROJECT_NAME} requires the video decode bindings to be built and installed before running CTests${ColourReset}")
 endif()
 if(NOT JPEG_DECODE_PYBIND_SCRIPTS)
-  message("-- ${Yellow}NOTE: ${PROJECT_NAME} requires the JPEG decode bindings to be built and installed before running JPEG tests${ColourReset}")
+  message("-- ${Yellow}NOTE: ${PROJECT_NAME} requires the JPEG decode bindings to be built and installed before running CTests${ColourReset}")
 endif()
 
 # Tests
-if(Python3_FOUND)
+if(Python3_FOUND AND rocdecode_FOUND AND rocjpeg_FOUND)
   execute_process(COMMAND ${Python3_EXECUTABLE} -c "import torch" RESULT_VARIABLE TORCH_PYTHON_RESULT OUTPUT_QUIET ERROR_QUIET)
   # add python-hip for perf tests
   execute_process(COMMAND ${Python3_EXECUTABLE} -m pip install --upgrade pip OUTPUT_VARIABLE PIP_VERSION ERROR_VARIABLE PIP_ERROR RESULT_VARIABLE PIP_RESULT)
@@ -220,30 +220,28 @@ if(Python3_FOUND)
   )
   set_property(TEST all_other_decoder_apis PROPERTY ENVIRONMENT "PYTHONPATH=${ROCM_PATH}/lib:$PYTHONPATH")
   # 15 - jpeg_decode_single_file_test
-  if(rocjpeg_FOUND AND JPEG_DECODE_PYBIND_SCRIPTS)
-        if(TORCH_PYTHON_RESULT EQUAL 0)
-          add_test(NAME jpeg_decode_python
-                COMMAND ${Python3_EXECUTABLE} ${ROCM_PATH}/lib/pyRocJpegDecode/samples/rocjpeg/jpegdecode.py
-                -i ${ROCM_PATH}/share/rocjpeg/images/mug_420.jpg
-                WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-          set_property(TEST jpeg_decode_python PROPERTY ENVIRONMENT "PYTHONPATH=${ROCM_PATH}/lib:$PYTHONPATH")
-        endif(TORCH_PYTHON_RESULT EQUAL 0)
-        # 16 - jpegdecodebatched_test
-        add_test(NAME jpeg_decode_batched_python
-              COMMAND ${Python3_EXECUTABLE} ${ROCM_PATH}/lib/pyRocJpegDecode/samples/rocjpeg/jpegdecodebatched.py
-              -i ${ROCM_PATH}/share/rocjpeg/images/
-              WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-        set_property(TEST jpeg_decode_batched_python PROPERTY ENVIRONMENT "PYTHONPATH=${ROCM_PATH}/lib:$PYTHONPATH")
-  else()
-    if(NOT rocjpeg_FOUND)
-      message("-- ${Yellow}NOTE: ${PROJECT_NAME} rocjpeg not found${ColourReset}")
-    endif()
-    if(NOT JPEG_DECODE_PYBIND_SCRIPTS)
-      message("-- ${Yellow}NOTE: ${PROJECT_NAME} requires the rocjpeg pybindings to be built and installed - JPEG tests skipped${ColourReset}")
-    endif()
-  endif(rocjpeg_FOUND AND JPEG_DECODE_PYBIND_SCRIPTS)
+  if(TORCH_PYTHON_RESULT EQUAL 0)
+    add_test(NAME jpeg_decode_python
+        COMMAND ${Python3_EXECUTABLE} ${ROCM_PATH}/lib/pyRocJpegDecode/samples/rocjpeg/jpegdecode.py
+        -i ${ROCM_PATH}/share/rocjpeg/images/mug_420.jpg
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    set_property(TEST jpeg_decode_python PROPERTY ENVIRONMENT "PYTHONPATH=${ROCM_PATH}/lib:$PYTHONPATH")
+  endif(TORCH_PYTHON_RESULT EQUAL 0)
+  # 16 - jpegdecodebatched_test
+  add_test(NAME jpeg_decode_batched_python
+      COMMAND ${Python3_EXECUTABLE} ${ROCM_PATH}/lib/pyRocJpegDecode/samples/rocjpeg/jpegdecodebatched.py
+      -i ${ROCM_PATH}/share/rocjpeg/images/
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+  set_property(TEST jpeg_decode_batched_python PROPERTY ENVIRONMENT "PYTHONPATH=${ROCM_PATH}/lib:$PYTHONPATH")
 else()
   if(NOT Python3_FOUND)
     message("-- ${Yellow}NOTE: ${PROJECT_NAME} requires Python3 - NOT FOUND${ColourReset}")
   endif()
-endif(Python3_FOUND)
+  if(NOT rocdecode_FOUND)
+    message("-- ${Yellow}NOTE: ${PROJECT_NAME} requires rocdecode - NOT FOUND${ColourReset}")
+  endif()
+  if(NOT rocjpeg_FOUND)
+    message("-- ${Yellow}NOTE: ${PROJECT_NAME} requires rocjpeg - NOT FOUND${ColourReset}")
+  endif()
+  message(FATAL_ERROR "ERROR: Install missing dependencies and retry")
+endif(Python3_FOUND AND rocdecode_FOUND AND rocjpeg_FOUND)
