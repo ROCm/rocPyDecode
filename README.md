@@ -30,7 +30,7 @@ The library supports multi-VCN configurations via batch decoding, making it well
 * AMD Clang++ Version 18.0.0 or later - installed with ROCm
 
 ### Libraries
-* CMake `3.12` or higher
+* CMake `3.15` or higher
 
   ```shell
   sudo apt install cmake

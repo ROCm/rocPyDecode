@@ -23,7 +23,7 @@
 # SOFTWARE.
 #
 ################################################################################
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.15)
 
 if(NOT DEFINED ENHANCED_MESSAGE)
   string(ASCII 27 Esc)
@@ -75,7 +75,7 @@ endif()
 
 # find requirements
 find_package(rocdecode 1.0.0 QUIET)
-find_package(rocjpeg 0.14.0 QUIET)
+find_package(rocjpeg 1.0.0 QUIET)
 set(Python3_FIND_VIRTUALENV FIRST)
 find_package(Python3 QUIET)
 

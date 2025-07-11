@@ -21,7 +21,7 @@
 #
 ################################################################################
 
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.15)
 # ROCM Path
 if(DEFINED ENV{ROCM_PATH})
     set(ROCM_PATH $ENV{ROCM_PATH} CACHE PATH "Default ROCm installation path")
@@ -104,19 +104,7 @@ endif()
 
 # Set supported GPU Targets
 if(NOT GPU_TARGETS AND NOT AMDGPU_TARGETS)
-    find_package(ROCmCMakeBuildTools QUIET)
-    if(NOT ROCmCMakeBuildTools_FOUND)
-        find_package(ROCM QUIET)
-    endif()
-    include(ROCMCheckTargetIds OPTIONAL RESULT_VARIABLE HAS_ROCM_CHECK_TARGET_IDS)
-
-    set(OPTIONAL_GPU_TARGETS "gfx950;gfx1200;gfx1201")
-    if(HAS_ROCM_CHECK_TARGET_IDS)
-        rocm_check_target_ids(OPTIONAL_GPU_TARGETS_AVAILABLE TARGETS ${OPTIONAL_GPU_TARGETS})
-    else() # if we don't have rocm_check_target_ids, just assume the targets are available
-        set(OPTIONAL_GPU_TARGETS_AVAILABLE "${OPTIONAL_GPU_TARGETS}")
-    endif()
-    set(DEFAULT_GPU_TARGETS "gfx908;gfx90a;gfx942;gfx1030;gfx1031;gfx1032;gfx1100;gfx1101;gfx1102;${OPTIONAL_GPU_TARGETS_AVAILABLE}")
+    set(DEFAULT_GPU_TARGETS "gfx908;gfx90a;gfx942;gfx1030;gfx1031;gfx1032;gfx1100;gfx1101;gfx1102;gfx950;gfx1200;gfx1201")
 endif()
 
 # Set AMD GPU_TARGETS
@@ -162,7 +150,7 @@ set(CMAKE_SKIP_BUILD_RPATH true)
 # Find dependencies
 find_package(HIP QUIET)
 find_package(rocdecode 1.0.0 QUIET)
-find_package(rocjpeg 0.14.0 QUIET)
+find_package(rocjpeg 1.0.0 QUIET)
 find_package(pybind11 QUIET)
 find_package(dlpack QUIET)
 find_package(FFmpeg QUIET)
@@ -312,6 +300,7 @@ if(BUILD_ROCPYDECODE)
                 #add-rocPyDecode-pybind11-module
                 pybind11_add_module(${TARGET_NAME_VERSIONED} MODULE ${sources})
                 target_link_libraries(${TARGET_NAME_VERSIONED} PRIVATE ${LINK_LIBRARY_LIST})
+
                 # include
                 target_include_directories(${TARGET_NAME_VERSIONED} PRIVATE ${pybind11_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIR})
 
@@ -346,6 +335,7 @@ if(BUILD_ROCPYDECODE)
                 #add-rocpyjpegdecode-pybind11-module
                 pybind11_add_module(${TARGET_NAME_JPEG_VERSIONED} MODULE ${sources_jpeg})
                 target_link_libraries(${TARGET_NAME_JPEG_VERSIONED} PRIVATE ${LINK_LIBRARY_LIST})
+
                 #include
                 target_include_directories(${TARGET_NAME_JPEG_VERSIONED} PRIVATE ${pybind11_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIR})
                 foreach (filename ${pyfiles_jpeg})
