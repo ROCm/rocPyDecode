@@ -148,8 +148,8 @@ set(CMAKE_SKIP_BUILD_RPATH true)
 
 # Find dependencies
 find_package(HIP REQUIRED)
-find_package(rocdecode 1.0.0 REQUIRED)
-find_package(rocjpeg 1.0.0 REQUIRED)
+find_package(rocdecode REQUIRED)
+find_package(rocjpeg REQUIRED)
 find_package(pybind11 REQUIRED)
 find_package(dlpack REQUIRED)
 find_package(FFmpeg REQUIRED)
