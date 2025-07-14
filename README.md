@@ -221,7 +221,7 @@ page.
   * Ubuntu - `22.04` / `24.04`
 * ROCm: rocm-core - `7.0.0`+
 * AMD Clang++ - Version `18.0.0`+
-* CMake - Version `3.12`+
+* CMake - Version `3.15`+
 * rocdecode-dev - `1.0.0`+
 * rocjpeg-dev - `1.0.0`+
 * libdlpack-dev - `0.6-1`
