@@ -179,7 +179,7 @@ include_directories(${rocdecode_INCLUDE_DIR}
     ${ROCM_PATH}/share/rocdecode/utils
     ${ROCM_PATH}/share/rocdecode/utils/rocvideodecode
 )
-set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${rocdecode_LIBRARY})
+set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} rocdecode::rocdecode)
 # FFMPEG
 include_directories(${AVUTIL_INCLUDE_DIR} ${AVCODEC_INCLUDE_DIR} ${AVFORMAT_INCLUDE_DIR})
 set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${FFMPEG_LIBRARIES})
@@ -190,7 +190,7 @@ file(GLOB include src/rocdecode/*.h src/common/*.h ${ROCM_PATH}/share/rocdecode/
 file(GLOB sources src/rocdecode/*.cpp src/common/*.cpp ${ROCM_PATH}/share/rocdecode/utils/*.cpp ${ROCM_PATH}/share/rocdecode/utils/rocvideodecode/*.cpp ${ROCM_PATH}/share/rocdecode/utils/ffmpegvideodecode/*.cpp)
 # rocJPEG
 include_directories(${rocjpeg_INCLUDE_DIR} ${ROCM_PATH}/share/rocjpeg/samples)
-set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${rocjpeg_LIBRARY})
+set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} rocjpeg::rocjpeg)
 file(GLOB pyfiles_jpeg pyRocJpegDecode/*.py pyRocJpegDecode/*.pyi)
 file(GLOB include_jpeg src/rocjpeg/*.h src/common/*.h)
 file(GLOB sources_jpeg src/rocjpeg/*.cpp src/common/*.cpp)
