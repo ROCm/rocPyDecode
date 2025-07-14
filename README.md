@@ -22,7 +22,7 @@ The library supports multi-VCN configurations via batch decoding, making it well
 > [!IMPORTANT] 
 > `gfx908` or higher GPU required
 
-* Install ROCm `6.3.0` or later with [amdgpu-install](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/how-to/amdgpu-install.html): **Required** usecase:`rocm`
+* Install ROCm `7.0.0` or later with [amdgpu-install](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/how-to/amdgpu-install.html): **Required** usecase:`rocm`
 > [!IMPORTANT]
 > `sudo amdgpu-install --usecase=rocm`
 
@@ -36,13 +36,13 @@ The library supports multi-VCN configurations via batch decoding, making it well
   sudo apt install cmake
   ```
 
-* [rocDecode](https://github.com/ROCm/rocDecode)
+* [rocDecode](https://github.com/ROCm/rocDecode) `1.0.0` or higher
 
   ```shell
   sudo apt install rocdecode-dev
   ```
 
-* [rocJPEG](https://github.com/ROCm/rocJPEG)
+* [rocJPEG](https://github.com/ROCm/rocJPEG) `1.0.0` or higher
 
   ```shell
   sudo apt install rocjpeg-dev
@@ -223,7 +223,7 @@ page.
 * AMD Clang++ - Version `18.0.0`+
 * CMake - Version `3.12`+
 * rocdecode-dev - `1.0.0`+
-* rocjpeg-dev - `0.14.0`+
+* rocjpeg-dev - `1.0.0`+
 * libdlpack-dev - `0.6-1`
 * python3-pybind11 - `2.9.1-2`
 * FFmpeg - `4.4.2` / `6.1.1`

@@ -11,6 +11,7 @@ Full documentation for for rocPyDecode is available at [https://rocm.docs.amd.co
 * Added samples/rocjpeg new subfolder
 
 ### Changed
+* Minimum version for rocdecode and rocjpeg updated to V1.0.0
 
 ### Removed
 

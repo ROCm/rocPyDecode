@@ -74,8 +74,8 @@ if(EXISTS "${ROCM_PATH}/lib/pyRocJpegDecode")
 endif()
 
 # find requirements
-find_package(rocdecode REQUIRED)
-find_package(rocjpeg REQUIRED)
+find_package(rocdecode 1.0.0 REQUIRED)
+find_package(rocjpeg 1.0.0 REQUIRED)
 set(Python3_FIND_VIRTUALENV FIRST)
 find_package(Python3 REQUIRED)
 # rocdecode info
