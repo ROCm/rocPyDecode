@@ -36,7 +36,8 @@ def jpeg_decode_batch(
         backend):
 
     # initialize hip
-    if(jdec.initialize_hip(device_id) == False):
+    devices_count, ret = jdec.initialize_hip(device_id)
+    if(ret == False):
         print(f"Exiting jpegdecodebatched application, Device#: {device_id} not found.")
         sys.exit()
 
@@ -54,7 +55,7 @@ def jpeg_decode_batch(
     print(f"Decoding Starting for {total} files with batch size = {batch_size}.")
     for i in range(0, total, batch_size):
         current_batch = files_full_path_list[i:i + batch_size]
-        img_list = decoder.decode(current_batch)
+        dec_time_msec, img_list = decoder.decode(current_batch)
         total_valid_images_processed += len(img_list)
 
     print(f"Total files processed : {total_valid_images_processed}")

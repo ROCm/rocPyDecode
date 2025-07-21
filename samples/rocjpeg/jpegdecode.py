@@ -38,7 +38,8 @@ def jpeg_decode(
         output_file_path):
 
     # initialize hip
-    if(jdec.initialize_hip(device_id) == False):
+    devices_count, ret = jdec.initialize_hip(device_id)
+    if(ret == False):
         print(f"Exiting jpegdecode application, Device#: {device_id} not found.")
         sys.exit()
 
@@ -49,7 +50,7 @@ def jpeg_decode(
     print(f"Image output format set to: {jpegt.RocJpegOutputFormat(output_format)}")
     print(f"\nDecoding file: {input_file_path} on Device: {'CPU' if backend else 'GPU'} with Device ID: {device_id}")
 
-    img_tensor = decoder.decode(input_file_path)
+    dec_time_msec, img_tensor = decoder.decode(input_file_path)
 
     print(f"Decoding file: {input_file_path} is complete.\n")
 

@@ -30,22 +30,6 @@
 ################################################################################
 
 set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:/usr/local/lib/pkgconfig")
-include(FindPackageHandleStandardArgs)
-
-find_package_handle_standard_args(
-  FFmpeg
-  FOUND_VAR FFMPEG_FOUND
-  REQUIRED_VARS
-    FFMPEG_LIBRARIES
-    FFMPEG_INCLUDE_DIR
-    AVCODEC_INCLUDE_DIR
-    AVCODEC_LIBRARY
-    AVFORMAT_INCLUDE_DIR
-    AVFORMAT_LIBRARY
-    AVUTIL_INCLUDE_DIR
-    AVUTIL_LIBRARY
-  VERSION_VAR FFMPEG_VERSION
-)
 
 if(FFMPEG_LIBRARIES AND FFMPEG_INCLUDE_DIR)
   set(FFMPEG_FOUND TRUE)
@@ -156,3 +140,18 @@ else()
   endif()
 endif()
 
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(
+  FFmpeg
+  FOUND_VAR FFMPEG_FOUND
+  REQUIRED_VARS
+    FFMPEG_LIBRARIES
+    FFMPEG_INCLUDE_DIR
+    AVCODEC_INCLUDE_DIR
+    AVCODEC_LIBRARY
+    AVFORMAT_INCLUDE_DIR
+    AVFORMAT_LIBRARY
+    AVUTIL_INCLUDE_DIR
+    AVUTIL_LIBRARY
+  VERSION_VAR FFMPEG_VERSION
+)

@@ -34,8 +34,8 @@ public:
     Decoder(int device_id, int backend, RocJpegOutputFormat output_format = ROCJPEG_OUTPUT_RGB);
     ~Decoder();
 
-    PyJpegImages decode(DecodeSource* data);
-    std::vector<PyJpegImages> decode(std::vector<DecodeSource*>& data_list);
+    std::pair<float, PyJpegImages> decode(DecodeSource* data);
+    std::pair<float, std::vector<PyJpegImages>> decode(std::vector<DecodeSource*>& data_list);
 
     static void ExportToPython(py::module& m);
 

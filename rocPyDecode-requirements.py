@@ -29,7 +29,7 @@ else:
     import subprocess
 
 __copyright__ = "Copyright (c) 2024, AMD ROCm rocPyDecode"
-__version__ = "0.4.0"
+__version__ = "0.6.0"
 __status__ = "Shipping"
 
 # error check calls
@@ -151,6 +151,7 @@ commonPackages = [
 # Debian packages
 coreDebianPackages = [
     'rocdecode-dev',
+    'rocjpeg-dev',
     'python3-dev',
     'python3-pip',
     'python3-pybind11',
@@ -161,6 +162,7 @@ coreDebianPackages = [
 # TODO: dlpack package missing in RPM
 coreRPMPackages = [
     'rocdecode-devel',
+    'rocjpeg-devel',
     'python3-devel',
     'python3-pybind11',
     'python3-pip'
@@ -187,5 +189,8 @@ elif "redhat" in platformInfo:
     for i in range(len(coreRPMPackages)):
             ERROR_CHECK(os.system('sudo '+linuxFlag+' '+linuxSystemInstall +
                     ' '+linuxSystemInstall_check+' install '+ coreRPMPackages[i]))
+
+# Tests requirements
+#ERROR_CHECK(os.system('python3 -m pip install -i https://test.pypi.org/simple hip-python'))
 
 print("rocPyDecode Dependencies Installed with rocPyDecode-setup.py V-"+__version__)

@@ -102,7 +102,8 @@ Decoder::Decoder(int device_id, int backend, RocJpegOutputFormat output_format) 
 }
 
 // receiving single code_stream
-PyJpegImages Decoder::decode(DecodeSource* data) {
+std::pair<float, PyJpegImages> Decoder::decode(DecodeSource* data) {
+    float elapsed_ms = 0.0;
     // keep code stream ptr in class (alive)
     assert(data);
     // img 'instance' to return
@@ -111,24 +112,28 @@ PyJpegImages Decoder::decode(DecodeSource* data) {
     const CodeStream* c_stream = data->CodeStreamInstance();    
     // runtime sanity check
     if(!c_stream->stream_handle) {
-        return img; // last item is this instance
+        return {elapsed_ms, img}; // last item is this instance
     }
     // DECODE one single JPEG image
     if( GetImageInfo(c_stream->stream_handle, img) == EXIT_SUCCESS) {
+        auto start = std::chrono::high_resolution_clock::now();
         RocJpegStatus status = rocJpegDecode(rocjpeg_handle, c_stream->stream_handle, &img.decode_params, &img.output_image);
+        auto end = std::chrono::high_resolution_clock::now();
         if (status != ROCJPEG_STATUS_SUCCESS) {
             std::cerr << "ERROR: Failed to decode image. Status code: " << status << std::endl;
-            return img;
+            return {elapsed_ms, img};
         }
         // to export to python (use dlpack(GPU MEM) {and numpy host array}) -- GPU Tensor
         img.ToDlpackTensor(user_output_format, m_device_id);
+        elapsed_ms = std::chrono::duration<float, std::milli>(end - start).count();
     }
-    return img; // return one image
+    return {elapsed_ms, img}; // return one image
 }
 
 // receiving multiple code_streams
-std::vector<PyJpegImages> Decoder::decode(std::vector<DecodeSource*>& decode_source_arg) {
+std::pair<float, std::vector<PyJpegImages>> Decoder::decode(std::vector<DecodeSource*>& decode_source_arg) {
 
+    float elapsed_ms = 0.0;
     RocJpegStatus status = ROCJPEG_STATUS_SUCCESS;
     int batch_size = decode_source_arg.size();
     int count_of_valid_instances = 0;
@@ -140,7 +145,7 @@ std::vector<PyJpegImages> Decoder::decode(std::vector<DecodeSource*>& decode_sou
     std::vector<PyJpegImages> images_;
 
     if(batch_size <= 0)
-        return images_;
+        return {elapsed_ms, images_};
 
     // loop the whole list length - Process as one BATCH
     for (auto* data : decode_source_arg) {       
@@ -167,15 +172,18 @@ std::vector<PyJpegImages> Decoder::decode(std::vector<DecodeSource*>& decode_sou
     // at least one image
     if(count_of_valid_instances > 0) {
         // DECODE ALL files/images in the batch one-time
+        auto start = std::chrono::high_resolution_clock::now();
         status = rocJpegDecodeBatched(  rocjpeg_handle,
                                         stream_handles.data(),
                                         count_of_valid_instances, // less or equal to the batch_size
                                         decode_params_list.data(),
                                         destinations.data()
                                         );
+        auto end = std::chrono::high_resolution_clock::now();
+        elapsed_ms += std::chrono::duration<float, std::milli>(end - start).count();
         if (status != ROCJPEG_STATUS_SUCCESS) {
             std::cerr << "ERROR: Failed to decode the image batch. Status code: " << status << std::endl;
-            return images_; // return the image list
+            return {elapsed_ms, images_}; // return the image list
         }
         // here 'images_' vector carries the count of 'valid' images
         // to export to python (use dlpack(GPU MEM) {and numpy host array})
@@ -185,7 +193,7 @@ std::vector<PyJpegImages> Decoder::decode(std::vector<DecodeSource*>& decode_sou
             }
         }
     }
-    return images_; // return the image list
+    return {elapsed_ms, images_}; // return the image list
 }
 
 // set the user desired output_format

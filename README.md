@@ -1,11 +1,14 @@
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-# rocDecode Python Binding
+<p align="center"><img width="70%" src="docs/data/AMD_rocPyDecode_Logo.png" alt="AMD rocPyDecode Logo" /></p>
 
 > [!NOTE]
 > The published documentation is available at [rocPyDecode](https://rocm.docs.amd.com/projects/rocPyDecode/en/latest/index.html) in an organized, easy-to-read format, with search and a table of contents. The documentation source files reside in the `docs` folder of this repository. As with all ROCm projects, the documentation is open source. For more information on contributing to the documentation, see [Contribute to ROCm documentation](https://rocm.docs.amd.com/en/latest/contribute/contributing.html).
 
-The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access rocDecode APIs in both Python and C/C++ languages. It works by connecting Python and C/C++ libraries, enabling function calling and data passing between the two languages. The `rocpydecode.so` library is a wrapper that facilitates the use of rocDecode APIs that are written primarily in C/C++ language within Python.
+rocPyDecode is a Python binding library that connects Python with AMD’s [rocDecode](https://github.com/ROCm/rocDecode) and [rocJPEG](https://github.com/ROCm/rocJPEG) C/C++ APIs, enabling seamless function calls and data exchange between the two languages. It serves as a high-level wrapper, making the video and image decoding capabilities of rocDecode and rocJPEG accessible from Python.
+
+rocPyDecode includes [rocPyJpegDecode](https://github.com/ROCm/rocPyDecode/blob/develop/docs/reference/rocPyJPEGDecode-api.rst#rocpyjpegdecode-python-api) when the underlying rocJPEG library is available on the system, providing JPEG-specific decoding support through Python.
+The library supports multi-VCN configurations via batch decoding, making it well-suited for high-throughput and parallelized image and video processing workloads.
 
 ## Prerequisites
 
@@ -19,7 +22,7 @@ The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access
 > [!IMPORTANT] 
 > `gfx908` or higher GPU required
 
-* Install ROCm `6.3.0` or later with [amdgpu-install](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/how-to/amdgpu-install.html): **Required** usecase:`rocm`
+* Install ROCm `7.0.0` or later with [amdgpu-install](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/how-to/amdgpu-install.html): **Required** usecase:`rocm`
 > [!IMPORTANT]
 > `sudo amdgpu-install --usecase=rocm`
 
@@ -27,16 +30,22 @@ The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access
 * AMD Clang++ Version 18.0.0 or later - installed with ROCm
 
 ### Libraries
-* CMake `3.12` or higher
+* CMake `3.15` or higher
 
   ```shell
   sudo apt install cmake
   ```
 
-* [rocDecode](https://github.com/ROCm/rocDecode)
+* [rocDecode](https://github.com/ROCm/rocDecode) `1.0.0` or higher
 
   ```shell
   sudo apt install rocdecode-dev
+  ```
+
+* [rocJPEG](https://github.com/ROCm/rocJPEG) `1.0.0` or higher
+
+  ```shell
+  sudo apt install rocjpeg-dev
   ```
 
 * [DLPack](https://pypi.org/project/dlpack/)
@@ -63,7 +72,7 @@ The rocDecode Python Binding, rocPyDecode, is a tool that allows users to access
   sudo apt install pkg-config
   ```
 
-* [FFmpeg](https://ffmpeg.org/about.html) runtime and headers - for tests and samples
+* [FFmpeg](https://ffmpeg.org/about.html)
 
   ```shell
   sudo apt install libavcodec-dev libavformat-dev libavutil-dev
@@ -91,7 +100,7 @@ The installation process uses the following steps:
 
 * [ROCm-supported hardware](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/reference/system-requirements.html) install verification
 
-* Install ROCm `6.3.0` or later with [amdgpu-install](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/how-to/amdgpu-install.html) with `--usecase=rocm`
+* Install ROCm `7.0.0` or later with [amdgpu-install](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/how-to/amdgpu-install.html) with `--usecase=rocm`
 
 >[!IMPORTANT]
 > Use **either** [package install](#package-install) **or** [source install](#source-install) as described below.
@@ -123,16 +132,17 @@ To build rocPyDecode from source and install, follow the steps below:
 git clone https://github.com/ROCm/rocPyDecode.git
 ```
 
-#### CMake install
+* Build rocPyDecode with the **CMake**
 
-* Instructions for building rocPyDecode with the **CMake**
   + run the requirements script to install all the dependencies required:
+
   ```shell
   cd rocPyDecode
   python3 rocPyDecode-requirements.py
   ```
 
   + run the below commands to build rocPyDecode:
+
   ```shell
   mkdir build && cd build
   cmake ../
@@ -150,42 +160,7 @@ git clone https://github.com/ROCm/rocPyDecode.git
 
 >[!NOTE]
 > To run tests with verbose option, use `make test ARGS="-VV"`.
-
-#### Pip3 install
-
-```shell
-cd rocPyDecode
-sudo pip3 install .
-```
->[!NOTE]
-> `sudo` access is required
-
-#### Creating python distribution wheel
-* Option 1:
-```shell
-cd rocPyDecode
-sudo python3 build_rocpydecode_wheel.py
-```
-* Option 2:
-```shell
-cd rocPyDecode
-sudo python3 setup.py bdist_wheel
-```
->[!NOTE]
-> * Generated `.whl` file will be located under subfolder `./dist/`
-> * `sudo` access is required
-
-#### docker environment install
-
-```shell
-cd rocPyDecode
-python rocPyDecode-docker-install.py 
-```
->[!NOTE]
-> Do NOT use `sudo`
-
-### creating rocPyDecode conda package
-* Information on how to create and install rocPyDecode conda package is located [here](https://github.com/ROCm/rocPyDecode/blob/develop/conda-recipe/README.md).
+> [Alternate source install methods](https://github.com/ROCm/rocPyDecode/wiki/rocPyDecode-Alternate-Install-Methods)
 
 ## Run CTest
 
@@ -244,9 +219,11 @@ page.
 
 * Linux distribution
   * Ubuntu - `22.04` / `24.04`
-* ROCm: rocm-core - `6.3.0.60300`+
+* ROCm: rocm-core - `7.0.0`+
 * AMD Clang++ - Version `18.0.0`+
-* CMake - Version `3.12`+
-* rocdecode-dev - `0.10.0`+
+* CMake - Version `3.15`+
+* rocdecode-dev - `1.0.0`+
+* rocjpeg-dev - `1.0.0`+
 * libdlpack-dev - `0.6-1`
 * python3-pybind11 - `2.9.1-2`
+* FFmpeg - `4.4.2` / `6.1.1`

@@ -74,26 +74,30 @@ public:
      * @param device_id The device ID.
      * @return True if successful, false otherwise.
      */
-    bool InitHipDevice(int device_id) {
+    std::tuple<int, bool> InitHipDevice(int device_id, bool display_prop = true) {
         int num_devices;
         hipDeviceProp_t hip_dev_prop;
         PY_CHECK_HIP(hipGetDeviceCount(&num_devices));
         if (num_devices < 1) {
             std::cerr << "ERROR: didn't find any GPU!" << std::endl;
-            return false;
+            return std::make_tuple(num_devices, false);
         }
+        // if '-' then caller needs only count of devices
+        if(device_id<0)
+            return std::make_tuple(num_devices, true);
         if (device_id >= num_devices) {
             std::cerr << "ERROR: the requested device_id is not found!" << std::endl;
-            return false;
+            return std::make_tuple(num_devices, false);
         }
         PY_CHECK_HIP(hipSetDevice(device_id));
-        PY_CHECK_HIP(hipGetDeviceProperties(&hip_dev_prop, device_id));
 
-        std::cout << "Using GPU device " << device_id << ": " << hip_dev_prop.name << "[" << hip_dev_prop.gcnArchName << "] on PCI bus " <<
-        std::setfill('0') << std::setw(2) << std::right << std::hex << hip_dev_prop.pciBusID << ":" << std::setfill('0') << std::setw(2) <<
-        std::right << std::hex << hip_dev_prop.pciDomainID << "." << hip_dev_prop.pciDeviceID << std::dec << std::endl;
-
-        return true;
+        if(display_prop) {
+            PY_CHECK_HIP(hipGetDeviceProperties(&hip_dev_prop, device_id));
+            std::cout << "Using GPU device " << device_id << ": " << hip_dev_prop.name << "[" << hip_dev_prop.gcnArchName << "] on PCI bus " <<
+            std::setfill('0') << std::setw(2) << std::right << std::hex << hip_dev_prop.pciBusID << ":" << std::setfill('0') << std::setw(2) <<
+            std::right << std::hex << hip_dev_prop.pciDomainID << "." << hip_dev_prop.pciDeviceID << std::dec << std::endl;
+        }
+        return std::make_tuple(num_devices, true);
     }
     /**
      * @brief Gets the chroma subsampling string.

@@ -2,7 +2,7 @@
 
 Full documentation for for rocPyDecode is available at [https://rocm.docs.amd.com/projects/rocPyDecode/en/latest/](https://rocm.docs.amd.com/projects/rocPyDecode/en/latest/)
 
-## (Unreleased) rocPyDecode 0.5.0
+## rocPyDecode 0.6.0 for ROCm 7.0.0
 
 ### Added
 
@@ -11,6 +11,7 @@ Full documentation for for rocPyDecode is available at [https://rocm.docs.amd.co
 * Added samples/rocjpeg new subfolder
 
 ### Changed
+* Minimum version for rocdecode and rocjpeg updated to V1.0.0
 
 ### Removed
 

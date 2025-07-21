@@ -167,26 +167,36 @@ if __name__ == "__main__":
             else:
                 v_device_id.append(device_id)
 
+    # prepare data collecting containers
     total_frames = 0
     total_fps = 0.0
+
+    # processes init
     try:
         multiprocessing.set_start_method('spawn')
     except RuntimeError:
         print('ERROR: Could not create processes')
         exit()
-    processes = []
-    p_frames = Value('i', 0)
-    p_fps = Value('f', 0.0)
 
+    # multiprocess shared variables
+    processes = []
+    p_frames = [Value('i', 0) for _ in range(num_process)]
+    p_fps = [Value('f', 0.0) for _ in range(num_process)]
+
+    # create count of processes required by args.num_process
     for i in range(0, num_process):
-        p = Process(target=DecProc, args=(input_file_path, v_device_id[i], p_frames, p_fps, user_mem_type))
+        p = Process(target=DecProc, args=(input_file_path, v_device_id[i], p_frames[i], p_fps[i], user_mem_type))
         p.start()
         processes.append(p)
 
+    # launch the processes and synchronize collecting its data
     for p in processes:
         p.join()
-        total_frames += p_frames.value
-        total_fps += p_fps.value
 
+    # aggregate results from all processes
+    total_frames += sum(v.value for v in p_frames)
+    total_fps += sum(v.value for v in p_fps)
+
+    # printout results
     print("info: Total frame decoded: " + str(total_frames))
     print("info: avg frame per second: " + str(round(total_fps, 2)))

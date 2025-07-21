@@ -65,7 +65,7 @@ PYBIND11_MODULE(rocpydecode, m) {
 
     // current version
     // Todo: to be changed to match version on CMakeLists with every future version update
-    m.attr("__version__") = py::str("0.4.0");
+    m.attr("__version__") = py::str("0.6.0");
 
     // rocDecVideoSurfaceFormat
     py::enum_<rocDecVideoSurfaceFormat>(types_m, "rocDecVideoSurfaceFormat")
