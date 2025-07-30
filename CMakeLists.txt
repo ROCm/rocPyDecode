@@ -179,7 +179,13 @@ include_directories(${rocdecode_INCLUDE_DIR}
     ${ROCM_PATH}/share/rocdecode/utils
     ${ROCM_PATH}/share/rocdecode/utils/rocvideodecode
 )
-set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} rocdecode::rocdecode rocdecodehost)
+find_library(rocdecode_HOST_LIBRARY rocdecodehost PATHS ${ROCM_PATH}/lib)
+set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} rocdecode::rocdecode)
+if(rocdecode_HOST_LIBRARY)
+    set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${rocdecode_HOST_LIBRARY})
+else()
+    message(FATAL_ERROR "Library rocdecode_HOST_LIBRARY not found!")
+endif()
 # FFMPEG
 include_directories(${AVUTIL_INCLUDE_DIR} ${AVCODEC_INCLUDE_DIR} ${AVFORMAT_INCLUDE_DIR})
 set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${FFMPEG_LIBRARIES})
