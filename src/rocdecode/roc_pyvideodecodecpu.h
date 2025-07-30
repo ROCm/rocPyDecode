@@ -33,12 +33,10 @@ THE SOFTWARE.
 //
 class PyRocVideoDecoderCpu : public FFMpegVideoDecoder {
     public:
-        // The false, 0, true parameters sent in the FFMpegVideoDecoder constructor are as follow:
-        // bool extract_user_sei_Message = false, uint32_t disp_delay = 0, bool no_multithreading = true
         PyRocVideoDecoderCpu(int device_id, int mem_type, rocDecVideoCodec codec, bool force_zero_latency = false,
                           const Rect *p_crop_rect = nullptr, int max_width = 0, int max_height = 0,
-                          uint32_t clk_rate = 0) : FFMpegVideoDecoder(device_id, static_cast<OutputSurfaceMemoryType>(mem_type), codec, force_zero_latency,
-                          p_crop_rect, false, 0, true, max_width, max_height, clk_rate) { InitConfigStructure(); }
+                          uint32_t clk_rate = 1000) : FFMpegVideoDecoder(device_id, static_cast<OutputSurfaceMemoryType>(mem_type), codec, force_zero_latency,
+                          p_crop_rect, false, 0, max_width, max_height, clk_rate) { InitConfigStructure(); }
         ~PyRocVideoDecoderCpu();                        
          
         // for python binding
