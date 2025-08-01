@@ -144,7 +144,8 @@ CodeStream::CodeStream(const unsigned char* data, size_t length) {
 
 CodeStream::CodeStream(py::bytes data) {
     data_ref_bytes_ = data;
-    auto data_view = static_cast<std::string_view>(data_ref_bytes_);
+    std::string data_str = static_cast<std::string>(data_ref_bytes_); // Convert py::bytes to std::string
+    std::string_view data_view(data_str);
     py::gil_scoped_release release;
     InitializeSingleImage(static_cast<const std::filesystem::path>(""), reinterpret_cast<const unsigned char*>(data_view.data()), data_view.size());
 }

@@ -23,6 +23,9 @@ import sys
 import argparse
 import platform
 import traceback
+import shutil
+from pathlib import Path
+
 if sys.version_info[0] < 3:
     import commands
 else:
@@ -177,6 +180,57 @@ for i in range(len(commonPackages)):
     ERROR_CHECK(os.system('sudo '+linuxFlag+' '+linuxSystemInstall +
             ' '+linuxSystemInstall_check+' install '+ commonPackages[i]))
 
+# setup directory path
+setupDir_deps = '~/rocpydecode-deps'
+deps_dir = os.path.expanduser(setupDir_deps)
+deps_dir = os.path.abspath(deps_dir)
+
+# Define deps_dir safely using absolute path
+deps_dir = os.path.abspath(os.path.expanduser(deps_dir))
+# safety check: ensure it's under home directory or a known safe location
+home_dir = str(Path.home())
+if os.path.isdir(deps_dir):
+    if deps_dir.startswith(home_dir):
+        shutil.rmtree(deps_dir)
+        print("rocpydecode Setup: Removing Previous Install -- "+deps_dir+"\n")
+    else:
+        raise ValueError(f"Refusing to delete unsafe path: {deps_dir}")
+
+# dlpack - https://github.com/dmlc/dlpack
+if "ubuntu" in platformInfo:
+    ERROR_CHECK(os.system('sudo '+linuxFlag+' '+linuxSystemInstall+' '+linuxSystemInstall_check +' install libdlpack-dev'))
+elif "sles" in platformInfo:
+    ERROR_CHECK(os.system('sudo '+linuxFlag+' '+linuxSystemInstall+' '+linuxSystemInstall_check +' install dlpack-devel'))
+else:
+    try:
+        os.makedirs(deps_dir, exist_ok=True)
+    except Exception as e:
+        print(f"Error creating directory {deps_dir}: {e}")
+        sys.exit(1)
+    try:
+        subprocess.run(
+            ['bash', '-c', f'cd {deps_dir} && git clone -b v1.0 https://github.com/dmlc/dlpack.git'],
+            check=True
+        )
+        exit_code = 0
+    except subprocess.CalledProcessError as e:
+        exit_code = e.returncode
+    ERROR_CHECK(exit_code)
+    try:
+        cmd = (
+            f'cd {deps_dir}/dlpack && '
+            'mkdir -p build && '
+            'cd build && '
+            f'{linuxCMake} .. && '
+            'make -j$(nproc) && '
+            'sudo make install'
+        )
+        subprocess.run(['bash', '-c', cmd], check=True)
+        exit_code = 0
+    except subprocess.CalledProcessError as e:
+        exit_code = e.returncode
+    ERROR_CHECK(exit_code)
+
 # rocPyDecode Requirements
 ERROR_CHECK(os.system(sudoValidate))
 if "Ubuntu" in platformInfo:
@@ -192,5 +246,16 @@ elif "redhat" in platformInfo:
 
 # Tests requirements
 #ERROR_CHECK(os.system('python3 -m pip install -i https://test.pypi.org/simple hip-python'))
+
+# clean up temp folders
+deps_dir = os.path.abspath(os.path.expanduser(deps_dir)) # Resolve deps_dir to absolute path
+# Safety check: allow deletion only inside user's home directory
+home_dir = str(Path.home())
+if os.path.isdir(deps_dir):
+    if deps_dir.startswith(home_dir):
+        shutil.rmtree(deps_dir)
+        print("rocpydecode Setup: Removing Previous Install -- "+deps_dir+"\n")
+    else:
+        raise ValueError(f"Refusing to delete unsafe path: {deps_dir}")
 
 print("rocPyDecode Dependencies Installed with rocPyDecode-setup.py V-"+__version__)
