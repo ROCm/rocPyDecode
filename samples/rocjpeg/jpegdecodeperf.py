@@ -26,7 +26,7 @@ import multiprocessing
 from multiprocessing import Process, Value
 
 # decoding batch of jpeg images
-def jpeg_decode_batch_process(files_batch_full_path_list, batch_size, output_format, device_id, backend, imgs_total, bad_images, mps, ips, init_hip):
+def jpeg_decode_batch_process(files_batch_full_path_list, batch_size, output_format, device_id, backend, imgs_total, bad_images, ips, init_hip):
 
     # each process on diff GPU device
     if(init_hip):
@@ -43,8 +43,6 @@ def jpeg_decode_batch_process(files_batch_full_path_list, batch_size, output_for
     total = len(files_batch_full_path_list)
     total_decode_time_in_milli_sec = 0.0
     total_valid_images_processed = 0
-    image_size_in_mpixels_all = 0.0
-    mps.value = 0.0
     ips.value = 0.0
 
     for i in range(0, total, batch_size):
@@ -52,11 +50,6 @@ def jpeg_decode_batch_process(files_batch_full_path_list, batch_size, output_for
         batch_time_msec, img_list = decoder.decode(current_batch)  # batch_time_msec elapsed time in milliseconds for 'current' batch
         total_decode_time_in_milli_sec += batch_time_msec
         total_valid_images_processed += len(img_list)
-        
-        # calc megapixels for all images
-        if(len(img_list) > 0):
-            for i, img in enumerate(img_list):
-                image_size_in_mpixels_all += ((float(img.width) * float(img.height)) / 1000000.0)
 
     imgs_total.value = total_valid_images_processed
     bad_images.value = total-total_valid_images_processed
@@ -64,7 +57,6 @@ def jpeg_decode_batch_process(files_batch_full_path_list, batch_size, output_for
     if (total_valid_images_processed > 0):
         avg_time_per_image = total_decode_time_in_milli_sec / float(total)
         ips.value = 1000.0 / avg_time_per_image
-        mps.value = (ips.value * image_size_in_mpixels_all) / float(total)
 
 
 if __name__ == "__main__":
@@ -158,7 +150,6 @@ if __name__ == "__main__":
     # prepare data collecting containers
     print(f"Info: Number of processes:    {num_process}")
     total_ips = 0.0
-    total_mps = 0.0
     total_images = 0
     total_bad_images = 0
     total_ims = 0.0
@@ -173,7 +164,6 @@ if __name__ == "__main__":
     # prepare shared containers
     images_totals = [Value('i', 0) for _ in range(num_process)]
     bad_images_list = [Value('i', 0) for _ in range(num_process)]
-    mps_list = [Value('f', 0.0) for _ in range(num_process)]
     ips_list = [Value('f', 0.0) for _ in range(num_process)]
 
     # device_id list distributed over available devices (for best HW performance):Essam Aly
@@ -188,7 +178,7 @@ if __name__ == "__main__":
     # create count of processes required by args.num_process
     processes = []
     for i in range(num_process):
-        p = Process(target=jpeg_decode_batch_process, args=(files_batch_full_path_list[i], batch_size, output_format, device_ids[i], backend, images_totals[i], bad_images_list[i], mps_list[i], ips_list[i], init_hip))
+        p = Process(target=jpeg_decode_batch_process, args=(files_batch_full_path_list[i], batch_size, output_format, device_ids[i], backend, images_totals[i], bad_images_list[i], ips_list[i], init_hip))
         p.start()
         processes.append(p)
 
@@ -199,7 +189,6 @@ if __name__ == "__main__":
     # aggregate results from all processes
     total_images = sum(v.value for v in images_totals)
     total_bad_images = sum(v.value for v in bad_images_list)
-    total_mps = sum(v.value for v in mps_list)
     total_ips = sum(v.value for v in ips_list)
 
     # printout results
@@ -207,6 +196,5 @@ if __name__ == "__main__":
     print("info: Total bad files found : " + str(total_bad_images))
     print("info: Average processing time per image (ms):      " + str(round(1000.0/total_ips, 3)))
     print("info: Average decoded images per sec (Images/Sec): " + str(round(total_ips, 3)))
-    print("info: Average decoded images size (Mpixels/Sec):   " + str(round(total_mps, 3)))
     print(f"info: GPU Devices Used: {device_ids}")
     print(f"info: Batch Size Used:  {batch_size}\n")
