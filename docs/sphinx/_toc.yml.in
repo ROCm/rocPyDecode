@@ -27,8 +27,6 @@ subtrees:
     title: Use rocPyDecode
   - file: how-to/rocPyDecode-wheel.rst
     title: Create a wheel file
-  - file: how-to/rocPyDecode-egg.rst
-    title: Create an egg file
 
 - caption: Tutorials
   entries:

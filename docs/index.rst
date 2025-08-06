@@ -35,11 +35,11 @@ The rocPyDecode public repository is located at `https://github.com/ROCm/rocPyDe
 
     * :doc:`Use rocPyDecode <how-to/using-rocPydecode>` 
     * :doc:`Create a rocPyDecode wheel file <how-to/rocPyDecode-wheel>`
-    * :doc:`Create a rocPyDecode egg file <how-to/rocPyDecode-egg>`
 
   .. grid-item-card:: Samples
 
     * :doc:`rocPyDecode samples <./tutorials/rocPyDecode-samples>`  
+
 
   .. grid-item-card:: Reference
 
