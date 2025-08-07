@@ -18,7 +18,7 @@ rocPyDecode has the following prerequisites:
 
 * `CMake 3.12 or later <https://cmake.org/>`_
 * `Python3 3.9 or later <https://www.python.org/>`_
-* Python3 pip
+* `Python3 pip <https://pypi.org/project/pip/>`_
 * `PyBind11 <https://github.com/pybind/pybind11>`_
 * `rocDecode <https://rocm.docs.amd.com/projects/rocDecode/en/latest/index.html>`_
 * `FFmpeg runtime and headers <https://ffmpeg.org>`_
