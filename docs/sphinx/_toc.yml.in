@@ -15,8 +15,6 @@ subtrees:
     title: Installing rocPyDecode
   - file: install/rocPyDecode-cmake-install
     title: Installing rocPyDecode with CMake
-  - file: install/rocPyDecode-pip-install
-    title: Installing rocPyDecode with pip
 
 - caption: Conceptual
   entries:
@@ -27,6 +25,8 @@ subtrees:
   entries:
   - file: how-to/using-rocPydecode
     title: Use rocPyDecode
+  - file: how-to/rocPyDecode-wheel.rst
+    title: Create a wheel file
 
 - caption: Tutorials
   entries:
