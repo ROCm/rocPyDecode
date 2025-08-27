@@ -3,9 +3,6 @@ defaults:
   maxdepth: 6
 root: index
 subtrees:
-- entries:
-  - file: what-is-rocPyDecode.rst
-    title: What is rocPyDecode?
 
 - caption: Install
   entries:
