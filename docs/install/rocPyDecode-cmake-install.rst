@@ -10,9 +10,9 @@ Building and installing rocPyDecode with CMake
 
     sudo access might be required to build and install with CMake.
 
-rocPyDecode can be built using CMake. rocPyJpegDecode will only be built if `rocJPEG <https://rocm.docs.amd.com/projects/rocJPEG/en/latest/index.html>`_ is already installed. If rocJPEG isn't installed, rocPyJpegDecode will be omitted will be omitted from the installation.
+rocPyDecode can be built using CMake. rocPyJpegDecode will only be built if `rocJPEG <https://rocm.docs.amd.com/projects/rocJPEG/en/latest/index.html>`_ is already installed. If rocJPEG isn't installed, rocPyJpegDecode will be omitted from the installation.
 
-Once rocPyDecode has been built and installed, tar and deb packages can be generated for distribution. For information about generating wheel and egg files, see :doc:`pip installation instructions <rocPyDecode-pip-install>`.
+Once rocPyDecode has been built and installed, tar and deb packages can be generated for distribution. :doc:`Wheel distribution files can also be created <../how-to/rocPyDecode-wheel>`.
 
 The rocPyDecode source code and installation scripts are available from the `rocPyDecode GitHub Repository <https://github.com/ROCm/rocPyDecode>`_. 
 
