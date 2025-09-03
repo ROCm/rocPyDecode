@@ -6,7 +6,8 @@
 rocPyDecode prerequisites
 ********************************************************************
 
-rocPyDecode has been tested on Ubuntu 22.04 or 24.04 with ROCm running on `accelerators based on the CDNA architecture <https://rocm.docs.amd.com/projects/install-on-linux/en/latest/reference/system-requirements.html>`_.
+rocPyDecode has been tested on Ubuntu 22.04 and 24.04 with ROCm running on `accelerators based on the CDNA architecture <https://rocm.docs.amd.com/projects/install-on-linux/en/latest/reference/system-requirements.html>`_.
+
 
 See `Supported operating systems <https://rocm.docs.amd.com/projects/install-on-linux/en/latest/reference/system-requirements.html#supported-operating-systems>`_ for the complete list of ROCm supported Linux environments.
 
