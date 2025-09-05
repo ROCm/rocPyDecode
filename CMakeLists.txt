@@ -179,10 +179,16 @@ include_directories(${rocdecode_INCLUDE_DIR}
     ${ROCM_PATH}/share/rocdecode/utils
     ${ROCM_PATH}/share/rocdecode/utils/rocvideodecode
 )
-find_library(rocdecode_HOST_LIBRARY rocdecodehost PATHS ${ROCM_PATH}/lib)
+if(rocdecode_VERSION VERSION_LESS_EQUAL 1.3.0)
+    find_library(rocdecode_HOST_LIBRARY rocdecodehost PATHS ${ROCM_PATH}/lib)
+else()
+    find_library(rocdecode_HOST_LIBRARY rocdecode-host PATHS ${ROCM_PATH}/lib)
+endif()
+
 set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} rocdecode::rocdecode)
 if(rocdecode_HOST_LIBRARY)
     set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${rocdecode_HOST_LIBRARY})
+    message(STATUS "rocdecode_HOST_LIBRARY found")
 else()
     message(FATAL_ERROR "Library rocdecode_HOST_LIBRARY not found!")
 endif()
