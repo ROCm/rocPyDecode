@@ -1,3 +1,6 @@
+// Copyright © Advanced Micro Devices, Inc., or its affiliates.
+ 
+// SPDX-License-Identifier:  [MIT License]
 
 // test_calls.cpp
 #include "roc_pyvideodemuxer.h"
