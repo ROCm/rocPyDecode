@@ -23,7 +23,6 @@ The rocPyDecode public repository is located at `https://github.com/ROCm/rocPyDe
     * :doc:`rocPyDecode prerequisites <./install/rocPyDecode-prerequisites>`
     * :doc:`rocPyDecode installation overview <./install/rocPyDecode-install>`
     * :doc:`rocPyDecode CMake installation <./install/rocPyDecode-cmake-install>`
-    * :doc:`rocPyDecode pip installation <./install/rocPyDecode-pip-install>`
 
 .. grid:: 2
   :gutter: 3
@@ -34,7 +33,8 @@ The rocPyDecode public repository is located at `https://github.com/ROCm/rocPyDe
   
   .. grid-item-card:: How to
 
-    * :doc:`Use rocPyDecode <how-to/using-rocPydecode>`  
+    * :doc:`Use rocPyDecode <how-to/using-rocPydecode>` 
+    * :doc:`Create a rocPyDecode wheel file <how-to/rocPyDecode-wheel>`
 
   .. grid-item-card:: Samples
 

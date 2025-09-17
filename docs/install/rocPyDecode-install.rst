@@ -14,9 +14,9 @@ The full list of prerequisites for both rocPyDecode and rocPyJpegDecode can be f
 
 The develop branch is the default rocPyDecode branch. The develop branch is intended for users who want to preview new features or contribute to the rocPyDecode code base. If you don't intend to preview new features or contribute to the codebase, clone the rocPyDecode branch that corresponds to your version of ROCm.
 
-rocPyDecode can be installed with :doc:`CMake <./rocPyDecode-cmake-install>` or with the :doc:`pip package manager <./rocPyDecode-pip-install>`. 
+rocPyDecode is installed with :doc:`CMake <./rocPyDecode-cmake-install>`. 
 
-The CMake installation method can be used to create deb files and zipped tar files for distribution.
+Cmake can be used to created deb files and zipped tar files for distribution. :docs:`Wheel distribution files can also be created <../how-to/rocPyDecode-wheel>`
 
 The pip installation method can be used to generate Python egg and wheel files for distribution. 
 
