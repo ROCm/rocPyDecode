@@ -28,7 +28,6 @@ rocPyDecode has the following prerequisites:
 * `DLPack <https://dmlc.github.io/dlpack/latest/>`_
 * `NumPy, for running tests and samples <https://numpy.org/>`_
 
-rocPyJpegDecode additionally requires `rocJPEG <https://rocm.docs.amd.com/projects/rocJPEG/en/latest/index.html>`_.
 
-All prerequisites except for NumPy and rocJPEG are installed with the `rocPyDecode-requirements.py <https://github.com/ROCm/rocPyDecode/blob/develop/rocPyDecode-requirements.py>`_ script. 
+All prerequisites except for NumPy are installed with the `rocPyDecode-requirements.py <https://github.com/ROCm/rocPyDecode/blob/develop/rocPyDecode-requirements.py>`_ script. 
 

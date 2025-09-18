@@ -6,11 +6,7 @@
 rocPyDecode samples and tests
 *************************************************************
 
-rocPyDecode and rocPyJpegDecode samples are located in the |samples|_ directory of the rocPyDecode GitHub repository.
-
-The rocPyDecode samples are located in |rocpydecode|_ and rocPyJpegDecode samples are located in |rocpyjpeg|_. Jupyter notebooks are also available for rocPyJpegDecode.
-
-rocPyDecode tests are located in |tests|_.
+rocPyDecode samples and tests are located in |samples|_ and |tests|_ in the rocPyDecode GitHub repository.
 
 .. |samples| replace:: ``samples``
 .. _samples: https://github.com/ROCm/rocPyDecode/tree/develop/samples
@@ -20,6 +16,3 @@ rocPyDecode tests are located in |tests|_.
 
 .. |rocpydecode| replace:: ``samples/rocdecode``
 .. _rocpydecode: https://github.com/ROCm/rocPyDecode/tree/develop/samples/rocdecode
-
-.. |rocpyjpeg| replace:: ``samples/rocjpeg``
-.. _rocpyjpeg: https://github.com/ROCm/rocPyDecode/tree/develop/samples/rocjpeg

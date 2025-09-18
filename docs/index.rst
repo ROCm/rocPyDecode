@@ -10,8 +10,6 @@ rocPyDecode provides Python bindings for the `rocDecode <https://rocm.docs.amd.c
 
 rocPyDecode uses the rocDecode C++ SDK library to decode video streams based on the number of available media engines (VCNs) on the GPU. 
 
-rocPyJpegDecode provides Python bindings for the rocJPEG APIs and is installed as part of rocPyDecode when `rocJPEG <https://rocm.docs.amd.com/projects/rocJPEG/en/latest/>`_ is already installed on the system. 
-
 The rocPyDecode public repository is located at `https://github.com/ROCm/rocPyDecode <https://github.com/ROCm/rocPyDecode>`_.
 
 
@@ -21,8 +19,7 @@ The rocPyDecode public repository is located at `https://github.com/ROCm/rocPyDe
   .. grid-item-card:: Install
 
     * :doc:`rocPyDecode prerequisites <./install/rocPyDecode-prerequisites>`
-    * :doc:`rocPyDecode installation overview <./install/rocPyDecode-install>`
-    * :doc:`rocPyDecode CMake installation <./install/rocPyDecode-cmake-install>`
+    * :doc:`rocPyDecode installation <./install/rocPyDecode-cmake-install>`
 
 .. grid:: 2
   :gutter: 3
@@ -49,7 +46,6 @@ The rocPyDecode public repository is located at `https://github.com/ROCm/rocPyDe
       * :doc:`rocPyDecode structures <./reference/structures>`
       * :doc:`rocPyDecode decoder class <./reference/decoderClass>`
       * :doc:`rocPyDecode demuxer class <./reference/demuxerClass>`
-      * :doc:`rocPyJpegDecode decoder class <./reference/rocPyJPEGDecode-api>`
 
 
 To contribute to the documentation, refer to

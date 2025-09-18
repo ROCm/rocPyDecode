@@ -10,16 +10,14 @@ subtrees:
 - caption: Install
   entries:
   - file: install/rocPyDecode-prerequisites
-    title: rocPyDecode prerequisites
-  - file: install/rocPyDecode-install
-    title: Installing rocPyDecode
+    title: Prerequisites
   - file: install/rocPyDecode-cmake-install
-    title: Installing rocPyDecode with CMake
+    title: Installing with CMake
 
 - caption: Conceptual
   entries:
   - file: conceptual/rocPyDecode-mem-types
-    title: rocPyDecode surface data memory locations
+    title: Surface data memory locations
 
 - caption: How to
   entries:
@@ -31,7 +29,7 @@ subtrees:
 - caption: Tutorials
   entries:
   - file: tutorials/rocPyDecode-samples 
-    title: rocPyDecode samples
+    title: Samples
 
 - caption: Reference
   entries:
@@ -45,8 +43,6 @@ subtrees:
         title: rocPyDecode Structures
       - file: reference/decoderClass
       - file: reference/demuxerClass
-  - file: reference/rocPyJPEGDecode-api
-    title: rocPyJpegDecode decoder class
 
 - caption: About
   entries:
