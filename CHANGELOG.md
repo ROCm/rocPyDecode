@@ -2,6 +2,19 @@
 
 Full documentation for for rocPyDecode is available at [https://rocm.docs.amd.com/projects/rocPyDecode/en/latest/](https://rocm.docs.amd.com/projects/rocPyDecode/en/latest/)
 
+## rocPyDecode 0.7.0 for ROCm 7.1.0
+
+### Added
+* rocPyJpegPerfSample - samples for JPEG decode
+
+### Changed
+* Package - rocjpeg set as required dependency
+* rocDecode host - rocdecode host linking updates
+
+### Resolved issues
+* rocJPEG Bindings - bugfixes
+* Test package - find dependencies updated
+
 ## rocPyDecode 0.6.0 for ROCm 7.0.0
 
 ### Added

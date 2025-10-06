@@ -78,7 +78,7 @@ You can then install the deb packages with ``apt install``. For example:
 
 .. code:: 
 
-    sudo apt install ./rocpydecode_0.6.0-local_amd64.deb
-    sudo apt install ./rocpydecode-test_0.6.0-local_amd64.deb
+    sudo apt install ./rocpydecode_0.7.0-local_amd64.deb
+    sudo apt install ./rocpydecode-test_0.7.0-local_amd64.deb
 
  
