@@ -5,6 +5,11 @@ resources:
     endpoint: ROCm
     name: ROCm/ROCm
 
+parameters:
+- name: pipelinesRepoRef
+  type: string
+  default: refs/heads/develop
+
 variables:
 - group: common
 - template: /.azuredevops/variables-global.yml@pipelines_repo
