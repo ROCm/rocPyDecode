@@ -40,7 +40,7 @@ if(NOT DEFINED CMAKE_CXX_COMPILER)
 endif()
 
 # lib version - NOTE: update version across multiple files
-set(VERSION "0.6.0")
+set(VERSION "0.7.0")
 
 # Set Project Version and Language
 project(rocpydecode VERSION ${VERSION} LANGUAGES CXX)
