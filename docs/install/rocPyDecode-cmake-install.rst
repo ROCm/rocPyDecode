@@ -6,10 +6,6 @@
 Building and installing rocPyDecode with CMake
 ********************************************************************
 
-.. note::
-
-    sudo access might be required to build and install with CMake.
-
 rocPyDecode can be built using CMake. rocPyJpegDecode will only be built if `rocJPEG <https://rocm.docs.amd.com/projects/rocJPEG/en/latest/index.html>`_ is already installed. If rocJPEG isn't installed, rocPyJpegDecode will be omitted from the installation.
 
 Once rocPyDecode has been built and installed, tar and deb packages can be generated for distribution. :doc:`Wheel distribution files can also be created <../how-to/rocPyDecode-wheel>`.
