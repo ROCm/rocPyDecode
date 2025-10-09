@@ -67,6 +67,20 @@ PYBIND11_MODULE(rocpydecode, m) {
     // Todo: to be changed to match version on CMakeLists with every future version update
     m.attr("__version__") = py::str("0.7.0");
 
+    // OutputSurfaceMemoryType
+    py::enum_<OutputSurfaceMemoryType>(types_m, "OutputSurfaceMemoryType")
+        .value("OUT_SURFACE_MEM_DEV_INTERNAL",OUT_SURFACE_MEM_DEV_INTERNAL)
+        .value("OUT_SURFACE_MEM_DEV_COPIED",OUT_SURFACE_MEM_DEV_COPIED)
+        .value("OUT_SURFACE_MEM_HOST_COPIED",OUT_SURFACE_MEM_HOST_COPIED)
+        .value("OUT_SURFACE_MEM_NOT_MAPPED",OUT_SURFACE_MEM_NOT_MAPPED)
+        .export_values();
+
+    // plain int constants
+    types_m.attr("OUT_SURFACE_MEM_DEV_INTERNAL") = py::int_(static_cast<int>(OUT_SURFACE_MEM_DEV_INTERNAL));
+    types_m.attr("OUT_SURFACE_MEM_DEV_COPIED")   = py::int_(static_cast<int>(OUT_SURFACE_MEM_DEV_COPIED));
+    types_m.attr("OUT_SURFACE_MEM_HOST_COPIED")  = py::int_(static_cast<int>(OUT_SURFACE_MEM_HOST_COPIED));
+    types_m.attr("OUT_SURFACE_MEM_NOT_MAPPED")   = py::int_(static_cast<int>(OUT_SURFACE_MEM_NOT_MAPPED));
+
     // rocDecVideoSurfaceFormat
     py::enum_<rocDecVideoSurfaceFormat>(types_m, "rocDecVideoSurfaceFormat")
         .value("rocDecVideoSurfaceFormat_NV12",rocDecVideoSurfaceFormat_NV12)					

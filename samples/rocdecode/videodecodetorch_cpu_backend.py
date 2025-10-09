@@ -9,6 +9,7 @@ import os.path
 import torch
 import pyRocVideoDecode.decodercpu as dec
 import pyRocVideoDecode.demuxer as dmx
+import pyRocVideoDecode.types as dectypes
 
 
 def Decoder(
@@ -154,8 +155,8 @@ if __name__ == "__main__":
         '-m',
         '--mem_type',
         type=int,
-        default=1,
-        help='mem_type of output surfce - 0: Internal 1: dev_copied 2: host_copied 3: MEM not mapped, optional, default 0',
+        default=dectypes.OUT_SURFACE_MEM_HOST_COPIED,
+        help='mem_type of output surface - 0: Internal 1: dev_copied 2: host_copied, optional, default 2',
         required=False)
     parser.add_argument(
         '-crop',
@@ -186,7 +187,7 @@ if __name__ == "__main__":
     resize_dim = args.resize_dim
 
     # handel params
-    mem_type = 1
+    mem_type = dectypes.OUT_SURFACE_MEM_HOST_COPIED if (mem_type < dectypes.OUT_SURFACE_MEM_DEV_INTERNAL or mem_type > dectypes.OUT_SURFACE_MEM_HOST_COPIED) else mem_type
     if not os.path.exists(input_file_path):  # Input file (must exist)
         print("ERROR: input file doesn't exist.")
         exit()

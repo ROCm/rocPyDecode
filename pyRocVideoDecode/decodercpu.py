@@ -64,7 +64,7 @@ class decodercpu(object):
             self,
             codec,
             device_id = 0,
-            mem_type = 0,
+            mem_type = dectypes.OUT_SURFACE_MEM_HOST_COPIED,
             b_force_zero_latency = False,
             crop_rect = None,
             max_width = 0,
