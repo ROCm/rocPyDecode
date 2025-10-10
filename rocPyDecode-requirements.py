@@ -158,7 +158,8 @@ coreDebianPackages = [
     'python3-dev',
     'python3-pip',
     'python3-pybind11',
-    'libdlpack-dev'
+    'libdlpack-dev',
+    'python3-numpy'
 ]
 
 # core RPM packages
@@ -168,7 +169,8 @@ coreRPMPackages = [
     'rocjpeg-devel',
     'python3-devel',
     'python3-pybind11',
-    'python3-pip'
+    'python3-pip',
+    'python3-numpy'
 ]
 
 # update

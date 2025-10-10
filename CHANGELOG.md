@@ -22,6 +22,7 @@ Full documentation for for rocPyDecode is available at [https://rocm.docs.amd.co
 * rocpyjpegdecode package
 * Added src/rocjpeg source new subfolder
 * Added samples/rocjpeg new subfolder
+* Added 'numpy' as pre-requisite needed for test and sample scripts
 
 ### Changed
 * Minimum version for rocdecode and rocjpeg updated to V1.0.0
