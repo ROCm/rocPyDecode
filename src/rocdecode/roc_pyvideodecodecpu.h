@@ -33,7 +33,7 @@ THE SOFTWARE.
 //
 class PyRocVideoDecoderCpu : public FFMpegVideoDecoder {
     public:
-        PyRocVideoDecoderCpu(int device_id, int mem_type, rocDecVideoCodec codec, bool force_zero_latency = false,
+        PyRocVideoDecoderCpu(int device_id, int mem_type = OUT_SURFACE_MEM_HOST_COPIED, rocDecVideoCodec codec = rocDecVideoCodec_HEVC, bool force_zero_latency = false,
                           const Rect *p_crop_rect = nullptr, int max_width = 0, int max_height = 0,
                           uint32_t clk_rate = 1000) : FFMpegVideoDecoder(device_id, static_cast<OutputSurfaceMemoryType>(mem_type), codec, force_zero_latency,
                           p_crop_rect, false, 0, max_width, max_height, clk_rate) { InitConfigStructure(); }

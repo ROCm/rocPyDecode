@@ -36,7 +36,7 @@ void TestAllClassCalls(const char* input_file) {
     rocDecVideoCodec dec_codec = ConvertAVCodec2RocDecVideoCodec(codec_id);
 
     int device_id = 0;
-    int mem_type = 1;
+    int mem_type = OUT_SURFACE_MEM_DEV_COPIED;
     bool force_zero_latency = false;
 
     // test GPU decoder
@@ -57,6 +57,7 @@ void TestAllClassCalls(const char* input_file) {
     viddec.PyReleaseFrame(*pkt);
 
     // test CPU decoder
+    mem_type = OUT_SURFACE_MEM_HOST_COPIED;
     PyRocVideoDecoderCpu cpu_dec(device_id, mem_type, dec_codec, force_zero_latency);    
     std::cout << "Testing PyRocVideoDecoderCpu...\n";
     pkt = demuxer.DemuxFrame();

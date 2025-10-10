@@ -47,7 +47,7 @@ PYBIND11_MODULE(rocpyjpegdecode, m) {
 
     // current version
     // TODO: match version on CMakeLists for future version update
-    m.attr("__version__") = py::str("0.6.0");
+    m.attr("__version__") = py::str("0.7.0");
 
     types_m.attr("ROCJPEG_MAX_COMPONENT") = ROCJPEG_MAX_COMPONENT;
 

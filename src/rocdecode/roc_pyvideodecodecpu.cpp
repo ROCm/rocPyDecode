@@ -29,7 +29,7 @@ using namespace std;
 void PyRocVideoDecoderCpuInitializer(py::module& m) {
         py::class_<PyRocVideoDecoderCpu> (m, "PyRocVideoDecoderCpu")
         .def(py::init<int,int,rocDecVideoCodec,bool,const Rect *,int,int,uint32_t>(),
-                    py::arg("device_id") = 0, py::arg("out_mem_type") = 0, py::arg("codec") = rocDecVideoCodec_HEVC, py::arg("force_zero_latency") = false, 
+                    py::arg("device_id") = 0, py::arg("out_mem_type") = OUT_SURFACE_MEM_HOST_COPIED, py::arg("codec") = rocDecVideoCodec_HEVC, py::arg("force_zero_latency") = false, 
                     py::arg("p_crop_rect") = nullptr, py::arg("max_width") = 0, py::arg("max_height") = 0, py::arg("clk_rate") = 1000)
         .def("GetDeviceinfo",&PyRocVideoDecoderCpu::PyGetDeviceinfo)
         .def("DecodeFrame",&PyRocVideoDecoderCpu::PyDecodeFrame)

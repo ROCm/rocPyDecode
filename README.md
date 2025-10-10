@@ -65,6 +65,13 @@ The library supports multi-VCN configurations via batch decoding, making it well
   ```shell
   sudo apt install python3-pybind11
   ```
+* [numpy](https://github.com/numpy/numpy)
+
+	```shell
+    sudo apt install python3-numpy
+	```
+> [!NOTE]
+> 'numpy' required for the test scripts and samples, not required for the build and install
 
 * [pkg-config](https://en.wikipedia.org/wiki/Pkg-config)
 
