@@ -41,7 +41,7 @@ Change directory to rocPyDecode subfolder 'conda-recipe', then execute the conda
 After successful build from the previous step the generated conda package will be on the following path:
 
 ```bash
-    /root/miniconda3/conda-bld/linux-64/rocpydecode-0.7.0-py310_0.tar.bz2
+    /root/miniconda3/conda-bld/linux-64/rocpydecode-0.8.0-py310_0.tar.bz2
  ```
 
 ## Installing rocPyDecode conda package
@@ -53,7 +53,7 @@ To install the generated package use the following command:
     conda install --use-local rocpydecode
 
     # or target the exact bz2 package
-    conda install --use-local /root/miniconda3/conda-bld/linux-64/rocpydecode-0.7.0-py310_0.tar.bz2
+    conda install --use-local /root/miniconda3/conda-bld/linux-64/rocpydecode-0.8.0-py310_0.tar.bz2
 ```
 
 ## Installing rocPyDecode package on conda virtual environment

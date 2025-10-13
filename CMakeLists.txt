@@ -35,12 +35,12 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED On)
 set(CMAKE_CXX_EXTENSIONS ON)
 if(NOT DEFINED CMAKE_CXX_COMPILER)
-    set(CMAKE_C_COMPILER ${ROCM_PATH}/bin/amdclang)
-    set(CMAKE_CXX_COMPILER ${ROCM_PATH}/bin/amdclang++)
+    set(CMAKE_C_COMPILER ${ROCM_PATH}/lib/llvm/bin/amdclang)
+    set(CMAKE_CXX_COMPILER ${ROCM_PATH}/lib/llvm/bin/amdclang++)
 endif()
 
 # lib version - NOTE: update version across multiple files
-set(VERSION "0.7.0")
+set(VERSION "0.8.0")
 
 # Set Project Version and Language
 project(rocpydecode VERSION ${VERSION} LANGUAGES CXX)

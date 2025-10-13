@@ -32,7 +32,7 @@ else:
     import subprocess
 
 __copyright__ = "Copyright (c) 2024, AMD ROCm rocPyDecode"
-__version__ = "0.7.0"
+__version__ = "0.8.0"
 __status__ = "Shipping"
 
 # error check calls
