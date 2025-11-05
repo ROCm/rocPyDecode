@@ -30,5 +30,5 @@ rocPyDecode has the following prerequisites:
 
 rocPyJpegDecode additionally requires `rocJPEG <https://rocm.docs.amd.com/projects/rocJPEG/en/latest/index.html>`_.
 
-All prerequisites except for NumPy and rocJPEG are installed with the `rocPyDecode-requirements.py <https://github.com/ROCm/rocPyDecode/blob/develop/rocPyDecode-requirements.py>`_ script. 
+All prerequisites except for rocJPEG are installed with the `rocPyDecode-requirements.py <https://github.com/ROCm/rocPyDecode/blob/develop/rocPyDecode-requirements.py>`_ script. 
 
