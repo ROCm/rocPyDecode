@@ -2,6 +2,17 @@
 
 Full documentation for for rocPyDecode is available at [https://rocm.docs.amd.com/projects/rocPyDecode/en/latest/](https://rocm.docs.amd.com/projects/rocPyDecode/en/latest/)
 
+## rocPyDecode 0.8.0 (Unreleased)
+
+### Added
+* 
+
+### Changed
+* CXX Compiler location - Use default `${ROCM_PATH}/lib/llvm/bin` for amd clang
+
+### Resolved issues
+* 
+
 ## rocPyDecode 0.7.0 for ROCm 7.1.0
 
 ### Added

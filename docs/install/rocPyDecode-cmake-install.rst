@@ -63,7 +63,7 @@ For example, the following command will build rocPyDecode only for Python 3.12:
 Once the makefile has been generated, make and install rocPyDecode:
 
 .. code::
-  
+
     make -j8
     sudo make install
 
@@ -78,7 +78,7 @@ You can then install the deb packages with ``apt install``. For example:
 
 .. code:: 
 
-    sudo apt install ./rocpydecode_0.7.0-local_amd64.deb
-    sudo apt install ./rocpydecode-test_0.7.0-local_amd64.deb
+    sudo apt install ./rocpydecode_0.8.0-local_amd64.deb
+    sudo apt install ./rocpydecode-test_0.8.0-local_amd64.deb
 
  

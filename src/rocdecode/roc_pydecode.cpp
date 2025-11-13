@@ -65,7 +65,7 @@ PYBIND11_MODULE(rocpydecode, m) {
 
     // current version
     // Todo: to be changed to match version on CMakeLists with every future version update
-    m.attr("__version__") = py::str("0.7.0");
+    m.attr("__version__") = py::str("0.8.0");
 
     // OutputSurfaceMemoryType
     py::enum_<OutputSurfaceMemoryType>(types_m, "OutputSurfaceMemoryType")
