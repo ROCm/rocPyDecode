@@ -25,7 +25,7 @@ subtrees:
   - file: how-to/rocPyDecode-wheel.rst
     title: Create a wheel file
 
-- caption: Tutorials
+- caption: Samples
   entries:
   - file: tutorials/rocPyDecode-samples 
     title: rocPyDecode samples
