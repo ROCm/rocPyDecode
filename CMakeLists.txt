@@ -151,7 +151,7 @@ find_package(HIP REQUIRED)
 find_package(rocdecode 1.0.0 REQUIRED)
 find_package(rocjpeg 1.0.0 REQUIRED)
 find_package(pybind11 REQUIRED)
-find_package(dlpack REQUIRED)
+find_package(DLPACK REQUIRED)
 find_package(FFmpeg REQUIRED)
 
 # Search for all installed Python versions - exclude Python versions lower than 3.9
