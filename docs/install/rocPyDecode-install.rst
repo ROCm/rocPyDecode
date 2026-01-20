@@ -16,7 +16,7 @@ The develop branch is the default rocPyDecode branch. The develop branch is inte
 
 rocPyDecode is installed with :doc:`CMake <./rocPyDecode-cmake-install>`. 
 
-Cmake can be used to created deb files and zipped tar files for distribution. :docs:`Wheel distribution files can also be created <../how-to/rocPyDecode-wheel>`
+Cmake can be used to created deb files and zipped tar files for distribution. :doc:`Wheel distribution files <../how-to/rocPyDecode-wheel>` can also be created.
 
 The pip installation method can be used to generate Python egg and wheel files for distribution. 
 
