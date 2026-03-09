@@ -3,9 +3,6 @@ defaults:
   maxdepth: 6
 root: index
 subtrees:
-- entries:
-  - file: what-is-rocPyDecode.rst
-    title: What is rocPyDecode?
 
 - caption: Install
   entries:
@@ -28,7 +25,7 @@ subtrees:
   - file: how-to/rocPyDecode-wheel.rst
     title: Create a wheel file
 
-- caption: Tutorials
+- caption: Samples
   entries:
   - file: tutorials/rocPyDecode-samples 
     title: rocPyDecode samples
