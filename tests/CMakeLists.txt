@@ -372,3 +372,13 @@ if(RUN_ROCPYJPEG_TESTS)
     set_property(TEST jpeg_decode_batched_python PROPERTY ENVIRONMENT "PYTHONPATH=${ROCPYJPEG_PYTHONPATH}:$PYTHONPATH")
   endif()
 endif()
+
+if(RUN_ROCPYDECODE_TESTS AND ROCPYDECODE_USE_FFMPEG)
+  # 19 - decoder rgb dlpack test
+  add_test(NAME rocpydecode_test_decoder_rgb_dlpack
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/decoder_rgb_dlpack_test.py
+    -i ${ROCM_PATH}/share/rocdecode/video/AMD_driving_virtual_20-H264.mp4
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  )
+  set_property(TEST rocpydecode_test_decoder_rgb_dlpack PROPERTY ENVIRONMENT "PYTHONPATH=${ROCPYDECODE_PYTHONPATH}:$PYTHONPATH")
+endif()
