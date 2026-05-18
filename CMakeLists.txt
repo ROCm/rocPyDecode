@@ -319,6 +319,13 @@ if(ROCPYDECODE_DEPENDENCY_READY OR ROCPYJPEG_DEPENDENCY_READY)
                 configure_file("${filename}" "${CMAKE_BINARY_DIR}/${TARGET_NAME_VERSIONED}/${ITEM_PATH_REL}" COPYONLY)
             endforeach(filename)
 
+            # Get the correct extension suffix directly from Python
+            execute_process(
+                COMMAND "${Python3_EXECUTABLE}" -c "import sysconfig; print(sysconfig.get_config_var('EXT_SUFFIX'))"
+                OUTPUT_VARIABLE Python3_EXTENSION_SUFFIX
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+
             set_target_properties(${TARGET_NAME_VERSIONED} PROPERTIES
                 PREFIX ""
                 SUFFIX "${Python3_EXTENSION_SUFFIX}"
@@ -344,6 +351,13 @@ if(ROCPYDECODE_DEPENDENCY_READY OR ROCPYJPEG_DEPENDENCY_READY)
                 message(STATUS "Copying ${filename} to ${TARGET_NAME_JPEG_VERSIONED}/${ITEM_PATH_REL}")
                 configure_file("${filename}" "${CMAKE_BINARY_DIR}/${TARGET_NAME_JPEG_VERSIONED}/${ITEM_PATH_REL}" COPYONLY)
             endforeach(filename)
+
+            # Get the correct extension suffix directly from Python
+            execute_process(
+                COMMAND "${Python3_EXECUTABLE}" -c "import sysconfig; print(sysconfig.get_config_var('EXT_SUFFIX'))"
+                OUTPUT_VARIABLE Python3_EXTENSION_SUFFIX
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
 
             set_target_properties(${TARGET_NAME_JPEG_VERSIONED} PROPERTIES
                 PREFIX ""
