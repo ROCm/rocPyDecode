@@ -97,6 +97,7 @@ endif()
 # CMake Config location
 list(APPEND CMAKE_PREFIX_PATH ${ROCM_PATH}/lib/cmake)
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+include(rocPyDecodeFFmpegUtils)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "${DEFAULT_BUILD_TYPE}" CACHE STRING "rocPyDecode Default Build Type" FORCE)
@@ -177,7 +178,7 @@ find_package(rocjpeg 1.0.0 QUIET)
 find_package(pybind11 REQUIRED)
 find_package(DLPACK REQUIRED)
 find_package(FFmpeg QUIET)
-set(ROCPYDECODE_USE_FFMPEG ${FFMPEG_FOUND})
+set(ROCPYDECODE_USE_FFMPEG FALSE)
 
 set(ROCPYDECODE_DEPENDENCY_READY FALSE)
 set(ROCPYJPEG_DEPENDENCY_READY FALSE)
@@ -220,14 +221,26 @@ if(rocdecode_FOUND)
     set(include ${include_base})
     set(sources ${sources_base})
 
-    if(ROCPYDECODE_USE_FFMPEG)
+    rocpydecode_check_ffmpeg_utils(
+        "${ROCM_PATH}"
+        ROCDECODE_FFMPEG_UTILS_FOUND
+        ROCDECODE_FFMPEG_UTILS_SOURCES
+        ROCDECODE_FFMPEG_UTILS_HEADERS
+        ROCDECODE_FFMPEG_UTILS_DIR)
+
+    if(FFMPEG_FOUND AND ROCDECODE_FFMPEG_UTILS_FOUND)
+        set(ROCPYDECODE_USE_FFMPEG TRUE)
         # Demux + CPU backend (FFmpeg-dependent)
-        file(GLOB sources_ffmpeg src/rocdecode/roc_pyvideodemuxer.cpp src/rocdecode/roc_pyvideodecodecpu.cpp src/rocdecode/roc_pydecode_test.cpp ${ROCM_PATH}/share/rocdecode/utils/ffmpegvideodecode/*.cpp)
-        file(GLOB include_ffmpeg ${ROCM_PATH}/share/rocdecode/utils/ffmpegvideodecode/*.h)
+        file(GLOB sources_ffmpeg src/rocdecode/roc_pyvideodemuxer.cpp src/rocdecode/roc_pyvideodecodecpu.cpp src/rocdecode/roc_pydecode_test.cpp)
+        set(include_ffmpeg ${ROCDECODE_FFMPEG_UTILS_HEADERS})
+        list(APPEND sources_ffmpeg ${ROCDECODE_FFMPEG_UTILS_SOURCES})
         list(APPEND include ${include_ffmpeg})
         list(APPEND sources ${sources_ffmpeg})
         include_directories(${AVUTIL_INCLUDE_DIR} ${AVCODEC_INCLUDE_DIR} ${AVFORMAT_INCLUDE_DIR})
         set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${FFMPEG_LIBRARIES})
+    elseif(FFMPEG_FOUND)
+        message(STATUS "FFmpeg found, but rocdecode FFmpeg utility files were not found under ${ROCDECODE_FFMPEG_UTILS_DIR}; building rocPyDecode without demux/CPU backend (GPU decode only).")
+        set(ROCPYDECODE_HOST_LIBRARY_FOUND FALSE)
     else()
         message(STATUS "FFmpeg not found; building rocPyDecode without demux/CPU backend (GPU decode only).")
         set(ROCPYDECODE_HOST_LIBRARY_FOUND FALSE)
@@ -451,6 +464,12 @@ endif()
 # make test with CTest
 enable_testing()
 include(CTest)
+add_test(NAME rocpydecode_cmake_ffmpeg_utils_detection
+    COMMAND ${CMAKE_COMMAND}
+        -DROCPYDECODE_SOURCE_DIR=${CMAKE_SOURCE_DIR}
+        -DROCPYDECODE_TEST_BINARY_DIR=${CMAKE_BINARY_DIR}/test_ffmpeg_utils_detection
+        -P ${CMAKE_SOURCE_DIR}/tests/cmake/ffmpeg_utils_detection.cmake)
+
 if(ROCPYDECODE_DEPENDENCY_READY AND ROCPYJPEG_DEPENDENCY_READY)
     add_subdirectory(tests)
 else()

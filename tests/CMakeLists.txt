@@ -181,6 +181,16 @@ endif()
 
 message("-- ${White}${PROJECT_NAME}: summary RUN_ROCPYDECODE_TESTS=${RUN_ROCPYDECODE_TESTS} RUN_ROCPYDECODE_HOST_TESTS=${RUN_ROCPYDECODE_HOST_TESTS} RUN_ROCPYJPEG_TESTS=${RUN_ROCPYJPEG_TESTS}${ColourReset}")
 
+if(RUN_ROCPYDECODE_TESTS AND RUN_ROCPYJPEG_TESTS)
+  add_test(NAME rocpydecode_test_module_imports
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/import_modules_test.py
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  )
+  set_property(TEST rocpydecode_test_module_imports PROPERTY
+    ENVIRONMENT "PYTHONPATH=${ROCPYDECODE_PYTHONPATH}:${ROCPYJPEG_LIB_DIR}:${ROCPYJPEG_PY_PARENT}:$ENV{PYTHONPATH}")
+endif()
+
+
 if(NOT VIDEO_DECODE_BINDINGS_INSTALLED)
   message("-- ${Yellow}NOTE: ${PROJECT_NAME} requires the video decode bindings to be built (build tree or installed) before running CTests${ColourReset}")
 endif()
