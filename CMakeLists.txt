@@ -97,7 +97,7 @@ endif()
 # CMake Config location
 list(APPEND CMAKE_PREFIX_PATH ${ROCM_PATH}/lib/cmake)
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-include(rocPyDecodeFFmpegUtils)
+include(rocPyDecodeRocdecodeUtils)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "${DEFAULT_BUILD_TYPE}" CACHE STRING "rocPyDecode Default Build Type" FORCE)
@@ -193,57 +193,71 @@ if(rocdecode_FOUND)
     include_directories(src)
     file(GLOB pyfiles pyRocVideoDecode/*.py pyRocVideoDecode/*.pyi)
 
-    # Always build the GPU path
-    include_directories(${rocdecode_INCLUDE_DIR}
-        ${ROCM_PATH}/include/rocdecode
-        ${ROCM_PATH}/share/rocdecode/utils
-        ${ROCM_PATH}/share/rocdecode/utils/rocvideodecode)
-    if(rocdecode_VERSION VERSION_LESS_EQUAL 1.3.0)
-        find_library(rocdecode_HOST_LIBRARY rocdecodehost PATHS ${ROCM_PATH}/lib)
-    else()
-        find_library(rocdecode_HOST_LIBRARY rocdecode-host PATHS ${ROCM_PATH}/lib)
-    endif()
-
-    list(APPEND LINK_LIBRARY_LIST rocdecode::rocdecode)
-    if(rocdecode_HOST_LIBRARY)
-        list(APPEND LINK_LIBRARY_LIST ${rocdecode_HOST_LIBRARY})
-        set(ROCPYDECODE_HOST_LIBRARY_FOUND TRUE)
-        message(STATUS "rocdecode_HOST_LIBRARY found")
-    else()
-        message(WARNING "Library rocdecode_HOST_LIBRARY not found! CPU backend support and samples will be limited.")
-    endif()
-
-    set(ROCPYDECODE_DEPENDENCY_READY TRUE)
-
-    # Core GPU sources
-    file(GLOB include_base src/rocdecode/*.h src/common/*.h ${ROCM_PATH}/share/rocdecode/utils/rocvideodecode/*.h)
-    file(GLOB sources_base src/rocdecode/roc_pydecode.cpp src/rocdecode/roc_pyvideodecode.cpp src/common/*.cpp ${ROCM_PATH}/share/rocdecode/utils/*.cpp ${ROCM_PATH}/share/rocdecode/utils/rocvideodecode/*.cpp)
-    set(include ${include_base})
-    set(sources ${sources_base})
-
-    rocpydecode_check_ffmpeg_utils(
+    rocpydecode_check_video_utils(
         "${ROCM_PATH}"
-        ROCDECODE_FFMPEG_UTILS_FOUND
-        ROCDECODE_FFMPEG_UTILS_SOURCES
-        ROCDECODE_FFMPEG_UTILS_HEADERS
-        ROCDECODE_FFMPEG_UTILS_DIR)
+        ROCDECODE_VIDEO_UTILS_FOUND
+        ROCDECODE_VIDEO_UTILS_SOURCES
+        ROCDECODE_VIDEO_UTILS_HEADERS
+        ROCDECODE_VIDEO_UTILS_DIR)
 
-    if(FFMPEG_FOUND AND ROCDECODE_FFMPEG_UTILS_FOUND)
-        set(ROCPYDECODE_USE_FFMPEG TRUE)
-        # Demux + CPU backend (FFmpeg-dependent)
-        file(GLOB sources_ffmpeg src/rocdecode/roc_pyvideodemuxer.cpp src/rocdecode/roc_pyvideodecodecpu.cpp src/rocdecode/roc_pydecode_test.cpp)
-        set(include_ffmpeg ${ROCDECODE_FFMPEG_UTILS_HEADERS})
-        list(APPEND sources_ffmpeg ${ROCDECODE_FFMPEG_UTILS_SOURCES})
-        list(APPEND include ${include_ffmpeg})
-        list(APPEND sources ${sources_ffmpeg})
-        include_directories(${AVUTIL_INCLUDE_DIR} ${AVCODEC_INCLUDE_DIR} ${AVFORMAT_INCLUDE_DIR})
-        set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${FFMPEG_LIBRARIES})
-    elseif(FFMPEG_FOUND)
-        message(STATUS "FFmpeg found, but rocdecode FFmpeg utility files were not found under ${ROCDECODE_FFMPEG_UTILS_DIR}; building rocPyDecode without demux/CPU backend (GPU decode only).")
-        set(ROCPYDECODE_HOST_LIBRARY_FOUND FALSE)
+    if(ROCDECODE_VIDEO_UTILS_FOUND)
+        # GPU video bindings need rocdecode's C++ sample utility wrapper files.
+        include_directories(${rocdecode_INCLUDE_DIR}
+            ${ROCM_PATH}/include/rocdecode
+            ${ROCM_PATH}/share/rocdecode/utils
+            ${ROCM_PATH}/share/rocdecode/utils/rocvideodecode)
+        if(rocdecode_VERSION VERSION_LESS_EQUAL 1.3.0)
+            find_library(rocdecode_HOST_LIBRARY rocdecodehost PATHS ${ROCM_PATH}/lib)
+        else()
+            find_library(rocdecode_HOST_LIBRARY rocdecode-host PATHS ${ROCM_PATH}/lib)
+        endif()
+
+        list(APPEND LINK_LIBRARY_LIST rocdecode::rocdecode)
+        if(rocdecode_HOST_LIBRARY)
+            list(APPEND LINK_LIBRARY_LIST ${rocdecode_HOST_LIBRARY})
+            set(ROCPYDECODE_HOST_LIBRARY_FOUND TRUE)
+            message(STATUS "rocdecode_HOST_LIBRARY found")
+        else()
+            message(WARNING "Library rocdecode_HOST_LIBRARY not found! CPU backend support and samples will be limited.")
+        endif()
+
+        set(ROCPYDECODE_DEPENDENCY_READY TRUE)
+
+        # Core GPU sources
+        file(GLOB include_base src/rocdecode/*.h src/common/*.h)
+        file(GLOB sources_base src/rocdecode/roc_pydecode.cpp src/rocdecode/roc_pyvideodecode.cpp src/common/*.cpp ${ROCM_PATH}/share/rocdecode/utils/*.cpp)
+        set(include ${include_base} ${ROCDECODE_VIDEO_UTILS_HEADERS})
+        set(sources ${sources_base} ${ROCDECODE_VIDEO_UTILS_SOURCES})
+
+        rocpydecode_check_ffmpeg_utils(
+            "${ROCM_PATH}"
+            ROCDECODE_FFMPEG_UTILS_FOUND
+            ROCDECODE_FFMPEG_UTILS_SOURCES
+            ROCDECODE_FFMPEG_UTILS_HEADERS
+            ROCDECODE_FFMPEG_UTILS_DIR)
+
+        if(FFMPEG_FOUND AND ROCDECODE_FFMPEG_UTILS_FOUND AND ROCPYDECODE_HOST_LIBRARY_FOUND)
+            set(ROCPYDECODE_USE_FFMPEG TRUE)
+            # Demux + CPU backend (FFmpeg and rocdecode-host dependent)
+            file(GLOB sources_ffmpeg src/rocdecode/roc_pyvideodemuxer.cpp src/rocdecode/roc_pyvideodecodecpu.cpp src/rocdecode/roc_pydecode_test.cpp)
+            set(include_ffmpeg ${ROCDECODE_FFMPEG_UTILS_HEADERS})
+            list(APPEND sources_ffmpeg ${ROCDECODE_FFMPEG_UTILS_SOURCES})
+            list(APPEND include ${include_ffmpeg})
+            list(APPEND sources ${sources_ffmpeg})
+            include_directories(${AVUTIL_INCLUDE_DIR} ${AVCODEC_INCLUDE_DIR} ${AVFORMAT_INCLUDE_DIR})
+            set(LINK_LIBRARY_LIST ${LINK_LIBRARY_LIST} ${FFMPEG_LIBRARIES})
+        elseif(FFMPEG_FOUND AND ROCDECODE_FFMPEG_UTILS_FOUND)
+            message(STATUS "FFmpeg and rocdecode FFmpeg utility files found, but rocdecode host library was not found; building rocPyDecode without demux/CPU backend (GPU raw decode only).")
+            set(ROCPYDECODE_HOST_LIBRARY_FOUND FALSE)
+        elseif(FFMPEG_FOUND)
+            message(STATUS "FFmpeg found, but rocdecode FFmpeg utility files were not found under ${ROCDECODE_FFMPEG_UTILS_DIR}; building rocPyDecode without demux/CPU backend (GPU decode only).")
+            set(ROCPYDECODE_HOST_LIBRARY_FOUND FALSE)
+        else()
+            message(STATUS "FFmpeg not found; building rocPyDecode without demux/CPU backend (GPU decode only).")
+            set(ROCPYDECODE_HOST_LIBRARY_FOUND FALSE)
+        endif()
     else()
-        message(STATUS "FFmpeg not found; building rocPyDecode without demux/CPU backend (GPU decode only).")
-        set(ROCPYDECODE_HOST_LIBRARY_FOUND FALSE)
+        message(WARNING "rocdecode found, but required rocdecode video utility files were not found under ${ROCDECODE_VIDEO_UTILS_DIR}. rocPyDecode video bindings will not be built.")
     endif()
 else()
     message(WARNING "rocdecode not found. rocPyDecode will not be built or installed.")
@@ -281,7 +295,9 @@ install(FILES ${CPACK_RESOURCE_FILE_LICENSE} DESTINATION ${CMAKE_INSTALL_DOCDIR}
 
 #install rocPyDecode pybind lib
 set(ROCPYDECODE_BUILT_TARGETS "")
+set(ROCPYJPEG_BUILT_TARGETS "")
 set(ROCPYJPEG_INSTALLED FALSE)
+set(ROCPYDECODE_TEST_LD_LIBRARY_PATH "${ROCM_PATH}/lib:${ROCM_PATH}/lib/rocm_sysdeps/lib:${ROCM_PATH}/lib/llvm/lib:$ENV{LD_LIBRARY_PATH}")
 if(ROCPYDECODE_DEPENDENCY_READY OR ROCPYJPEG_DEPENDENCY_READY)
 
     foreach(PYTHON_VERSION ${PYTHON_VERSION_LIST})
@@ -392,6 +408,7 @@ if(ROCPYDECODE_DEPENDENCY_READY OR ROCPYJPEG_DEPENDENCY_READY)
 
             message(STATUS "Building and installing rocpyjpegdecode for ${PYTHON_VERSION}")
             install(TARGETS ${TARGET_NAME_JPEG_VERSIONED} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT runtime)
+            list(APPEND ROCPYJPEG_BUILT_TARGETS ${TARGET_NAME_JPEG_VERSIONED})
             set(ROCPYJPEG_INSTALLED TRUE)
         endif()
     endforeach()
@@ -464,23 +481,42 @@ endif()
 # make test with CTest
 enable_testing()
 include(CTest)
-add_test(NAME rocpydecode_cmake_ffmpeg_utils_detection
+
+foreach(BUILT_TARGET IN LISTS ROCPYDECODE_BUILT_TARGETS)
+    add_test(NAME ${BUILT_TARGET}_module_import
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/import_module_test.py rocpydecode)
+    set_property(TEST ${BUILT_TARGET}_module_import PROPERTY
+        ENVIRONMENT
+            "PYTHONPATH=$<TARGET_FILE_DIR:${BUILT_TARGET}>:${CMAKE_BINARY_DIR}/${BUILT_TARGET}:$ENV{PYTHONPATH}"
+            "LD_LIBRARY_PATH=${ROCPYDECODE_TEST_LD_LIBRARY_PATH}")
+endforeach()
+
+foreach(BUILT_TARGET IN LISTS ROCPYJPEG_BUILT_TARGETS)
+    add_test(NAME ${BUILT_TARGET}_module_import
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/import_module_test.py rocpyjpegdecode)
+    set_property(TEST ${BUILT_TARGET}_module_import PROPERTY
+        ENVIRONMENT
+            "PYTHONPATH=$<TARGET_FILE_DIR:${BUILT_TARGET}>:${CMAKE_BINARY_DIR}/${BUILT_TARGET}:$ENV{PYTHONPATH}"
+            "LD_LIBRARY_PATH=${ROCPYDECODE_TEST_LD_LIBRARY_PATH}")
+endforeach()
+
+add_test(NAME rocpydecode_cmake_rocdecode_utils_detection
     COMMAND ${CMAKE_COMMAND}
         -DROCPYDECODE_SOURCE_DIR=${CMAKE_SOURCE_DIR}
-        -DROCPYDECODE_TEST_BINARY_DIR=${CMAKE_BINARY_DIR}/test_ffmpeg_utils_detection
-        -P ${CMAKE_SOURCE_DIR}/tests/cmake/ffmpeg_utils_detection.cmake)
+        -DROCPYDECODE_TEST_BINARY_DIR=${CMAKE_BINARY_DIR}/test_rocdecode_utils_detection
+        -P ${CMAKE_SOURCE_DIR}/tests/cmake/rocdecode_utils_detection.cmake)
 
-if(ROCPYDECODE_DEPENDENCY_READY AND ROCPYJPEG_DEPENDENCY_READY)
+if(ROCPYDECODE_DEPENDENCY_READY OR ROCPYJPEG_DEPENDENCY_READY)
     add_subdirectory(tests)
 else()
-    message("-- ${Yellow}Skipping tests; rocPyDecode and rocPyJPEG dependencies not fully available.${ColourReset}")
+    message("-- ${Yellow}Skipping runtime tests; rocPyDecode and rocPyJPEG dependencies not available.${ColourReset}")
 endif()
 
 message(" ----------------")
 if(ROCPYDECODE_DEPENDENCY_READY)
     message(" rocPyDecode is ready to build/install with base lib 'rocdecode'")
 else()
-    message(" rocPyDecode can not be built or installed due to the missing base lib 'rocdecode'")
+    message(" rocPyDecode can not be built or installed due to missing rocdecode dependencies or utility files")
 endif()
 if(ROCPYJPEG_DEPENDENCY_READY)
     message(" rocPyJpeg   is ready to build/install with base lib 'rocjpeg'")

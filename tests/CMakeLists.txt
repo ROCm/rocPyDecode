@@ -72,6 +72,8 @@ set(ROCPYDECODE_PY_DIR "${ROCM_PATH}/lib/pyRocVideoDecode")
 set(ROCPYJPEG_LIB_DIR "${ROCM_PATH}/lib")
 set(ROCPYJPEG_PY_DIR "${ROCM_PATH}/lib/pyRocJpegDecode")
 
+set(ROCPYDECODE_TEST_LD_LIBRARY_PATH "${ROCM_PATH}/lib:${ROCM_PATH}/lib/rocm_sysdeps/lib:${ROCM_PATH}/lib/llvm/lib:$ENV{LD_LIBRARY_PATH}")
+
 # In-tree build locations (match pybind target layout)
 set(ROCPYDECODE_BUILD_LIB_DIR "${CMAKE_BINARY_DIR}/rocpydecode/lib")
 set(ROCPYDECODE_BUILD_PY_DIR "${CMAKE_BINARY_DIR}/rocpydecode_${PY_VERSION_SUFFIX}/pyRocVideoDecode")
@@ -207,11 +209,23 @@ endif()
 if(RUN_ROCPYDECODE_TESTS OR RUN_ROCPYJPEG_TESTS)
   # Tests
   execute_process(COMMAND ${Python3_EXECUTABLE} -c "import torch" RESULT_VARIABLE TORCH_PYTHON_RESULT OUTPUT_QUIET ERROR_QUIET)
+  set(TORCH_ROCPYJPEG_RESULT 1)
+  if(RUN_ROCPYJPEG_TESTS)
+    execute_process(
+      COMMAND ${CMAKE_COMMAND} -E env
+        "PYTHONPATH=${ROCPYJPEG_PYTHONPATH}:$ENV{PYTHONPATH}"
+        "LD_LIBRARY_PATH=${ROCPYDECODE_TEST_LD_LIBRARY_PATH}"
+        ${Python3_EXECUTABLE} -c "import torch; import pyRocJpegDecode.decoder"
+      RESULT_VARIABLE TORCH_ROCPYJPEG_RESULT
+      OUTPUT_QUIET
+      ERROR_QUIET)
+  endif()
   # add python-hip for perf tests
   execute_process(COMMAND ${Python3_EXECUTABLE} -m pip install --upgrade pip OUTPUT_VARIABLE PIP_VERSION ERROR_VARIABLE PIP_ERROR RESULT_VARIABLE PIP_RESULT)
   execute_process(COMMAND ${Python3_EXECUTABLE} -m pip install -i https://test.pypi.org/simple hip-python OUTPUT_VARIABLE PIP_VERSION ERROR_VARIABLE PIP_ERROR RESULT_VARIABLE PIP_RESULT)
 else()
   set(TORCH_PYTHON_RESULT 1)
+  set(TORCH_ROCPYJPEG_RESULT 1)
 endif()
 
 if(RUN_ROCPYDECODE_TESTS)
@@ -355,31 +369,44 @@ if(RUN_ROCPYDECODE_TESTS)
 endif()
 
 if(RUN_ROCPYJPEG_TESTS)
+  set(ROCPYJPEG_IMAGE_DIR "${ROCM_PATH}/share/rocjpeg/images")
+  set(ROCPYJPEG_SINGLE_IMAGE "${ROCPYJPEG_IMAGE_DIR}/mug_420.jpg")
+  file(GLOB ROCPYJPEG_SAMPLE_IMAGES "${ROCPYJPEG_IMAGE_DIR}/*.jpg" "${ROCPYJPEG_IMAGE_DIR}/*.jpeg")
+
   # 17 - jpeg_decode_single_file_test
-  if(TORCH_PYTHON_RESULT EQUAL 0)
+  if(TORCH_ROCPYJPEG_RESULT EQUAL 0 AND EXISTS "${ROCPYJPEG_SINGLE_IMAGE}")
     add_test(NAME jpeg_decode_python
       COMMAND ${Python3_EXECUTABLE} ${ROCPYJPEG_SAMPLE_DIR}/jpegdecode.py
-      -i ${ROCM_PATH}/share/rocjpeg/images/mug_420.jpg
+      -i ${ROCPYJPEG_SINGLE_IMAGE}
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
     if(USING_THE_ROCK)
-      set_property(TEST jpeg_decode_python PROPERTY ENVIRONMENT
-        "PYTHONPATH=${ROCPYJPEG_PYTHONPATH}:$ENV{PYTHONPATH}"
-        "LD_LIBRARY_PATH=${ROCM_PATH}/lib:$ENV{LD_LIBRARY_PATH}")
+    set_property(TEST jpeg_decode_python PROPERTY ENVIRONMENT
+      "PYTHONPATH=${ROCPYJPEG_PYTHONPATH}:$ENV{PYTHONPATH}"
+      "LD_LIBRARY_PATH=${ROCPYDECODE_TEST_LD_LIBRARY_PATH}")
     else()
       set_property(TEST jpeg_decode_python PROPERTY ENVIRONMENT "PYTHONPATH=${ROCPYJPEG_PYTHONPATH}:$PYTHONPATH")
     endif()
-  endif(TORCH_PYTHON_RESULT EQUAL 0)
+  elseif(TORCH_ROCPYJPEG_RESULT EQUAL 0)
+    message("-- ${Yellow}${PROJECT_NAME}: skipping jpeg_decode_python; ${ROCPYJPEG_SINGLE_IMAGE} not found.${ColourReset}")
+  else()
+    message("-- ${Yellow}${PROJECT_NAME}: skipping jpeg_decode_python; torch and pyRocJpegDecode cannot be imported together with the selected runtime.${ColourReset}")
+  endif()
+
   # 18 - jpegdecodebatched_test
-  add_test(NAME jpeg_decode_batched_python
-    COMMAND ${Python3_EXECUTABLE} ${ROCPYJPEG_SAMPLE_DIR}/jpegdecodebatched.py
-    -i ${ROCM_PATH}/share/rocjpeg/images/
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-  if(USING_THE_ROCK)
+  if(ROCPYJPEG_SAMPLE_IMAGES)
+    add_test(NAME jpeg_decode_batched_python
+      COMMAND ${Python3_EXECUTABLE} ${ROCPYJPEG_SAMPLE_DIR}/jpegdecodebatched.py
+      -i ${ROCPYJPEG_IMAGE_DIR}/
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    if(USING_THE_ROCK)
     set_property(TEST jpeg_decode_batched_python PROPERTY ENVIRONMENT
       "PYTHONPATH=${ROCPYJPEG_PYTHONPATH}:$ENV{PYTHONPATH}"
-      "LD_LIBRARY_PATH=${ROCM_PATH}/lib:$ENV{LD_LIBRARY_PATH}")
+      "LD_LIBRARY_PATH=${ROCPYDECODE_TEST_LD_LIBRARY_PATH}")
+    else()
+      set_property(TEST jpeg_decode_batched_python PROPERTY ENVIRONMENT "PYTHONPATH=${ROCPYJPEG_PYTHONPATH}:$PYTHONPATH")
+    endif()
   else()
-    set_property(TEST jpeg_decode_batched_python PROPERTY ENVIRONMENT "PYTHONPATH=${ROCPYJPEG_PYTHONPATH}:$PYTHONPATH")
+    message("-- ${Yellow}${PROJECT_NAME}: skipping jpeg_decode_batched_python; no JPEG samples found under ${ROCPYJPEG_IMAGE_DIR}.${ColourReset}")
   endif()
 endif()
 
