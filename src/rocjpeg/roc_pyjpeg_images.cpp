@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
+#include <array>
 #include <iostream>
 #include "rocjpeg/rocjpeg.h"
 #include "common/roc_pybuffer.h"
@@ -32,6 +33,11 @@ using namespace py::literals;
 using namespace std;
 
 #include <pybind11/numpy.h>
+
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
 
 void PyJpegImages::ExportToPython(py::module& m) {
     // PyJpegImages
@@ -63,8 +69,8 @@ void PyJpegImages::ExportToPython(py::module& m) {
             }, "Get the data type of the buffer")
         .def("__dlpack__", [](std::shared_ptr<PyJpegImages>& self, py::object stream) {
             return self->ext_buf[0]->dlpack(stream);
-            }, py::arg("stream") = NULL, "Export the buffer as a DLPack tensor")
-        .def("__dlpack_device__", [](std::shared_ptr<PyJpegImages>& self) {
+            }, py::arg("stream") = py::none(), "Export the buffer as a DLPack tensor")
+        .def("__dlpack_device__", [](std::shared_ptr<PyJpegImages>& /*self*/) {
                 return py::make_tuple(py::int_(static_cast<int>(DLDeviceType::kDLROCM)), py::int_(static_cast<int>(0)));
             }, "Get the device associated with the buffer")
         .def_readwrite("height", &PyJpegImages::m_height, 
@@ -81,7 +87,7 @@ py::array_t<uint8_t> PyJpegImages::to_numpy(int index) {
     py::array_t<uint8_t> ret;
     if (index < 0 || index >= static_cast<int>(ext_buf.size()))
         throw std::out_of_range("Invalid channel index");
-    auto& buf = ext_buf[index];
+    auto& buf = ext_buf[static_cast<size_t>(index)];
     uint8_t* data_ptr = static_cast<uint8_t*>(buf->data());
     py::tuple py_shape = buf->shape();
     if (py_shape.size() == 3) {
@@ -106,10 +112,10 @@ py::array_t<uint8_t> PyJpegImages::to_numpy(int index) {
 
 bool PyJpegImages::GetOutputDims(std::vector<uint32_t>& widths, std::vector<uint32_t>& heights, 
                                 uint32_t img_width, uint32_t img_height, RocJpegOutputFormat output_format, 
-                                RocJpegChromaSubsampling subsampling) {
+                                RocJpegChromaSubsampling image_subsampling) {
     switch (output_format) {
         case ROCJPEG_OUTPUT_NATIVE:
-            switch (subsampling) {
+            switch (image_subsampling) {
                 case ROCJPEG_CSS_444:
                     widths[2] = widths[1] = widths[0] = img_width;
                     heights[2] = heights[1] = heights[0] = img_height;
@@ -120,7 +126,7 @@ bool PyJpegImages::GetOutputDims(std::vector<uint32_t>& widths, std::vector<uint
                     heights[2] = heights[1] = img_height >> 1;
                     break;
                 case ROCJPEG_CSS_422:
-                    widths[0] = img_width * 2;
+                    widths[0] = img_width * 2U;
                     heights[0] = img_height;
                     break;
                 case ROCJPEG_CSS_420:
@@ -132,13 +138,17 @@ bool PyJpegImages::GetOutputDims(std::vector<uint32_t>& widths, std::vector<uint
                     widths[0] = img_width;
                     heights[0] = img_height;
                     break;
+                case ROCJPEG_CSS_411:
+                case ROCJPEG_CSS_UNKNOWN:
+                    std::cout << "Unknown chroma subsampling!" << std::endl;
+                    return false;
                 default:
                     std::cout << "Unknown chroma subsampling!" << std::endl;
                     return false;
             }
             break;
         case ROCJPEG_OUTPUT_YUV_PLANAR:
-            switch (subsampling) {
+            switch (image_subsampling) {
                 case ROCJPEG_CSS_444:
                     widths[2] = widths[1] = widths[0] = img_width;
                     heights[2] = heights[1] = heights[0] = img_height;
@@ -163,6 +173,10 @@ bool PyJpegImages::GetOutputDims(std::vector<uint32_t>& widths, std::vector<uint
                     widths[0] = img_width;
                     heights[0] = img_height;
                     break;
+                case ROCJPEG_CSS_411:
+                case ROCJPEG_CSS_UNKNOWN:
+                    std::cout << "Unknown chroma subsampling!" << std::endl;
+                    return false;
                 default:
                     std::cout << "Unknown chroma subsampling!" << std::endl;
                     return false;
@@ -173,13 +187,16 @@ bool PyJpegImages::GetOutputDims(std::vector<uint32_t>& widths, std::vector<uint
             heights[0] = img_height;
             break;
         case ROCJPEG_OUTPUT_RGB:
-            widths[0] = img_width * 3;
+            widths[0] = img_width * 3U;
             heights[0] = img_height;
             break;
         case ROCJPEG_OUTPUT_RGB_PLANAR:
             widths[2] = widths[1] = widths[0] = img_width;
             heights[2] = heights[1] = heights[0] = img_height;
             break;
+        case ROCJPEG_OUTPUT_FORMAT_MAX:
+            std::cout << "Unknown output format!" << std::endl;
+            return false;
         default:
             std::cout << "Unknown output format!" << std::endl;
             return false;
@@ -188,36 +205,48 @@ bool PyJpegImages::GetOutputDims(std::vector<uint32_t>& widths, std::vector<uint
 }
 
 bool PyJpegImages::ToDlpackTensor(RocJpegOutputFormat output_format, int device_id) {
-    uint32_t img_width = m_width;
-    uint32_t img_height = m_height;    
+    uint32_t img_width = static_cast<uint32_t>(m_width);
+    uint32_t img_height = static_cast<uint32_t>(m_height);    
     std::vector<uint32_t> widths;
     std::vector<uint32_t> heights;
     widths.resize(ROCJPEG_MAX_COMPONENT);
     heights.resize(ROCJPEG_MAX_COMPONENT);
      if(GetOutputDims(widths, heights, img_width, img_height, output_format, subsampling) == false)
         return false;
-    uint32_t bit_depth = 8;
-    std::string type_str(static_cast<const char*>("|u1"));
+    const uint32_t bit_depth = 8U;
+    const std::string type_str("|u1");
+    std::array<uint8_t *, ROCJPEG_MAX_COMPONENT> channels{};
+    std::copy(std::begin(output_image.channel), std::end(output_image.channel), channels.begin());
     switch(output_format) {
+        case ROCJPEG_OUTPUT_NATIVE:
+        case ROCJPEG_OUTPUT_YUV_PLANAR:
+        case ROCJPEG_OUTPUT_Y:
+        case ROCJPEG_OUTPUT_FORMAT_MAX:
+            return false;
         case ROCJPEG_OUTPUT_RGB_PLANAR: { // each color plane in a channel separately R[0], G[1], and B[2]
-            uint32_t surf_stride[3] = {widths[0], widths[1], widths[2]}; // ROCJPEG_OUTPUT_RGB_PLANAR all same width = img_width
-            for(int i = 0; i < 3; i++) {
+            const std::array<uint32_t, 3> surf_stride{widths[0], widths[1], widths[2]}; // ROCJPEG_OUTPUT_RGB_PLANAR all same width = img_width
+            for(size_t i = 0; i < 3U; ++i) {
                 std::vector<size_t> shape{ static_cast<size_t>(heights[i]), static_cast<size_t>(widths[i])}; // depend on get_output_dims()
-                std::vector<size_t> stride{ static_cast<size_t>(surf_stride[i]), 1, 0};
+                std::vector<size_t> stride{ static_cast<size_t>(surf_stride[i]), size_t{1} };
                 // RGB PLANAR using VCN JPEG decoder @ first, second, and third channel of RocJpegImage
-                ext_buf[i]->LoadDLPack(shape, stride, bit_depth, type_str, (void *)output_image.channel[i], device_id); // device_id was set/saved at the constructor
+                ext_buf[i]->LoadDLPack(shape, stride, bit_depth, type_str, static_cast<void *>(channels[i]), device_id); // device_id was set/saved at the constructor
             }
         }
         break;
-        default:
         case ROCJPEG_OUTPUT_RGB: { // all the RGB interleaved in one channel [0]
-            uint32_t surf_stride = widths[0]; // ROCJPEG_OUTPUT_RGB width is * 3 for RGB interleaved
-            std::vector<size_t> shape{ static_cast<size_t>(heights[0]), static_cast<size_t>(widths[0]/3), 3}; // widths[0]/3 for ROCJPEG_OUTPUT_RGB
-            std::vector<size_t> stride{ static_cast<size_t>(surf_stride), 1, 0}; // python assumes same dim for both shape & strides
+            const uint32_t surf_stride = widths[0]; // ROCJPEG_OUTPUT_RGB width is * 3 for RGB interleaved
+            std::vector<size_t> shape{ static_cast<size_t>(heights[0]), static_cast<size_t>(widths[0] / 3U), size_t{3} }; // widths[0]/3 for ROCJPEG_OUTPUT_RGB
+            std::vector<size_t> stride{ static_cast<size_t>(surf_stride), size_t{3}, size_t{1} };
             // interleaved RGB using VCN JPEG decoder written to first channel of RocJpegImage
-            ext_buf[0]->LoadDLPack(shape, stride, bit_depth, type_str, (void *)output_image.channel[0], device_id); // device_id was set/saved at the constructor
+            ext_buf[0]->LoadDLPack(shape, stride, bit_depth, type_str, static_cast<void *>(channels[0]), device_id); // device_id was set/saved at the constructor
         }
         break;
+        default:
+            return false;
     }
     return true;
 }
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif

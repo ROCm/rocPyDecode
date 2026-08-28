@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
+#include <algorithm>
 #include <pybind11/stl.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
@@ -27,48 +28,95 @@ THE SOFTWARE.
 namespace py = pybind11;
 #include "roc_pydlpack.h"
 #include <iostream>
+#include <limits>
+#include <memory>
+#include <type_traits>
 #include <vector>
 
+namespace {
+void ReleaseTensorMetadata(DLManagedTensor *self) {
+    delete[] self->dl_tensor.shape;
+    self->dl_tensor.shape = nullptr;
+    delete[] self->dl_tensor.strides;
+    self->dl_tensor.strides = nullptr;
+}
+
+template <typename Target, typename Source>
+Target CheckedNumericCast(Source value, const char *context) {
+    if constexpr (std::is_signed_v<Source> && std::is_signed_v<Target>) {
+        if (value < static_cast<Source>(std::numeric_limits<Target>::min()) ||
+            value > static_cast<Source>(std::numeric_limits<Target>::max())) {
+            throw std::runtime_error(std::string(context) + " is out of range");
+        }
+    } else if constexpr (std::is_signed_v<Source> && !std::is_signed_v<Target>) {
+        using UnsignedSource = std::make_unsigned_t<Source>;
+        if (value < 0 ||
+            static_cast<UnsignedSource>(value) > std::numeric_limits<Target>::max()) {
+            throw std::runtime_error(std::string(context) + " is out of range");
+        }
+    } else if constexpr (!std::is_signed_v<Source> && std::is_signed_v<Target>) {
+        using UnsignedTarget = std::make_unsigned_t<Target>;
+        if (value > static_cast<UnsignedTarget>(std::numeric_limits<Target>::max())) {
+            throw std::runtime_error(std::string(context) + " is out of range");
+        }
+    } else if (value > std::numeric_limits<Target>::max()) {
+        throw std::runtime_error(std::string(context) + " is out of range");
+    }
+    return static_cast<Target>(value);
+}
+
+DLManagedTensor MakeManagedTensor(const DLTensor &tensor) {
+    DLManagedTensor managed_tensor{};
+    managed_tensor.dl_tensor = tensor;
+    return managed_tensor;
+}
+} // namespace
+
 DLPackPyTensor::DLPackPyTensor() noexcept : m_tensor{} {
+    m_tensor.deleter = ReleaseTensorMetadata;
 }
 
 DLPackPyTensor::DLPackPyTensor(DLManagedTensor &&managedTensor) : m_tensor{std::move(managedTensor)} {
     managedTensor = {};
 }
 
-DLPackPyTensor::DLPackPyTensor(const DLTensor &tensor) : DLPackPyTensor(DLManagedTensor{tensor}) {
+DLPackPyTensor::DLPackPyTensor(const DLTensor &tensor) : DLPackPyTensor(MakeManagedTensor(tensor)) {
 }
 
 DLPackPyTensor::DLPackPyTensor(const py::buffer_info &info, const DLDevice &dev) : m_tensor{} {
     DLTensor &dlTensor = m_tensor.dl_tensor;
+    const auto rank = CheckedNumericCast<size_t>(info.ndim, "tensor rank");
+    if (info.shape.size() != rank || info.strides.size() != rank) {
+        throw std::runtime_error("Buffer shape and stride rank must match tensor rank");
+    }
+    if (info.itemsize <= 0) {
+        throw std::runtime_error("Buffer item size must be positive");
+    }
     dlTensor.data      = info.ptr;
     //TBD dtype
     dlTensor.dtype.code = kDLInt;
     dlTensor.dtype.bits = 8;
     dlTensor.dtype.lanes = 1;
-    dlTensor.ndim        = info.ndim;
+    dlTensor.ndim        = CheckedNumericCast<int32_t>(info.ndim, "tensor rank");
     dlTensor.device      = dev;
     dlTensor.byte_offset = 0;
 
-    m_tensor.deleter = [](DLManagedTensor *self) {
-        delete[] self->dl_tensor.shape;
-        self->dl_tensor.shape = nullptr;
-        delete[] self->dl_tensor.strides;
-        self->dl_tensor.strides = nullptr;
-    };
+    m_tensor.deleter = ReleaseTensorMetadata;
 
     try {
-        dlTensor.shape = new int64_t[info.ndim];
-        std::copy_n(info.shape.begin(), info.shape.size(), dlTensor.shape);
-
-        dlTensor.strides = new int64_t[info.ndim];
-        for (int i = 0; i < info.ndim; ++i) {
-            if (info.strides[i] % info.itemsize != 0) {
+        auto shape = std::make_unique<int64_t[]>(rank);
+        auto strides = std::make_unique<int64_t[]>(rank);
+        for (size_t i = 0; i < rank; ++i) {
+            shape[i] = CheckedNumericCast<int64_t>(info.shape[i], "shape dimension");
+            const auto stride = info.strides[i];
+            if (stride % info.itemsize != 0) {
                 throw std::runtime_error("Stride must be a multiple of the element size in bytes");
             }
-
-            dlTensor.strides[i] = info.strides[i] / info.itemsize;
+            strides[i] = CheckedNumericCast<int64_t>(stride / info.itemsize, "stride element");
         }
+
+        dlTensor.shape = shape.release();
+        dlTensor.strides = strides.release();
     } catch (...) {
         m_tensor.deleter(&m_tensor);
         throw;

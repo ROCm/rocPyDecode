@@ -36,7 +36,5 @@ THE SOFTWARE.
 #include <pybind11/chrono.h>
 
 namespace py = pybind11;
-using namespace py::literals;
-
 
 #endif // PY_ROC_JPEG_PYBIND11_HEADER

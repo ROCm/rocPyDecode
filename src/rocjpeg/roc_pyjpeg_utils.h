@@ -27,11 +27,14 @@ THE SOFTWARE.
 #include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <iterator>
 #include <string>
 #include <vector>
 #include <thread>
 #include <mutex>
 #include <algorithm>
+#include <cstdint>
+#include <cstdlib>
 #include <functional>
 #include <condition_variable>
 #include <queue>
@@ -41,21 +44,23 @@ namespace fs = std::experimental::filesystem;
 #include <chrono>
 #include "rocjpeg/rocjpeg.h"
 
-#define PY_CHECK_ROCJPEG(call) {                                          \
-    RocJpegStatus rocjpeg_status = (call);                                \
-    if (rocjpeg_status != ROCJPEG_STATUS_SUCCESS) {                       \
-        std::cerr << #call << " returned " << rocJpegGetErrorName(rocjpeg_status) << " at " <<  __FILE__ << ":" << __LINE__ << std::endl;\
-        exit(1);                                                          \
-    }                                                                     \
-}
+#define PY_CHECK_ROCJPEG(call)                                             \
+    do {                                                                   \
+        const RocJpegStatus rocjpeg_status = (call);                       \
+        if (rocjpeg_status != ROCJPEG_STATUS_SUCCESS) {                    \
+            std::cerr << #call << " returned " << rocJpegGetErrorName(rocjpeg_status) << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
+            std::exit(EXIT_FAILURE);                                       \
+        }                                                                  \
+    } while (false)
 
-#define PY_CHECK_HIP(call) {                                          \
-    hipError_t hip_status = (call);                                   \
-    if (hip_status != hipSuccess) {                                   \
-        std::cout << "rocJPEG failure: '#" << hip_status << "' at " <<  __FILE__ << ":" << __LINE__ << std::endl;\
-        exit(1);                                                      \
-    }                                                                 \
-}
+#define PY_CHECK_HIP(call)                                                 \
+    do {                                                                   \
+        const hipError_t hip_status = (call);                              \
+        if (hip_status != hipSuccess) {                                    \
+            std::cout << "rocJPEG failure: '#" << hip_status << "' at " << __FILE__ << ":" << __LINE__ << std::endl; \
+            std::exit(EXIT_FAILURE);                                       \
+        }                                                                  \
+    } while (false)
 
 /**
  * @class PyRocJpegUtils
@@ -64,6 +69,10 @@ namespace fs = std::experimental::filesystem;
  * This class provides utility functions such as getting file paths, initializing HIP device, 
  * getting chroma subsampling string, getting channel pitch and sizes, getting output file extension, and saving images.
  */
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
 class PyRocJpegUtils {
 public:
     /**
@@ -131,7 +140,7 @@ public:
                 chroma_sub_sampling = "UNKNOWN";
                 break;
             default:
-                chroma_sub_sampling = "";
+                chroma_sub_sampling = "UNKNOWN";
                 break;
         }
     }
@@ -151,47 +160,57 @@ public:
      * @param channel_sizes The array to store the channel sizes.
      * @return The channel pitch.
      */
-    int GetChannelPitchAndSizes(RocJpegDecodeParams decode_params, RocJpegChromaSubsampling subsampling, uint32_t *widths, uint32_t *heights,
-                                uint32_t &num_channels, RocJpegImage &output_image, uint32_t *channel_sizes) {
-        
-        bool is_roi_valid = false;
-        uint32_t roi_width;
-        uint32_t roi_height;
-        roi_width = decode_params.crop_rectangle.right - decode_params.crop_rectangle.left;
-        roi_height = decode_params.crop_rectangle.bottom - decode_params.crop_rectangle.top;
-        if (roi_width > 0 && roi_height > 0 && roi_width <= widths[0] && roi_height <= heights[0]) {
-            is_roi_valid = true; 
-        }
+    int GetChannelPitchAndSizes(RocJpegDecodeParams decode_params, RocJpegChromaSubsampling subsampling,
+                                const std::vector<uint32_t> &widths, const std::vector<uint32_t> &heights,
+                                uint32_t &num_channels, RocJpegImage &output_image,
+                                std::vector<uint32_t> &channel_sizes) {
+        const int roi_width_raw = decode_params.crop_rectangle.right - decode_params.crop_rectangle.left;
+        const int roi_height_raw = decode_params.crop_rectangle.bottom - decode_params.crop_rectangle.top;
+        const uint32_t roi_width = static_cast<uint32_t>(roi_width_raw);
+        const uint32_t roi_height = static_cast<uint32_t>(roi_height_raw);
+        const bool is_roi_valid = roi_width_raw > 0 && roi_height_raw > 0 && roi_width <= widths[0] && roi_height <= heights[0];
+        const uint32_t full_width = is_roi_valid ? roi_width : widths[0];
+        const uint32_t full_height = is_roi_valid ? roi_height : heights[0];
+        std::vector<uint32_t> pitches(ROCJPEG_MAX_COMPONENT, 0U);
+        std::fill(channel_sizes.begin(), channel_sizes.end(), 0U);
+
+        const auto set_channel = [&](std::size_t index, uint32_t pitch, uint32_t height) {
+            pitches[index] = pitch;
+            channel_sizes[index] = AlignSize(pitch, height, mem_alignment);
+        };
+
         switch (decode_params.output_format) {
             case ROCJPEG_OUTPUT_NATIVE:
                 switch (subsampling) {
                     case ROCJPEG_CSS_444:
-                        num_channels = 3;
-                        output_image.pitch[2] = output_image.pitch[1] = output_image.pitch[0] = is_roi_valid ? roi_width : widths[0];
-                        channel_sizes[2] = channel_sizes[1] = channel_sizes[0] = align(output_image.pitch[0] * (is_roi_valid ? roi_height : heights[0]), mem_alignment);
+                        num_channels = 3U;
+                        set_channel(0U, full_width, full_height);
+                        set_channel(1U, full_width, full_height);
+                        set_channel(2U, full_width, full_height);
                         break;
                     case ROCJPEG_CSS_440:
-                        num_channels = 3;
-                        output_image.pitch[2] = output_image.pitch[1] = output_image.pitch[0] = is_roi_valid ? roi_width : widths[0];
-                        channel_sizes[0] = align(output_image.pitch[0] * (is_roi_valid ? roi_height : heights[0]), mem_alignment);
-                        channel_sizes[2] = channel_sizes[1] = align(output_image.pitch[0] * ((is_roi_valid ? roi_height : heights[0]) >> 1), mem_alignment);
+                        num_channels = 3U;
+                        set_channel(0U, full_width, full_height);
+                        set_channel(1U, full_width, full_height >> 1U);
+                        set_channel(2U, full_width, full_height >> 1U);
                         break;
                     case ROCJPEG_CSS_422:
-                        num_channels = 1;
-                        output_image.pitch[0] = (is_roi_valid ? roi_width : widths[0]) * 2;
-                        channel_sizes[0] = align(output_image.pitch[0] * (is_roi_valid ? roi_height : heights[0]), mem_alignment);
+                        num_channels = 1U;
+                        set_channel(0U, full_width * 2U, full_height);
                         break;
                     case ROCJPEG_CSS_420:
-                        num_channels = 2;
-                        output_image.pitch[1] = output_image.pitch[0] = is_roi_valid ? roi_width : widths[0];
-                        channel_sizes[0] = align(output_image.pitch[0] * (is_roi_valid ? roi_height : heights[0]), mem_alignment);
-                        channel_sizes[1] = align(output_image.pitch[1] * ((is_roi_valid ? roi_height : heights[0]) >> 1), mem_alignment);
+                        num_channels = 2U;
+                        set_channel(0U, full_width, full_height);
+                        set_channel(1U, full_width, full_height >> 1U);
                         break;
                     case ROCJPEG_CSS_400:
-                        num_channels = 1;
-                        output_image.pitch[0] = is_roi_valid ? roi_width : widths[0];
-                        channel_sizes[0] = align(output_image.pitch[0] * (is_roi_valid ? roi_height : heights[0]), mem_alignment);
+                        num_channels = 1U;
+                        set_channel(0U, full_width, full_height);
                         break;
+                    case ROCJPEG_CSS_411:
+                    case ROCJPEG_CSS_UNKNOWN:
+                        std::cout << "Unknown chroma subsampling!" << std::endl;
+                        return EXIT_FAILURE;
                     default:
                         std::cout << "Unknown chroma subsampling!" << std::endl;
                         return EXIT_FAILURE;
@@ -199,55 +218,98 @@ public:
                 break;
             case ROCJPEG_OUTPUT_YUV_PLANAR:
                 if (subsampling == ROCJPEG_CSS_400) {
-                    num_channels = 1;
-                    output_image.pitch[0] = is_roi_valid ? roi_width : widths[0];
-                    channel_sizes[0] = align(output_image.pitch[0] * (is_roi_valid ? roi_height : heights[0]), mem_alignment);
+                    num_channels = 1U;
+                    set_channel(0U, full_width, full_height);
                 } else {
-                    num_channels = 3;
-                    output_image.pitch[0] = is_roi_valid ? roi_width : widths[0];
-                    output_image.pitch[1] = is_roi_valid ? roi_width : widths[1];
-                    output_image.pitch[2] = is_roi_valid ? roi_width : widths[2];
-                    channel_sizes[0] = align(output_image.pitch[0] * (is_roi_valid ? roi_height : heights[0]), mem_alignment);
-                    channel_sizes[1] = align(output_image.pitch[1] * (is_roi_valid ? roi_height : heights[1]), mem_alignment);
-                    channel_sizes[2] = align(output_image.pitch[2] * (is_roi_valid ? roi_height : heights[2]), mem_alignment);
+                    switch (subsampling) {
+                        case ROCJPEG_CSS_444:
+                            num_channels = 3U;
+                            set_channel(0U, full_width, full_height);
+                            set_channel(1U, full_width, full_height);
+                            set_channel(2U, full_width, full_height);
+                            break;
+                        case ROCJPEG_CSS_440: {
+                            const uint32_t chroma_height = is_roi_valid ? (full_height >> 1U) : heights[1];
+                            num_channels = 3U;
+                            set_channel(0U, full_width, full_height);
+                            set_channel(1U, full_width, chroma_height);
+                            set_channel(2U, full_width, chroma_height);
+                            break;
+                        }
+                        case ROCJPEG_CSS_422: {
+                            const uint32_t chroma_width = is_roi_valid ? (full_width >> 1U) : widths[1];
+                            num_channels = 3U;
+                            set_channel(0U, full_width, full_height);
+                            set_channel(1U, chroma_width, full_height);
+                            set_channel(2U, chroma_width, full_height);
+                            break;
+                        }
+                        case ROCJPEG_CSS_420: {
+                            const uint32_t chroma_width = is_roi_valid ? (full_width >> 1U) : widths[1];
+                            const uint32_t chroma_height = is_roi_valid ? (full_height >> 1U) : heights[1];
+                            num_channels = 3U;
+                            set_channel(0U, full_width, full_height);
+                            set_channel(1U, chroma_width, chroma_height);
+                            set_channel(2U, chroma_width, chroma_height);
+                            break;
+                        }
+                        case ROCJPEG_CSS_400:
+                            break;
+                        case ROCJPEG_CSS_411:
+                        case ROCJPEG_CSS_UNKNOWN:
+                            std::cout << "Unknown chroma subsampling!" << std::endl;
+                            return EXIT_FAILURE;
+                        default:
+                            std::cout << "Unknown chroma subsampling!" << std::endl;
+                            return EXIT_FAILURE;
+                    }
                 }
                 break;
             case ROCJPEG_OUTPUT_Y:
-                num_channels = 1;
-                output_image.pitch[0] = is_roi_valid ? roi_width : widths[0];
-                channel_sizes[0] = align(output_image.pitch[0] * (is_roi_valid ? roi_height : heights[0]), mem_alignment);
+                num_channels = 1U;
+                set_channel(0U, full_width, full_height);
                 break;
             case ROCJPEG_OUTPUT_RGB:
-                num_channels = 1;
-                output_image.pitch[0] = (is_roi_valid ? roi_width : widths[0]) * 3;
-                channel_sizes[0] = align(output_image.pitch[0] * (is_roi_valid ? roi_height : heights[0]), mem_alignment);
+                num_channels = 1U;
+                set_channel(0U, full_width * 3U, full_height);
                 break;
             case ROCJPEG_OUTPUT_RGB_PLANAR:
-                num_channels = 3;
-                output_image.pitch[2] = output_image.pitch[1] = output_image.pitch[0] = is_roi_valid ? roi_width : widths[0];
-                channel_sizes[2] = channel_sizes[1] = channel_sizes[0] = align(output_image.pitch[0] * (is_roi_valid ? roi_height : heights[0]), mem_alignment);
+                num_channels = 3U;
+                set_channel(0U, full_width, full_height);
+                set_channel(1U, full_width, full_height);
+                set_channel(2U, full_width, full_height);
                 break;
+            case ROCJPEG_OUTPUT_FORMAT_MAX:
+                std::cout << "Unknown output format!" << std::endl;
+                return EXIT_FAILURE;
             default:
                 std::cout << "Unknown output format!" << std::endl;
                 return EXIT_FAILURE;
         }
+        std::copy(pitches.begin(), pitches.end(), std::begin(output_image.pitch));
         return EXIT_SUCCESS;
     }
 
 private:
-    static const int mem_alignment = 4 * 1024 * 1024;
+    static constexpr uint32_t mem_alignment = 4U * 1024U * 1024U;
     /**
      * @brief Aligns a value to a specified alignment.
      *
      * This function takes a value and aligns it to the specified alignment. It returns the aligned value.
      *
-     * @param value The value to be aligned.
+     * @param pitch The pitch of the channel in bytes.
+     * @param height The channel height in rows.
      * @param alignment The alignment value.
      * @return The aligned value.
      */
-    static inline int align(int value, int alignment) {
-        return (value + alignment - 1) & ~(alignment - 1);
+    static inline uint32_t AlignSize(uint32_t pitch, uint32_t height, uint32_t alignment) {
+        const auto size = static_cast<uint64_t>(pitch) * static_cast<uint64_t>(height);
+        const auto aligned = (size + alignment - 1U) & ~(static_cast<uint64_t>(alignment) - 1U);
+        return static_cast<uint32_t>(aligned);
     }
 };
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 
 #endif //ROC_PY_JPEG_UTILS

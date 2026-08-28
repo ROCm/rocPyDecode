@@ -24,8 +24,10 @@ THE SOFTWARE.
 #include "roc_pyjpeg_utils.h"
 #include "roc_pyjpeg_codestream.h"
 #include "roc_pyjpeg_images.h"
+#include <array>
 
 using namespace std;
+using namespace py::literals;
 
 void Decoder::ExportToPython(py::module& m) {
     // Decoder Class
@@ -135,8 +137,8 @@ std::pair<float, std::vector<PyJpegImages>> Decoder::decode(std::vector<DecodeSo
 
     float elapsed_ms = 0.0;
     RocJpegStatus status = ROCJPEG_STATUS_SUCCESS;
-    int batch_size = decode_source_arg.size();
-    int count_of_valid_instances = 0;
+    const auto batch_size = decode_source_arg.size();
+    size_t count_of_valid_instances = 0;
     std::vector<RocJpegStreamHandle> stream_handles;
     std::vector<RocJpegDecodeParams> decode_params_list;
     std::vector<RocJpegImage> destinations;
@@ -144,7 +146,7 @@ std::pair<float, std::vector<PyJpegImages>> Decoder::decode(std::vector<DecodeSo
     // we return a list of images
     std::vector<PyJpegImages> images_;
 
-    if(batch_size <= 0)
+    if(batch_size == 0U)
         return {elapsed_ms, images_};
 
     // loop the whole list length - Process as one BATCH
@@ -175,7 +177,7 @@ std::pair<float, std::vector<PyJpegImages>> Decoder::decode(std::vector<DecodeSo
         auto start = std::chrono::high_resolution_clock::now();
         status = rocJpegDecodeBatched(  rocjpeg_handle,
                                         stream_handles.data(),
-                                        count_of_valid_instances, // less or equal to the batch_size
+                                        static_cast<int>(count_of_valid_instances), // less or equal to the batch_size
                                         decode_params_list.data(),
                                         destinations.data()
                                         );
@@ -188,7 +190,7 @@ std::pair<float, std::vector<PyJpegImages>> Decoder::decode(std::vector<DecodeSo
         // here 'images_' vector carries the count of 'valid' images
         // to export to python (use dlpack(GPU MEM) {and numpy host array})
         if (status == ROCJPEG_STATUS_SUCCESS) {
-            for(int i = 0; i < count_of_valid_instances; i++) {
+            for(size_t i = 0; i < count_of_valid_instances; ++i) {
                 images_[i].ToDlpackTensor(user_output_format, m_device_id); // GPU Tensor
             }
         }
@@ -217,13 +219,13 @@ Decoder::~Decoder() {
 // Get Image Info, Pitch, Sizes, and alloc GPU MEM
 int Decoder::GetImageInfo(RocJpegStreamHandle stream_handle, PyJpegImages& img) {
     uint8_t num_components = 0;
-    uint32_t widths[ROCJPEG_MAX_COMPONENT] = {};
-    uint32_t heights[ROCJPEG_MAX_COMPONENT] = {};
-    uint32_t channel_sizes[ROCJPEG_MAX_COMPONENT] = {};
+    std::vector<uint32_t> widths(ROCJPEG_MAX_COMPONENT, 0U);
+    std::vector<uint32_t> heights(ROCJPEG_MAX_COMPONENT, 0U);
+    std::vector<uint32_t> channel_sizes(ROCJPEG_MAX_COMPONENT, 0U);
     // default, reset
     img.decode_params.output_format = user_output_format;
     // Get the image info
-    RocJpegStatus rocjpeg_status = rocJpegGetImageInfo(rocjpeg_handle, stream_handle, &num_components, &img.subsampling, widths, heights);
+    RocJpegStatus rocjpeg_status = rocJpegGetImageInfo(rocjpeg_handle, stream_handle, &num_components, &img.subsampling, widths.data(), heights.data());
     if (rocjpeg_status != ROCJPEG_STATUS_SUCCESS) {
         std::cerr << "ERROR: Failed to  get image info with " << rocJpegGetErrorName(rocjpeg_status) << std::endl;
         return EXIT_FAILURE;
@@ -238,8 +240,8 @@ int Decoder::GetImageInfo(RocJpegStreamHandle stream_handle, PyJpegImages& img) 
         return EXIT_FAILURE;
     }    
     // save the output w/h to the image instance
-    img.m_width = widths[0];
-    img.m_height = heights[0];
+    img.m_width = static_cast<int>(widths[0]);
+    img.m_height = static_cast<int>(heights[0]);
     // Get Channel Pitch And Sizes
     PyRocJpegUtils rocjpeg_utils;
     if (rocjpeg_utils.GetChannelPitchAndSizes(img.decode_params, img.subsampling, widths, heights, img.num_channels, img.output_image, channel_sizes)) {
@@ -248,16 +250,21 @@ int Decoder::GetImageInfo(RocJpegStreamHandle stream_handle, PyJpegImages& img) 
     }
     // allocate memory for each channel
     hipError_t hip_status = hipSuccess;
-    for (int i = 0; i < img.num_channels; i++) {
-        if (img.output_image.channel[i] != nullptr) {
-            hip_status = hipFree((void *)img.output_image.channel[i]);
-            if (hip_status != hipSuccess)
+    std::array<uint8_t *, ROCJPEG_MAX_COMPONENT> channels{};
+    std::copy(std::begin(img.output_image.channel), std::end(img.output_image.channel), channels.begin());
+    for (uint32_t i = 0; i < img.num_channels; ++i) {
+        if (channels[i] != nullptr) {
+            hip_status = hipFree(static_cast<void *>(channels[i]));
+            if (hip_status != hipSuccess) {
                 return EXIT_FAILURE;
-                img.output_image.channel[i] = nullptr;
+            }
+            channels[i] = nullptr;
         }
-        hip_status = hipMalloc(&img.output_image.channel[i], channel_sizes[i]);
-        if (hip_status != hipSuccess)
+        hip_status = hipMalloc(&channels[i], static_cast<size_t>(channel_sizes[i]));
+        if (hip_status != hipSuccess) {
             return EXIT_FAILURE;
+        }
     }
+    std::copy(channels.begin(), channels.end(), std::begin(img.output_image.channel));
     return EXIT_SUCCESS;
 }

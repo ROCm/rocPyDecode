@@ -26,8 +26,10 @@ THE SOFTWARE.
 #include <algorithm>
 #include <vector>
 #include <functional>
+#include <utility>
 
 using namespace std;
+using namespace py::literals;
 
 void CodeStream::ExportToPython(py::module& m) {
     py::class_<CodeStream>(m, "CodeStream",
@@ -69,7 +71,7 @@ void CodeStream::ExportToPython(py::module& m) {
             )pbdoc");
 }
 
-int CodeStream::ReadFromFile(const std::filesystem::path& filename, std::shared_ptr<std::vector<char>>& file_data, int& file_size) {
+int CodeStream::ReadFromFile(const std::filesystem::path& filename, std::shared_ptr<std::vector<char>>& file_buffer, size_t& file_size) {
     // Open image file in binary mode and go to the end to get file size
     std::ifstream input(filename, std::ios::in | std::ios::binary | std::ios::ate);
     if (!input.is_open()) {
@@ -77,14 +79,19 @@ int CodeStream::ReadFromFile(const std::filesystem::path& filename, std::shared_
         return EXIT_FAILURE;
     }
     // Get the size
-    file_size = static_cast<int>(input.tellg());
+    const auto raw_file_size = input.tellg();
+    if (raw_file_size <= 0) {
+        std::cerr << "ERROR: Invalid image size: " << filename << std::endl;
+        return EXIT_FAILURE;
+    }
+    file_size = static_cast<size_t>(raw_file_size);
     input.seekg(0, std::ios::beg);
     // Allocate shared buffer if not already allocated or too small
-    if (!file_data || file_data->size() < static_cast<size_t>(file_size)) {
-        file_data = std::make_shared<std::vector<char>>(file_size);
+    if (!file_buffer || file_buffer->size() < file_size) {
+        file_buffer = std::make_shared<std::vector<char>>(file_size);
     }
     // Read the file into the buffer
-    if (!input.read(file_data->data(), file_size)) {
+    if (!input.read(file_buffer->data(), static_cast<std::streamsize>(file_size))) {
         std::cerr << "ERROR: Cannot read from file: " << filename << std::endl;
         return EXIT_FAILURE;
     }
@@ -92,7 +99,7 @@ int CodeStream::ReadFromFile(const std::filesystem::path& filename, std::shared_
 }
 
 // Use the dat and its size if valid, otherwise use the file to load the data
-int CodeStream::InitializeSingleImage(const std::filesystem::path& filename, const unsigned char* data, int data_size) {
+int CodeStream::InitializeSingleImage(const std::filesystem::path& filename, const unsigned char* data, size_t data_size) {
     // File sanity check
     if(!filename.empty()) {
         if(!std::filesystem::exists(filename)) {
@@ -102,13 +109,23 @@ int CodeStream::InitializeSingleImage(const std::filesystem::path& filename, con
     }
     // Read file data, if no data sent
     if (data != nullptr && data_size > 0) {
-        file_data = std::make_shared<std::vector<char>>(reinterpret_cast<const char*>(data), reinterpret_cast<const char*>(data) + data_size);
+        auto buffer = std::make_shared<std::vector<char>>(data_size);
+        std::copy_n(reinterpret_cast<const char *>(data), data_size, buffer->begin());
+        file_data = std::move(buffer);
     } else if(data == nullptr) {
-        int ret = EXIT_SUCCESS;
-        if((ret = ReadFromFile(filename, file_data, data_size)) != EXIT_SUCCESS) {
-            return ret;
+        if (ReadFromFile(filename, file_data, data_size) != EXIT_SUCCESS) {
+            return EXIT_FAILURE;
         }
     }
+    return InitializeStreamFromCurrentData();
+}
+
+int CodeStream::InitializeStreamFromCurrentData() {
+    if (!file_data || file_data->empty()) {
+        std::cerr << "ERROR: Empty JPEG stream" << std::endl;
+        return EXIT_FAILURE;
+    }
+
     RocJpegStatus rocjpeg_status = ROCJPEG_STATUS_NOT_INITIALIZED;
     rocjpeg_status = rocJpegStreamCreate(&stream_handle);
     if (rocjpeg_status != ROCJPEG_STATUS_SUCCESS) {
@@ -116,9 +133,9 @@ int CodeStream::InitializeSingleImage(const std::filesystem::path& filename, con
         return EXIT_FAILURE;
     }
     // Stream Parse
-    rocjpeg_status = rocJpegStreamParse(reinterpret_cast<uint8_t*>(file_data->data()), data_size, stream_handle);
+    rocjpeg_status = rocJpegStreamParse(reinterpret_cast<unsigned char*>(file_data->data()), file_data->size(), stream_handle);
     if (rocjpeg_status != ROCJPEG_STATUS_SUCCESS) {
-        std::cerr << "ERROR: Failed to parse the input jpeg stream with " << rocJpegGetErrorName(rocjpeg_status) << ": Input File : " << (!filename.empty() ? filename : "") << std::endl;
+        std::cerr << "ERROR: Failed to parse the input jpeg stream with " << rocJpegGetErrorName(rocjpeg_status) << std::endl;
         Release();
         return EXIT_FAILURE;
     }
@@ -127,9 +144,53 @@ int CodeStream::InitializeSingleImage(const std::filesystem::path& filename, con
 
 void CodeStream::Release() {
     if(stream_handle) {
-        RocJpegStatus rocjpeg_status = rocJpegStreamDestroy(stream_handle);
+        rocJpegStreamDestroy(stream_handle);
         stream_handle = nullptr;
     }
+}
+
+CodeStream::CodeStream(const CodeStream& other)
+    : file_data(other.file_data),
+      data_ref_bytes_(other.data_ref_bytes_),
+      data_ref_arr_(other.data_ref_arr_) {
+    if (other.stream_handle != nullptr) {
+        InitializeStreamFromCurrentData();
+    }
+}
+
+CodeStream& CodeStream::operator=(const CodeStream& other) {
+    if (this == &other) {
+        return *this;
+    }
+
+    Release();
+    file_data = other.file_data;
+    data_ref_bytes_ = other.data_ref_bytes_;
+    data_ref_arr_ = other.data_ref_arr_;
+
+    if (other.stream_handle != nullptr) {
+        InitializeStreamFromCurrentData();
+    }
+    return *this;
+}
+
+CodeStream::CodeStream(CodeStream&& other) noexcept
+    : stream_handle(std::exchange(other.stream_handle, nullptr)),
+      file_data(std::move(other.file_data)),
+      data_ref_bytes_(std::move(other.data_ref_bytes_)),
+      data_ref_arr_(std::move(other.data_ref_arr_)) {}
+
+CodeStream& CodeStream::operator=(CodeStream&& other) noexcept {
+    if (this == &other) {
+        return *this;
+    }
+
+    Release();
+    stream_handle = std::exchange(other.stream_handle, nullptr);
+    file_data = std::move(other.file_data);
+    data_ref_bytes_ = std::move(other.data_ref_bytes_);
+    data_ref_arr_ = std::move(other.data_ref_arr_);
+    return *this;
 }
 
 CodeStream::CodeStream(const std::filesystem::path& filename) {
@@ -139,7 +200,7 @@ CodeStream::CodeStream(const std::filesystem::path& filename) {
 
 CodeStream::CodeStream(const unsigned char* data, size_t length) {
     py::gil_scoped_release release;
-    InitializeSingleImage(static_cast<const std::filesystem::path>(""), data, length);
+    InitializeSingleImage({}, data, length);
 }
 
 CodeStream::CodeStream(py::bytes data) {
@@ -147,14 +208,14 @@ CodeStream::CodeStream(py::bytes data) {
     std::string data_str = static_cast<std::string>(data_ref_bytes_); // Convert py::bytes to std::string
     std::string_view data_view(data_str);
     py::gil_scoped_release release;
-    InitializeSingleImage(static_cast<const std::filesystem::path>(""), reinterpret_cast<const unsigned char*>(data_view.data()), data_view.size());
+    InitializeSingleImage({}, reinterpret_cast<const unsigned char*>(data_view.data()), data_view.size());
 }
 
 CodeStream::CodeStream(py::array_t<uint8_t> arr) {
     data_ref_arr_ = arr;
     auto data = data_ref_arr_.unchecked<1>();
     py::gil_scoped_release release;
-    InitializeSingleImage(static_cast<const std::filesystem::path>(""), data.data(0), data.size());
+    InitializeSingleImage({}, data.data(0), static_cast<size_t>(data.size()));
 }
 
 CodeStream::CodeStream() {

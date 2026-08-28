@@ -37,7 +37,7 @@ class PyRocVideoDecoderCpu : public FFMpegVideoDecoder {
                           const Rect *p_crop_rect = nullptr, int max_width = 0, int max_height = 0,
                           uint32_t clk_rate = 1000) : FFMpegVideoDecoder(device_id, static_cast<OutputSurfaceMemoryType>(mem_type), codec, force_zero_latency,
                           p_crop_rect, false, 0, max_width, max_height, clk_rate) { InitConfigStructure(); }
-        ~PyRocVideoDecoderCpu();                        
+        ~PyRocVideoDecoderCpu() override;
          
         // for python binding
         int PyDecodeFrame(PyPacketData& packet);
@@ -90,8 +90,8 @@ class PyRocVideoDecoderCpu : public FFMpegVideoDecoder {
 
 #if ROCDECODE_CHECK_VERSION(0,6,0)
         // Session overhead refers to decoder initialization and deinitialization time
-        py::object PyAddDecoderSessionOverHead(int session_id, double duration);
-        py::object PyGetDecoderSessionOverHead(int session_id);
+        py::object PyAddDecoderSessionOverHead(std::uintptr_t session_id, double duration);
+        py::object PyGetDecoderSessionOverHead(std::uintptr_t session_id);
 #endif
     private:
         std::shared_ptr <ConfigInfo> configInfo;

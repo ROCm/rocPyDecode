@@ -36,6 +36,10 @@ public:
     CodeStream(const unsigned char*, size_t);
     CodeStream(py::bytes);
     CodeStream(py::array_t<uint8_t>);
+    CodeStream(const CodeStream&);
+    CodeStream& operator=(const CodeStream&);
+    CodeStream(CodeStream&&) noexcept;
+    CodeStream& operator=(CodeStream&&) noexcept;
     ~CodeStream();
     CodeStream();
 
@@ -49,8 +53,9 @@ private:
     py::bytes data_ref_bytes_;
     py::array_t<uint8_t> data_ref_arr_;
     void Release();
-    int ReadFromFile(const std::filesystem::path& filename, std::shared_ptr<std::vector<char>>& file_data, int& file_size);
-    int InitializeSingleImage(const std::filesystem::path& filename, const unsigned char* data, int data_size);
+    int ReadFromFile(const std::filesystem::path& filename, std::shared_ptr<std::vector<char>>& file_buffer, size_t& file_size);
+    int InitializeSingleImage(const std::filesystem::path& filename, const unsigned char* data, size_t data_size);
+    int InitializeStreamFromCurrentData();
 };
 
 #endif // PY_ROC_JPEG_CODE_STREAM_HEADER

@@ -48,8 +48,6 @@ extern "C" {
 namespace py = pybind11;
 
 struct PyPacketData {
-    bool      end_of_stream;
-    int       pkt_flags;
     int64_t   frame_pts;
     int64_t   frame_size;
     int64_t   bitstream_size;
@@ -58,6 +56,8 @@ struct PyPacketData {
     uintptr_t frame_adrs_rgb;   // rgb frame address
     uintptr_t frame_adrs_resized; // new resized yuv frame
     std::vector<std::shared_ptr<BufferInterface>> ext_buf;
+    int       pkt_flags = 0;
+    bool      end_of_stream = false;
     PyPacketData(){
         ext_buf.push_back(std::make_shared<BufferInterface>()); //index[0]: always Y Tensor
         ext_buf.push_back(std::make_shared<BufferInterface>()); //index[1]: UV tensor in case of NV12, otherwise only U tensor when YUV444/P016 is supported
@@ -68,9 +68,9 @@ struct PyPacketData {
 struct ConfigInfo {
     std::string device_name;
     std::string gcn_arch_name;
-    int         pci_bus_id;
-    int         pci_domain_id;
-    int         pci_device_id;
+    int         pci_bus_id = 0;
+    int         pci_domain_id = 0;
+    int         pci_device_id = 0;
 };
 
 // defined in roc_pyvideodemuxer.cpp (FFmpeg dependent)

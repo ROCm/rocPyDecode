@@ -42,14 +42,15 @@ public:
     // set output image format
     void SetOutputFormat(RocJpegOutputFormat output_format);
 
-    RocJpegOutputFormat GetFormat() {return user_output_format;};
-    void SetFormat(RocJpegOutputFormat fmt) { user_output_format = fmt;};
+    RocJpegOutputFormat GetFormat() const { return user_output_format; }
+    void SetFormat(RocJpegOutputFormat fmt) { user_output_format = fmt; }
 
 private:
     int m_device_id;
     RocJpegBackend m_backend;
     RocJpegHandle rocjpeg_handle;               // main session
     RocJpegOutputFormat user_output_format;     // user can adjust
+    [[maybe_unused]] uint32_t padding_ = 0;
     int GetImageInfo(RocJpegStreamHandle stream_handle, PyJpegImages& img); // finalize the parsing job
 };
 

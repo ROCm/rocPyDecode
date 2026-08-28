@@ -23,6 +23,8 @@ THE SOFTWARE.
 #include <iostream>
 #include "roc_pyjpeg_decode_source.h"
 
+using namespace py::literals;
+
 DecodeSource::DecodeSource(const CodeStream* code_stream_ptr)
     : code_stream_(std::make_unique<CodeStream>(*code_stream_ptr))  // make a copy
     , code_stream_ptr_(code_stream_.get()) {

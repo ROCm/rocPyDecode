@@ -25,7 +25,6 @@ THE SOFTWARE.
 #include "roc_pyjpeg_codestream.h"
 
 namespace py = pybind11;
-using namespace py::literals;
 
 class DecodeSource {
   public:

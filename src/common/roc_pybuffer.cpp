@@ -21,13 +21,58 @@ THE SOFTWARE.
 */
 
 #include "roc_pybuffer.h"
+#include <algorithm>
 #include <iostream>
+#include <limits>
+#include <memory>
+#include <type_traits>
 
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
 
 using namespace std;
 using namespace py::literals;
+
+namespace {
+template <typename Target, typename Source>
+Target CheckedNumericCast(Source value, const char *context) {
+    if constexpr (std::is_signed_v<Source> && std::is_signed_v<Target>) {
+        if (value < static_cast<Source>(std::numeric_limits<Target>::min()) ||
+            value > static_cast<Source>(std::numeric_limits<Target>::max())) {
+            throw std::runtime_error(std::string(context) + " is out of range");
+        }
+    } else if constexpr (std::is_signed_v<Source> && !std::is_signed_v<Target>) {
+        using UnsignedSource = std::make_unsigned_t<Source>;
+        if (value < 0 ||
+            static_cast<UnsignedSource>(value) > std::numeric_limits<Target>::max()) {
+            throw std::runtime_error(std::string(context) + " is out of range");
+        }
+    } else if constexpr (!std::is_signed_v<Source> && std::is_signed_v<Target>) {
+        using UnsignedTarget = std::make_unsigned_t<Target>;
+        if (value > static_cast<UnsignedTarget>(std::numeric_limits<Target>::max())) {
+            throw std::runtime_error(std::string(context) + " is out of range");
+        }
+    } else if (value > std::numeric_limits<Target>::max()) {
+        throw std::runtime_error(std::string(context) + " is out of range");
+    }
+    return static_cast<Target>(value);
+}
+
+void ReleaseTensorShapeAndStrides(DLTensor &tensor) {
+    delete[] tensor.shape;
+    tensor.shape = nullptr;
+    delete[] tensor.strides;
+    tensor.strides = nullptr;
+}
+
+std::unique_ptr<int64_t[]> MakeTensorMetadataArray(const std::vector<size_t> &values, const char *context) {
+    auto data = std::make_unique<int64_t[]>(values.size());
+    for (size_t i = 0; i < values.size(); ++i) {
+        data[i] = CheckedNumericCast<int64_t>(values[i], context);
+    }
+    return data;
+}
+} // namespace
 
 static void CheckValidBuffer(const void *ptr) {
     if (ptr == nullptr) {
@@ -43,18 +88,51 @@ BufferInterface::BufferInterface(DLPackPyTensor &&dlTensor) {
 }
 
 py::tuple BufferInterface::shape() const {
-    py::tuple shape(m_dlTensor->ndim);
-    for (size_t i = 0; i < shape.size(); ++i) {
-        shape[i] = m_dlTensor->shape[i];
+    const auto ndim = static_cast<size_t>(m_dlTensor->ndim);
+    py::tuple shape(ndim);
+    if (m_dlTensor->shape == nullptr) {
+        if (ndim == 0) {
+            return shape;
+        }
+        throw std::runtime_error("DLPack tensor shape is null");
+    }
+
+    std::vector<int64_t> values(ndim);
+    std::copy_n(m_dlTensor->shape, ndim, values.begin());
+    for (size_t i = 0; i < ndim; ++i) {
+        shape[i] = values[i];
     }
     return shape;
 }
 
 py::tuple BufferInterface::strides() const {
-    py::tuple strides(m_dlTensor->ndim);
+    const auto ndim = static_cast<size_t>(m_dlTensor->ndim);
+    py::tuple strides(ndim);
+    if (m_dlTensor->strides == nullptr) {
+        if (ndim == 0) {
+            return strides;
+        }
+        if (m_dlTensor->shape == nullptr) {
+            throw std::runtime_error("Cannot compute contiguous strides without a tensor shape");
+        }
 
-    for (size_t i = 0; i < strides.size(); ++i) {
-        strides[i] = m_dlTensor->strides[i];
+        int64_t current_stride = 1;
+        for (size_t i = ndim; i-- > 0;) {
+            const int64_t dimension = m_dlTensor->shape[i];
+            if (dimension < 0 ||
+                (dimension != 0 && current_stride > std::numeric_limits<int64_t>::max() / dimension)) {
+                throw std::runtime_error("Invalid tensor shape while computing contiguous strides");
+            }
+            strides[i] = current_stride;
+            current_stride *= dimension;
+        }
+        return strides;
+    }
+
+    std::vector<int64_t> values(ndim);
+    std::copy_n(m_dlTensor->strides, ndim, values.begin());
+    for (size_t i = 0; i < ndim; ++i) {
+        strides[i] = values[i];
     }
     return strides;
 }
@@ -72,7 +150,8 @@ void *BufferInterface::data() const {
 }
 
 py::capsule BufferInterface::dlpack(py::object stream) const {
-    
+    static_cast<void>(stream);
+
     struct ManagerCtx {
         DLManagedTensor tensor;
         std::shared_ptr<const BufferInterface> extBuffer;
@@ -83,8 +162,7 @@ py::capsule BufferInterface::dlpack(py::object stream) const {
     // Set up tensor deleter to delete the ManagerCtx
     ctx->tensor.manager_ctx = ctx.get();
     ctx->tensor.deleter = [](DLManagedTensor *tensor) {
-        auto *ctx = static_cast<ManagerCtx *>(tensor->manager_ctx);
-        delete ctx;
+        delete static_cast<ManagerCtx *>(tensor->manager_ctx);
     };
 
     // Copy tensor data
@@ -131,7 +209,11 @@ void BufferInterface::ExportToPython(py::module &m) {
         .def("__dlpack_device__", &BufferInterface::dlpackDevice, "Get the device associated with the buffer");
 }
 
-int BufferInterface::LoadDLPack(std::vector<size_t>& _shape, std::vector<size_t>& _stride, uint32_t bit_depth, std::string& _type_str, void* _data, int device_id_) {
+int BufferInterface::LoadDLPack(const std::vector<size_t>& _shape, const std::vector<size_t>& _stride, uint32_t bit_depth, const std::string& _type_str, void* _data, int device_id_) {
+    if (_shape.size() != _stride.size()) {
+        throw std::runtime_error("Shape and stride rank must match");
+    }
+
     m_dlTensor->byte_offset = 0;
     m_dlTensor->device.device_type = kDLROCM;   // TODO: infer the device type from the memory buffer
     m_dlTensor->device.device_id = device_id_;
@@ -144,41 +226,37 @@ int BufferInterface::LoadDLPack(std::vector<size_t>& _shape, std::vector<size_t>
     // Convert DataType
     if (_type_str != "|u1" && _type_str != "|u2") {  // TODO: can also be other letters
         throw std::runtime_error("Could not create DL Pack tensor! Invalid typstr: " + _type_str);
-        return -1;
     }
 
-    int itemSizeDT;
-
     m_dlTensor->dtype.code = kDLUInt;
-
-    if (bit_depth == 8) {
-        m_dlTensor->dtype.bits = 8;
-        itemSizeDT = sizeof(uint8_t);
-    } else if (bit_depth == 10) {
-        m_dlTensor->dtype.bits = 16;
-        itemSizeDT = sizeof(uint16_t);
+    int item_size_dt = 0;
+    if (bit_depth == 8U) {
+        m_dlTensor->dtype.bits = 8U;
+        item_size_dt = static_cast<int>(sizeof(uint8_t));
+    } else if (bit_depth == 10U) {
+        m_dlTensor->dtype.bits = 16U;
+        item_size_dt = static_cast<int>(sizeof(uint16_t));
+    } else {
+        throw std::runtime_error("Unsupported bit depth for DLPack export");
     }
     m_dlTensor->dtype.lanes = 1;
 
-    // Convert ndim
-    m_dlTensor->ndim = _shape.size();
-
-    // Convert shape
-    m_dlTensor->shape = new int64_t[m_dlTensor->ndim];
-    for (int i = 0; i < m_dlTensor->ndim; ++i) {
-        m_dlTensor->shape[i] = _shape[i];
-    }
-    
-    // Convert strides
-    int strides_dim = _stride.size();
-    m_dlTensor->strides = new int64_t[strides_dim];
-    for (int i = 0; i < strides_dim; ++i) {
-        m_dlTensor->strides[i] = _stride[i];
-        if (m_dlTensor->strides[i] % itemSizeDT != 0) {
+    // Prepare replacement metadata before modifying the current tensor so an
+    // allocation or conversion failure leaves the existing metadata intact.
+    const auto ndim = CheckedNumericCast<int>(_shape.size(), "tensor rank");
+    auto shape = MakeTensorMetadataArray(_shape, "shape dimension");
+    auto strides = std::make_unique<int64_t[]>(_stride.size());
+    for (size_t i = 0; i < _stride.size(); ++i) {
+        const auto stride_bytes = CheckedNumericCast<int64_t>(_stride[i], "stride");
+        if (stride_bytes % item_size_dt != 0) {
             throw std::runtime_error("Stride must be a multiple of the element size in bytes");
-            return -1;
         }
-        m_dlTensor->strides[i] /= itemSizeDT;
+        strides[i] = stride_bytes / item_size_dt;
     }
+
+    ReleaseTensorShapeAndStrides(*m_dlTensor);
+    m_dlTensor->ndim = ndim;
+    m_dlTensor->shape = shape.release();
+    m_dlTensor->strides = strides.release();
     return 0;
 }
