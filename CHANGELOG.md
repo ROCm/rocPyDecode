@@ -2,6 +2,48 @@
 
 Full documentation for for rocPyDecode is available at [https://rocm.docs.amd.com/projects/rocPyDecode/en/latest/](https://rocm.docs.amd.com/projects/rocPyDecode/en/latest/)
 
+## (Unreleased) rocPyDecode 1.0.0
+
+### Added
+
+* Added independent `videoDecode` and `jpegDecode` CMake projects, each with
+  component-owned bindings, samples, tests, support sources, documentation,
+  installation rules, and licensing.
+* Added root options to build both components or select either component
+  independently.
+* Added component ownership, implementation-plan, and validation documents.
+* Added dependency-minimal CTest suites for direct H.264/H.265 raw video
+  decoding and batched JPEG decoding.
+
+### Changed
+
+* Replaced the monolithic root build with a lightweight umbrella orchestrator.
+* Moved all video and JPEG files into their respective component directories.
+* Duplicated the buffer and DLPack implementations as private, independently
+  owned child sources so neither project depends on its sibling.
+* Registered each private `BufferInterface` binding as module-local so the
+  video and JPEG extensions can coexist in one Python process.
+* Made ImageNet labels optional in the ResNet50 video sample through the
+  `--labels` argument.
+* Limited default CTest registration to tests without optional FFmpeg host,
+  PyTorch, hip-python, or VAAPI-sensitive sample dependencies.
+
+### Removed
+
+* Removed the root `data` and `conda-recipe` directories.
+* Removed obsolete wheel, setup, dependency-install, and Docker-install helper
+  files. Wheel generation remains outside the scope of this release.
+* Removed obsolete root source, package, sample, and test layouts after moving
+  their maintained content into the independent child projects.
+
+### Validation
+
+* Verified standalone video and JPEG configure, build, install, import, and
+  CTest workflows.
+* Verified root video-only, JPEG-only, and combined workflows.
+* Verified all four combined dependency-minimal CTests and both installed
+  Python bindings on an AMD GPU system.
+
 ## (Unreleased) rocPyDecode 0.9.0 
 
 ### Added
@@ -162,4 +204,3 @@ All MD5 functionality, APIs, and sample code have been removed.
 * Clang - Default CXX compiler
 * Supported codecs - adding check if the input video codec is supported
 * Setup to produce python wheel for end-user
-
