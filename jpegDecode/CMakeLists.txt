@@ -31,7 +31,7 @@ if(PYTHON_VERSION_SUGGESTED)
 else()
     find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 endif()
-include("${CMAKE_CURRENT_SOURCE_DIR}/../third-party/Dependencies.cmake")
+include("${CMAKE_CURRENT_SOURCE_DIR}/third-party/Dependencies.cmake")
 
 string(REPLACE "." "_" ROCPYJPEG_PYTHON_SUFFIX
     "${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}")

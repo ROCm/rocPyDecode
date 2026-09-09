@@ -1,8 +1,11 @@
 # Copyright © Advanced Micro Devices, Inc., or its affiliates.
 # SPDX-License-Identifier: MIT
 
-# Shared by the combined build and either component configured directly.
-include_guard(GLOBAL)
+# Each component carries a copy; initialize shared CMake targets only once.
+get_property(_rocpydecode_deps_ready GLOBAL PROPERTY ROCPYDECODE_BUNDLED_DEPS_READY)
+if(_rocpydecode_deps_ready)
+    return()
+endif()
 if(TARGET pybind11::headers OR TARGET pybind11::module)
     message(FATAL_ERROR
         "rocPyDecode requires its bundled pybind11 2.11.1 targets. "
@@ -15,6 +18,7 @@ if(TARGET dlpack OR TARGET dlpack::dlpack)
 endif()
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}"
     "${CMAKE_CURRENT_BINARY_DIR}/third-party" EXCLUDE_FROM_ALL)
+set_property(GLOBAL PROPERTY ROCPYDECODE_BUNDLED_DEPS_READY TRUE)
 install(FILES "${CMAKE_CURRENT_LIST_DIR}/pybind11/LICENSE"
     DESTINATION "${CMAKE_INSTALL_DATADIR}/doc/rocpydecode/third-party/pybind11")
 install(FILES "${CMAKE_CURRENT_LIST_DIR}/dlpack/LICENSE"

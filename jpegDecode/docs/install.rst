@@ -51,13 +51,14 @@ packages according to the selected sample and SDK version.
 Bundled build dependencies
 --------------------------
 
-The repository includes pybind11 2.11.1 and DLPack 1.3 under ``third-party/``.
+Each component includes pybind11 2.11.1 and DLPack 1.3 in its own ``third-party/``.
 CMake uses these committed copies without downloading dependencies or searching
 system installations. No separate pybind11 or DLPack installation is required;
 the ROCm SDK, decoder libraries, and Python development files are still required.
 
-Both combined and component builds use this shared directory. When copying
-videoDecode or jpegDecode elsewhere, also copy third-party alongside it.
+The videoDecode and jpegDecode directories each contain a complete third-party
+copy. Either component can be copied and built independently. Combined builds
+initialize the identical dependency targets once.
 A parent project can add rocPyDecode with add_subdirectory; it must add it before
 creating conflicting pybind11 or DLPack targets. The build reports such conflicts
 instead of silently substituting another dependency version.
