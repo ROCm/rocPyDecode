@@ -14,7 +14,7 @@ Required build dependencies:
   The CMake project itself accepts CMake 3.15 or newer.
 - Python interpreter and matching development headers/libraries. The examples
   select Python 3.12; change ``PYTHON_VERSION_SUGGESTED`` to your installed version.
-- pybind11 development files and DLPack headers (``dlpack/dlpack.h``).
+- pybind11 2.11.1 and DLPack 1.3 headers; bundled in the repository.
 - rocDecode **1.0.0 or newer**, including development files, CMake package
   configuration, and utility sources under ``share/rocdecode/utils``.
 - rocJPEG **1.0.0 or newer**, including development files and CMake package
@@ -26,7 +26,7 @@ Install the build tools after configuring the appropriate ROCm repositories:
 
    sudo apt-get update
    sudo apt-get install -y build-essential cmake pkg-config \
-       python3.12-dev pybind11-dev libdlpack-dev
+       python3.12-dev
    sudo apt-get install -y rocdecode-dev rocdecode-test rocjpeg-dev rocjpeg-test
 
 
@@ -61,6 +61,23 @@ The default raw-video tests do not require them.
 NumPy, ROCm-compatible PyTorch, and hip-python are needed only by samples that
 use them, not by the native build or default CTest suite. Install those optional
 packages according to the selected sample and SDK version.
+
+Bundled build dependencies
+--------------------------
+
+The repository includes pybind11 2.11.1 and DLPack 1.3 under ``third-party/``.
+CMake uses these committed copies without downloading dependencies or searching
+system installations. No separate pybind11 or DLPack installation is required;
+the ROCm SDK, decoder libraries, and Python development files are still required.
+
+Both combined and component builds use this shared directory. When copying
+videoDecode or jpegDecode elsewhere, also copy third-party alongside it.
+A parent project can add rocPyDecode with add_subdirectory; it must add it before
+creating conflicting pybind11 or DLPack targets. The build reports such conflicts
+instead of silently substituting another dependency version.
+
+Dependency licenses are included under third-party and installed with the
+project documentation.
 
 Select the SDK and check test assets
 ------------------------------------

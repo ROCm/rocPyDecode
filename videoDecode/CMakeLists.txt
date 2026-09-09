@@ -24,8 +24,6 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set(HIP_PLATFORM amd CACHE STRING "HIP platform")
 find_package(HIP REQUIRED)
 find_package(rocdecode 1.0.0 REQUIRED)
-find_package(pybind11 REQUIRED)
-find_package(DLPACK REQUIRED)
 find_package(FFmpeg QUIET)
 
 set(ROCPYVIDEO_UTILS "${ROCM_PATH}/share/rocdecode/utils")
@@ -70,6 +68,8 @@ if(PYTHON_VERSION_SUGGESTED)
 else()
     find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 endif()
+include("${CMAKE_CURRENT_SOURCE_DIR}/../third-party/Dependencies.cmake")
+
 string(REPLACE "." "_" ROCPYVIDEO_PYTHON_SUFFIX
     "${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}")
 set(ROCPYVIDEO_TARGET "rocpydecode_${ROCPYVIDEO_PYTHON_SUFFIX}")
@@ -82,8 +82,8 @@ target_include_directories(${ROCPYVIDEO_TARGET} PRIVATE
     "${ROCPYVIDEO_UTILS}"
     "${ROCPYVIDEO_UTILS}/rocvideodecode"
     "${ROCPYVIDEO_UTILS}/ffmpegvideodecode"
-    ${rocdecode_INCLUDE_DIR} ${DLPACK_INCLUDE_DIRS})
-target_link_libraries(${ROCPYVIDEO_TARGET} PRIVATE hip::device rocdecode::rocdecode)
+    ${rocdecode_INCLUDE_DIR})
+target_link_libraries(${ROCPYVIDEO_TARGET} PRIVATE dlpack::dlpack hip::device rocdecode::rocdecode)
 target_compile_definitions(${ROCPYVIDEO_TARGET} PRIVATE
     ROCPYDECODE_ENABLE_HOST=$<BOOL:${ROCPYVIDEO_ENABLE_HOST}>
     ROCPYDECODE_USE_FFMPEG=$<BOOL:${ROCPYVIDEO_USE_FFMPEG}>)
