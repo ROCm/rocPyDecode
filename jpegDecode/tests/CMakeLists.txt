@@ -13,6 +13,13 @@ if(IS_DIRECTORY "${ROCPYJPEG_MEDIA_DIR}")
     rocpyjpeg_add_test(jpeg_decode_batched_python
         "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/../samples/rocjpeg/jpegdecodebatched.py"
         -i "${ROCPYJPEG_MEDIA_DIR}")
+    rocpyjpeg_add_test(jpeg_decode_regressions
+        "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/jpeg_regression_test.py"
+        --media-dir "${ROCPYJPEG_MEDIA_DIR}")
 else()
     message(STATUS "rocJPEG test images unavailable; JPEG runtime tests are not registered")
 endif()
+
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/" DESTINATION
+    "${CMAKE_INSTALL_DATADIR}/rocpyjpegdecode/tests"
+    FILES_MATCHING PATTERN "*.py")

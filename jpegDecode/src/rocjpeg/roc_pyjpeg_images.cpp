@@ -213,7 +213,7 @@ bool PyJpegImages::ToDlpackTensor(RocJpegOutputFormat output_format, int device_
         case ROCJPEG_OUTPUT_RGB: { // all the RGB interleaved in one channel [0]
             uint32_t surf_stride = widths[0]; // ROCJPEG_OUTPUT_RGB width is * 3 for RGB interleaved
             std::vector<size_t> shape{ static_cast<size_t>(heights[0]), static_cast<size_t>(widths[0]/3), 3}; // widths[0]/3 for ROCJPEG_OUTPUT_RGB
-            std::vector<size_t> stride{ static_cast<size_t>(surf_stride), 1, 0}; // python assumes same dim for both shape & strides
+            std::vector<size_t> stride{ static_cast<size_t>(surf_stride), 3, 1};
             // interleaved RGB using VCN JPEG decoder written to first channel of RocJpegImage
             ext_buf[0]->LoadDLPack(shape, stride, bit_depth, type_str, (void *)output_image.channel[0], device_id); // device_id was set/saved at the constructor
         }
