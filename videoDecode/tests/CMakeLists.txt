@@ -30,6 +30,13 @@ else()
     message(STATUS "H.265 raw test media unavailable; skipping raw H.265 CTest")
 endif()
 
+if(EXISTS "${ROCPYVIDEO_MEDIA_DIR}/AMD_driving_virtual_20-H264.264" AND
+   EXISTS "${ROCPYVIDEO_MEDIA_DIR}/AMD_driving_virtual_20-H265.265")
+    rocpyvideo_add_test(video_decode_raw_regressions
+        "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/raw_regression_test.py"
+        --media-dir "${ROCPYVIDEO_MEDIA_DIR}")
+endif()
+
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/" DESTINATION
     "${CMAKE_INSTALL_DATADIR}/rocpydecode/tests"
     FILES_MATCHING PATTERN "*.py")
