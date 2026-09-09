@@ -1,31 +1,14 @@
-# rocPyDecode samples
+# rocPyVideoDecode samples
 
 ## Prerequisites
-* [rocDecode C/C++ Library](https://github.com/ROCm/rocDecode)
-* [rocPyDecode installed](../../README.md)
-* [DLPack](https://pypi.org/project/dlpack/)
-* [pytorch for ROCm](https://pytorch.org/get-started/locally/)
-* [Python HIP](https://rocm.docs.amd.com/projects/hip-python/en/latest/user_guide/0_install.html)
 
-The torch python sample requires pytorch for ROCm, which can be installed as follow:
+Follow the [component installation instructions](../../README.md) for the
+complete SDK version requirements, development packages, test assets, and
+`PYTHONPATH`/`LD_LIBRARY_PATH` setup.
 
-- If using bare-metal, `sudo` access is needed.
-```bash
-    pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.4
-    sudo reboot 
-```
-
-- If using a docker environment or any system with `root` access, no need for reboot.
-```bash
-    pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.4
-```
-
-The performance sample requires Python HIP, which can be installed as follows:
-
-```
-python3 -m pip install --upgrade pip
-python3 -m pip install -i https://test.pypi.org/simple hip-python
-```
+Install FFmpeg and the rocDecode host library for demuxer/CPU samples, and
+ROCm-compatible PyTorch or hip-python for samples that import them.
+The default CTest suite does not require these optional packages.
 
 ## videodecode.py
 
