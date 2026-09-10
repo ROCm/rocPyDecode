@@ -43,7 +43,7 @@ public:
     void SetOutputFormat(RocJpegOutputFormat output_format);
 
     RocJpegOutputFormat GetFormat() {return user_output_format;};
-    void SetFormat(RocJpegOutputFormat fmt) { user_output_format = fmt;};
+    void SetFormat(RocJpegOutputFormat fmt) { SetOutputFormat(fmt); };
 
 private:
     int m_device_id;

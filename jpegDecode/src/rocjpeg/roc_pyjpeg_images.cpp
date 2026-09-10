@@ -21,6 +21,7 @@ THE SOFTWARE.
 */
 
 #include <iostream>
+#include <hip/hip_runtime.h>
 #include "rocjpeg/rocjpeg.h"
 #include "roc_pybuffer.h"
 #include "roc_pyjpeg_images.h"
@@ -65,7 +66,7 @@ void PyJpegImages::ExportToPython(py::module& m) {
             return self->ext_buf[0]->dlpack(stream);
             }, py::arg("stream") = NULL, "Export the buffer as a DLPack tensor")
         .def("__dlpack_device__", [](std::shared_ptr<PyJpegImages>& self) {
-                return py::make_tuple(py::int_(static_cast<int>(DLDeviceType::kDLROCM)), py::int_(static_cast<int>(0)));
+                return self->ext_buf[0]->dlpackDevice();
             }, "Get the device associated with the buffer")
         .def_readwrite("height", &PyJpegImages::m_height, 
             R"pbdoc(
@@ -78,30 +79,19 @@ void PyJpegImages::ExportToPython(py::module& m) {
 }
 
 py::array_t<uint8_t> PyJpegImages::to_numpy(int index) {
-    py::array_t<uint8_t> ret;
     if (index < 0 || index >= static_cast<int>(ext_buf.size()))
         throw std::out_of_range("Invalid channel index");
-    auto& buf = ext_buf[index];
-    uint8_t* data_ptr = static_cast<uint8_t*>(buf->data());
-    py::tuple py_shape = buf->shape();
-    if (py_shape.size() == 3) {
-        const ssize_t height   = py_shape[0].cast<ssize_t>();
-        const ssize_t width    = py_shape[1].cast<ssize_t>();
-        const ssize_t channels = py_shape[2].cast<ssize_t>();
-        std::vector<ssize_t> shape   = { height, width, channels };
-        std::vector<ssize_t> strides = { width * channels, channels, 1 };
-        ret = py::array_t<uint8_t>(shape, strides, data_ptr, py::cast(buf));
-    } else if (py_shape.size() == 2) {
-        const ssize_t height = py_shape[0].cast<ssize_t>();
-        const ssize_t width  = py_shape[1].cast<ssize_t>();
-        const ssize_t row_stride = buf->strides()[0].cast<ssize_t>();
-        std::vector<ssize_t> shape   = { height, width };
-        std::vector<ssize_t> strides = { row_stride, 1 };
-        ret = py::array_t<uint8_t>(shape, strides, data_ptr, py::cast(buf));
-    } else {
-        throw std::runtime_error("Unsupported shape: only 2D or 3D supported");
-    }
-    return ret;
+    const auto& tensor = ext_buf[index]->dlTensor();
+    if (!tensor.data || (tensor.ndim != 2 && tensor.ndim != 3))
+        throw std::runtime_error("Image plane is not initialized");
+    std::vector<ssize_t> shape(tensor.shape, tensor.shape + tensor.ndim);
+    py::array_t<uint8_t> result(shape);
+    const size_t row_bytes = shape[1] * (tensor.ndim == 3 ? shape[2] : 1);
+    hipError_t status = hipMemcpy2D(result.mutable_data(), row_bytes,
+        tensor.data, tensor.strides[0], row_bytes, shape[0], hipMemcpyDeviceToHost);
+    if (status != hipSuccess)
+        throw std::runtime_error(hipGetErrorString(status));
+    return result;
 }
 
 bool PyJpegImages::GetOutputDims(std::vector<uint32_t>& widths, std::vector<uint32_t>& heights, 
@@ -200,7 +190,7 @@ bool PyJpegImages::ToDlpackTensor(RocJpegOutputFormat output_format, int device_
     std::string type_str(static_cast<const char*>("|u1"));
     switch(output_format) {
         case ROCJPEG_OUTPUT_RGB_PLANAR: { // each color plane in a channel separately R[0], G[1], and B[2]
-            uint32_t surf_stride[3] = {widths[0], widths[1], widths[2]}; // ROCJPEG_OUTPUT_RGB_PLANAR all same width = img_width
+            uint32_t surf_stride[3] = {output_image.pitch[0], output_image.pitch[1], output_image.pitch[2]}; // ROCJPEG_OUTPUT_RGB_PLANAR all same width = img_width
             for(int i = 0; i < 3; i++) {
                 std::vector<size_t> shape{ static_cast<size_t>(heights[i]), static_cast<size_t>(widths[i])}; // depend on get_output_dims()
                 std::vector<size_t> stride{ static_cast<size_t>(surf_stride[i]), 1, 0};
@@ -211,7 +201,7 @@ bool PyJpegImages::ToDlpackTensor(RocJpegOutputFormat output_format, int device_
         break;
         default:
         case ROCJPEG_OUTPUT_RGB: { // all the RGB interleaved in one channel [0]
-            uint32_t surf_stride = widths[0]; // ROCJPEG_OUTPUT_RGB width is * 3 for RGB interleaved
+            uint32_t surf_stride = output_image.pitch[0]; // ROCJPEG_OUTPUT_RGB width is * 3 for RGB interleaved
             std::vector<size_t> shape{ static_cast<size_t>(heights[0]), static_cast<size_t>(widths[0]/3), 3}; // widths[0]/3 for ROCJPEG_OUTPUT_RGB
             std::vector<size_t> stride{ static_cast<size_t>(surf_stride), 3, 1};
             // interleaved RGB using VCN JPEG decoder written to first channel of RocJpegImage

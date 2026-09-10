@@ -45,5 +45,4 @@ class DecodeSource {
 
   private:
     std::unique_ptr<CodeStream> code_stream_;       // owned by this instance
-    const CodeStream* code_stream_ptr_ = nullptr;   // externally provided
 };

@@ -20,19 +20,16 @@ def Decoder(
         labels_path=None):
 
     # Init resnet
-    model = torchvision.models.resnet50(
-        weights=torchvision.models.ResNet50_Weights.DEFAULT)
+    weights = torchvision.models.ResNet50_Weights.DEFAULT
+    preprocess = weights.transforms()
+    model = torchvision.models.resnet50(weights=weights)
     model.eval()
-    model.to("cuda")
+    model.to(f"cuda:{device_id}")
 
     categories = None
     if labels_path is not None:
         with open(labels_path, "r", encoding="utf-8") as labels_file:
             categories = labels_file.read().splitlines()
-
-    # resnet expects images to be 3 channel planar RGB of 224x244 size at
-    # least.
-    target_w, target_h = 224, 224
 
     # demuxer instance
     demuxer = dmx.demuxer(input_file_path)
@@ -41,7 +38,7 @@ def Decoder(
     codec_id = dec.GetRocDecCodecID(demuxer.GetCodecId())
 
     # decoder instance
-    viddec = dec.decoder(codec_id)
+    viddec = dec.decoder(codec_id, device_id=device_id)
 
     # Get GPU device information
     cfg = viddec.GetGpuInfo()
@@ -89,7 +86,7 @@ def Decoder(
                 continue
 
             # using torch tensor
-            rgb_tensor = torch.from_dlpack(packet.ext_buf[0].__dlpack__(packet))
+            rgb_tensor = torch.from_dlpack(packet.ext_buf[0])
 
             # save tensors to file, with original decoded Size
             if (output_file_path is not None):
@@ -100,15 +97,13 @@ def Decoder(
                     surface_info,
                     output_format)
 
-            # for inference
-            rgb_tensor.resize_(3, target_h, target_w)
-            rgb_tensor = rgb_tensor.type(dtype=torch.cuda.FloatTensor)
-            rgb_tensor = torch.divide(rgb_tensor, 255.0)
-            data_transforms = torchvision.transforms.Normalize(
-                mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-            )
-            surface_tensor = data_transforms(rgb_tensor)
-            input_batch = surface_tensor.unsqueeze(0).to("cuda")
+            # Convert HWC to RGB CHW, then apply the selected weights' preprocessing.
+            rgb_tensor = rgb_tensor[..., :3].float()
+            if rgb_format in (1, 2, 5, 6):
+                rgb_tensor = rgb_tensor[..., [2, 1, 0]]
+            scale = 65535.0 if rgb_format in (2, 4, 6, 8) else 255.0
+            rgb_tensor = rgb_tensor.permute(2, 0, 1) / scale
+            input_batch = preprocess(rgb_tensor).unsqueeze(0)
 
             # Run inference.
             with torch.no_grad():
@@ -177,7 +172,7 @@ if __name__ == "__main__":
         '-of',
         '--rgb_format',
         type=int,
-        default=2,
+        default=3,
         help="Rgb Format to use as tensor - 1:bgr, 2:bgr48, 3:rgb, 4:rgb48, 5:bgra, 6:bgra64, 7:rgba, 8:rgba64, converts decoded YUV frame to Tensor in RGB format, optional, default: 3",
         required=False)
     parser.add_argument(

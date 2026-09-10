@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
+#include "roc_pyrgb.h"
 #include "roc_pyvideodecode.h"
 #include "colorspace_kernels.h"
 #include "resize_kernels.h"
@@ -119,18 +120,9 @@ void PyRocVideoDecoder::InitConfigStructure() {
 }
 
 PyRocVideoDecoder::~PyRocVideoDecoder() {
-    // free new RGB frame ptr if used
-    if (frame_ptr_rgb != nullptr) {
-        hipError_t hip_status = hipFree(frame_ptr_rgb);
-        if (hip_status != hipSuccess) {
-            std::cerr << "ERROR: hipFree failed! (" << hip_status << ")" << std::endl;
-        }
-        frame_ptr_rgb = nullptr;
-    }
-    if( post_process_class != nullptr ) {
-        delete post_process_class;
-        post_process_class = nullptr;
-    }
+    rgb_owner_.reset();
+    frame_ptr_rgb = nullptr;
+
     // free new resized YUV frame if used
     if (frame_ptr_resized != nullptr) {
         hipError_t hip_status = hipFree(frame_ptr_resized);
@@ -201,65 +193,55 @@ py::object PyRocVideoDecoder::PyGetFrameYuv(PyPacketData& packet, bool SeparateY
 }
 
 size_t PyRocVideoDecoder::CalculateRgbImageSize(OutputFormatEnum& e_output_format, OutputSurfaceInfo * p_surf_info) {
-    size_t rgb_image_size = 0;
-    int rgb_width = 0;
-    if (p_surf_info->bit_depth == 8) {
-        rgb_width = (p_surf_info->output_width + 1) & ~1; // has to be a multiple of 2 for hip colorconvert kernels
-        rgb_image_size = ((e_output_format == bgr) || (e_output_format == rgb)) ? rgb_width * p_surf_info->output_height * 3 : rgb_width * p_surf_info->output_height * 4;
-    } else {
-        rgb_width = (p_surf_info->output_width + 1) & ~1;
-        rgb_image_size = ((e_output_format == bgr) || (e_output_format == rgb)) ? rgb_width * p_surf_info->output_height * 3 : ((e_output_format == bgr48) || (e_output_format == rgb48)) ? rgb_width * p_surf_info->output_height * 6 : rgb_width * p_surf_info->output_height * 8;
-    }
-    return rgb_image_size;
+    const int format = static_cast<int>(e_output_format);
+    if (format < 1 || format > 8)
+        throw std::invalid_argument("RGB format must be in the range 1 through 8");
+    const size_t channels = format >= 5 ? 4 : 3;
+    const size_t item_size = format % 2 == 0 ? 2 : 1;
+    return size_t((p_surf_info->output_width + 1) & ~1u) *
+        p_surf_info->output_height * channels * item_size;
 }
 
 // for python binding
 py::object PyRocVideoDecoder::PyGetFrameRgb(PyPacketData& packet, int rgb_format) {
-    OutputFormatEnum e_output_format = static_cast<OutputFormatEnum>(rgb_format);
-    // Get YUV Frame
+    if (rgb_format < 1 || rgb_format > 8)
+        throw std::invalid_argument("RGB format must be in the range 1 through 8");
+    const auto format = static_cast<OutputFormatEnum>(rgb_format);
+    const uint32_t channels = rgb_format >= 5 ? 4 : 3;
+    const uint32_t item_size = rgb_format % 2 == 0 ? 2 : 1;
     int64_t pts = packet.frame_pts;
-    packet.frame_adrs = reinterpret_cast<std::uintptr_t>(GetFrame(&pts));
+    auto input = GetFrame(&pts);
+    packet.frame_adrs = reinterpret_cast<std::uintptr_t>(input);
     packet.frame_pts = pts;
-    // Load DLPack Tensor
-    if(reinterpret_cast<uint8_t*>(packet.frame_adrs) != nullptr) {
-        // get surface info
-        OutputSurfaceInfo * surf_info = nullptr;
-        GetOutputSurfaceInfo(&surf_info);
-        if(surf_info == nullptr)
-            return py::cast(-1); // ret failure
-        // get/calc new rgb image size
-        size_t rgb_image_size = CalculateRgbImageSize(e_output_format, surf_info);
-        if(rgb_image_size <= 0)
-            return py::cast(-1); // ret failure
-        // allocate 'new' RGB image device-memory if wasn't
-        if(frame_ptr_rgb == nullptr) {
-            HIP_API_CALL(hipMalloc((void **)&frame_ptr_rgb, rgb_image_size));
-            if(frame_ptr_rgb == nullptr)
-                return py::cast(-1); // ret failure
+    if (!input) return py::cast(-1);
+    try {
+        OutputSurfaceInfo* info = nullptr;
+        GetOutputSurfaceInfo(&info);
+        if (!info) throw std::runtime_error("Missing output surface information");
+        const uint32_t pitch = ((info->output_width + 1) & ~1u) * channels * item_size;
+        const size_t size = size_t(pitch) * info->output_height;
+        if (!rgb_owner_ || rgb_owner_.use_count() > 1 || rgb_capacity_ != size) {
+            void* allocation = nullptr;
+            HIP_API_CALL(hipMalloc(&allocation, size));
+            rgb_owner_ = std::shared_ptr<void>(allocation, [](void* p) { (void)hipFree(p); });
+            frame_ptr_rgb = static_cast<uint8_t*>(allocation);
+            rgb_capacity_ = size;
         }
-        // create new instance of post process class if not created
-        if(post_process_class == nullptr) {
-            post_process_class = new VideoPostProcess();
-        }
-        // use post process instance
-        VideoPostProcess * post_proc = post_process_class;
-        // Get Stream, and convert YUV 2 RGB
-        post_proc->ColorConvertYUV2RGB(reinterpret_cast<uint8_t*>(packet.frame_adrs), surf_info, frame_ptr_rgb, e_output_format, 0);
-        // save the rgb ptr
+        ConvertRgbFrame(input, info, frame_ptr_rgb, format, pitch);
+        HIP_API_CALL(hipStreamSynchronize(0));
         packet.frame_adrs_rgb = reinterpret_cast<std::uintptr_t>(frame_ptr_rgb);
-        // Load DLPack Tensor
-        if(reinterpret_cast<uint8_t*>(packet.frame_adrs) != nullptr) {
-            uint32_t width = GetWidth();
-            uint32_t height = GetHeight();
-            uint32_t surf_stride = post_proc->GetRgbStride(e_output_format, surf_info);
-            uint32_t bit_depth = GetBitDepth();
-            std::string type_str(static_cast<const char*>("|u1"));
-            std::vector<size_t> shape{ static_cast<size_t>(height), static_cast<size_t>(width), 3}; // 3 rgb channels
-            std::vector<size_t> stride{ static_cast<size_t>(surf_stride), 3, 1}; // bytes per row, per pixel, per channel
-            packet.ext_buf[0]->LoadDLPack(shape, stride, bit_depth, type_str, (void *)frame_ptr_rgb, device_id_);
-        }
+        std::vector<size_t> shape{info->output_height, info->output_width, channels};
+        std::vector<size_t> stride{pitch, channels * item_size, item_size};
+        std::string type = item_size == 1 ? "|u1" : "|u2";
+        auto buffer = std::make_shared<BufferInterface>();
+        buffer->KeepAlive(rgb_owner_);
+        buffer->LoadDLPack(shape, stride, item_size * 8, type, frame_ptr_rgb, device_id_);
+        packet.ext_buf[0] = std::move(buffer);
+    } catch (...) {
+        ReleaseFrame(pts);
+        throw;
     }
-    return py::cast(packet.frame_pts);
+    return py::cast(pts);
 }
 
 // for python binding

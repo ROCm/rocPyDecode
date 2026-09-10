@@ -24,17 +24,15 @@ THE SOFTWARE.
 #include "roc_pyjpeg_decode_source.h"
 
 DecodeSource::DecodeSource(const CodeStream* code_stream_ptr)
-    : code_stream_(std::make_unique<CodeStream>(*code_stream_ptr))  // make a copy
-    , code_stream_ptr_(code_stream_.get()) {
+    : code_stream_(code_stream_ptr ? std::make_unique<CodeStream>(*code_stream_ptr) : nullptr) {
 }
 
 DecodeSource::DecodeSource(std::unique_ptr<CodeStream> code_stream)
-    : code_stream_(std::move(code_stream))
-    , code_stream_ptr_(code_stream_.get()) {
+    : code_stream_(std::move(code_stream)) {
 }
 
 const CodeStream* DecodeSource::CodeStreamInstance() const {
-    return code_stream_ptr_;
+    return code_stream_.get();
 }
 
 DecodeSource::~DecodeSource() {
@@ -63,7 +61,7 @@ void DecodeSource::ExportToPython(py::module& m) {
             }),
             "Constructor initializing DecodeSource with filename pointing to the file with image.",
             "filename"_a)
-        .def_property_readonly("code_stream", &DecodeSource::CodeStreamInstance,
+        .def_property_readonly("code_stream", &DecodeSource::CodeStreamInstance, py::return_value_policy::reference_internal,
             "Returns the code stream to be decoded into an image.");
     py::implicitly_convertible<py::bytes, DecodeSource>();
     py::implicitly_convertible<py::array_t<uint8_t>, DecodeSource>();

@@ -34,7 +34,7 @@ class decoder(object):
             output_format = jpegt.ROCJPEG_OUTPUT_RGB):
         self.device_id = device_id
         self.backend = backend
-        self.output_format = output_format
+        self.output_format = jpegt.RocJpegOutputFormat(output_format)
         self.jpegdec = rocpyjpeg.Decoder(self.device_id, self.backend, self.output_format)
 
     # read image or batch of images

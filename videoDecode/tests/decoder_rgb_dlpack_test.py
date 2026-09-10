@@ -25,31 +25,25 @@ import argparse
 import sys
 
 
-def test_rgb_dlpack(input_file_path):
-    demuxer = dmx.demuxer(input_file_path)
-    codec_id = dec.GetRocDecCodecID(demuxer.GetCodecId())
-    decoder = dec.decoder(codec_id, mem_type=OUT_SURFACE_MEM_DEV_COPIED, b_force_zero_latency=True)
-
-    while True:
-        packet = demuxer.DemuxFrame()
-        for i in range(decoder.DecodeFrame(packet)):
-            if decoder.GetFrameRgb(packet, rgb_format=3) == -1:
-                continue
-
-            # interleaved 8-bit RGB surface: shape [H, W, 3], 3 bytes/pixel, 1 byte/channel.
-            buf = packet.ext_buf[0]
-            assert buf.dtype == "|u1" # unsigned 8-bit integer, "|u1" == uint8
-            assert len(buf.shape) == 3 and buf.shape[2] == 3
-            assert buf.strides[1:] == (3, 1)
-
-            decoder.ReleaseFrame(packet)
-            print('rocPyDecode RGB DLPack test finished.')
-            return
-
-        if packet.bitstream_size <= 0:
-            break
-
-    raise RuntimeError('no RGB frame decoded')
+def test_rgb_dlpack(input_file_path, decoder_class=dec.decoder, mem_type=OUT_SURFACE_MEM_DEV_COPIED):
+    for fmt in range(1, 9):
+        demuxer = dmx.demuxer(input_file_path)
+        codec_id = dec.GetRocDecCodecID(demuxer.GetCodecId())
+        decoder = decoder_class(codec_id, mem_type=mem_type, b_force_zero_latency=True)
+        while True:
+            packet = demuxer.DemuxFrame()
+            if decoder.DecodeFrame(packet):
+                assert decoder.GetFrameRgb(packet, fmt) != -1
+                buf = packet.ext_buf[0]
+                channels = 4 if fmt >= 5 else 3
+                assert buf.dtype == ("|u2" if fmt % 2 == 0 else "|u1")
+                assert buf.shape == (decoder.GetHeight(), decoder.GetWidth(), channels)
+                assert buf.strides[1:] == (channels, 1)
+                decoder.ReleaseFrame(packet)
+                break
+            if packet.bitstream_size <= 0:
+                raise RuntimeError("no RGB frame decoded")
+    print("rocPyDecode RGB DLPack formats 1–8 passed.")
 
 
 if __name__ == "__main__":

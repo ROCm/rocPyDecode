@@ -57,8 +57,10 @@ def jpeg_decode(
     # example how to save the decoded image as a file
     if (output_file_path is not None):
         filename = output_file_path.strip() + ".png"
-        img1 = torch.from_numpy(img_tensor.to_numpy())
-        arr = img1.cpu().numpy()
+        if output_format == 4:
+            arr = np.stack([img_tensor.to_numpy(i) for i in range(3)], axis=-1)
+        else:
+            arr = img_tensor.to_numpy()
         img = Image.fromarray(arr.astype(np.uint8))
         img.save(filename)
         print(f"Image saved as: {filename}")

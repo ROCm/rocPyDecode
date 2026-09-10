@@ -53,8 +53,8 @@ public:
     std::vector<std::shared_ptr<BufferInterface>> ext_buf; // external buffer, a view on the GPU MEM of the decoded image
 
     // public to be accessed by python pybind
-    int m_width;
-    int m_height;
+    int m_width = 0;
+    int m_height = 0;
     py::array_t<uint8_t> to_numpy(int index = 0);
     RocJpegChromaSubsampling subsampling;
 

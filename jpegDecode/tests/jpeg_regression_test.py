@@ -10,6 +10,7 @@ import sys
 import tempfile
 
 import pyRocJpegDecode.decoder as jdec
+import rocpyjpegdecode as native
 
 
 def run(sample, args, expected_error=None, expected_output=None):
@@ -41,12 +42,24 @@ def main():
             assert img.width > 0 and img.height > 0
             if fmt == 3:
                 assert img.shape == (img.height, img.width, 3), img.shape
-                assert img.strides == (img.width * 3, 3, 1), img.strides
+                assert img.strides == (((img.width * 3 + 255) // 256) * 256, 3, 1), img.strides
             else:
                 for buf in img.ext_buf:
                     assert buf.shape == (img.height, img.width), buf.shape
-                    assert buf.strides == (img.width, 1), buf.strides
+                    assert buf.strides == (((img.width + 255) // 256) * 256, 1), buf.strides
             assert img.dtype == "|u1", img.dtype
+    # Converting a CodeStream must not destroy a handle still used by its source.
+    stream = native.CodeStream(files[0].read_bytes())
+    source = native.DecodeSource(stream)
+    borrowed_stream = source.code_stream
+    del source
+    decoder = jdec.decoder()
+    for item in (stream, stream, borrowed_stream):
+        _, image = decoder.decode(item)
+        assert image.width > 0 and image.height > 0
+    _, batch = decoder.decode([stream, stream])
+    assert len(batch) == 2
+    assert native.CodeStream(b"") is not None
     sample = Path(__file__).resolve().parents[1] / "samples/rocjpeg/jpegdecodebatched.py"
     run(sample, ["-i", args.media_dir, "-d", device_count], expected_error="not found")
     with tempfile.TemporaryDirectory() as directory:

@@ -123,7 +123,8 @@ class PyRocVideoDecoder : public RocVideoDecoder {
     protected:
         // used in frame allocation
         uint8_t *frame_ptr_rgb = nullptr;
-        VideoPostProcess * post_process_class = nullptr;
+        std::shared_ptr<void> rgb_owner_;
+        size_t rgb_capacity_ = 0;
         // used in frame resizing
         uint8_t *frame_ptr_resized = nullptr;
         size_t resized_image_size_in_bytes = 0;

@@ -3,6 +3,7 @@
 
 """Optional pixel checks; requires NumPy and ROCm-compatible PyTorch."""
 import argparse
+import gc
 from pathlib import Path
 
 import numpy as np
@@ -44,6 +45,15 @@ def main():
             assert len(batch) == 2
             for image in batch:
                 np.testing.assert_array_equal(pixels(image, fmt), reference)
+            # Exported tensors retain storage after image/decoder deletion.
+            _, owned_image = decoder.decode(str(path))
+            view = torch.from_dlpack(owned_image.ext_buf[0])
+            expected = view.clone()
+            host = owned_image.to_numpy()
+            del owned_image, decoder
+            gc.collect()
+            assert torch.equal(view, expected)
+            np.testing.assert_array_equal(host, expected.cpu().numpy())
             layouts.append(reference)
         np.testing.assert_array_equal(*layouts)
         print(f"Pixel equality passed: {path.name}")

@@ -63,7 +63,13 @@ buffer = np.zeros((1080 * 1920 * 3,), dtype=np.uint8)
 packet = demuxer.DemuxFrame()
 decoder.DecodeFrame(packet)
 decoder.GetFrameYuv(packet, separate_planes=False)
-decoder.GetFrameRgb(packet, rgb_format=0)
+try:
+    decoder.GetFrameRgb(packet, rgb_format=0)
+except ValueError:
+    pass
+else:
+    raise AssertionError("Native YUV is not an RGB output format")
+decoder.GetFrameRgb(packet, rgb_format=3)
 GetRocPyDecPacket(0, size=buffer.size, buffer=buffer)
 decoder.GetWidth()
 decoder.GetHeight()
@@ -78,3 +84,8 @@ decoder.IsCodecSupported(device_id=0, codec_id=codec_id, bit_depth=8)
 decoder.GetBitDepth()
 decoder.SaveFrameToFile("outfile.yuv", packet.frame_adrs)
 decoder.ReleaseFrame(packet)
+
+# CPU conversion must handle its planar YUV output in both memory modes.
+from decoder_rgb_dlpack_test import test_rgb_dlpack
+for memory_type in (1, 2):
+    test_rgb_dlpack(input_file_path, dec.decodercpu, memory_type)
