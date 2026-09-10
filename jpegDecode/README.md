@@ -15,9 +15,9 @@ Required build dependencies:
 
 - CMake 3.20 or newer for the commands below, including `ctest --test-dir`.
   The CMake project itself accepts CMake 3.15 or newer.
-- Python interpreter and matching development headers/libraries. The examples
+- Python 3.9 or newer and matching development headers/libraries. The examples
   select Python 3.12; change `PYTHON_VERSION_SUGGESTED` to your installed version.
-- pybind11 2.11.1 and DLPack 1.3 headers; bundled in the repository.
+- pybind11 3.1.0 and DLPack 1.3 headers; bundled in the repository.
 - rocJPEG **1.0.0 or newer**, including development files and CMake package
   configuration.
 
@@ -49,19 +49,19 @@ packages according to the selected sample and SDK version.
 
 ## Bundled build dependencies
 
-Each component includes pybind11 2.11.1 and DLPack 1.3 in its own `third-party/`.
+Each component includes pybind11 3.1.0 and DLPack 1.3 in its own `third_party/`.
 CMake uses these committed copies without downloading dependencies or searching
 system installations. No separate pybind11 or DLPack installation is required;
 the ROCm SDK, decoder libraries, and Python development files are still required.
 
-The videoDecode and jpegDecode directories each contain a complete third-party
+The videoDecode and jpegDecode directories each contain a complete third_party
 copy. Either component can be copied and built independently. Combined builds
 initialize the identical dependency targets once.
 A parent project can add rocPyDecode with add_subdirectory; it must add it before
 creating conflicting pybind11 or DLPack targets. The build reports such conflicts
 instead of silently substituting another dependency version.
 
-Dependency licenses are included under third-party and installed with the
+Dependency licenses are included under third_party and installed with the
 project documentation.
 
 ## Select the SDK and check test assets
