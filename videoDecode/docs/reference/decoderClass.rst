@@ -17,7 +17,7 @@ To instantiate a decoder instance, pass the following parameters:
 - **mem_type**:		The mem type of output surface - 0: Internal 1: dev_copied 2: host_copied, default is 1
 - **codec**:        The codec ID obtained by *GetRocDecCodecID* API
 - **b_force_zero_latency**: 	Force zero latency flag, default is 'False'
-- **crop_rect**:    See :doc:`Structures Classess <structures>`, optional, default: 'None', no cropping
+- **crop_rect**:    See :doc:`Structures Classess <structures>`, optional, default: 'None', no cropping. The rectangle must lie within the decoded frame and align to its chroma subsampling.
 - **max_width**:    Max width, default is 0
 - **max_height**:   Max height, default is 0
 - **clk_rate**:     Clock rate, default is 1000  
@@ -128,7 +128,16 @@ Returns the width of the current decoded frame.
 ResizeFrame(packet, resize_dim, surface_info)
 ---------------------------------------------
 
-Resizes the decode frame pointed to by the passed packet, see: :doc:`Structures Classess <structures>`, to the new dimension in resize_dim, to the new dimension using the passed surface info.
+Resizes the YUV frame using center-sampled nearest-neighbor interpolation. The
+output preserves the input plane layout and sample type and resides in device
+memory, including when the input resides in host memory. Resizing completes
+before this call returns.
+
+Dimensions must be positive and align to the chroma subsampling (even width and
+height for YUV 4:2:0). Invalid dimensions raise ``ValueError``. A request matching
+the input dimensions returns zero without resizing. Otherwise, use
+``packet.frame_adrs_resized`` and the returned surface information while the
+decoder remains alive and before the next resize overwrites that buffer.
 
 - **packet**: The demuxed packet contains the demuxed frames information, and the desired rgb format  
 - **resize_dim**:  The new dimension, width and height 

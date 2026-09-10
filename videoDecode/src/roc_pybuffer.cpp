@@ -141,7 +141,7 @@ void BufferInterface::ExportToPython(py::module &m) {
         .def("__dlpack_device__", &BufferInterface::dlpackDevice, "Get the device associated with the buffer");
 }
 
-int BufferInterface::LoadDLPack(std::vector<size_t>& _shape, std::vector<size_t>& _stride, uint32_t bit_depth, std::string& _type_str, void* _data, int device_id_) {
+int BufferInterface::LoadDLPack(std::vector<size_t>& _shape, std::vector<size_t>& _stride, uint32_t bit_depth, std::string& _type_str, void* _data, int device_id_, DLDeviceType device_type) {
     CheckValidBuffer(_data);
     if ((_type_str != "|u1" && _type_str != "|u2") || bit_depth == 0 || bit_depth > 16)
         throw std::invalid_argument("Unsupported DLPack unsigned element type");
@@ -153,7 +153,7 @@ int BufferInterface::LoadDLPack(std::vector<size_t>& _shape, std::vector<size_t>
     py::buffer_info info(_data, item_size,
         item_size == 1 ? py::format_descriptor<uint8_t>::format() : py::format_descriptor<uint16_t>::format(),
         shape.size(), shape, strides);
-    m_dlTensor = DLPackPyTensor(info, DLDevice{kDLROCM, device_id_});
+    m_dlTensor = DLPackPyTensor(info, DLDevice{device_type, device_type == kDLCPU ? 0 : device_id_});
     m_dlTensor->dtype = DLDataType{kDLUInt, static_cast<uint8_t>(item_size * 8), 1};
     return 0;
 }

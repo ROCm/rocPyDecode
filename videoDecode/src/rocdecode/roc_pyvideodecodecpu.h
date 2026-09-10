@@ -21,6 +21,7 @@ THE SOFTWARE.
 */
 
 #pragma once
+#include "roc_pysurface.h"
 
 #include "roc_video_dec.h"
 #include "roc_pydecode.h"
@@ -40,7 +41,7 @@ class PyRocVideoDecoderCpu : public FFMpegVideoDecoder {
         PyRocVideoDecoderCpu(int device_id, int mem_type = OUT_SURFACE_MEM_HOST_COPIED, rocDecVideoCodec codec = rocDecVideoCodec_HEVC, bool force_zero_latency = false,
                           const Rect *p_crop_rect = nullptr, int max_width = 0, int max_height = 0,
                           uint32_t clk_rate = 1000) : FFMpegVideoDecoder(device_id, static_cast<OutputSurfaceMemoryType>(mem_type), codec, force_zero_latency,
-                          p_crop_rect, false, 0, max_width, max_height, clk_rate) { InitConfigStructure(); }
+                          rocpy::DecodeFullFrame(p_crop_rect), false, 0, max_width, max_height, clk_rate), requested_crop_(p_crop_rect ? *p_crop_rect : Rect{}) { InitConfigStructure(); }
         ~PyRocVideoDecoderCpu();                        
          
         // for python binding
@@ -110,8 +111,8 @@ class PyRocVideoDecoderCpu : public FFMpegVideoDecoder {
         uint8_t *frame_ptr_rgb = nullptr;
         std::shared_ptr<void> rgb_owner_;
         size_t rgb_capacity_ = 0;
-        // used in frame resizing
-        uint8_t *frame_ptr_resized = nullptr;
-        size_t resized_image_size_in_bytes = 0;
-        OutputSurfaceInfo *resized_surf_info = nullptr;
+        Rect requested_crop_{};
+        rocpy::Surface cropped_surface_, resized_surface_;
+        uint8_t* GetPythonFrame(int64_t* pts);
+        bool GetPythonSurfaceInfo(OutputSurfaceInfo** info);
 };

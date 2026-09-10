@@ -49,7 +49,6 @@ set(ROCPYVIDEO_SOURCES
     src/rocdecode/roc_pydecode.cpp
     src/rocdecode/roc_pyvideodecode.cpp
     "${ROCPYVIDEO_UTILS}/colorspace_kernels.cpp"
-    "${ROCPYVIDEO_UTILS}/resize_kernels.cpp"
     "${ROCPYVIDEO_UTILS}/rocvideodecode/roc_video_dec.cpp")
 if(ROCPYVIDEO_USE_FFMPEG)
     list(APPEND ROCPYVIDEO_SOURCES src/rocdecode/roc_pyvideodemuxer.cpp)

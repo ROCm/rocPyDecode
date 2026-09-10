@@ -23,7 +23,6 @@ THE SOFTWARE.
 #include "roc_pyrgb.h"
 #include "roc_pyvideodecode.h"
 #include "colorspace_kernels.h"
-#include "resize_kernels.h"
 
 using namespace std;
 
@@ -62,15 +61,15 @@ int PyReconfigureFlushCallback(void *p_viddec_obj, uint32_t flush_mode, void * p
     int n_frames_flushed = 0;
     if ((p_viddec_obj == nullptr) ||  (p_user_struct == nullptr))
         return n_frames_flushed;
-    RocVideoDecoder *viddec = static_cast<RocVideoDecoder *> (p_viddec_obj);
+    auto* viddec = static_cast<PyRocVideoDecoder*>(static_cast<RocVideoDecoder*>(p_viddec_obj));
     OutputSurfaceInfo *surf_info;
-    if (!viddec->GetOutputSurfaceInfo(&surf_info)) {
+    if (!viddec->GetPythonSurfaceInfo(&surf_info)) {
         std::cerr << "Error: Failed to get Output Surface Info!" << std::endl;
         return n_frames_flushed;
     }
     uint8_t *pframe = nullptr;
     int64_t pts;
-    while ((pframe = viddec->GetFrame(&pts))) {
+    while ((pframe = viddec->GetPythonFrame(&pts))) {
         if (flush_mode != RECONFIG_FLUSH_MODE_NONE) {
             if (flush_mode == ReconfigFlushMode::RECONFIG_FLUSH_MODE_DUMP_TO_FILE) {
                 ReconfigDumpFileStruct *p_dump_file_struct = static_cast<ReconfigDumpFileStruct *>(p_user_struct);
@@ -80,7 +79,8 @@ int PyReconfigureFlushCallback(void *p_viddec_obj, uint32_t flush_mode, void * p
             }
         }
         // release and flush frame
-        viddec->ReleaseFrame(pts, true);
+        // ReconfigureDecoder frees copied frames after this callback returns.
+        viddec->ReleaseFrame(pts);
         n_frames_flushed ++;
     }
     return n_frames_flushed;
@@ -123,19 +123,7 @@ PyRocVideoDecoder::~PyRocVideoDecoder() {
     rgb_owner_.reset();
     frame_ptr_rgb = nullptr;
 
-    // free new resized YUV frame if used
-    if (frame_ptr_resized != nullptr) {
-        hipError_t hip_status = hipFree(frame_ptr_resized);
-        if (hip_status != hipSuccess) {
-            std::cerr << "ERROR: hipFree failed! (" << hip_status << ")" << std::endl;
-        }
-        frame_ptr_resized = nullptr;
-    }
-    // free new surface allocated locally
-    if (resized_surf_info != nullptr) {
-        free(resized_surf_info);
-        resized_surf_info = nullptr;
-    }
+
 }
 
 int PyRocVideoDecoder::PyDecodeFrame(PyPacketData& packet) {
@@ -146,50 +134,32 @@ int PyRocVideoDecoder::PyDecodeFrame(PyPacketData& packet) {
 }
 
 // for python binding
-py::object PyRocVideoDecoder::PyGetFrameYuv(PyPacketData& packet, bool SeparateYuvPlanes) {
-    int frame_size = GetFrameSize();
+py::object PyRocVideoDecoder::PyGetFrameYuv(PyPacketData& packet, bool separate) {
     int64_t pts = packet.frame_pts;
-    packet.frame_adrs = reinterpret_cast<std::uintptr_t>(GetFrame(&pts));
+    auto input = GetPythonFrame(&pts);
+    packet.frame_adrs = reinterpret_cast<uintptr_t>(input);
     packet.frame_pts = pts;
-    // Load DLPack Tensor
-    if((reinterpret_cast<uint8_t*>(packet.frame_adrs) != nullptr) && (frame_size > 0)) {
-        uint32_t width = GetWidth();
-        uint32_t height = GetHeight();
-        uint32_t surf_stride = GetSurfaceStride();
-        uint32_t bit_depth = GetBitDepth();
-        std::string type_str;
-        std::vector<size_t> stride;
-        if (bit_depth == 8) {
-            type_str = static_cast<const char*>("|u1");
-            stride.push_back(static_cast<size_t>(surf_stride));
-            stride.push_back(sizeof(uint8_t));
-        } else if (bit_depth <= 16) {
-            type_str = static_cast<const char*>("|u2");
-            stride.push_back(static_cast<size_t>(surf_stride));
-            stride.push_back(sizeof(uint16_t));
-        }
-        // for NV12 format (also YUV444 & P016 when supported), Y always in ext_buf vector index [0]
-        // The tensor shape->height will be all the Yuv planes if user specify 'FALSE' in 'SeparateYuvPlanes' argument
-        float plane_height_multiplier = SeparateYuvPlanes ? 1.0 : 1.5; // 1.5 for YUV NV12
-        std::vector<size_t> shape{ static_cast<size_t>(height * plane_height_multiplier), static_cast<size_t>(width)};
-        packet.ext_buf[0]->LoadDLPack(shape, stride, bit_depth, type_str, (void *)packet.frame_adrs, device_id_);
-        if (SeparateYuvPlanes) {
-            // get surface format
-            OutputSurfaceInfo* p_surf_info;
-            bool ret = GetOutputSurfaceInfo(&p_surf_info);
-            if (ret) {
-                // for NV12 only the UV interleaved in one tensor: ext_buf vector index [1]
-                if (p_surf_info->surface_format == rocDecVideoSurfaceFormat_NV12 || p_surf_info->surface_format == rocDecVideoSurfaceFormat_P016) {
-                    std::vector<size_t> shape{ static_cast<size_t>(height >> 1), static_cast<size_t>(width)};
-                    uintptr_t uv_offset = p_surf_info->output_pitch * p_surf_info->output_vstride; // count for possible padding
-                    packet.ext_buf[1]->LoadDLPack(shape, stride, bit_depth, type_str, (void *)(packet.frame_adrs + uv_offset), device_id_);
-                } else {
-                    cout << "surf fmt: " << p_surf_info->surface_format << " [not supported]" << "\n";
-                }
-            }
-        }
+    if (!input) return py::cast(-1);
+    OutputSurfaceInfo* info = nullptr;
+    GetPythonSurfaceInfo(&info);
+    const auto layout = rocpy::Planes(*info);
+    std::string type = info->bytes_per_pixel == 1 ? "|u1" : "|u2";
+    const auto device = info->mem_type == OUT_SURFACE_MEM_HOST_COPIED ? kDLCPU : kDLROCM;
+    size_t rows = info->output_height;
+    if (!separate)
+        for (int i = 1; i < layout.count; ++i)
+            rows += size_t(layout.planes[i].width) * layout.planes[i].channels * layout.planes[i].height / info->output_width;
+    for (int i = 0; i < (separate ? layout.count : 1); ++i) {
+        const auto& plane = layout.planes[i];
+        std::vector<size_t> shape{i == 0 ? rows : plane.height, size_t(plane.width) * plane.channels};
+        std::vector<size_t> strides{plane.pitch, info->bytes_per_pixel};
+        auto buffer = std::make_shared<BufferInterface>();
+        if (rocpy::HasCrop(requested_crop_)) buffer->KeepAlive(cropped_surface_.owner);
+        buffer->LoadDLPack(shape, strides, info->bytes_per_pixel * 8, type,
+            input + plane.offset, device_id_, device);
+        packet.ext_buf[i] = std::move(buffer);
     }
-    return py::cast(packet.frame_pts);
+    return py::cast(pts);
 }
 
 size_t PyRocVideoDecoder::CalculateRgbImageSize(OutputFormatEnum& e_output_format, OutputSurfaceInfo * p_surf_info) {
@@ -210,14 +180,15 @@ py::object PyRocVideoDecoder::PyGetFrameRgb(PyPacketData& packet, int rgb_format
     const uint32_t channels = rgb_format >= 5 ? 4 : 3;
     const uint32_t item_size = rgb_format % 2 == 0 ? 2 : 1;
     int64_t pts = packet.frame_pts;
-    auto input = GetFrame(&pts);
+    auto input = GetPythonFrame(&pts);
     packet.frame_adrs = reinterpret_cast<std::uintptr_t>(input);
     packet.frame_pts = pts;
     if (!input) return py::cast(-1);
     try {
         OutputSurfaceInfo* info = nullptr;
-        GetOutputSurfaceInfo(&info);
+        GetPythonSurfaceInfo(&info);
         if (!info) throw std::runtime_error("Missing output surface information");
+        HIP_API_CALL(hipSetDevice(device_id_));
         const uint32_t pitch = ((info->output_width + 1) & ~1u) * channels * item_size;
         const size_t size = size_t(pitch) * info->output_height;
         if (!rgb_owner_ || rgb_owner_.use_count() > 1 || rgb_capacity_ != size) {
@@ -246,65 +217,17 @@ py::object PyRocVideoDecoder::PyGetFrameRgb(PyPacketData& packet, int rgb_format
 
 // for python binding
 uintptr_t PyRocVideoDecoder::PyGetResizedOutputSurfaceInfo() {
-    return reinterpret_cast<std::uintptr_t>(resized_surf_info);
+    return resized_surface_.owner ? reinterpret_cast<uintptr_t>(&resized_surface_.info) : 0;
 }
 
-// for python binding
-uintptr_t PyRocVideoDecoder::PyResizeFrame(PyPacketData& packet, Dim *resized_dim, uintptr_t& in_surf_info) {
-    // check params
-    if(resized_dim == nullptr || in_surf_info == 0)
-        return 0;
-    if((reinterpret_cast<uint8_t*>(packet.frame_adrs) == nullptr) || resized_dim->w == 0 || resized_dim->h == 0)
-        return 0;
-    OutputSurfaceInfo *surf_info = reinterpret_cast<OutputSurfaceInfo*>(in_surf_info);
-    // validate request
-    if ((surf_info->output_width == resized_dim->w) && (surf_info->output_height == resized_dim->h))
-        return 0;
-    uint8_t *in_yuv_frame = reinterpret_cast<uint8_t*>(packet.frame_adrs);
-    size_t requested_size_in_bytes = resized_dim->w * (resized_dim->h + (resized_dim->h >> 1)) * surf_info->bytes_per_pixel;
-    // alloc or refill surf-info one time, and refill if size changed
-    if (resized_image_size_in_bytes != requested_size_in_bytes) {
-        resized_image_size_in_bytes = requested_size_in_bytes;
-        if(resized_surf_info == nullptr) {
-            if((resized_surf_info = reinterpret_cast<OutputSurfaceInfo*>(malloc(sizeof(OutputSurfaceInfo)))) == nullptr) {
-                std::cerr << "ERROR: Failed to allocate Surface Info!" << std::endl;
-                resized_image_size_in_bytes = 0;
-                return 0;
-            }
-        }
-        memcpy(resized_surf_info, surf_info, sizeof(OutputSurfaceInfo));
-        resized_surf_info->output_width = resized_dim->w;
-        resized_surf_info->output_height = resized_dim->h;
-        resized_surf_info->output_pitch = resized_dim->w * surf_info->bytes_per_pixel;
-        resized_surf_info->output_vstride = resized_dim->h;
-        resized_surf_info->output_surface_size_in_bytes = resized_surf_info->output_pitch * (resized_dim->h + (resized_dim->h >> 1));
-
-        // new size means new MEM, dealloc old one if exist
-        if (frame_ptr_resized != nullptr) {
-            hipError_t hip_status = hipFree(frame_ptr_resized);
-            if (hip_status != hipSuccess) {
-                std::cerr << "ERROR: hipFree failed! (" << hip_status << ")" << std::endl;
-            }
-            frame_ptr_resized = nullptr;
-        }
-    }
-    // new MEM if not allocated
-    if (frame_ptr_resized == nullptr)  {
-        hipError_t hip_status = hipMalloc((void **)&frame_ptr_resized, resized_image_size_in_bytes);
-        if (hip_status != hipSuccess) {
-            std::cerr << "ERROR: hipMalloc failed to allocate the device memory for the output!" << hip_status << std::endl;
-            return 0;
-        }
-    }
-    // call resize kernel, TODO: below code assumes NV12/P016 for decoded surface. Modify to take other surface formats in future
-    if (surf_info->bytes_per_pixel == 2) {
-        ResizeP016(frame_ptr_resized, resized_dim->w * 2, resized_dim->w, resized_dim->h, in_yuv_frame, surf_info->output_pitch, surf_info->output_width, surf_info->output_height, (in_yuv_frame + surf_info->output_vstride * surf_info->output_pitch), nullptr, 0);
-    } else {
-        ResizeNv12(frame_ptr_resized, resized_dim->w, resized_dim->w, resized_dim->h, in_yuv_frame, surf_info->output_pitch, surf_info->output_width, surf_info->output_height, (in_yuv_frame + surf_info->output_vstride * surf_info->output_pitch), nullptr, 0);
-    }
-    // save new resized frame address
-    packet.frame_adrs_resized = reinterpret_cast<std::uintptr_t>(frame_ptr_resized);
-    return reinterpret_cast<std::uintptr_t>(resized_surf_info);
+uintptr_t PyRocVideoDecoder::PyResizeFrame(PyPacketData& packet, Dim* dim, uintptr_t& surface_info) {
+    if (!dim || !surface_info || !packet.frame_adrs) return 0;
+    const auto* info = reinterpret_cast<OutputSurfaceInfo*>(surface_info);
+    if (dim->w == info->output_width && dim->h == info->output_height) return 0;
+    HIP_API_CALL(hipSetDevice(device_id_));
+    resized_surface_.Resize(reinterpret_cast<uint8_t*>(packet.frame_adrs), *info, dim->w, dim->h);
+    packet.frame_adrs_resized = reinterpret_cast<uintptr_t>(resized_surface_.data());
+    return reinterpret_cast<uintptr_t>(&resized_surface_.info);
 }
 
 // for python binding (can not move it to header for py)
@@ -327,13 +250,15 @@ py::object PyRocVideoDecoder::PySaveFrameToFile(std::string& output_file_name_in
     if (surface_info)
         p_surf_info = reinterpret_cast<OutputSurfaceInfo*>(surface_info);
     else
-        ret = GetOutputSurfaceInfo(&p_surf_info);
+        ret = GetPythonSurfaceInfo(&p_surf_info);
     if(surf_mem && ret) {
         size_t image_size = 0; // 0 size == rgb frame
         if (e_output_format != OutputFormatEnum::native) { // native == YUV frame
             image_size = CalculateRgbImageSize(e_output_format, p_surf_info);
         }
-        SaveFrameToFile(output_file_name, (void *)surf_mem, p_surf_info, image_size);
+        auto saved_info = *p_surf_info;
+        if (image_size) saved_info.mem_type = OUT_SURFACE_MEM_DEV_COPIED;
+        SaveFrameToFile(output_file_name, (void *)surf_mem, &saved_info, image_size);
     }
     return py::cast<py::none>(Py_None);
 }
@@ -347,7 +272,7 @@ std::shared_ptr<ConfigInfo> PyRocVideoDecoder::PyGetDeviceinfo() {
 // for python binding
 uintptr_t PyRocVideoDecoder::PyGetOutputSurfaceInfo() {
     OutputSurfaceInfo *l_surface_info;
-    bool ret = GetOutputSurfaceInfo(&l_surface_info);
+    bool ret = GetPythonSurfaceInfo(&l_surface_info);
     if (ret) {
        return reinterpret_cast<std::uintptr_t>(l_surface_info);
     }
@@ -356,21 +281,29 @@ uintptr_t PyRocVideoDecoder::PyGetOutputSurfaceInfo() {
 
 // for python binding
 py::int_ PyRocVideoDecoder::PyGetWidth() {
+    OutputSurfaceInfo* info = nullptr;
+    if (rocpy::HasCrop(requested_crop_) && GetPythonSurfaceInfo(&info)) return py::int_(info->output_width);
     return py::int_(static_cast<int>(GetWidth()));
 }
 
 // for python binding
 py::int_ PyRocVideoDecoder::PyGetHeight() {
+    OutputSurfaceInfo* info = nullptr;
+    if (rocpy::HasCrop(requested_crop_) && GetPythonSurfaceInfo(&info)) return py::int_(info->output_height);
     return py::int_(static_cast<int>(GetHeight()));
 }
 
 // for python binding
 py::int_ PyRocVideoDecoder::PyGetFrameSize() {
+    OutputSurfaceInfo* info = nullptr;
+    if (rocpy::HasCrop(requested_crop_) && GetPythonSurfaceInfo(&info)) return py::int_(info->output_surface_size_in_bytes);
     return py::int_(static_cast<int>(GetFrameSize()));
 }
 
 // for python binding
 py::int_ PyRocVideoDecoder::PyGetStride() {
+    OutputSurfaceInfo* info = nullptr;
+    if (rocpy::HasCrop(requested_crop_) && GetPythonSurfaceInfo(&info)) return py::int_(info->output_pitch);
     return py::int_(static_cast<int>(GetSurfaceStride()));
 }
 
@@ -397,3 +330,30 @@ py::object PyRocVideoDecoder::PyGetDecoderSessionOverHead(int session_id) {
 }
 
 #endif
+
+// Crop after native decoding so utility allocations and copies use full-frame dimensions.
+bool PyRocVideoDecoder::GetPythonSurfaceInfo(OutputSurfaceInfo** info) {
+    if (!RocVideoDecoder::GetOutputSurfaceInfo(info)) return false;
+    if (rocpy::HasCrop(requested_crop_)) {
+        cropped_surface_.info = rocpy::Describe(**info,
+            requested_crop_.right - requested_crop_.left, requested_crop_.bottom - requested_crop_.top,
+            (*info)->mem_type == OUT_SURFACE_MEM_HOST_COPIED);
+        *info = &cropped_surface_.info;
+    }
+    return true;
+}
+
+uint8_t* PyRocVideoDecoder::GetPythonFrame(int64_t* pts) {
+    auto input = RocVideoDecoder::GetFrame(pts);
+    if (!input || !rocpy::HasCrop(requested_crop_)) return input;
+    try {
+        OutputSurfaceInfo* full = nullptr;
+        if (!RocVideoDecoder::GetOutputSurfaceInfo(&full)) throw std::runtime_error("Missing output surface information");
+        if (full->mem_type != OUT_SURFACE_MEM_HOST_COPIED) HIP_API_CALL(hipSetDevice(device_id_));
+        cropped_surface_.Copy(input, *full, requested_crop_, full->mem_type == OUT_SURFACE_MEM_HOST_COPIED);
+        return cropped_surface_.data();
+    } catch (...) {
+        ReleaseFrame(*pts);
+        throw;
+    }
+}

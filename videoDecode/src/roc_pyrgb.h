@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <memory>
 
-inline void ConvertRgbFrame(uint8_t* input, OutputSurfaceInfo* info, uint8_t* output,
+inline void ConvertDeviceRgbFrame(uint8_t* input, OutputSurfaceInfo* info, uint8_t* output,
                             OutputFormatEnum format, uint32_t pitch) {
     if (info->surface_format == rocDecVideoSurfaceFormat_NV12) {
         switch (format) {
@@ -95,6 +95,22 @@ inline void ConvertRgbFrame(uint8_t* input, OutputSurfaceInfo* info, uint8_t* ou
     else { throw std::invalid_argument("Unsupported YUV surface for RGB conversion"); }
 }
 
+inline void ConvertRgbFrame(uint8_t* input, OutputSurfaceInfo* info, uint8_t* output,
+                            OutputFormatEnum format, uint32_t pitch) {
+    std::shared_ptr<void> staged;
+    auto device_info = *info;
+    if (info->mem_type == OUT_SURFACE_MEM_HOST_COPIED) {
+        void* ptr = nullptr;
+        HIP_API_CALL(hipMalloc(&ptr, info->output_surface_size_in_bytes));
+        staged = std::shared_ptr<void>(ptr, [](void* p) { (void)hipFree(p); });
+        HIP_API_CALL(hipMemcpy(ptr, input, info->output_surface_size_in_bytes, hipMemcpyHostToDevice));
+        input = static_cast<uint8_t*>(ptr);
+        device_info.mem_type = OUT_SURFACE_MEM_DEV_COPIED;
+    }
+    ConvertDeviceRgbFrame(input, &device_info, output, format, pitch);
+    HIP_API_CALL(hipStreamSynchronize(0));
+}
+
 #if ROCPYDECODE_ENABLE_HOST
 // FFmpeg returns planar, low-bit-aligned samples. Expand chroma and align
 // high-bit-depth samples before using rocDecode's existing RGB kernels.
@@ -132,6 +148,9 @@ inline void ConvertCpuRgbFrame(uint8_t* input, OutputSurfaceInfo* info, uint8_t*
                                hipMemcpyHostToDevice));
         input = static_cast<uint8_t*>(staged.get());
     }
+    auto device_info = *info;
+    device_info.mem_type = OUT_SURFACE_MEM_DEV_COPIED;
+    info = &device_info;
     int x_shift = 0, y_shift = 0;
     switch (info->surface_format) {
     case rocDecVideoSurfaceFormat_YUV420:
