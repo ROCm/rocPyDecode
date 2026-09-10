@@ -121,6 +121,10 @@ def decode_raw(
         decoded_now = decoder.DecodeFrame(packet)
         for _ in range(decoded_now):
             decoder.GetFrameYuv(packet, False)
+            # Drain frames already decoded, even after reaching the output limit.
+            if 0 < max_frames <= frame_count:
+                decoder.ReleaseFrame(packet)
+                continue
             if output_path and output_final_path is None:
                 width = decoder.GetWidth()
                 height = decoder.GetHeight()
@@ -135,9 +139,7 @@ def decode_raw(
             decoder.ReleaseFrame(packet)
             frame_count += 1
             frame_index += 1
-            if 0 < max_frames <= frame_count:
-                return True
-        return False
+        return 0 < max_frames <= frame_count
 
     data = memoryview(Path(input_path).read_bytes())
     for nal in _annexb_slices(data):

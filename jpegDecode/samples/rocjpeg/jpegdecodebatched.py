@@ -64,11 +64,10 @@ def jpeg_decode_batch(
     print(f"Total Bad files found : {total-total_valid_images_processed}")
     if total_valid_images_processed == 0:
         raise RuntimeError(f"No images decoded from {input_file_path}")
-    if (total_valid_images_processed > 0):
-        avg_time_per_image = total_decode_time_in_milli_sec / float(total)
-        ips = 1000.0 / avg_time_per_image
-        print("info: Average processing time per image (ms):      " + str(round(avg_time_per_image, 3)))
-        print("info: Average decoded images per sec (Images/Sec): " + str(round(ips, 3)) + "\n")
+    avg_time_per_image = total_decode_time_in_milli_sec / float(total_valid_images_processed)
+    ips = 1000.0 / avg_time_per_image
+    print("info: Average processing time per image (ms):      " + str(round(avg_time_per_image, 3)))
+    print("info: Average decoded images per sec (Images/Sec): " + str(round(ips, 3)) + "\n")
 
 
 if __name__ == "__main__":
