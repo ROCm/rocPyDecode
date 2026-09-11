@@ -142,19 +142,42 @@ py::object PyRocVideoDecoder::PyGetFrameYuv(PyPacketData& packet, bool separate)
     if (!input) return py::cast(-1);
     OutputSurfaceInfo* info = nullptr;
     GetPythonSurfaceInfo(&info);
-    const auto layout = rocpy::Planes(*info);
+    auto layout = rocpy::Planes(*info);
+    std::shared_ptr<void> owner;
+    if (rocpy::HasCrop(requested_crop_)) owner = cropped_surface_.owner;
+    // One rectangular tensor cannot represent gaps between planes or different
+    // plane pitches. Pack those layouts before exposing their concatenated bytes.
+    if (!separate && (info->output_vstride != info->output_height ||
+                     (layout.count > 1 && layout.planes[1].pitch != layout.planes[0].pitch))) {
+        try {
+            const bool host = info->mem_type == OUT_SURFACE_MEM_HOST_COPIED;
+            if (!host) HIP_API_CALL(hipSetDevice(device_id_));
+            packed_surface_.Copy(input, *info,
+                {0, 0, int(info->output_width), int(info->output_height)}, host);
+            input = packed_surface_.data();
+            info = &packed_surface_.info;
+            layout = rocpy::Planes(*info);
+            owner = packed_surface_.owner;
+        } catch (...) {
+            ReleaseFrame(pts);
+            throw;
+        }
+    }
     std::string type = info->bytes_per_pixel == 1 ? "|u1" : "|u2";
     const auto device = info->mem_type == OUT_SURFACE_MEM_HOST_COPIED ? kDLCPU : kDLROCM;
-    size_t rows = info->output_height;
+    size_t samples = size_t(info->output_width) * info->output_height;
     if (!separate)
         for (int i = 1; i < layout.count; ++i)
-            rows += size_t(layout.planes[i].width) * layout.planes[i].channels * layout.planes[i].height / info->output_width;
+            samples += size_t(layout.planes[i].width) * layout.planes[i].channels * layout.planes[i].height;
+    // Divide after summing: individual planar chroma planes can occupy half a
+    // luma-width row (for example, YUV420 with a height of 50).
+    const size_t rows = samples / info->output_width;
     for (int i = 0; i < (separate ? layout.count : 1); ++i) {
         const auto& plane = layout.planes[i];
         std::vector<size_t> shape{i == 0 ? rows : plane.height, size_t(plane.width) * plane.channels};
         std::vector<size_t> strides{plane.pitch, info->bytes_per_pixel};
         auto buffer = std::make_shared<BufferInterface>();
-        if (rocpy::HasCrop(requested_crop_)) buffer->KeepAlive(cropped_surface_.owner);
+        if (owner) buffer->KeepAlive(owner);
         buffer->LoadDLPack(shape, strides, info->bytes_per_pixel * 8, type,
             input + plane.offset, device_id_, device);
         packet.ext_buf[i] = std::move(buffer);

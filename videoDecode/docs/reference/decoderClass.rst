@@ -48,6 +48,13 @@ GetFrameYuv(packet, separate_planes=False)
 Retrieves the next decoded YUV frame, updates ``packet.frame_adrs`` and
 ``packet.ext_buf``, and returns its presentation timestamp, or -1 if no frame
 is available. Set ``separate_planes=True`` to export individual YUV planes.
+With ``separate_planes=False``, the tensor contains concatenated YUV samples
+reshaped to the luma width; a tensor row is not necessarily one chroma row.
+Layouts with different plane pitches or vertical gaps are copied into packed
+storage for this export. The packet's raw ``frame_adrs`` and surface information
+still describe the original retrieved frame. Use ``separate_planes=True`` for
+individual plane geometry without this packing step.
+
 Process each retrieved frame before releasing it with ``ReleaseFrame(packet)``.
 
 Example:

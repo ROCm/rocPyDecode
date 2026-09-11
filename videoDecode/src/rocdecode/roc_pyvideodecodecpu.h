@@ -112,7 +112,7 @@ class PyRocVideoDecoderCpu : public FFMpegVideoDecoder {
         std::shared_ptr<void> rgb_owner_;
         size_t rgb_capacity_ = 0;
         Rect requested_crop_{};
-        rocpy::Surface cropped_surface_, resized_surface_;
+        rocpy::Surface cropped_surface_, resized_surface_, packed_surface_;
         uint8_t* GetPythonFrame(int64_t* pts);
         bool GetPythonSurfaceInfo(OutputSurfaceInfo** info);
 };

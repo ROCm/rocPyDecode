@@ -78,6 +78,20 @@ def test_rgb_dlpack(input_file_path, decoder_class=dec.decoder, mem_type=OUT_SUR
             if packet.bitstream_size <= 0:
                 raise RuntimeError("no RGB frame decoded")
     test_geometry(input_file_path, decoder_class, mem_type)
+    # A 50-row planar 4:2:0 crop has two 25-row chroma planes. Their
+    # concatenated size is 75 luma-width rows, not 74 after per-plane division.
+    demuxer = dmx.demuxer(input_file_path)
+    decoder = decoder_class(dec.GetRocDecCodecID(demuxer.GetCodecId()),
+                            mem_type=mem_type, b_force_zero_latency=True,
+                            crop_rect=(0, 0, 64, 50))
+    while True:
+        packet = demuxer.DemuxFrame()
+        if decoder.DecodeFrame(packet):
+            break
+        assert packet.bitstream_size > 0, "No frame for combined YUV regression"
+    assert decoder.GetFrameYuv(packet, False) != -1
+    assert packet.ext_buf[0].shape == (75, 64)
+    decoder.ReleaseFrame(packet)
     print("rocPyDecode RGB DLPack formats 1–8 and crop/resize checks passed.")
 
 

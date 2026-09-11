@@ -23,6 +23,7 @@ THE SOFTWARE.
 #include "roc_pyjpeg_decoder.h"
 #include "roc_pyjpeg_utils.h"
 #include "roc_pyjpeg_codestream.h"
+#include <algorithm>
 #include "roc_pyjpeg_images.h"
 
 using namespace std;
@@ -248,10 +249,13 @@ int Decoder::GetImageInfo(RocJpegStreamHandle stream_handle, PyJpegImages& img) 
     }
     // Hardware output pitches are aligned; logical tensor widths remain unchanged.
     for (uint32_t i = 0; i < img.num_channels; ++i) {
-        const size_t height = channel_sizes[i] / img.output_image.pitch[i];
         img.output_image.pitch[i] = (img.output_image.pitch[i] + 255u) & ~255u;
+        // channel_sizes already includes the minimum allocation alignment.
+        // RGB and RGB_PLANAR both have full-height output channels.
+        const size_t allocation_size = std::max<size_t>(
+            channel_sizes[i], size_t(img.output_image.pitch[i]) * img.m_height);
         void* allocation = nullptr;
-        hipError_t status = hipMalloc(&allocation, size_t(img.output_image.pitch[i]) * height);
+        hipError_t status = hipMalloc(&allocation, allocation_size);
         if (status != hipSuccess)
             throw std::runtime_error(hipGetErrorString(status));
         img.ext_buf[i]->KeepAlive(std::shared_ptr<void>(allocation, [](void* ptr) { (void)hipFree(ptr); }));
