@@ -66,7 +66,13 @@ buffer = np.zeros((1080 * 1920 * 3,), dtype=np.uint8)
 packet = demuxer.DemuxFrame()
 decoder.DecodeFrame(packet)
 decoder.GetFrameYuv(packet, separate_planes=False)
-decoder.GetFrameRgb(packet, rgb_format=0)
+try:
+    decoder.GetFrameRgb(packet, rgb_format=0)
+except ValueError:
+    pass
+else:
+    raise AssertionError("Native YUV is not an RGB output format")
+decoder.GetFrameRgb(packet, rgb_format=3)
 GetRocPyDecPacket(0, size=buffer.size, buffer=buffer)
 decoder.GetWidth()
 decoder.GetHeight()

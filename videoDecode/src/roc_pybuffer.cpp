@@ -76,6 +76,8 @@ py::capsule BufferInterface::dlpack(py::object stream) const {
     struct ManagerCtx {
         DLManagedTensor tensor;
         std::shared_ptr<const BufferInterface> extBuffer;
+        std::shared_ptr<void> owner;
+        std::vector<int64_t> shape, strides;
     };
 
     auto ctx = std::make_unique<ManagerCtx>();
@@ -89,6 +91,13 @@ py::capsule BufferInterface::dlpack(py::object stream) const {
 
     // Copy tensor data
     ctx->tensor.dl_tensor = *m_dlTensor;
+    if (!m_dlTensor->data)
+        throw std::runtime_error("Cannot export an uninitialized buffer");
+    ctx->shape.assign(m_dlTensor->shape, m_dlTensor->shape + m_dlTensor->ndim);
+    ctx->strides.assign(m_dlTensor->strides, m_dlTensor->strides + m_dlTensor->ndim);
+    ctx->tensor.dl_tensor.shape = ctx->shape.data();
+    ctx->tensor.dl_tensor.strides = ctx->strides.data();
+    ctx->owner = m_owner;
 
     // Manager context holds a reference to this External Buffer so that
     // GC doesn't delete this buffer while the dlpack tensor still refers to it.
@@ -132,54 +141,19 @@ void BufferInterface::ExportToPython(py::module &m) {
         .def("__dlpack_device__", &BufferInterface::dlpackDevice, "Get the device associated with the buffer");
 }
 
-int BufferInterface::LoadDLPack(std::vector<size_t>& _shape, std::vector<size_t>& _stride, uint32_t bit_depth, std::string& _type_str, void* _data, int device_id_) {
-    m_dlTensor->byte_offset = 0;
-    m_dlTensor->device.device_type = kDLROCM;   // TODO: infer the device type from the memory buffer
-    m_dlTensor->device.device_id = device_id_;
-
-    // Convert data
-    void* ptr = _data;
-    CheckValidBuffer(ptr);
-    m_dlTensor->data = ptr;
-
-    // Convert DataType
-    if (_type_str != "|u1" && _type_str != "|u2") {  // TODO: can also be other letters
-        throw std::runtime_error("Could not create DL Pack tensor! Invalid typstr: " + _type_str);
-        return -1;
-    }
-
-    int itemSizeDT;
-
-    m_dlTensor->dtype.code = kDLUInt;
-
-    if (bit_depth == 8) {
-        m_dlTensor->dtype.bits = 8;
-        itemSizeDT = sizeof(uint8_t);
-    } else if (bit_depth == 10) {
-        m_dlTensor->dtype.bits = 16;
-        itemSizeDT = sizeof(uint16_t);
-    }
-    m_dlTensor->dtype.lanes = 1;
-
-    // Convert ndim
-    m_dlTensor->ndim = _shape.size();
-
-    // Convert shape
-    m_dlTensor->shape = new int64_t[m_dlTensor->ndim];
-    for (int i = 0; i < m_dlTensor->ndim; ++i) {
-        m_dlTensor->shape[i] = _shape[i];
-    }
-
-    // Convert strides
-    int strides_dim = _stride.size();
-    m_dlTensor->strides = new int64_t[strides_dim];
-    for (int i = 0; i < strides_dim; ++i) {
-        m_dlTensor->strides[i] = _stride[i];
-        if (m_dlTensor->strides[i] % itemSizeDT != 0) {
-            throw std::runtime_error("Stride must be a multiple of the element size in bytes");
-            return -1;
-        }
-        m_dlTensor->strides[i] /= itemSizeDT;
-    }
+int BufferInterface::LoadDLPack(std::vector<size_t>& _shape, std::vector<size_t>& _stride, uint32_t bit_depth, std::string& _type_str, void* _data, int device_id_, DLDeviceType device_type) {
+    CheckValidBuffer(_data);
+    if ((_type_str != "|u1" && _type_str != "|u2") || bit_depth == 0 || bit_depth > 16)
+        throw std::invalid_argument("Unsupported DLPack unsigned element type");
+    const size_t item_size = bit_depth <= 8 ? 1 : 2;
+    if (_stride.size() < _shape.size())
+        throw std::invalid_argument("Missing DLPack strides");
+    std::vector<ssize_t> shape(_shape.begin(), _shape.end());
+    std::vector<ssize_t> strides(_stride.begin(), _stride.begin() + _shape.size());
+    py::buffer_info info(_data, item_size,
+        item_size == 1 ? py::format_descriptor<uint8_t>::format() : py::format_descriptor<uint16_t>::format(),
+        shape.size(), shape, strides);
+    m_dlTensor = DLPackPyTensor(info, DLDevice{device_type, device_type == kDLCPU ? 0 : device_id_});
+    m_dlTensor->dtype = DLDataType{kDLUInt, static_cast<uint8_t>(item_size * 8), 1};
     return 0;
 }

@@ -21,35 +21,78 @@
 import pyRocVideoDecode.demuxer as dmx
 import pyRocVideoDecode.decoder as dec
 from pyRocVideoDecode.types import OUT_SURFACE_MEM_DEV_COPIED
+import ctypes
 import argparse
 import sys
 
 
-def test_rgb_dlpack(input_file_path):
+def test_geometry(input_file_path, decoder_class, mem_type):
     demuxer = dmx.demuxer(input_file_path)
-    codec_id = dec.GetRocDecCodecID(demuxer.GetCodecId())
-    decoder = dec.decoder(codec_id, mem_type=OUT_SURFACE_MEM_DEV_COPIED, b_force_zero_latency=True)
-
+    codec = dec.GetRocDecCodecID(demuxer.GetCodecId())
+    decoder = decoder_class(codec, mem_type=mem_type, b_force_zero_latency=True,
+                            crop_rect=(0, 0, 64, 48))
     while True:
         packet = demuxer.DemuxFrame()
-        for i in range(decoder.DecodeFrame(packet)):
-            if decoder.GetFrameRgb(packet, rgb_format=3) == -1:
-                continue
-
-            # interleaved 8-bit RGB surface: shape [H, W, 3], 3 bytes/pixel, 1 byte/channel.
-            buf = packet.ext_buf[0]
-            assert buf.dtype == "|u1" # unsigned 8-bit integer, "|u1" == uint8
-            assert len(buf.shape) == 3 and buf.shape[2] == 3
-            assert buf.strides[1:] == (3, 1)
-
-            decoder.ReleaseFrame(packet)
-            print('rocPyDecode RGB DLPack test finished.')
-            return
-
-        if packet.bitstream_size <= 0:
+        if decoder.DecodeFrame(packet):
             break
+        assert packet.bitstream_size > 0, "No frame for crop/resize regression"
+    assert decoder.GetFrameYuv(packet, True) != -1
+    assert packet.ext_buf[0].shape == (48, 64)
+    assert (decoder.GetWidth(), decoder.GetHeight()) == (64, 48)
+    expected_device = 1 if mem_type == 2 else 10  # DLPack CPU / ROCm
+    assert packet.ext_buf[0].__dlpack_device__()[0] == expected_device
+    surface = decoder.GetOutputSurfaceInfo()
+    for width, height in ((32, 24), (24, 32), (128, 96)):
+        resized = decoder.ResizeFrame(packet, (width, height), surface)
+        assert resized
+        # OutputSurfaceInfo begins with uint32 width, height and pitch.
+        metadata = tuple((ctypes.c_uint32 * 3).from_address(resized))
+        itemsize = 1 if packet.ext_buf[0].dtype == "|u1" else 2
+        assert metadata == (width, height, width * itemsize), metadata
+    for dims in ((-2, 48), (0, 48), (63, 47)):
+        try:
+            decoder.ResizeFrame(packet, dims, surface)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("Invalid subsampled YUV resize dimensions accepted")
+    decoder.ReleaseFrame(packet)
 
-    raise RuntimeError('no RGB frame decoded')
+
+def test_rgb_dlpack(input_file_path, decoder_class=dec.decoder, mem_type=OUT_SURFACE_MEM_DEV_COPIED):
+    for fmt in range(1, 9):
+        demuxer = dmx.demuxer(input_file_path)
+        codec_id = dec.GetRocDecCodecID(demuxer.GetCodecId())
+        decoder = decoder_class(codec_id, mem_type=mem_type, b_force_zero_latency=True)
+        while True:
+            packet = demuxer.DemuxFrame()
+            if decoder.DecodeFrame(packet):
+                assert decoder.GetFrameRgb(packet, fmt) != -1
+                buf = packet.ext_buf[0]
+                channels = 4 if fmt >= 5 else 3
+                assert buf.dtype == ("|u2" if fmt % 2 == 0 else "|u1")
+                assert buf.shape == (decoder.GetHeight(), decoder.GetWidth(), channels)
+                assert buf.strides[1:] == (channels, 1)
+                decoder.ReleaseFrame(packet)
+                break
+            if packet.bitstream_size <= 0:
+                raise RuntimeError("no RGB frame decoded")
+    test_geometry(input_file_path, decoder_class, mem_type)
+    # A 50-row planar 4:2:0 crop has two 25-row chroma planes. Their
+    # concatenated size is 75 luma-width rows, not 74 after per-plane division.
+    demuxer = dmx.demuxer(input_file_path)
+    decoder = decoder_class(dec.GetRocDecCodecID(demuxer.GetCodecId()),
+                            mem_type=mem_type, b_force_zero_latency=True,
+                            crop_rect=(0, 0, 64, 50))
+    while True:
+        packet = demuxer.DemuxFrame()
+        if decoder.DecodeFrame(packet):
+            break
+        assert packet.bitstream_size > 0, "No frame for combined YUV regression"
+    assert decoder.GetFrameYuv(packet, False) != -1
+    assert packet.ext_buf[0].shape == (75, 64)
+    decoder.ReleaseFrame(packet)
+    print("rocPyDecode RGB DLPack formats 1–8 and crop/resize checks passed.")
 
 
 if __name__ == "__main__":

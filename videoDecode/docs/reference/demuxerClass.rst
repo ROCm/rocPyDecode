@@ -12,18 +12,18 @@ Instantiation
 =============
 
 To instantiate a demuxer instance, pass the video file name and path as the input parameter.
-	
+
 Example:
-^^^^^^^^
+--------
 
 .. code-block:: python
-	
-		# demuxer instance
-		demuxer = dmx.demuxer(input_file_path)
+
+                # demuxer instance
+                demuxer = dmx.demuxer(input_file_path)
 
 Member functions
 ================
-  
+
 The following are the member functions of the demuxer class.
 
 DemuxFrame()
@@ -35,40 +35,41 @@ Example:
 ^^^^^^^^
 
 .. code-block:: python
-	
-		while True:
-			packet = demuxer.DemuxFrame()
-			n_frame_returned = viddec.DecodeFrame(packet)
 
-			for i in range(n_frame_returned):
-				viddec.GetFrame(packet)
+                while True:
+                        packet = demuxer.DemuxFrame()
+                        n_frame_returned = viddec.DecodeFrame(packet)
 
-				# save frames
-				surface_info = viddec.GetOutputSurfaceInfo()
-				viddec.SaveFrameToFile(output_file_path, packet.frame_adrs, surface_info)
+                        for i in range(n_frame_returned):
+                                viddec.GetFrame(packet)
 
-				# release frame
-				viddec.ReleaseFrame(packet)
-				if (packet.frame_size <= 0):  # EOF: no more to decode
-					break
-				
+                                # save frames
+                                surface_info = viddec.GetOutputSurfaceInfo()
+                                viddec.SaveFrameToFile(output_file_path, packet.frame_adrs, surface_info)
+
+                                # release frame
+                                viddec.ReleaseFrame(packet)
+                                if (packet.frame_size <= 0):  # EOF: no more to decode
+                                        break
+
 GetCodecId()
 ------------
 
-Returns the demux codec ID to be used in later decoder functions. 
+Returns the demux codec ID to be used in later decoder functions.
 
 Example:
 ^^^^^^^^
 
 .. code-block:: python
-	
-		# demuxer instance
-		demuxer = dmx.demuxer(input_file_path)
 
-		# get the used coded id
-		codec_id = dec.GetRocDecCodecID(demuxer.GetCodecId())
-		# decoder instance
-		viddec = dec.decoder(device_id, mem_type, codec_id, b_force_zero_latency, crop_rect, 0, 0, 1000)
+                # demuxer instance
+                demuxer = dmx.demuxer(input_file_path)
+
+                # get the used coded id
+                codec_id = dec.GetRocDecCodecID(demuxer.GetCodecId())
+                # decoder instance
+                viddec = dec.decoder(codec_id, device_id=device_id, mem_type=mem_type,
+                    b_force_zero_latency=b_force_zero_latency, crop_rect=crop_rect)
 
 SeekFrame(frame_number, seek_mode, seek_criteria)
 -------------------------------------------------
@@ -84,18 +85,18 @@ Example:
 ^^^^^^^^
 
 .. code-block:: python
-	
-		not_seeking = False
 
-		seek_frame = 100     # seek to the 100th frames
-		seek_mode = 0        # by exact frame number
-		seek_criteria = 0    # by frame number
-		
-		# The decoding loop to start by seek
-		while True:
-			start_time = datetime.datetime.now()
-			if(not_seeking):
-				packet = demuxer.DemuxFrame()
-			else:
-				packet = demuxer.SeekFrame(seek_frame, seek_mode, seek_criteria)
-				not_seeking = True
+                not_seeking = False
+
+                seek_frame = 100     # seek to the 100th frames
+                seek_mode = 0        # by exact frame number
+                seek_criteria = 0    # by frame number
+
+                # The decoding loop to start by seek
+                while True:
+                        start_time = datetime.datetime.now()
+                        if(not_seeking):
+                                packet = demuxer.DemuxFrame()
+                        else:
+                                packet = demuxer.SeekFrame(seek_frame, seek_mode, seek_criteria)
+                                not_seeking = True

@@ -24,8 +24,6 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set(HIP_PLATFORM amd CACHE STRING "HIP platform")
 find_package(HIP REQUIRED)
 find_package(rocdecode 1.0.0 REQUIRED)
-find_package(pybind11 REQUIRED)
-find_package(DLPACK REQUIRED)
 find_package(FFmpeg QUIET)
 
 set(ROCPYVIDEO_UTILS "${ROCM_PATH}/share/rocdecode/utils")
@@ -51,7 +49,6 @@ set(ROCPYVIDEO_SOURCES
     src/rocdecode/roc_pydecode.cpp
     src/rocdecode/roc_pyvideodecode.cpp
     "${ROCPYVIDEO_UTILS}/colorspace_kernels.cpp"
-    "${ROCPYVIDEO_UTILS}/resize_kernels.cpp"
     "${ROCPYVIDEO_UTILS}/rocvideodecode/roc_video_dec.cpp")
 if(ROCPYVIDEO_USE_FFMPEG)
     list(APPEND ROCPYVIDEO_SOURCES src/rocdecode/roc_pyvideodemuxer.cpp)
@@ -68,8 +65,13 @@ set(Python3_FIND_VIRTUALENV FIRST)
 if(PYTHON_VERSION_SUGGESTED)
     find_package(Python3 ${PYTHON_VERSION_SUGGESTED} EXACT REQUIRED COMPONENTS Interpreter Development)
 else()
-    find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+    find_package(Python3 3.9 REQUIRED COMPONENTS Interpreter Development)
 endif()
+if(Python3_VERSION VERSION_LESS "3.9")
+    message(FATAL_ERROR "Bundled pybind11 3.1.0 requires Python 3.9 or newer")
+endif()
+include("${CMAKE_CURRENT_SOURCE_DIR}/third_party/Dependencies.cmake")
+
 string(REPLACE "." "_" ROCPYVIDEO_PYTHON_SUFFIX
     "${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}")
 set(ROCPYVIDEO_TARGET "rocpydecode_${ROCPYVIDEO_PYTHON_SUFFIX}")
@@ -82,8 +84,8 @@ target_include_directories(${ROCPYVIDEO_TARGET} PRIVATE
     "${ROCPYVIDEO_UTILS}"
     "${ROCPYVIDEO_UTILS}/rocvideodecode"
     "${ROCPYVIDEO_UTILS}/ffmpegvideodecode"
-    ${rocdecode_INCLUDE_DIR} ${DLPACK_INCLUDE_DIRS})
-target_link_libraries(${ROCPYVIDEO_TARGET} PRIVATE hip::device rocdecode::rocdecode)
+    ${rocdecode_INCLUDE_DIR})
+target_link_libraries(${ROCPYVIDEO_TARGET} PRIVATE dlpack::dlpack hip::device rocdecode::rocdecode)
 target_compile_definitions(${ROCPYVIDEO_TARGET} PRIVATE
     ROCPYDECODE_ENABLE_HOST=$<BOOL:${ROCPYVIDEO_ENABLE_HOST}>
     ROCPYDECODE_USE_FFMPEG=$<BOOL:${ROCPYVIDEO_USE_FFMPEG}>)

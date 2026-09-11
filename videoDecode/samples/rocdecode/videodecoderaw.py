@@ -111,6 +111,8 @@ def decode_raw(
 
     def feed_packet(buf, is_eos=False):
         nonlocal frame_count, frame_index, output_final_path
+        if 0 < max_frames <= frame_count:
+            return True
         packet = dec.GetRocPyDecPacket(frame_index, len(buf), buf)
         packet.pkt_flags = 0
         packet.end_of_stream = False
@@ -119,6 +121,10 @@ def decode_raw(
         decoded_now = decoder.DecodeFrame(packet)
         for _ in range(decoded_now):
             decoder.GetFrameYuv(packet, False)
+            # Drain frames already decoded, even after reaching the output limit.
+            if 0 < max_frames <= frame_count:
+                decoder.ReleaseFrame(packet)
+                continue
             if output_path and output_final_path is None:
                 width = decoder.GetWidth()
                 height = decoder.GetHeight()
@@ -133,35 +139,18 @@ def decode_raw(
             decoder.ReleaseFrame(packet)
             frame_count += 1
             frame_index += 1
-            if 0 < max_frames <= frame_count:
-                return True
-        return False
+        return 0 < max_frames <= frame_count
 
     data = memoryview(Path(input_path).read_bytes())
-    sps = pps = None
     for nal in _annexb_slices(data):
-        # nal header byte after start code
-        sc_len = 4 if nal[:4] == b"\x00\x00\x00\x01" else 3
-        nal_type = nal[sc_len] & 0x1F
-        if nal_type == 7:  # SPS
-            sps = bytes(nal)
-            continue
-        if nal_type == 8:  # PPS
-            pps = bytes(nal)
-            continue
-        if nal_type in (1, 5):  # non-IDR / IDR slice -> frame
-            # prepend latest SPS/PPS so each frame is self-contained
-            parts = []
-            if sps:
-                parts.append(sps)
-            if pps:
-                parts.append(pps)
-            parts.append(bytes(nal))
-            au = b"".join(parts)
-            if feed_packet(memoryview(au)):
-                break
-    # EOS
-    feed_packet(memoryview(b""), is_eos=True)
+        # Preserve the stream's NAL order and parameter sets. rocDecode's
+        # codec-specific parser assembles pictures for both AVC and HEVC;
+        # interpreting every NAL header as AVC silently discards HEVC data.
+        if feed_packet(nal):
+            break
+    # Flush delayed pictures only while more output is requested.
+    if max_frames < 0 or frame_count < max_frames:
+        feed_packet(memoryview(b""), is_eos=True)
     # Account for any frames still buffered in decoder
     frame_count += decoder.GetNumOfFlushedFrames()
 
@@ -173,7 +162,7 @@ def decode_raw(
             f"({fps:.2f} fps)."
         )
     else:
-        print("info: No frames decoded.")
+        raise RuntimeError(f"No frames decoded from {input_path}")
 
 
 def main():
@@ -234,6 +223,9 @@ def main():
     )
 
     args = parser.parse_args()
+
+    if args.frames != -1 and args.frames <= 0:
+        parser.error("--frames must be -1 (all frames) or a positive integer")
 
     if not os.path.exists(args.input):
         raise FileNotFoundError(f"Input file not found: {args.input}")

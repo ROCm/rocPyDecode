@@ -23,6 +23,7 @@ THE SOFTWARE.
 #include "roc_pyjpeg_decoder.h"
 #include "roc_pyjpeg_utils.h"
 #include "roc_pyjpeg_codestream.h"
+#include <algorithm>
 #include "roc_pyjpeg_images.h"
 
 using namespace std;
@@ -105,13 +106,13 @@ Decoder::Decoder(int device_id, int backend, RocJpegOutputFormat output_format) 
 std::pair<float, PyJpegImages> Decoder::decode(DecodeSource* data) {
     float elapsed_ms = 0.0;
     // keep code stream ptr in class (alive)
-    assert(data);
+    if (!data) throw std::invalid_argument("DecodeSource must not be None");
     // img 'instance' to return
     PyJpegImages img;
     // get current data/file associated code_stream instance
     const CodeStream* c_stream = data->CodeStreamInstance();    
     // runtime sanity check
-    if(!c_stream->stream_handle) {
+    if(!c_stream || !c_stream->stream_handle) {
         return {elapsed_ms, img}; // last item is this instance
     }
     // DECODE one single JPEG image
@@ -121,7 +122,7 @@ std::pair<float, PyJpegImages> Decoder::decode(DecodeSource* data) {
         auto end = std::chrono::high_resolution_clock::now();
         if (status != ROCJPEG_STATUS_SUCCESS) {
             std::cerr << "ERROR: Failed to decode image. Status code: " << status << std::endl;
-            return {elapsed_ms, img};
+            throw std::runtime_error("JPEG decode failed");
         }
         // to export to python (use dlpack(GPU MEM) {and numpy host array}) -- GPU Tensor
         img.ToDlpackTensor(user_output_format, m_device_id);
@@ -154,7 +155,7 @@ std::pair<float, std::vector<PyJpegImages>> Decoder::decode(std::vector<DecodeSo
         // get current data/file associated code_stream instance
         const CodeStream* c_stream = data->CodeStreamInstance();    
         // runtime sanity check
-        if(!c_stream->stream_handle)
+        if(!c_stream || !c_stream->stream_handle)
             continue;
         // one img 'instance'
         PyJpegImages img;
@@ -183,7 +184,7 @@ std::pair<float, std::vector<PyJpegImages>> Decoder::decode(std::vector<DecodeSo
         elapsed_ms += std::chrono::duration<float, std::milli>(end - start).count();
         if (status != ROCJPEG_STATUS_SUCCESS) {
             std::cerr << "ERROR: Failed to decode the image batch. Status code: " << status << std::endl;
-            return {elapsed_ms, images_}; // return the image list
+            throw std::runtime_error("JPEG batch decode failed");
         }
         // here 'images_' vector carries the count of 'valid' images
         // to export to python (use dlpack(GPU MEM) {and numpy host array})
@@ -246,18 +247,19 @@ int Decoder::GetImageInfo(RocJpegStreamHandle stream_handle, PyJpegImages& img) 
         std::cerr << "ERROR: Failed to get the channel pitch and sizes" << std::endl;
         return EXIT_FAILURE;
     }
-    // allocate memory for each channel
-    hipError_t hip_status = hipSuccess;
-    for (int i = 0; i < img.num_channels; i++) {
-        if (img.output_image.channel[i] != nullptr) {
-            hip_status = hipFree((void *)img.output_image.channel[i]);
-            if (hip_status != hipSuccess)
-                return EXIT_FAILURE;
-                img.output_image.channel[i] = nullptr;
-        }
-        hip_status = hipMalloc(&img.output_image.channel[i], channel_sizes[i]);
-        if (hip_status != hipSuccess)
-            return EXIT_FAILURE;
+    // Hardware output pitches are aligned; logical tensor widths remain unchanged.
+    for (uint32_t i = 0; i < img.num_channels; ++i) {
+        img.output_image.pitch[i] = (img.output_image.pitch[i] + 255u) & ~255u;
+        // channel_sizes already includes the minimum allocation alignment.
+        // RGB and RGB_PLANAR both have full-height output channels.
+        const size_t allocation_size = std::max<size_t>(
+            channel_sizes[i], size_t(img.output_image.pitch[i]) * img.m_height);
+        void* allocation = nullptr;
+        hipError_t status = hipMalloc(&allocation, allocation_size);
+        if (status != hipSuccess)
+            throw std::runtime_error(hipGetErrorString(status));
+        img.ext_buf[i]->KeepAlive(std::shared_ptr<void>(allocation, [](void* ptr) { (void)hipFree(ptr); }));
+        img.output_image.channel[i] = static_cast<uint8_t*>(allocation);
     }
     return EXIT_SUCCESS;
 }

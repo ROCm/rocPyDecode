@@ -26,6 +26,7 @@ THE SOFTWARE.
 #include <algorithm>
 #include <vector>
 #include <functional>
+#include <pybind11/stl/filesystem.h>
 
 using namespace std;
 
@@ -109,12 +110,18 @@ int CodeStream::InitializeSingleImage(const std::filesystem::path& filename, con
             return ret;
         }
     }
+    if (!file_data || file_data->empty() || data_size <= 0)
+        return EXIT_FAILURE;
     RocJpegStatus rocjpeg_status = ROCJPEG_STATUS_NOT_INITIALIZED;
     rocjpeg_status = rocJpegStreamCreate(&stream_handle);
     if (rocjpeg_status != ROCJPEG_STATUS_SUCCESS) {
         std::cerr << "ERROR: Failed to create stream with " << rocJpegGetErrorName(rocjpeg_status) << std::endl;
         return EXIT_FAILURE;
     }
+    // Copies share one owner; the native stream is destroyed exactly once.
+    stream_owner_ = std::shared_ptr<void>(stream_handle, [](void* handle) {
+        rocJpegStreamDestroy(handle);
+    });
     // Stream Parse
     rocjpeg_status = rocJpegStreamParse(reinterpret_cast<uint8_t*>(file_data->data()), data_size, stream_handle);
     if (rocjpeg_status != ROCJPEG_STATUS_SUCCESS) {
@@ -126,10 +133,8 @@ int CodeStream::InitializeSingleImage(const std::filesystem::path& filename, con
 }
 
 void CodeStream::Release() {
-    if(stream_handle) {
-        RocJpegStatus rocjpeg_status = rocJpegStreamDestroy(stream_handle);
-        stream_handle = nullptr;
-    }
+    stream_owner_.reset();
+    stream_handle = nullptr;
 }
 
 CodeStream::CodeStream(const std::filesystem::path& filename) {
@@ -143,18 +148,19 @@ CodeStream::CodeStream(const unsigned char* data, size_t length) {
 }
 
 CodeStream::CodeStream(py::bytes data) {
-    data_ref_bytes_ = data;
-    std::string data_str = static_cast<std::string>(data_ref_bytes_); // Convert py::bytes to std::string
+    std::string data_str = static_cast<std::string>(data); // Convert py::bytes to std::string
     std::string_view data_view(data_str);
     py::gil_scoped_release release;
     InitializeSingleImage(static_cast<const std::filesystem::path>(""), reinterpret_cast<const unsigned char*>(data_view.data()), data_view.size());
 }
 
 CodeStream::CodeStream(py::array_t<uint8_t> arr) {
-    data_ref_arr_ = arr;
-    auto data = data_ref_arr_.unchecked<1>();
+    auto data = arr.unchecked<1>();
+    std::vector<unsigned char> contiguous(data.size());
+    for (ssize_t i = 0; i < data.size(); ++i)
+        contiguous[i] = data(i);
     py::gil_scoped_release release;
-    InitializeSingleImage(static_cast<const std::filesystem::path>(""), data.data(0), data.size());
+    InitializeSingleImage(std::filesystem::path(), contiguous.data(), contiguous.size());
 }
 
 CodeStream::CodeStream() {

@@ -24,15 +24,18 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set(HIP_PLATFORM amd CACHE STRING "HIP platform")
 find_package(HIP REQUIRED)
 find_package(rocjpeg 1.0.0 REQUIRED)
-find_package(pybind11 REQUIRED)
-find_package(DLPACK REQUIRED)
 
 set(Python3_FIND_VIRTUALENV FIRST)
 if(PYTHON_VERSION_SUGGESTED)
     find_package(Python3 ${PYTHON_VERSION_SUGGESTED} EXACT REQUIRED COMPONENTS Interpreter Development)
 else()
-    find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+    find_package(Python3 3.9 REQUIRED COMPONENTS Interpreter Development)
 endif()
+if(Python3_VERSION VERSION_LESS "3.9")
+    message(FATAL_ERROR "Bundled pybind11 3.1.0 requires Python 3.9 or newer")
+endif()
+include("${CMAKE_CURRENT_SOURCE_DIR}/third_party/Dependencies.cmake")
+
 string(REPLACE "." "_" ROCPYJPEG_PYTHON_SUFFIX
     "${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}")
 set(ROCPYJPEG_TARGET "rocpyjpegdecode_${ROCPYJPEG_PYTHON_SUFFIX}")
@@ -43,8 +46,8 @@ pybind11_add_module(${ROCPYJPEG_TARGET} MODULE
 target_include_directories(${ROCPYJPEG_TARGET} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/rocjpeg"
-    ${rocjpeg_INCLUDE_DIR} ${DLPACK_INCLUDE_DIRS})
-target_link_libraries(${ROCPYJPEG_TARGET} PRIVATE hip::device rocjpeg::rocjpeg)
+    ${rocjpeg_INCLUDE_DIR})
+target_link_libraries(${ROCPYJPEG_TARGET} PRIVATE dlpack::dlpack hip::device rocjpeg::rocjpeg)
 
 set(ROCPYJPEG_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/${ROCPYJPEG_TARGET}")
 file(COPY pyRocJpegDecode DESTINATION "${ROCPYJPEG_OUTPUT_DIR}")

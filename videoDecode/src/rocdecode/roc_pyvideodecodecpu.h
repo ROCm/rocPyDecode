@@ -21,12 +21,17 @@ THE SOFTWARE.
 */
 
 #pragma once
+#include "roc_pysurface.h"
 
 #include "roc_video_dec.h"
 #include "roc_pydecode.h"
 #include "video_post_process.h"
 #include "ffmpegvideodecode/ffmpeg_video_dec.h"
 #include "rocdecode_version.h"
+extern "C" {
+#include <libavcodec/avcodec.h>
+#include <libavutil/pixdesc.h>
+}
 
 //
 // AMD Video Decoder Python Interface class
@@ -36,7 +41,7 @@ class PyRocVideoDecoderCpu : public FFMpegVideoDecoder {
         PyRocVideoDecoderCpu(int device_id, int mem_type = OUT_SURFACE_MEM_HOST_COPIED, rocDecVideoCodec codec = rocDecVideoCodec_HEVC, bool force_zero_latency = false,
                           const Rect *p_crop_rect = nullptr, int max_width = 0, int max_height = 0,
                           uint32_t clk_rate = 1000) : FFMpegVideoDecoder(device_id, static_cast<OutputSurfaceMemoryType>(mem_type), codec, force_zero_latency,
-                          p_crop_rect, false, 0, max_width, max_height, clk_rate) { InitConfigStructure(); }
+                          rocpy::DecodeFullFrame(p_crop_rect), false, 0, max_width, max_height, clk_rate), requested_crop_(p_crop_rect ? *p_crop_rect : Rect{}) { InitConfigStructure(); }
         ~PyRocVideoDecoderCpu();                        
          
         // for python binding
@@ -96,13 +101,18 @@ class PyRocVideoDecoderCpu : public FFMpegVideoDecoder {
     private:
         std::shared_ptr <ConfigInfo> configInfo;
         void InitConfigStructure();
+        void ParseBitDepth(const PyPacketData& packet);
+        std::shared_ptr<AVCodecParserContext> bit_depth_parser_;
+        std::shared_ptr<AVCodecContext> bit_depth_context_;
+        uint32_t parsed_bit_depth_ = 0;
 
     protected:
         // used in frame allocation
         uint8_t *frame_ptr_rgb = nullptr;
-        VideoPostProcess * post_process_class = nullptr;
-        // used in frame resizing
-        uint8_t *frame_ptr_resized = nullptr;
-        size_t resized_image_size_in_bytes = 0;
-        OutputSurfaceInfo *resized_surf_info = nullptr;
+        std::shared_ptr<void> rgb_owner_;
+        size_t rgb_capacity_ = 0;
+        Rect requested_crop_{};
+        rocpy::Surface cropped_surface_, resized_surface_, packed_surface_;
+        uint8_t* GetPythonFrame(int64_t* pts);
+        bool GetPythonSurfaceInfo(OutputSurfaceInfo** info);
 };

@@ -40,7 +40,7 @@ def jpeg_decode_batch(
     devices_count, ret = jdec.initialize_hip(device_id)
     if(ret == False):
         print(f"Exiting jpegdecodebatched application, Device#: {device_id} not found.")
-        sys.exit()
+        sys.exit(1)
 
     # create the decoder instance
     decoder = jdec.decoder(device_id, backend)
@@ -62,11 +62,12 @@ def jpeg_decode_batch(
 
     print(f"Total files processed : {total_valid_images_processed}")
     print(f"Total Bad files found : {total-total_valid_images_processed}")
-    if (total_valid_images_processed > 0):
-        avg_time_per_image = total_decode_time_in_milli_sec / float(total)
-        ips = 1000.0 / avg_time_per_image
-        print("info: Average processing time per image (ms):      " + str(round(avg_time_per_image, 3)))
-        print("info: Average decoded images per sec (Images/Sec): " + str(round(ips, 3)) + "\n")
+    if total_valid_images_processed == 0:
+        raise SystemExit(f"No images decoded from {input_file_path}")
+    avg_time_per_image = total_decode_time_in_milli_sec / float(total_valid_images_processed)
+    ips = 1000.0 / avg_time_per_image
+    print("info: Average processing time per image (ms):      " + str(round(avg_time_per_image, 3)))
+    print("info: Average decoded images per sec (Images/Sec): " + str(round(ips, 3)) + "\n")
 
 
 if __name__ == "__main__":
@@ -85,7 +86,7 @@ if __name__ == "__main__":
         '--batch',
         type=int,
         default=2,
-        help='batch size > 0 process the batch of files with this batch size, if 0 means do not process as batch, optional, default is 2',
+        help='Positive batch size, optional, default is 2',
         required=False)
     parser.add_argument(
         '-fmt',
@@ -111,10 +112,7 @@ if __name__ == "__main__":
         help='GPU device ID - optional, default 0',
         required=False)
 
-    try:
-        args = parser.parse_args()
-    except BaseException:
-        sys.exit()
+    args = parser.parse_args()
 
     # get params
     input_file_path = args.input
@@ -124,13 +122,8 @@ if __name__ == "__main__":
     backend = args.backend
 
     if not isinstance(batch_size, int) or batch_size <= 0:
-        print(f"Args Error: batch_size must be a positive integer, got {batch_size}\n")
-        exit()
+        parser.error(f"batch_size must be a positive integer, got {batch_size}")
     if not os.path.isdir(input_file_path):
-        print(f"Args Error: '{input_file_path}' is not a directory.\n")
-        exit()
-    if not os.path.exists(input_file_path):  # Input file or folder (must exist)
-        print("ERROR: input folder doesn't exist.")
-        exit()
+        parser.error(f"'{input_file_path}' is not a directory")
 
     jpeg_decode_batch(input_file_path, batch_size, output_format, device_id, backend)

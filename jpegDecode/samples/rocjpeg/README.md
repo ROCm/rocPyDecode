@@ -1,9 +1,13 @@
 # rocPyJpegDecode samples
 
 ## Prerequisites
-* [rocJPEG C/C++ Library](https://github.com/ROCm/rocJPEG)
-* [rocPyJpegDecode installed](../../README.md)
-* [DLPack](https://pypi.org/project/dlpack/)
+
+Follow the [component installation instructions](../../README.md) for the
+complete SDK version requirements, development packages, test assets, and
+`PYTHONPATH`/`LD_LIBRARY_PATH` setup.
+
+Install ROCm-compatible PyTorch or hip-python only for samples that import them.
+The default CTest suite does not require these optional packages.
 
 ## jpegdecode.py
 
@@ -28,6 +32,9 @@ The following are full list of arguments that can be passed to the sample.
 This sample decodes batch of JPEG images. \
 The user specifies the root folder full path with the -i argument for multiple JPEG images with any number of files and/or subfolders.
 
+Invalid arguments, unavailable GPUs, and folders with no decodable images
+return a nonzero exit status. Mixed folders report and skip bad files.
+
 ### Arguments
 
 The following are full list of arguments that can be passed to the sample.
@@ -35,7 +42,7 @@ The following are full list of arguments that can be passed to the sample.
 ```bash
 -h, --help                                 : Show this help message and exit
 -i INPUT, --input INPUT                    : Input Files FULL Path - required
--b BATCH, --batch BATCH                    : batch size > 0 process the batch of files with this batch size, if 0 means do not process as batch, optional, default is 2
+-b BATCH, --batch BATCH                    : Positive batch size, optional, default is 2
 -fmt {3,4}, --output_format {3,4}          : Set output image format: 3 for ROCJPEG_OUTPUT_RGB (interleaved), 4 for ROCJPEG_OUTPUT_RGB_PLANAR. Optional, default is 3
 -bk {0,1}, --backend {0,1}                 : Set backend choice 0:GPU and 1:CPU, Optional, default is 0
 -d DEVICE, --device DEVICE                 : GPU device ID - optional, default 0
