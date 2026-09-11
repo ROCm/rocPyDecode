@@ -6,20 +6,12 @@
 rocPyDecode samples and tests
 *************************************************************
 
-rocPyDecode and rocPyJpegDecode samples are located in the |samples|_ directory of the rocPyDecode GitHub repository.
+Samples and tests are owned by their respective components. Video samples and
+tests are documented by |video_docs|_. JPEG samples, notebooks, and tests are
+documented by |jpeg_docs|_.
 
-The rocPyDecode samples are located in |rocpydecode|_ and rocPyJpegDecode samples are located in |rocpyjpeg|_. Jupyter notebooks are also available for rocPyJpegDecode.
+.. |video_docs| replace:: ``videoDecode``
+.. _video_docs: https://github.com/ROCm/rocPyDecode/tree/develop/videoDecode/docs
 
-rocPyDecode tests are located in |tests|_.
-
-.. |samples| replace:: ``samples``
-.. _samples: https://github.com/ROCm/rocPyDecode/tree/develop/samples
-
-.. |tests| replace:: ``tests``
-.. _tests: https://github.com/ROCm/rocPyDecode/tree/develop/tests
-
-.. |rocpydecode| replace:: ``samples/rocdecode``
-.. _rocpydecode: https://github.com/ROCm/rocPyDecode/tree/develop/samples/rocdecode
-
-.. |rocpyjpeg| replace:: ``samples/rocjpeg``
-.. _rocpyjpeg: https://github.com/ROCm/rocPyDecode/tree/develop/samples/rocjpeg
+.. |jpeg_docs| replace:: ``jpegDecode``
+.. _jpeg_docs: https://github.com/ROCm/rocPyDecode/tree/develop/jpegDecode/docs

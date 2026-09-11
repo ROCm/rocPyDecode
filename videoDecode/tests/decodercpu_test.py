@@ -1,0 +1,91 @@
+# Copyright (c) 2018 - 2023 Advanced Micro Devices, Inc. All rights reserved.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+import pyRocVideoDecode.decodercpu as decoderscpu
+from inspect import getmembers, isfunction
+import rocpydecode.decTypes as dectypes
+import numpy as np
+from pyRocVideoDecode.decodercpu import decodercpu, GetOutputFormat, GetRocDecCodecID, GetRectangle, GetDim, GetOutputSurfaceInfo, GetRocPyDecPacket
+import pyRocVideoDecode.demuxer as dmx
+import pyRocVideoDecode.decodercpu as dec
+import argparse
+
+parser = argparse.ArgumentParser(
+    description='PyRocDecode Video Decode Arguments')
+parser.add_argument(
+    '-i',
+    '--input',
+    type=str,
+    help='Input File Path - required',
+    required=True)
+
+try:
+    args = parser.parse_args()
+except SystemExit as e:
+    print(f"Error: {e}. Please check the input arguments and try again.")
+    exit()
+
+input_file_path = args.input
+
+print('rocPyDecode DecodersCPU')
+rocpydecodeDecoders = getmembers(decoderscpu, isfunction)
+for i in range(len(rocpydecodeDecoders)):
+    print(rocpydecodeDecoders[i])
+
+# test all APIs
+codec_id = GetRocDecCodecID("h264")
+output_format = GetOutputFormat(0)
+crop_rect = GetRectangle((0, 0, 1920, 1080))
+resize_dim = GetDim((640, 360))
+surface_info = GetOutputSurfaceInfo()
+demuxer = dmx.demuxer(input_file_path)
+codec_id = dec.GetRocDecCodecID(demuxer.GetCodecId())
+decoder = dec.decodercpu(codec_id,0,1)
+gpu_info = decoder.GetGpuInfo()
+buffer = np.zeros((1080 * 1920 * 3,), dtype=np.uint8)
+packet = demuxer.DemuxFrame()
+decoder.DecodeFrame(packet)
+decoder.GetFrameYuv(packet, separate_planes=False)
+try:
+    decoder.GetFrameRgb(packet, rgb_format=0)
+except ValueError:
+    pass
+else:
+    raise AssertionError("Native YUV is not an RGB output format")
+decoder.GetFrameRgb(packet, rgb_format=3)
+GetRocPyDecPacket(0, size=buffer.size, buffer=buffer)
+decoder.GetWidth()
+decoder.GetHeight()
+decoder.GetStride()
+decoder.GetFrameSize()
+decoder.GetOutputSurfaceInfo()
+decoder.GetResizedOutputSurfaceInfo()
+decoder.GetNumOfFlushedFrames()
+decoder.AddDecoderSessionOverHead(session_id=1, duration=123456)
+decoder.GetDecoderSessionOverHead(session_id=1)
+decoder.IsCodecSupported(device_id=0, codec_id=codec_id, bit_depth=8)
+decoder.GetBitDepth()
+decoder.SaveFrameToFile("outfile.yuv", packet.frame_adrs)
+decoder.ReleaseFrame(packet)
+
+# CPU conversion must handle its planar YUV output in both memory modes.
+from decoder_rgb_dlpack_test import test_rgb_dlpack
+for memory_type in (1, 2):
+    test_rgb_dlpack(input_file_path, dec.decodercpu, memory_type)

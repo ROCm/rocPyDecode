@@ -15,35 +15,13 @@ subtrees:
 
 - caption: Conceptual
   entries:
-  - file: conceptual/rocPyDecode-mem-types
-    title: rocPyDecode surface data memory locations
-
-- caption: How to
-  entries:
-  - file: how-to/using-rocPydecode
-    title: Use rocPyDecode
-  - file: how-to/rocPyDecode-wheel.rst
-    title: Create a wheel file
+  - file: components
+    title: Component documentation
 
 - caption: Samples
   entries:
-  - file: tutorials/rocPyDecode-samples 
+  - file: tutorials/rocPyDecode-samples
     title: rocPyDecode samples
-
-- caption: Reference
-  entries:
-  - file: reference/rocPyDecode-codecs-and-hardware
-    title: rocPyDecode supported codecs and hardware
-  - file: reference/rocPyDecode
-    title: rocPyDecode API
-    subtrees:
-    - entries:
-      - file: reference/structures
-        title: rocPyDecode Structures
-      - file: reference/decoderClass
-      - file: reference/demuxerClass
-  - file: reference/rocPyJPEGDecode-api
-    title: rocPyJpegDecode decoder class
 
 - caption: About
   entries:

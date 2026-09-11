@@ -2,235 +2,184 @@
 
 <p align="center"><img width="70%" src="docs/data/AMD_rocPyDecode_Logo.png" alt="AMD rocPyDecode Logo" /></p>
 
-> [!NOTE]
-> The published documentation is available at [rocPyDecode](https://rocm.docs.amd.com/projects/rocPyDecode/en/latest/index.html) in an organized, easy-to-read format, with search and a table of contents. The documentation source files reside in the `docs` folder of this repository. As with all ROCm projects, the documentation is open source. For more information on contributing to the documentation, see [Contribute to ROCm documentation](https://rocm.docs.amd.com/en/latest/contribute/contributing.html).
+# rocPyDecode
 
-rocPyDecode is a Python binding library that connects Python with AMD’s [rocDecode](https://github.com/ROCm/rocDecode) and [rocJPEG](https://github.com/ROCm/rocJPEG) C/C++ APIs, enabling seamless function calls and data exchange between the two languages. It serves as a high-level wrapper, making the video and image decoding capabilities of rocDecode and rocJPEG accessible from Python.
+rocPyDecode provides Python bindings for AMD's rocDecode and rocJPEG C/C++
+libraries. The repository contains two components:
 
-rocPyDecode includes [rocPyJpegDecode](https://github.com/ROCm/rocPyDecode/blob/develop/docs/reference/rocPyJPEGDecode-api.rst#rocpyjpegdecode-python-api) when the underlying rocJPEG library is available on the system, providing JPEG-specific decoding support through Python.
-The library supports multi-VCN configurations via batch decoding, making it well-suited for high-throughput and parallelized image and video processing workloads.
+- [`videoDecode`](videoDecode/README.md): rocDecode video bindings,
+  `pyRocVideoDecode`, samples, and tests.
+- [`jpegDecode`](jpegDecode/README.md): rocJPEG image bindings,
+  `pyRocJpegDecode`, samples, and tests.
+
+Each component supports standalone configuration, build, installation, and
+testing. The top-level build supports building both components together.
 
 ## Prerequisites
 
-### Operating Systems
-* Linux
-  * Ubuntu - `22.04` / `24.04`
+Use Linux and an AMD GPU supported by the selected ROCm release and the
+underlying decoder library. Install a complete ROCm 7.0 or newer SDK with
+AMD Clang 18 or newer and C++17 support. See the
+[ROCm installation guide](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/) for OS, GPU, driver,
+and repository setup. The Ubuntu package examples below target Ubuntu 24.04
+and Python 3.12; use packages appropriate to your OS and selected ROCm release.
 
-### Hardware
-* **GPU**: [AMD Radeon&trade; Graphics](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/reference/system-requirements.html) / [AMD Instinct&trade; Accelerators](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/reference/system-requirements.html)
+Required build dependencies:
 
-> [!IMPORTANT] 
-> `gfx908` or higher GPU required
+- CMake 3.20 or newer for the commands below, including `ctest --test-dir`.
+  The CMake project itself accepts CMake 3.15 or newer.
+- Python 3.9 or newer and matching development headers/libraries. The examples
+  select Python 3.12; change `PYTHON_VERSION_SUGGESTED` to your installed version.
+- pybind11 3.1.0 and DLPack 1.3 headers; bundled in the repository.
+- rocDecode **1.0.0 or newer**, including development files, CMake package
+  configuration, and utility sources under `share/rocdecode/utils`.
+- rocJPEG **1.0.0 or newer**, including development files and CMake package
+  configuration.
 
-* Install ROCm `7.0.0` or later with [amdgpu-install](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/how-to/amdgpu-install.html): **Required** usecase:`rocm`
-> [!IMPORTANT]
-> `sudo amdgpu-install --usecase=rocm`
+Install the build tools after configuring the appropriate ROCm repositories:
 
-### Compiler
-* AMD Clang++ Version 18.0.0 or later - installed with ROCm
-
-### Libraries
-* CMake `3.15` or higher
-
-  ```shell
-  sudo apt install cmake
-  ```
-
-* [rocDecode](https://github.com/ROCm/rocDecode) `1.0.0` or higher
-
-  ```shell
-  sudo apt install rocdecode-dev
-  ```
-
-* [rocJPEG](https://github.com/ROCm/rocJPEG) `1.0.0` or higher
-
-  ```shell
-  sudo apt install rocjpeg-dev
-  ```
-
-* [DLPack](https://pypi.org/project/dlpack/)
-  
-  ```shell
-  sudo apt install libdlpack-dev
-  ```
-
-* Python3 and Python3 PIP
-
-  ```shell
-  sudo apt install python3-dev python3-pip
-  ```
-
-* [PyBind11](https://github.com/pybind/pybind11)
-
-  ```shell
-  sudo apt install python3-pybind11
-  ```
-* [numpy](https://github.com/numpy/numpy)
-
-	```shell
-    sudo apt install python3-numpy
-	```
-> [!NOTE]
-> 'numpy' required for the test scripts and samples, not required for the build and install
-
-* [pkg-config](https://en.wikipedia.org/wiki/Pkg-config)
-
-  ```shell
-  sudo apt install pkg-config
-  ```
-
-* [FFmpeg](https://ffmpeg.org/about.html)
-
-  ```shell
-  sudo apt install libavcodec-dev libavformat-dev libavutil-dev
-  ```
-
-> [!IMPORTANT]
-> * Required compiler support
->   * C++17
->   * Threads
-
->[!NOTE]
-> * All package installs are shown with the `apt` package manager. Use the appropriate package manager for your operating system.
-
-### Prerequisites setup script
-
-For your convenience, we provide the setup script, [rocPyDecode-requirements.py](rocPyDecode-requirements.py), which installs all required dependencies. Run this script only once on bare metal, if using docker please see below instructions.
-
-```shell
-python3 rocPyDecode-requirements.py
+```bash
+sudo apt-get update
+sudo apt-get install -y build-essential cmake pkg-config \
+    python3.12-dev
+sudo apt-get install -y rocdecode-dev rocdecode-test rocjpeg-dev rocjpeg-test
 ```
 
-## rocPyDecode install
+The `-dev` packages supply build dependencies; the `-test` packages request
+runtime test assets. Packaging varies between SDK distributions: verify the
+media paths below even after installing these packages. For an SDK archive,
+install its complete development and test assets into the same SDK prefix.
+A particular nightly SDK or container is not required.
 
-The installation process uses the following steps:
+Check the candidate versions with `apt-cache policy` before installing. An old
+ROCm repository can offer decoder packages below the required version; merely
+installing those packages will not satisfy CMake. Select a compatible complete
+SDK instead of mixing decoder libraries from one release with another SDK.
+Run dependency setup in the environment where you will build and test:
+packages installed inside a container do not provision the bare-metal host.
 
-* [ROCm-supported hardware](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/reference/system-requirements.html) install verification
+### Optional video features
 
-* Install ROCm `7.0.0` or later with [amdgpu-install](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/how-to/amdgpu-install.html) with `--usecase=rocm`
+FFmpeg development libraries enable demuxing. The matching rocDecode host
+library and its utility sources additionally enable the CPU backend:
 
->[!IMPORTANT]
-> Use **either** [package install](#package-install) **or** [source install](#source-install) as described below.
-
-### Package install
-
-Install rocPyDecode runtime, and test packages.
-
-* Runtime package - `rocpydecode` only provides the python bindings for rocDecode
-* Test package - `rocpydecode-test` provides ctest to verify installation
-
-#### `Ubuntu`
-
-  ```shell
-  sudo apt-get install rocpydecode rocpydecode-test
-  ```
-
->[!IMPORTANT]
-> Python module: To use python module, set PYTHONPATH:
->   + `export PYTHONPATH=/opt/rocm/lib:$PYTHONPATH`
-
-### Source install
-
-To build rocPyDecode from source and install, follow the steps below:
-
-* Clone rocPyDecode source code
-
-```shell
-git clone https://github.com/ROCm/rocPyDecode.git
+```bash
+sudo apt-get install -y libavcodec-dev libavformat-dev libavutil-dev \
+    libswscale-dev
 ```
 
-* Build rocPyDecode with the **CMake**
+The CPU backend additionally requires a matching rocDecode host library and its
+FFmpeg decoder utility sources under the selected SDK prefix. Some SDK
+repositories do not provide a separate rocdecode-host package. Check
+`apt-cache policy rocdecode-host` before installing it; if unavailable,
+use a complete matching SDK that supplies these files to enable CPU decoding.
+Do not mix host libraries from another ROCm release.
 
-  + run the requirements script to install all the dependencies required:
+GPU decoding and the default CTests do not require the CPU backend.
 
-  ```shell
-  cd rocPyDecode
-  python3 rocPyDecode-requirements.py
-  ```
+These paths are omitted when their complete dependencies are unavailable.
+The default raw-video tests do not require them.
 
-  + run the below commands to build rocPyDecode:
+NumPy, ROCm-compatible PyTorch, and hip-python are needed only by samples that
+use them, not by the native build or default CTest suite. Install those optional
+packages according to the selected sample and SDK version.
 
-  ```shell
-  mkdir build && cd build
-  cmake ../
-  make -j8
-  sudo make install
-  ```
+## Bundled build dependencies
 
->[!IMPORTANT]
-> * rocPyDecode will be installed for all Python versions on the system. To install rocPyDecode for a specific Python version, use the cmake `-D PYTHON_VERSION_SUGGESTED=version_num` directive, where version_num is the target Python version.
+Each component includes pybind11 3.1.0 and DLPack 1.3 in its own `third_party/`.
+CMake uses these committed copies without downloading dependencies or searching
+system installations. No separate pybind11 or DLPack installation is required;
+the ROCm SDK, decoder libraries, and Python development files are still required.
 
-  + run tests - [test option instructions](https://github.com/ROCm/MIVisionX/wiki/CTest)
-  ```shell
-  make test
-  ```
+The videoDecode and jpegDecode directories each contain a complete third_party
+copy. Either component can be copied and built independently. Combined builds
+initialize the identical dependency targets once.
+A parent project can add rocPyDecode with add_subdirectory; it must add it before
+creating conflicting pybind11 or DLPack targets. The build reports such conflicts
+instead of silently substituting another dependency version.
 
->[!NOTE]
-> To run tests with verbose option, use `make test ARGS="-VV"`.
-> [Alternate source install methods](https://github.com/ROCm/rocPyDecode/wiki/rocPyDecode-Alternate-Install-Methods)
+Dependency licenses are included under third_party and installed with the
+project documentation.
 
-## Run CTest
+## Select the SDK and check test assets
 
-This will run python samples and show pass/fail.
->[!NOTE]
-> install rocPydecode before running tests
+Run from the project directory. Set `ROCM_PATH` to the complete SDK prefix;
+`/opt/rocm` is the default. Activate your intended Python environment first.
 
-### Dependencies:
-```shell
-python3 -m pip install --upgrade pip
-python3 -m pip install -i https://test.pypi.org/simple hip-python
+```bash
+export ROCM_PATH=/opt/rocm
+export PATH="$ROCM_PATH/bin:$ROCM_PATH/lib/llvm/bin:$PATH"
+export CMAKE_PREFIX_PATH="$ROCM_PATH${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}"
+export LD_LIBRARY_PATH="$ROCM_PATH/lib:$ROCM_PATH/lib/rocm_sysdeps/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+
+"$ROCM_PATH/bin/rocminfo"
+test -d "$ROCM_PATH/share/rocdecode/utils/rocvideodecode"
+ls "$ROCM_PATH/share/rocdecode/video/AMD_driving_virtual_20-H264.264"
+ls "$ROCM_PATH/share/rocdecode/video/AMD_driving_virtual_20-H265.265"
+ls "$ROCM_PATH/share/rocjpeg/images"
 ```
 
-### Run tests with source
-```shell
-mkdir rocpydecode-test && cd rocpydecode-test
-cmake ../rocPyDecode/tests
-ctest -VV
+The `rocm_sysdeps/lib` directory is used by SDK distributions that bundle
+runtime dependencies; it may be absent in a system-package installation.
+Ensure the user can access the GPU devices. In a container, the host driver
+and GPU device access must also be available to that container.
+
+A missing decoder CMake package requires the corresponding development
+package or a corrected SDK prefix. Changing `CMAKE_PREFIX_PATH` cannot supply
+an absent or incompatible library. After changing SDKs, Python environments,
+or moving between a container and the host, use a new build directory to avoid
+reusing cached compiler and dependency paths.
+
+## Build, install, and test
+
+Run these commands from the project directory after preparing the prerequisites:
+
+```bash
+cmake -S . -B build \
+    -DCMAKE_INSTALL_PREFIX="$PWD/install" \
+    -DPYTHON_VERSION_SUGGESTED=3.12
+cmake --build build --parallel
+cmake --install build
+ctest --test-dir build --output-on-failure -V
 ```
 
-### Run tests with rocpydecode-test package
+The local install prefix does not require `sudo`. Replace `build` and `install`
+consistently if you need separate host, container, or SDK-specific builds.
+CTest uses the build-tree bindings; `-V` also displays successful tests' output.
 
-Test package will install ctest module to test rocPyDecode. Follow below steps to test package install
+Both components are enabled by default. Set `-DBUILD_VIDEO_DECODE=OFF` or
+`-DBUILD_JPEG_DECODE=OFF` to omit a component and its dependencies. For a
+standalone build, run the same commands directly inside `videoDecode` or
+`jpegDecode`.
 
-```shell
-mkdir rocpydecode-test && cd rocpydecode-test
-cmake /opt/rocm/share/rocpydecode/tests
-ctest -VV
+With all test assets available, expect **six tests**: binding types, raw H.264,
+raw H.265, batched JPEG decoding, and video/JPEG regression checks.
+
+Media-dependent tests are registered during configuration only when their
+assets are present. A passing run with fewer tests does not establish full
+runtime coverage. Install the missing media and rerun CMake before CTest.
+Check that each raw-video test reports a positive decoded-frame count; zero
+frames is a failure.
+Check that the JPEG test processes images and reports zero bad files.
+
+## Use the installed bindings
+
+Keep the selected SDK's runtime library path from the setup above. For the
+local install prefix and Python 3.12 used here:
+
+```bash
+export PYTHONPATH="$PWD/install/lib${PYTHONPATH:+:$PYTHONPATH}"
+python3.12 -c 'import rocpydecode, rocpyjpegdecode; import pyRocVideoDecode.decoder, pyRocJpegDecode.decoder; print("Installed bindings imported successfully")'
 ```
->[!NOTE]
-> Make sure all required libraries are in your PATH
-> ```shell
-> export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/rocm/lib
-> export PYTHONPATH=/opt/rocm/lib:$PYTHONPATH
-> ```
 
-## Run Sample Scripts
-
-* Sample scripts and instructions to run them can be found [here](samples/)
+If you change `CMAKE_INSTALL_LIBDIR` or the Python version, adjust these paths
+and the interpreter accordingly.
 
 ## Documentation
 
-Run the following code to build our documentation locally.
+Each component includes its own complete setup instructions:
 
-```shell
-cd docs
-pip3 install -r sphinx/requirements.txt
-python3 -m sphinx -T -E -b html -d _build/doctrees -D language=en . _build/html
-```
+- [Video README](videoDecode/README.md) and [installation guide](videoDecode/docs/install.rst)
+- [JPEG README](jpegDecode/README.md) and [installation guide](jpegDecode/docs/install.rst)
 
-For more information on documentation builds, refer to the
-[Building documentation](https://rocm.docs.amd.com/en/latest/contribute/building.html)
-page.
-
-## Tested configurations
-
-* Linux distribution
-  * Ubuntu - `22.04` / `24.04`
-* ROCm: rocm-core - `7.0.0`+
-* AMD Clang++ - Version `18.0.0`+
-* CMake - Version `3.15`+
-* rocdecode-dev - `1.0.0`+
-* rocjpeg-dev - `1.0.0`+
-* libdlpack-dev - `0.6-1`
-* python3-pybind11 - `2.9.1-2`
-* FFmpeg - `4.4.2` / `6.1.1`
+The main documentation starts at [docs/index.rst](docs/index.rst).
