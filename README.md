@@ -65,8 +65,17 @@ library and its utility sources additionally enable the CPU backend:
 
 ```bash
 sudo apt-get install -y libavcodec-dev libavformat-dev libavutil-dev \
-    libswscale-dev rocdecode-host
+    libswscale-dev
 ```
+
+The CPU backend additionally requires a matching rocDecode host library and its
+FFmpeg decoder utility sources under the selected SDK prefix. Some SDK
+repositories do not provide a separate rocdecode-host package. Check
+`apt-cache policy rocdecode-host` before installing it; if unavailable,
+use a complete matching SDK that supplies these files to enable CPU decoding.
+Do not mix host libraries from another ROCm release.
+
+GPU decoding and the default CTests do not require the CPU backend.
 
 These paths are omitted when their complete dependencies are unavailable.
 The default raw-video tests do not require them.
