@@ -9,7 +9,10 @@ function(rocpyjpeg_add_test test_name)
         TIMEOUT 300)
 endfunction()
 
-if(IS_DIRECTORY "${ROCPYJPEG_MEDIA_DIR}")
+# Match the regression test's top-level *.jpg fixture discovery.
+file(GLOB ROCPYJPEG_TEST_IMAGES LIST_DIRECTORIES false
+    "${ROCPYJPEG_MEDIA_DIR}/*.jpg")
+if(ROCPYJPEG_TEST_IMAGES)
     rocpyjpeg_add_test(jpeg_decode_batched_python
         "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/../samples/rocjpeg/jpegdecodebatched.py"
         -i "${ROCPYJPEG_MEDIA_DIR}")
@@ -17,7 +20,7 @@ if(IS_DIRECTORY "${ROCPYJPEG_MEDIA_DIR}")
         "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/jpeg_regression_test.py"
         --media-dir "${ROCPYJPEG_MEDIA_DIR}")
 else()
-    message(STATUS "rocJPEG test images unavailable; JPEG runtime tests are not registered")
+    message(STATUS "rocJPEG *.jpg test images unavailable; JPEG runtime tests are not registered")
 endif()
 
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/" DESTINATION
