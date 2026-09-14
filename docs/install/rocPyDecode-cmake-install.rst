@@ -1,90 +1,54 @@
-.. meta::
-  :description: Installing rocPyDecode using CMake
-  :keywords: install, rocPyDecode, rocPyJpegDecode, AMD, ROCm, CMake
+CMake installation
+==================
 
-********************************************************************
-Building and installing rocPyDecode with CMake
-********************************************************************
+Prepare the SDK, development dependencies, and media described in
+:doc:`rocPyDecode-prerequisites` before configuring.
 
-.. note::
+Build, install, and test
+------------------------
 
-    sudo access might be required to build and install with CMake.
+Run these commands from the project directory after preparing the prerequisites:
 
-rocPyDecode can be built using CMake. rocPyJpegDecode will only be built if `rocJPEG <https://rocm.docs.amd.com/projects/rocJPEG/en/latest/index.html>`_ is already installed. If rocJPEG isn't installed, rocPyJpegDecode will be omitted from the installation.
+.. code-block:: shell
 
-Once rocPyDecode has been built and installed, tar and deb packages can be generated for distribution. :doc:`Wheel distribution files can also be created <../how-to/rocPyDecode-wheel>`.
-
-The rocPyDecode source code and installation scripts are available from the `rocPyDecode GitHub Repository <https://github.com/ROCm/rocPyDecode>`_. 
-
-The develop branch is the default branch and is intended for users who want to preview new features or contribute to the rocPyDecode or rocPyJpegDecode code base. If you don't intend to preview new features or contribute to the codebase, clone the branch that corresponds to your version of ROCm.
-
-Before building and installing rocPyDecode, run `rocPyDecode-requirements.py <https://github.com/ROCm/rocPyDecode/blob/develop/rocPyDecode-requirements.py>`_ from the ``rocPyDecode`` root directory:
-
-.. code:: shell
-
-    python3 rocPyDecode-requirements.py
-
-If you're installing on Ubuntu 22.04, install libstdc++-12-dev:
-
-.. code:: shell
-
-  apt install libstdc++-12-dev
-
-To build rocPyDecode, create a ``build`` directory in the ``rocPyDecode`` root directory:
-
-.. code::
-
-    mkdir build
-
-Change directory to ``build``, then use ``cmake`` to generate a makefile.
-
-.. code:: 
-
-    cd build
-    cmake ../
-
-By default rocPyDecode and rocPyJpegDecode will be built and installed for all versions of Python available on the system. In some instances, such as when rocPyDecode and rocPyJpegDecode are being built and installed in a conda environment in a Docker container, there may be a hidden Python installation. rocPyDecode and rocPyJpegDecode won't be built or installed for this version of Python unless the ``-DPYTHON_FOLDER_SUGGESTED=path_to_python_installation`` cmake directive is used. This will add the hidden Python installation to the list of targets. 
-
-For example, this will add the version of Python installed at ``/opt/miniconda3/bin/python`` to the target list: 
-
-.. code:: shell
-
-    cmake -DPYTHON_FOLDER_SUGGESTED=/opt/miniconda3/bin/python3 ../
-
-You can also build and install rocPyDecode and rocPyJpegDecode for a specific Python version. Use the ``-DPYTHON_VERSION_SUGGESTED=version_num`` cmake directive to build and install only for the specified Python version.
-
-For example, the following command will build rocPyDecode and rocPyJpegDecode only for Python 3.12: 
-
-.. code:: shell
-
-    cmake -DPYTHON_VERSION_SUGGESTED=3.12  ../
+   cmake -S . -B build \
+       -DCMAKE_INSTALL_PREFIX="$PWD/install" \
+       -DPYTHON_VERSION_SUGGESTED=3.12
+   cmake --build build --parallel
+   cmake --install build
+   ctest --test-dir build --output-on-failure -V
 
 
-.. note::
+The local install prefix does not require ``sudo``. Replace ``build`` and ``install``
+consistently if you need separate host, container, or SDK-specific builds.
+CTest uses the build-tree bindings; ``-V`` also displays successful tests' output.
 
-    ``PYTHON_VERSION_SUGGESTED`` and ``PYTHON_FOLDER_SUGGESTED`` are mutually exclusive and can't be used together.
+Both components are enabled by default. Set ``-DBUILD_VIDEO_DECODE=OFF`` or
+``-DBUILD_JPEG_DECODE=OFF`` to omit a component and its dependencies. For a
+standalone build, run the same commands directly inside ``videoDecode`` or
+``jpegDecode``.
 
-Once the makefile has been generated, make and install rocPyDecodee:
+With all test assets available, expect **six tests**: binding types, raw H.264,
+raw H.265, batched JPEG decoding, and video/JPEG regression checks.
 
-.. code::
+Media-dependent tests are registered during configuration only when their
+assets are present. A passing run with fewer tests does not establish full
+runtime coverage. Install the missing media and rerun CMake before CTest.
+Check that each raw-video test reports a positive decoded-frame count; zero
+frames is a failure.
+Check that the JPEG test processes images and reports zero bad files.
 
-    make -j8
-    sudo make install
+Use the installed bindings
+--------------------------
 
-You can also generate deb files and zipped tar files for distribution:
+Keep the selected SDK's runtime library path from the setup above. For the
+local install prefix and Python 3.12 used here:
 
-.. code::
+.. code-block:: shell
 
-    make package
+   export PYTHONPATH="$PWD/install/lib${PYTHONPATH:+:$PYTHONPATH}"
+   python3.12 -c 'import rocpydecode, rocpyjpegdecode; import pyRocVideoDecode.decoder, pyRocJpegDecode.decoder; print("Installed bindings imported successfully")'
 
 
-You can then install the deb packages with ``apt install``. For example:
-
-.. code:: 
-
-    sudo apt install ./rocpydecode_0.8.0-local_amd64.deb
-    sudo apt install ./rocpydecode-test_0.8.0-local_amd64.deb
-
-.. note::
-
-    The deb files and tar files will include rocPyJpegDecode if rocJPEG was installed on the system before rocPyDecode was installed.
+If you change ``CMAKE_INSTALL_LIBDIR`` or the Python version, adjust these paths
+and the interpreter accordingly.
