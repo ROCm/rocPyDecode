@@ -34,7 +34,15 @@ endif()
 if(Python3_VERSION VERSION_LESS "3.9")
     message(FATAL_ERROR "Bundled pybind11 3.1.0 requires Python 3.9 or newer")
 endif()
-include("${CMAKE_CURRENT_SOURCE_DIR}/third_party/Dependencies.cmake")
+get_filename_component(ROCPYDECODE_THIRD_PARTY
+    "${CMAKE_CURRENT_SOURCE_DIR}/../third_party" ABSOLUTE)
+include("${ROCPYDECODE_THIRD_PARTY}/Dependencies.cmake")
+# Install licenses for this component even if the other component initialized
+# the shared dependency targets first.
+foreach(_rocpydecode_dependency IN ITEMS pybind11 dlpack)
+    install(FILES "${ROCPYDECODE_THIRD_PARTY}/${_rocpydecode_dependency}/LICENSE"
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/doc/rocpyjpegdecode/third_party/${_rocpydecode_dependency}")
+endforeach()
 
 string(REPLACE "." "_" ROCPYJPEG_PYTHON_SUFFIX
     "${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}")
