@@ -2,6 +2,7 @@
 
 No ROCm SDK is needed: incomplete utilities must skip video before SDK discovery.
 """
+import os
 import pathlib
 import shutil
 import subprocess
@@ -14,12 +15,13 @@ class MissingVideoUtilities(unittest.TestCase):
 
     def configure(self, directory, *options, standalone=False):
         source = self.source / "videoDecode" if standalone else self.source
-        compiler = shutil.which("c++")
+        compiler = os.environ.get("ROCPYDECODE_TEST_CXX") or shutil.which("c++")
         self.assertIsNotNone(compiler, "A C++ compiler is required")
         result = subprocess.run(
-            ["cmake", "-S", str(source), "-B", str(directory / "build"),
+            [os.environ.get("ROCPYDECODE_TEST_CMAKE", "cmake"), "-S", str(source), "-B", str(directory / "build"),
              "-DCMAKE_CXX_COMPILER=" + compiler,
-             "-DROCM_PATH=" + str(directory / "no-sdk"), *options],
+             "-DROCM_PATH=" + str(directory / "no-sdk"),
+             "-DBUILD_TESTING=OFF", *options],
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
         )
         self.assertEqual(result.returncode, 0, result.stdout)

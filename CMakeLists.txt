@@ -30,3 +30,7 @@ endif()
 if(NOT _rocpyvideo_target AND NOT BUILD_JPEG_DECODE)
     message(WARNING "No rocPyDecode components remain; nothing will be built.")
 endif()
+
+if(BUILD_TESTING)
+    add_subdirectory(cmake/tests)
+endif()

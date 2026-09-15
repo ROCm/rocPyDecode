@@ -152,8 +152,11 @@ Both components are enabled by default. Set `-DBUILD_VIDEO_DECODE=OFF` or
 standalone build, run the same commands directly inside `videoDecode` or
 `jpegDecode`.
 
-With all test assets available, expect **six tests**: binding types, raw H.264,
-raw H.265, batched JPEG decoding, and video/JPEG regression checks.
+With all test assets available, expect **seven tests**: binding types, raw H.264,
+raw H.265, batched JPEG decoding, video/JPEG regression checks, and the
+configure regression suite. The configure suite also runs when video is skipped
+or disabled, provided a Python 3 interpreter is available. Set
+`-DBUILD_TESTING=OFF` to omit test registration.
 
 Media-dependent tests are registered during configuration only when their
 assets are present. A passing run with fewer tests does not establish full
