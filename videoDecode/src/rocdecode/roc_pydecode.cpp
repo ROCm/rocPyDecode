@@ -33,7 +33,7 @@ using namespace std;
 void TestAllClassCalls(const char* input_file);
 void TestAll_roc_pybuffer();
 void Test_DLPackPyTensor_ConstructorsAndOperators();
-void Test_PyReconfigureFlushCallback();
+void Test_PyReconfigureFlushCallback(const char* input_file);
 void Test_CalculateRgbImageSize();
 #endif
 
@@ -48,7 +48,7 @@ PYBIND11_MODULE(rocpydecode, m) {
 #endif
     
     // Testing (works only in DEBUG build)
-#if defined(ROCPYDECODE_ENABLE_HOST) && ROCPYDECODE_ENABLE_HOST
+#if defined(ROCPYDECODE_ENABLE_HOST) && ROCPYDECODE_ENABLE_HOST && !defined(NDEBUG)
     m.def("TestAllClassCalls", &TestAllClassCalls, "Testing  and validation");
     m.def("TestAll_roc_pybuffer", &TestAll_roc_pybuffer, "Testing  and validation");
     m.def("Test_DLPack", &Test_DLPackPyTensor_ConstructorsAndOperators, "Testing  and validation");

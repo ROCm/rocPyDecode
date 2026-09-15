@@ -13,65 +13,63 @@
 #include <cstdint>
 #include <memory>
 
+#ifndef NDEBUG
+namespace {
+void Require(bool condition, const char* message) {
+    if (!condition) throw std::runtime_error(message);
+}
+
+template <typename Decoder>
+std::shared_ptr<PyPacketData> DecodeFirstFrame(Decoder& decoder, PyVideoDemuxer& demuxer) {
+    while (true) {
+        auto packet = demuxer.DemuxFrame();
+        if (decoder.PyDecodeFrame(*packet) > 0) return packet;
+        Require(packet->bitstream_size > 0, "API smoke test did not decode a frame");
+    }
+}
+
+template <typename Decoder>
+void TestDecodedFrame(Decoder& decoder, PyVideoDemuxer& demuxer) {
+    auto packet = DecodeFirstFrame(decoder, demuxer);
+    Require(decoder.PyGetFrameRgb(*packet, 3).template cast<int64_t>() != -1,
+            "API smoke test did not retrieve an RGB frame");
+    uintptr_t surface = decoder.PyGetOutputSurfaceInfo();
+    Require(surface != 0, "Decoded surface information is missing");
+    Dim resized{64, 48};
+    if (decoder.PyGetWidth().template cast<int>() == resized.w &&
+        decoder.PyGetHeight().template cast<int>() == resized.h) resized.w = 32;
+    Require(decoder.PyResizeFrame(*packet, &resized, surface) != 0,
+            "API smoke test did not resize a frame");
+    Require(decoder.PyGetResizedOutputSurfaceInfo() != 0, "Resized surface information is missing");
+    decoder.PyGetDeviceinfo();
+    decoder.PyGetNumOfFlushedFrames();
+    Require(decoder.PyGetBitDepth() >= 8, "Decoded bit depth is invalid");
+    Require(decoder.PyReleaseFrame(*packet).template cast<bool>(), "Frame release failed");
+}
+}
+#endif
+
 void TestAllClassCalls(const char* input_file) {
 #ifndef NDEBUG
-    // here check input_file, ret if invalid str or null
-    if(!input_file){
-        std::cout << "ERROR: Input File Name is a nullptr, BAD argument sent." << std::endl;    
-        return;
-    }
-    std::cout << "Input File Full Path Name: " << input_file << std::endl;
-
-    // Initialize and test demuxer
+    Require(input_file && *input_file, "API smoke test requires an input file");
     PyVideoDemuxer demuxer(input_file);
-    std::cout << "Testing PyVideoDemuxer...\n";
-    int codec = demuxer.GetCodecId();
-    uint32_t depth = demuxer.PyGetBitDepth();
-    std::shared_ptr<PyPacketData> pkt1 = demuxer.SeekFrame(0, 1, 0);
-    std::shared_ptr<PyPacketData> pkt2 = demuxer.DemuxFrame();
-    (void)codec; (void)depth; (void)pkt1; (void)pkt2;
+    const auto codec = ConvertAVCodec2RocDecVideoCodec(demuxer.GetCodecId());
+    PyRocVideoDecoder decoder(0, OUT_SURFACE_MEM_DEV_COPIED, codec);
+    Require(decoder.PyCodecSupported(0, codec, demuxer.PyGetBitDepth()).cast<bool>(),
+            "GPU does not support the API smoke-test input");
+    TestDecodedFrame(decoder, demuxer);
+    std::string output_name;
+    decoder.PySetReconfigParams(RECONFIG_FLUSH_MODE_NONE, output_name);
 
-    int codec_id = demuxer.GetCodecId();
-    uint32_t bit_depth = demuxer.PyGetBitDepth();
-    rocDecVideoCodec dec_codec = ConvertAVCodec2RocDecVideoCodec(codec_id);
-
-    int device_id = 0;
-    int mem_type = OUT_SURFACE_MEM_DEV_COPIED;
-    bool force_zero_latency = false;
-
-    // test GPU decoder
-    PyRocVideoDecoder viddec(device_id, mem_type, dec_codec, force_zero_latency);
-    std::cout << "Testing PyRocVideoDecoder...\n";
-    std::shared_ptr<PyPacketData> pkt = demuxer.DemuxFrame();
-    if (!viddec.PyCodecSupported(0, ConvertAVCodec2RocDecVideoCodec(demuxer.GetCodecId()), demuxer.PyGetBitDepth()).cast<bool>()) return;
-    viddec.PyGetFrameRgb(*pkt, 3);
-    Dim resize_dim{1920, 1080};
-    uintptr_t surf_info = static_cast<uintptr_t>(0); 
-    viddec.PyResizeFrame(*pkt, &resize_dim, surf_info);
-    viddec.PyGetResizedOutputSurfaceInfo();    
-    viddec.PyGetDeviceinfo();    
-    viddec.PyGetNumOfFlushedFrames();
-    std::string empty_name = "";
-    viddec.PySetReconfigParams(0, empty_name);
-    viddec.PyGetBitDepth();
-    viddec.PyReleaseFrame(*pkt);
-
-    // test CPU decoder
-    mem_type = OUT_SURFACE_MEM_HOST_COPIED;
-    PyRocVideoDecoderCpu cpu_dec(device_id, mem_type, dec_codec, force_zero_latency);    
-    std::cout << "Testing PyRocVideoDecoderCpu...\n";
-    pkt = demuxer.DemuxFrame();
-    if (!cpu_dec.PyCodecSupported(0, ConvertAVCodec2RocDecVideoCodec(demuxer.GetCodecId()), demuxer.PyGetBitDepth()).cast<bool>()) return;
-    cpu_dec.PyGetFrameRgb(*pkt, 3);    
-    cpu_dec.PyResizeFrame(*pkt, &resize_dim, surf_info);
-    cpu_dec.PyGetResizedOutputSurfaceInfo();    
-    cpu_dec.PyGetDeviceinfo();    
-    cpu_dec.PyGetNumOfFlushedFrames();
-    cpu_dec.PyGetBitDepth();
-    cpu_dec.PyReleaseFrame(*pkt);
-
-    std::cout << "All classes member methods calls completed successfully." << std::endl;
-#endif //#ifndef NDEBUG
+    // Use a fresh stream and device output for CPU API coverage. The SDK's
+    // separate host-copy path is not exercised by this API smoke test.
+    PyVideoDemuxer cpu_demuxer(input_file);
+    PyRocVideoDecoderCpu cpu_decoder(0, OUT_SURFACE_MEM_DEV_COPIED, codec);
+    Require(cpu_decoder.PyCodecSupported(0, codec, cpu_demuxer.PyGetBitDepth()).cast<bool>(),
+            "CPU decoder does not support the API smoke-test input");
+    TestDecodedFrame(cpu_decoder, cpu_demuxer);
+    std::cout << "GPU and CPU API smoke tests decoded, resized, and released frames.\n";
+#endif
 }
 
 void TestAll_roc_pybuffer() {
@@ -178,88 +176,59 @@ void Test_DLPackPyTensor_ConstructorsAndOperators() {
 }
 
 // The actual test
-void Test_PyReconfigureFlushCallback() {
+void Test_PyReconfigureFlushCallback(const char* input_file) {
 #ifndef NDEBUG
-    int device_id = 0;
-    OutputSurfaceMemoryType mem_type = static_cast<OutputSurfaceMemoryType>(0);
-    rocDecVideoCodec codec = rocDecVideoCodec_HEVC;
-    bool force_zero_latency = false;
-
-    RocVideoDecoder decoder(
-        device_id,
-        mem_type,
-        codec,
-        force_zero_latency,
-        nullptr,      // crop_rect
-        false,        // extract_user_SEI_Message
-        0,            // disp_delay
-        1920, 1080,   // max_width, max_height
-        1000          // clk_rate
-    );
-
-    ReconfigDumpFileStruct dump_struct;
-    dump_struct.b_dump_frames_to_file = true;
-    dump_struct.output_file_name = "dummy_output.yuv";
-
-    // Call with RECONFIG_FLUSH_MODE_DUMP_TO_FILE
-    int flushed = PyReconfigureFlushCallback(&decoder, RECONFIG_FLUSH_MODE_DUMP_TO_FILE, &dump_struct);
-    std::cout << "Flushed frames: " << flushed << std::endl;
-
-    // test with nullptr to hit the early-return path
-    int flushed_null = PyReconfigureFlushCallback(nullptr, 0, nullptr);
-    std::cout << "Flushed frames (null case): " << flushed_null << std::endl;
-
-    // test with RECONFIG_FLUSH_MODE_NONE (won’t call SaveFrameToFile)
-    flushed = PyReconfigureFlushCallback(&decoder, RECONFIG_FLUSH_MODE_NONE, &dump_struct);
-    std::cout << "Flushed frames (no file save): " << flushed << std::endl;
-#endif //#ifndef NDEBUG
+    Require(input_file && *input_file, "Flush smoke test requires an input file");
+    Require(PyReconfigureFlushCallback(nullptr, 0, nullptr) == 0, "Null flush callback failed");
+    for (auto mode : {RECONFIG_FLUSH_MODE_NONE, RECONFIG_FLUSH_MODE_DUMP_TO_FILE}) {
+        PyVideoDemuxer demuxer(input_file);
+        const auto codec = ConvertAVCodec2RocDecVideoCodec(demuxer.GetCodecId());
+        // The callback expects a PyRocVideoDecoder, not a plain base object.
+        PyRocVideoDecoder decoder(0, OUT_SURFACE_MEM_DEV_COPIED, codec);
+        auto packet = DecodeFirstFrame(decoder, demuxer);
+        ReconfigDumpFileStruct dump{};
+        dump.b_dump_frames_to_file = false;
+        Require(PyReconfigureFlushCallback(&decoder, mode, &dump) > 0,
+                "Flush callback did not drain decoded frames");
+        Require(PyReconfigureFlushCallback(&decoder, mode, &dump) == 0,
+                "Flush callback retained frames after draining");
+    }
+    std::cout << "Flush callback drained initialized decoder frames.\n";
+#endif
 }
 
 void Test_CalculateRgbImageSize() {
 #ifndef NDEBUG
-    PyRocVideoDecoderCpu decoder(0, 1, rocDecVideoCodec_HEVC);
-
-    OutputSurfaceInfo surf_info_8bit = {};
-    surf_info_8bit.bit_depth = 8;
-    surf_info_8bit.output_width = 1919;// odd to test rounding
-    surf_info_8bit.output_height = 1080;
-    OutputSurfaceInfo surf_info_10bit = {};
-    surf_info_10bit.bit_depth = 10;
-    surf_info_10bit.output_width = 1920;
-    surf_info_10bit.output_height = 1080;
-    OutputFormatEnum fmt = rgb;
-    size_t sz1 = decoder.CalculateRgbImageSize(fmt, &surf_info_8bit);
-    std::cout << "RGB 8-bit size: " << sz1 << std::endl;
-    fmt = rgba;
-    size_t sz2 = decoder.CalculateRgbImageSize(fmt, &surf_info_8bit);
-    std::cout << "RGBA 8-bit size: " << sz2 << std::endl;
-    fmt = rgb48;
-    size_t sz3 = decoder.CalculateRgbImageSize(fmt, &surf_info_10bit);
-    std::cout << "RGB48 10-bit size: " << sz3 << std::endl;
-    fmt = rgba64;
-    size_t sz4 = decoder.CalculateRgbImageSize(fmt, &surf_info_10bit);
-    std::cout << "RGBA64 10-bit size: " << sz4 << std::endl;
-    fmt = static_cast<OutputFormatEnum>(999); // should hit the fallback else in bit_depth != 8
-    size_t sz5 = decoder.CalculateRgbImageSize(fmt, &surf_info_10bit);
-    std::cout << "Unknown format 10-bit size: " << sz5 << std::endl;
-
-    PyRocVideoDecoder decoder_gpu(0, 0, rocDecVideoCodec_HEVC);
-    fmt = bgr;
-    size_t g_sz1 = decoder_gpu.CalculateRgbImageSize(fmt, &surf_info_8bit);
-    std::cout << "g_sz1 (BGR 8-bit size): " << g_sz1 << std::endl;
-    fmt = rgba;
-    size_t g_sz2 = decoder_gpu.CalculateRgbImageSize(fmt, &surf_info_8bit);
-    std::cout << "g_sz2 (RGBA 8-bit size): " << g_sz2 << std::endl;
-    fmt = rgb48;
-    size_t g_sz3 = decoder_gpu.CalculateRgbImageSize(fmt, &surf_info_10bit);
-    std::cout << "g_sz3 (RGB48 10-bit size): " << g_sz3 << std::endl;
-    fmt = rgba64;
-    size_t g_sz4 = decoder_gpu.CalculateRgbImageSize(fmt, &surf_info_10bit);
-    std::cout << "g_sz4 (RGBA64 10-bit size): " << g_sz4 << std::endl;
-    fmt = static_cast<OutputFormatEnum>(999); // intentional edge case
-    size_t g_sz5 = decoder_gpu.CalculateRgbImageSize(fmt, &surf_info_10bit);
-    std::cout << "g_sz5 (Unknown format 10-bit size): " << g_sz5 << std::endl;
-
-    std::cout << "All branches of CalculateRgbImageSize tested.\n";
-#endif //#ifndef NDEBUG
+    PyRocVideoDecoderCpu cpu(0, OUT_SURFACE_MEM_DEV_COPIED, rocDecVideoCodec_HEVC);
+    PyRocVideoDecoder gpu(0, OUT_SURFACE_MEM_DEV_INTERNAL, rocDecVideoCodec_HEVC);
+    const auto check = [](auto& decoder) {
+        for (uint32_t depth : {8u, 10u}) {
+            OutputSurfaceInfo info{};
+            info.bit_depth = depth;
+            info.output_width = 1919;
+            info.output_height = 1080;
+            // Expected allocations include one alignment pixel per row.
+            const size_t expected[] = {6220800, 12441600, 6220800, 12441600,
+                                       8294400, 16588800, 8294400, 16588800};
+            for (int value = 1; value <= 8; ++value) {
+                auto format = static_cast<OutputFormatEnum>(value);
+                Require(decoder.CalculateRgbImageSize(format, &info) == expected[value - 1],
+                        "Incorrect RGB allocation size");
+            }
+            for (int value : {0, 9, 999}) {
+                auto format = static_cast<OutputFormatEnum>(value);
+                bool rejected = false;
+                try {
+                    decoder.CalculateRgbImageSize(format, &info);
+                } catch (const std::invalid_argument&) {
+                    rejected = true;
+                }
+                Require(rejected, "Invalid RGB format was accepted");
+            }
+        }
+    };
+    check(cpu);
+    check(gpu);
+    std::cout << "RGB allocation sizes and invalid-format rejection verified.\n";
+#endif
 }
