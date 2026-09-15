@@ -17,14 +17,16 @@ option(BUILD_JPEG_DECODE "Build the rocJPEG Python bindings" ON)
 
 include(CTest)
 
+set(_rocpyvideo_target "")
 if(BUILD_VIDEO_DECODE)
     add_subdirectory(videoDecode)
+    get_directory_property(_rocpyvideo_target DIRECTORY videoDecode DEFINITION ROCPYVIDEO_TARGET)
 endif()
 
 if(BUILD_JPEG_DECODE)
     add_subdirectory(jpegDecode)
 endif()
 
-if(NOT BUILD_VIDEO_DECODE AND NOT BUILD_JPEG_DECODE)
-    message(WARNING "Both rocPyDecode components are disabled; no targets will be built.")
+if(NOT _rocpyvideo_target AND NOT BUILD_JPEG_DECODE)
+    message(WARNING "No rocPyDecode components remain; nothing will be built.")
 endif()
