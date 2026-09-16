@@ -188,13 +188,8 @@ py::object PyRocVideoDecoderCpu::PyGetFrameYuv(PyPacketData& packet, bool separa
 }
 
 size_t PyRocVideoDecoderCpu::CalculateRgbImageSize(OutputFormatEnum& e_output_format, OutputSurfaceInfo * p_surf_info) {
-    const int format = static_cast<int>(e_output_format);
-    if (format < 1 || format > 8)
-        throw std::invalid_argument("RGB format must be in the range 1 through 8");
-    const size_t channels = format >= 5 ? 4 : 3;
-    const size_t item_size = format % 2 == 0 ? 2 : 1;
-    return size_t((p_surf_info->output_width + 1) & ~1u) *
-        p_surf_info->output_height * channels * item_size;
+    return size_t(CalculateRgbPitch(p_surf_info->output_width, e_output_format)) *
+        p_surf_info->output_height;
 }
 
 // for python binding
@@ -214,7 +209,7 @@ py::object PyRocVideoDecoderCpu::PyGetFrameRgb(PyPacketData& packet, int rgb_for
         GetPythonSurfaceInfo(&info);
         if (!info) throw std::runtime_error("Missing output surface information");
         HIP_API_CALL(hipSetDevice(device_id_));
-        const uint32_t pitch = ((info->output_width + 1) & ~1u) * channels * item_size;
+        const uint32_t pitch = CalculateRgbPitch(info->output_width, format);
         const size_t size = size_t(pitch) * info->output_height;
         if (!rgb_owner_ || rgb_owner_.use_count() > 1 || rgb_capacity_ != size) {
             void* allocation = nullptr;

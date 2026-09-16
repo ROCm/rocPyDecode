@@ -7,6 +7,18 @@
 #include <memory>
 #include <limits>
 
+inline uint32_t CalculateRgbPitch(uint32_t width, OutputFormatEnum output_format) {
+    const int format = static_cast<int>(output_format);
+    if (format < 1 || format > 8)
+        throw std::invalid_argument("RGB format must be in the range 1 through 8");
+    const uint32_t channels = format >= 5 ? 4u : 3u;
+    const uint32_t item_size = format % 2 == 0 ? 2u : 1u;
+    const uint64_t pitch = ((uint64_t{width} + 1) & ~uint64_t{1}) * channels * item_size;
+    if (pitch > static_cast<uint64_t>(std::numeric_limits<int>::max()))
+        throw std::invalid_argument("RGB pitch exceeds the SDK integer range");
+    return static_cast<uint32_t>(pitch);
+}
+
 inline void ConvertDeviceRgbFrame(uint8_t* input, OutputSurfaceInfo* info, uint8_t* output,
                             OutputFormatEnum format, uint32_t pitch) {
     if (info->output_width > std::numeric_limits<int>::max() ||
