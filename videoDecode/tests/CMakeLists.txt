@@ -37,6 +37,24 @@ if(EXISTS "${ROCPYVIDEO_MEDIA_DIR}/AMD_driving_virtual_20-H264.264" AND
         --media-dir "${ROCPYVIDEO_MEDIA_DIR}")
 endif()
 
+# Exercise optional API smoke tests only when their backend and media exist.
+set(_rocpyvideo_api_media "${ROCPYVIDEO_MEDIA_DIR}/AMD_driving_virtual_20-H264.mp4")
+if(ROCPYVIDEO_ENABLE_HOST AND EXISTS "${_rocpyvideo_api_media}")
+    rocpyvideo_add_test(video_decode_debug_api
+        "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/decoder_api_test.py"
+        -i "${_rocpyvideo_api_media}")
+    set_tests_properties(video_decode_debug_api PROPERTIES SKIP_RETURN_CODE 77)
+    execute_process(COMMAND "${Python3_EXECUTABLE}" -c "import numpy"
+        RESULT_VARIABLE _rocpyvideo_numpy_status OUTPUT_QUIET ERROR_QUIET)
+    if(_rocpyvideo_numpy_status EQUAL 0)
+        rocpyvideo_add_test(video_decode_cpu_api
+            "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/decodercpu_test.py"
+            -i "${_rocpyvideo_api_media}")
+    else()
+        message(STATUS "NumPy unavailable; skipping optional CPU API smoke test")
+    endif()
+endif()
+
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/" DESTINATION
     "${CMAKE_INSTALL_DATADIR}/rocpydecode/tests"
     FILES_MATCHING PATTERN "*.py")

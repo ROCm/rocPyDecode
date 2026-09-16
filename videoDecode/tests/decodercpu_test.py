@@ -26,6 +26,8 @@ from pyRocVideoDecode.decodercpu import decodercpu, GetOutputFormat, GetRocDecCo
 import pyRocVideoDecode.demuxer as dmx
 import pyRocVideoDecode.decodercpu as dec
 import argparse
+from pathlib import Path
+import tempfile
 
 parser = argparse.ArgumentParser(
     description='PyRocDecode Video Decode Arguments')
@@ -36,11 +38,7 @@ parser.add_argument(
     help='Input File Path - required',
     required=True)
 
-try:
-    args = parser.parse_args()
-except SystemExit as e:
-    print(f"Error: {e}. Please check the input arguments and try again.")
-    exit()
+args = parser.parse_args()
 
 input_file_path = args.input
 
@@ -60,30 +58,40 @@ codec_id = dec.GetRocDecCodecID(demuxer.GetCodecId())
 decoder = dec.decodercpu(codec_id,0,1)
 gpu_info = decoder.GetGpuInfo()
 buffer = np.zeros((1080 * 1920 * 3,), dtype=np.uint8)
-packet = demuxer.DemuxFrame()
-decoder.DecodeFrame(packet)
-decoder.GetFrameYuv(packet, separate_planes=False)
+while True:
+    packet = demuxer.DemuxFrame()
+    if decoder.DecodeFrame(packet) > 0:
+        break
+    if packet.bitstream_size <= 0:
+        raise AssertionError("CPU API smoke test did not decode a frame")
+assert decoder.GetFrameYuv(packet, separate_planes=False) != -1
+assert packet.frame_adrs, "CPU API smoke test did not retrieve a frame"
 try:
     decoder.GetFrameRgb(packet, rgb_format=0)
 except ValueError:
     pass
 else:
     raise AssertionError("Native YUV is not an RGB output format")
-decoder.GetFrameRgb(packet, rgb_format=3)
 GetRocPyDecPacket(0, size=buffer.size, buffer=buffer)
-decoder.GetWidth()
-decoder.GetHeight()
-decoder.GetStride()
-decoder.GetFrameSize()
-decoder.GetOutputSurfaceInfo()
-decoder.GetResizedOutputSurfaceInfo()
+assert decoder.GetWidth() > 0
+assert decoder.GetHeight() > 0
+assert decoder.GetStride() > 0
+assert decoder.GetFrameSize() > 0
+surface_info = decoder.GetOutputSurfaceInfo()
+assert surface_info
+assert decoder.ResizeFrame(packet, (640, 360), surface_info)
+assert decoder.GetResizedOutputSurfaceInfo()
 decoder.GetNumOfFlushedFrames()
 decoder.AddDecoderSessionOverHead(session_id=1, duration=123456)
 decoder.GetDecoderSessionOverHead(session_id=1)
 decoder.IsCodecSupported(device_id=0, codec_id=codec_id, bit_depth=8)
 decoder.GetBitDepth()
-decoder.SaveFrameToFile("outfile.yuv", packet.frame_adrs)
+with tempfile.TemporaryDirectory() as directory:
+    output = Path(directory) / "frame.yuv"
+    decoder.SaveFrameToFile(str(output), packet.frame_adrs)
+    assert output.stat().st_size > 0, "CPU API smoke test saved an empty frame"
 decoder.ReleaseFrame(packet)
+print("CPU API smoke test decoded, resized, saved, and released a frame.")
 
 # CPU conversion must handle its planar YUV output in both memory modes.
 from decoder_rgb_dlpack_test import test_rgb_dlpack
