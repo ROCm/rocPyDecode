@@ -33,7 +33,7 @@ using namespace std;
 void TestAllClassCalls(const char* input_file);
 void TestAll_roc_pybuffer();
 void Test_DLPackPyTensor_ConstructorsAndOperators();
-void Test_PyReconfigureFlushCallback(const char* input_file);
+void Test_PyReconfigureFlushCallback(const char* input_file, const std::string& output_directory);
 void Test_CalculateRgbImageSize();
 #endif
 
