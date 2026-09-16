@@ -14,8 +14,8 @@ and Python 3.12; use packages appropriate to your OS and selected ROCm release.
 Required build dependencies:
 
 - CMake 3.20 or newer for the commands below, including ``ctest --test-dir``.
-  The CMake project itself accepts CMake 3.15 or newer.
-- Python 3.9 or newer and matching development headers/libraries. The examples
+  The CMake project itself requires CMake 3.18 or newer for Python module discovery.
+- Python 3.9 or newer and matching development headers. The examples
   select Python 3.12; change ``PYTHON_VERSION_SUGGESTED`` to your installed version.
 - pybind11 3.1.0 and DLPack 1.3 headers; bundled in the repository.
 - rocDecode **1.0.0 or newer**, including development files, CMake package
