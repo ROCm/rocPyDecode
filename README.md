@@ -165,28 +165,6 @@ Check that each raw-video test reports a positive decoded-frame count; zero
 frames is a failure.
 Check that the JPEG test processes images and reports zero bad files.
 
-## Compiler warnings
-
-rocDecode SDK utility sources and headers still contain compiler warnings.
-SDK translation units use `-Wno-error` (MSVC: `/WX-`), so their enabled warnings
-remain visible without failing a build that uses `-Werror`. SDK include
-directories remain `SYSTEM`; compiler warnings suppressed by system-header
-treatment are not printed. This keeps SDK headers from failing project
-translation units. Project sources retain the caller's warning/error flags.
-CMake reports this policy explicitly. **SDK warnings remain unresolved**;
-SDK files are unchanged. There is no SDK warning configuration option.
-
-For a strict GCC/Clang build, add the following to the configure command above:
-
-```bash
--DCMAKE_CXX_FLAGS="-Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wshadow -Wformat=2 -Wundef -Wcast-qual -Wnon-virtual-dtor -Woverloaded-virtual -Wnull-dereference -Wdouble-promotion -Wimplicit-fallthrough -Werror"
-```
-
-An unsuppressed audit with ROCm 7.2.2 and AMD Clang 22 still reports SDK
-conversion, signed-comparison, initialization, unused-parameter, qualifier,
-and undefined-macro diagnostics. Source warnings are now non-fatal;
-header warnings covered by `SYSTEM` treatment remain suppressed.
-
 ## Use the installed bindings
 
 Keep the selected SDK's runtime library path from the setup above. For the
