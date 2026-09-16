@@ -28,6 +28,7 @@ namespace py = pybind11;
 #include "roc_pydlpack.h"
 #include <iostream>
 #include <vector>
+#include <limits>
 
 DLPackPyTensor::DLPackPyTensor() noexcept : m_tensor{} {
 }
@@ -36,17 +37,22 @@ DLPackPyTensor::DLPackPyTensor(DLManagedTensor &&managedTensor) : m_tensor{std::
     managedTensor = {};
 }
 
-DLPackPyTensor::DLPackPyTensor(const DLTensor &tensor) : DLPackPyTensor(DLManagedTensor{tensor}) {
+DLPackPyTensor::DLPackPyTensor(const DLTensor &tensor) : DLPackPyTensor(DLManagedTensor{tensor, nullptr, nullptr}) {
 }
 
 DLPackPyTensor::DLPackPyTensor(const py::buffer_info &info, const DLDevice &dev) : m_tensor{} {
+    if (info.ndim < 0 || info.ndim > std::numeric_limits<int32_t>::max() || info.itemsize <= 0)
+        throw std::invalid_argument("Invalid DLPack rank or element size");
+    const auto rank = static_cast<size_t>(info.ndim);
+    if (info.shape.size() != rank || info.strides.size() != rank)
+        throw std::invalid_argument("DLPack metadata does not match its rank");
     DLTensor &dlTensor = m_tensor.dl_tensor;
     dlTensor.data      = info.ptr;
     //TBD dtype
     dlTensor.dtype.code = kDLInt;
     dlTensor.dtype.bits = 8;
     dlTensor.dtype.lanes = 1;
-    dlTensor.ndim        = info.ndim;
+    dlTensor.ndim        = static_cast<int32_t>(info.ndim);
     dlTensor.device      = dev;
     dlTensor.byte_offset = 0;
 
@@ -58,11 +64,11 @@ DLPackPyTensor::DLPackPyTensor(const py::buffer_info &info, const DLDevice &dev)
     };
 
     try {
-        dlTensor.shape = new int64_t[info.ndim];
+        dlTensor.shape = new int64_t[rank];
         std::copy_n(info.shape.begin(), info.shape.size(), dlTensor.shape);
 
-        dlTensor.strides = new int64_t[info.ndim];
-        for (int i = 0; i < info.ndim; ++i) {
+        dlTensor.strides = new int64_t[rank];
+        for (size_t i = 0; i < rank; ++i) {
             if (info.strides[i] % info.itemsize != 0) {
                 throw std::runtime_error("Stride must be a multiple of the element size in bytes");
             }

@@ -15,6 +15,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iterator>
+#include <limits>
 
 #ifndef NDEBUG
 namespace {
@@ -52,7 +53,7 @@ void TestDecodedFrame(Decoder& decoder, PyVideoDemuxer& demuxer) {
 }
 #endif
 
-void TestAllClassCalls(const char* input_file) {
+void TestAllClassCalls([[maybe_unused]] const char* input_file) {
 #ifndef NDEBUG
     Require(input_file && *input_file, "API smoke test requires an input file");
     PyVideoDemuxer demuxer(input_file);
@@ -179,7 +180,7 @@ void Test_DLPackPyTensor_ConstructorsAndOperators() {
 }
 
 // The actual test
-void Test_PyReconfigureFlushCallback(const char* input_file, const std::string& output_directory) {
+void Test_PyReconfigureFlushCallback([[maybe_unused]] const char* input_file, [[maybe_unused]] const std::string& output_directory) {
 #ifndef NDEBUG
     Require(input_file && *input_file, "Flush smoke test requires an input file");
     Require(PyReconfigureFlushCallback(nullptr, 0, nullptr) == 0, "Null flush callback failed");
@@ -200,7 +201,7 @@ void Test_PyReconfigureFlushCallback(const char* input_file, const std::string& 
         int64_t pts = 0;
         while (auto* frame = reference.GetFrame(&pts)) {
             HIP_API_CALL(hipMemcpy(host.data(), frame, host.size(), hipMemcpyDeviceToHost));
-            for (int i = 0; i < layout.count; ++i) {
+            for (size_t i = 0; i < layout.count; ++i) {
                 const auto& plane = layout.planes[i];
                 const size_t row_bytes = size_t(plane.width) * plane.channels * info->bytes_per_pixel;
                 for (uint32_t row = 0; row < plane.height; ++row)
@@ -282,9 +283,35 @@ void Test_CalculateRgbImageSize() {
                 Require(rejected, "Invalid RGB format was accepted");
             }
         }
+        OutputSurfaceInfo info{};
+        info.output_height = 1;
+        for (int value = 1; value <= 8; ++value) {
+            auto format = static_cast<OutputFormatEnum>(value);
+            const uint32_t bytes_per_pixel = (value >= 5 ? 4u : 3u) * (value % 2 == 0 ? 2u : 1u);
+            const uint32_t max_width = (static_cast<uint32_t>(std::numeric_limits<int>::max()) /
+                                        bytes_per_pixel) & ~1u;
+            for (uint32_t width : {max_width - 1, max_width}) {
+                info.output_width = width;
+                Require(decoder.CalculateRgbImageSize(format, &info) == size_t(max_width) * bytes_per_pixel,
+                        "Largest representable RGB pitch was rejected or changed");
+            }
+            const uint32_t wrapped_width = (std::numeric_limits<uint32_t>::max() / bytes_per_pixel & ~1u) + 2;
+            for (uint32_t width : {max_width + 1, max_width + 2, wrapped_width,
+                                   static_cast<uint32_t>(std::numeric_limits<int>::max()),
+                                   std::numeric_limits<uint32_t>::max()}) {
+                info.output_width = width;
+                bool rejected = false;
+                try {
+                    decoder.CalculateRgbImageSize(format, &info);
+                } catch (const std::invalid_argument&) {
+                    rejected = true;
+                }
+                Require(rejected, "Unrepresentable RGB pitch was accepted");
+            }
+        }
     };
     check(cpu);
     check(gpu);
-    std::cout << "RGB allocation sizes and invalid-format rejection verified.\n";
+    std::cout << "RGB allocation sizes, pitch boundaries, and invalid-format rejection verified.\n";
 #endif
 }

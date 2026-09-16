@@ -23,6 +23,8 @@ THE SOFTWARE.
 #pragma once
  
 #include "video_demuxer.h"
+#include <algorithm>
+#include <cerrno>
 #include "roc_pydecode.h"
 
 #if ROCPYDECODE_USE_FFMPEG
@@ -78,18 +80,22 @@ public:
     // Fill in the buffer owned by the demuxer
     int GetData(uint8_t *p_buf, int n_buf) {
         // We simply copy from the mapped memory in this example. You may get your data from network or somewhere else
-        if (!buffer_size_)
+        if (n_buf <= 0 || !p_buf)
+            return AVERROR(EINVAL);
+        const size_t remaining = buffer_size_ - offset_;
+        if (!remaining)
             return AVERROR_EOF;
-        memcpy(p_buf, buf_ptr_, n_buf);
-        buf_ptr_ += n_buf;
-        buffer_size_ -= n_buf;
-        return n_buf;
+        const size_t count = std::min(static_cast<size_t>(n_buf), remaining);
+        memcpy(p_buf, buf_ptr_ + offset_, count);
+        offset_ += count;
+        return static_cast<int>(count);
     }
 
-    size_t GetBufferSize() { return buffer_size_; };    
+    size_t GetBufferSize() { return buffer_size_ - offset_; };
 
 	private:
 	    uint8_t *buf_ptr_ = nullptr;
-	    size_t buffer_size_ = 0; ///< size left in the buffer
+	    size_t buffer_size_ = 0; ///< original mapping size
+	    size_t offset_ = 0;
 };
 #endif

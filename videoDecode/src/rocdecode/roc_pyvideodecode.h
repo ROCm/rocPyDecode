@@ -22,6 +22,7 @@ THE SOFTWARE.
 
 #pragma once
 #include "roc_pysurface.h"
+#include <unordered_map>
 
 #include "roc_video_dec.h"
 #include "roc_pydecode.h"
@@ -113,6 +114,10 @@ class PyRocVideoDecoder : public RocVideoDecoder {
         py::object PyGetDecoderSessionOverHead(int session_id);
 #endif
     private:
+#if ROCDECODE_CHECK_VERSION(0,6,0)
+        // Python integer keys are independent of the SDK's native thread IDs.
+        std::unordered_map<int, double> python_session_overhead_;
+#endif
         friend int PyReconfigureFlushCallback(void*, uint32_t, void*);
         int device_id_;
         std::shared_ptr <ConfigInfo> configInfo;

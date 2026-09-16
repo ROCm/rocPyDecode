@@ -3,6 +3,10 @@
 
 """Exercise raw sample frame limits and failure exit codes using SDK media."""
 import argparse
+from concurrent.futures import ThreadPoolExecutor
+import ctypes
+import hashlib
+import rocpydecode as native
 from pathlib import Path
 import re
 import subprocess
@@ -24,10 +28,80 @@ def run(sample, args, expected_frames=None, error=None):
         assert counts == [str(expected_frames)], output
 
 
+def packet_and_session_boundaries(media):
+    codec = native.decTypes.rocDecVideoCodec.rocDecVideoCodec_AVC
+    classes = [native.PyRocVideoDecoder]
+    if hasattr(native, "PyRocVideoDecoderCpu"):
+        classes.append(native.PyRocVideoDecoderCpu)
+    for cls in classes:
+        decoder = cls(codec=codec, out_mem_type=1)
+        other = cls(codec=codec, out_mem_type=1)
+        if hasattr(decoder, "AddDecoderSessionOverHead"):
+            keys = [-(2**31), -1, 0, 1, 2**31 - 1]
+            for key in keys:
+                assert decoder.GetDecoderSessionOverHead(key) == 0
+                decoder.AddDecoderSessionOverHead(key, 1.25)
+                decoder.AddDecoderSessionOverHead(key, 2.5)
+                assert decoder.GetDecoderSessionOverHead(key) == 3.75
+                assert other.GetDecoderSessionOverHead(key) == 0
+            def accumulate(_):
+                for _ in range(100):
+                    decoder.AddDecoderSessionOverHead(1, 0.5)
+            with ThreadPoolExecutor(max_workers=4) as pool:
+                list(pool.map(accumulate, range(4)))
+            assert decoder.GetDecoderSessionOverHead(1) == 203.75
+        max_packet_size = 2**31 - 1 if cls is getattr(native, "PyRocVideoDecoderCpu", None) else 2**32 - 1
+        data = ctypes.create_string_buffer(1)
+        for address in [0, ctypes.addressof(data)]:
+            for size in [-(2**63), -1, max_packet_size + 1, max_packet_size + 2, 2**63 - 1]:
+                packet = native.PyPacketData()
+                packet.bitstream_adrs, packet.bitstream_size = address, size
+                packet.pkt_flags, packet.frame_pts = 0, 0
+                try:
+                    decoder.DecodeFrame(packet)
+                except ValueError:
+                    pass
+                else:
+                    raise AssertionError(f"Accepted packet size {size}, address {address}")
+                assert packet.pkt_flags == 0
+        packet = native.PyPacketData()
+        packet.bitstream_adrs, packet.bitstream_size = 0, 1
+        packet.pkt_flags, packet.frame_pts = 0, 0
+        try:
+            decoder.DecodeFrame(packet)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("Accepted a non-empty packet with no address")
+        packet.bitstream_size = 0
+        assert decoder.DecodeFrame(packet) == 0  # Valid EOS still works.
+        del decoder, other
+
+    if hasattr(native, "PyFileStreamProvider"):
+        def packets(mux):
+            result = []
+            for _ in range(10000):
+                packet = mux.DemuxFrame()
+                if packet.bitstream_size == 0:
+                    return result
+                assert packet.bitstream_size > 0
+                data = ctypes.string_at(packet.bitstream_adrs, packet.bitstream_size)
+                result.append(hashlib.sha256(data).digest())
+            raise AssertionError("Demuxer did not reach EOF")
+        expected = packets(native.PyVideoDemuxer(str(media)))
+        provider = native.PyFileStreamProvider(str(media))
+        mux = native.PyVideoDemuxer(provider)
+        assert expected and packets(mux) == expected
+        assert provider.GetBufferSize() == 0
+        del mux, provider
+    print("Packet, session-key, and mapped-provider regressions passed")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--media-dir", required=True, type=Path)
     args = parser.parse_args()
+    packet_and_session_boundaries(args.media_dir / "AMD_driving_virtual_20-H264.264")
     sample = Path(__file__).resolve().parents[1] / "samples/rocdecode/videodecoderaw.py"
     for codec in ("264", "265"):
         media = args.media_dir / f"AMD_driving_virtual_20-H{codec}.{codec}"

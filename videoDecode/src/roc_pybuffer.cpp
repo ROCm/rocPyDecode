@@ -22,6 +22,7 @@ THE SOFTWARE.
 
 #include "roc_pybuffer.h"
 #include <iostream>
+#include <limits>
 
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
@@ -71,7 +72,7 @@ void *BufferInterface::data() const {
     return m_dlTensor->data;
 }
 
-py::capsule BufferInterface::dlpack(py::object stream) const {
+py::capsule BufferInterface::dlpack(py::object /*stream*/) const {
 
     struct ManagerCtx {
         DLManagedTensor tensor;
@@ -85,8 +86,8 @@ py::capsule BufferInterface::dlpack(py::object stream) const {
     // Set up tensor deleter to delete the ManagerCtx
     ctx->tensor.manager_ctx = ctx.get();
     ctx->tensor.deleter = [](DLManagedTensor *tensor) {
-        auto *ctx = static_cast<ManagerCtx *>(tensor->manager_ctx);
-        delete ctx;
+        auto *manager = static_cast<ManagerCtx *>(tensor->manager_ctx);
+        delete manager;
     };
 
     // Copy tensor data
@@ -145,14 +146,20 @@ int BufferInterface::LoadDLPack(std::vector<size_t>& _shape, std::vector<size_t>
     CheckValidBuffer(_data);
     if ((_type_str != "|u1" && _type_str != "|u2") || bit_depth == 0 || bit_depth > 16)
         throw std::invalid_argument("Unsupported DLPack unsigned element type");
-    const size_t item_size = bit_depth <= 8 ? 1 : 2;
+    const ssize_t item_size = bit_depth <= 8 ? 1 : 2;
     if (_stride.size() < _shape.size())
         throw std::invalid_argument("Missing DLPack strides");
+    const auto max_size = static_cast<size_t>(std::numeric_limits<ssize_t>::max());
+    if (_shape.size() > max_size)
+        throw std::invalid_argument("Too many DLPack dimensions");
+    for (size_t i = 0; i < _shape.size(); ++i)
+        if (_shape[i] > max_size || _stride[i] > max_size)
+            throw std::invalid_argument("DLPack dimensions and strides exceed the Python size range");
     std::vector<ssize_t> shape(_shape.begin(), _shape.end());
-    std::vector<ssize_t> strides(_stride.begin(), _stride.begin() + _shape.size());
+    std::vector<ssize_t> strides(_stride.begin(), _stride.begin() + static_cast<ssize_t>(_shape.size()));
     py::buffer_info info(_data, item_size,
         item_size == 1 ? py::format_descriptor<uint8_t>::format() : py::format_descriptor<uint16_t>::format(),
-        shape.size(), shape, strides);
+        static_cast<ssize_t>(shape.size()), shape, strides);
     m_dlTensor = DLPackPyTensor(info, DLDevice{device_type, device_type == kDLCPU ? 0 : device_id_});
     m_dlTensor->dtype = DLDataType{kDLUInt, static_cast<uint8_t>(item_size * 8), 1};
     return 0;

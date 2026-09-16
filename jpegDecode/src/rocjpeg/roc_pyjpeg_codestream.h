@@ -48,8 +48,8 @@ public:
 private:
     std::shared_ptr<void> stream_owner_;
     void Release();
-    int ReadFromFile(const std::filesystem::path& filename, std::shared_ptr<std::vector<char>>& file_data, int& file_size);
-    int InitializeSingleImage(const std::filesystem::path& filename, const unsigned char* data, int data_size);
+    int ReadFromFile(const std::filesystem::path& filename, std::shared_ptr<std::vector<char>>& buffer, size_t& file_size);
+    int InitializeSingleImage(const std::filesystem::path& filename, const unsigned char* data, size_t data_size);
 };
 
 #endif // PY_ROC_JPEG_CODE_STREAM_HEADER
