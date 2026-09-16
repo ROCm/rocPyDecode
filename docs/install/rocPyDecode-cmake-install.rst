@@ -28,8 +28,17 @@ Both components are enabled by default. Set ``-DBUILD_VIDEO_DECODE=OFF`` or
 standalone build, run the same commands directly inside ``videoDecode`` or
 ``jpegDecode``.
 
-With all test assets available, expect **six tests**: binding types, raw H.264,
-raw H.265, batched JPEG decoding, and video/JPEG regression checks.
+For a root build with both components available, testing enabled, and all test
+assets present, the core suite contains **seven tests**: binding types, raw H.264,
+raw H.265, batched JPEG decoding, video/JPEG regression checks, and the configure
+regression suite. The configure suite also runs when video is skipped or
+disabled, provided a Python 3 interpreter is available. Set
+``-DBUILD_TESTING=OFF`` to omit test registration.
+
+When the optional CPU backend and H.264 MP4 fixture are available, CTest also
+registers the debug API smoke test and, when NumPy is available, the CPU API
+smoke test. The debug test is reported as skipped in builds that define
+``NDEBUG``, including Release and RelWithDebInfo; it must run in Debug builds.
 
 Media-dependent tests are registered during configuration only when their
 assets are present. A passing run with fewer tests does not establish full

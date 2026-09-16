@@ -152,8 +152,17 @@ Both components are enabled by default. Set `-DBUILD_VIDEO_DECODE=OFF` or
 standalone build, run the same commands directly inside `videoDecode` or
 `jpegDecode`.
 
-With all test assets available, expect **six tests**: binding types, raw H.264,
-raw H.265, batched JPEG decoding, and video/JPEG regression checks.
+For a root build with both components available, testing enabled, and all test
+assets present, the core suite contains **seven tests**: binding types, raw H.264,
+raw H.265, batched JPEG decoding, video/JPEG regression checks, and the configure
+regression suite. The configure suite also runs when video is skipped or
+disabled, provided a Python 3 interpreter is available. Set
+`-DBUILD_TESTING=OFF` to omit test registration.
+
+When the optional CPU backend and H.264 MP4 fixture are available, CTest also
+registers the debug API smoke test and, when NumPy is available, the CPU API
+smoke test. The debug test is reported as skipped in builds that define
+`NDEBUG`, including Release and RelWithDebInfo; it must run in Debug builds.
 
 Media-dependent tests are registered during configuration only when their
 assets are present. A passing run with fewer tests does not establish full
@@ -183,3 +192,23 @@ Each component includes its own complete setup instructions:
 - [JPEG README](jpegDecode/README.md) and [installation guide](jpegDecode/docs/install.rst)
 
 The main documentation starts at [docs/index.rst](docs/index.rst).
+
+### Missing rocDecode utility sources
+
+Video builds require the rocDecode utility sources normally installed under
+`${ROCM_PATH}/share/rocdecode/utils`. To use a compatible external source tree,
+pass `-DROCPYVIDEO_UTILS_DIR=/path/to/rocDecode/utils` when configuring. Sources
+remain external; rocPyDecode does not copy or download them. The selected sources
+must be compatible with the installed rocDecode headers and libraries.
+
+If the selected directory is absent or lacks required files, CMake lists the
+missing files in a warning and skips all video targets, tests, and installation
+rules. An explicit override never falls back to the SDK directory. JPEG continues
+when enabled; if no component remains (including standalone video configuration),
+CMake warns that nothing will be built and completes without a missing-utilities
+error. Unrelated compiler or dependency errors can still fail configuration.
+
+`BUILD_VIDEO_DECODE=OFF` skips video configuration entirely in the combined build.
+The requested build option is not changed in the cache when video is skipped;
+correct the utility path and reconfigure to restore video support. FFmpeg and CPU
+backend support retain their optional dependency requirements.

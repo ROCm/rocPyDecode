@@ -157,3 +157,23 @@ For build-tree imports, add `build/rocpydecode_3_12/lib` and
 `build/rocpydecode_3_12` to `PYTHONPATH`.
 
 See the [component documentation](docs/index.rst) for samples and API details.
+
+### Missing rocDecode utility sources
+
+Video builds require the rocDecode utility sources normally installed under
+`${ROCM_PATH}/share/rocdecode/utils`. To use a compatible external source tree,
+pass `-DROCPYVIDEO_UTILS_DIR=/path/to/rocDecode/utils` when configuring. Sources
+remain external; rocPyDecode does not copy or download them. The selected sources
+must be compatible with the installed rocDecode headers and libraries.
+
+If the selected directory is absent or lacks required files, CMake lists the
+missing files in a warning and skips all video targets, tests, and installation
+rules. An explicit override never falls back to the SDK directory. JPEG continues
+when enabled; if no component remains (including standalone video configuration),
+CMake warns that nothing will be built and completes without a missing-utilities
+error. Unrelated compiler or dependency errors can still fail configuration.
+
+`BUILD_VIDEO_DECODE=OFF` skips video configuration entirely in the combined build.
+The requested build option is not changed in the cache when video is skipped;
+correct the utility path and reconfigure to restore video support. FFmpeg and CPU
+backend support retain their optional dependency requirements.

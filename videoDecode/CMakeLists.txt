@@ -19,6 +19,38 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "${ROCM_PATH}" CACHE PATH "Installation path" FORCE)
 endif()
 
+# Validate utility sources before discovering video-only dependencies. An explicit
+# override is authoritative: never fall back to another SDK's utility sources.
+set(ROCPYVIDEO_UTILS_DIR "${ROCM_PATH}/share/rocdecode/utils" CACHE PATH
+    "Directory containing compatible rocDecode utility sources")
+set(ROCPYVIDEO_UTILS "${ROCPYVIDEO_UTILS_DIR}")
+set(_rocpyvideo_missing_utils)
+foreach(_rocpyvideo_file IN ITEMS
+        rocvideodecode/roc_video_dec.cpp
+        rocvideodecode/roc_video_dec.h
+        colorspace_kernels.cpp
+        colorspace_kernels.h
+        resize_kernels.h
+        video_post_process.h)
+    if(NOT EXISTS "${ROCPYVIDEO_UTILS}/${_rocpyvideo_file}" OR
+       IS_DIRECTORY "${ROCPYVIDEO_UTILS}/${_rocpyvideo_file}")
+        list(APPEND _rocpyvideo_missing_utils "${_rocpyvideo_file}")
+    endif()
+endforeach()
+if(_rocpyvideo_missing_utils)
+    string(REPLACE ";" "\n  " _rocpyvideo_missing_text "${_rocpyvideo_missing_utils}")
+    message(WARNING
+        "Skipping rocPyVideoDecode: incomplete rocDecode utility directory:\n"
+        "  ${ROCPYVIDEO_UTILS}\nMissing required files:\n  ${_rocpyvideo_missing_text}\n"
+        "Set ROCPYVIDEO_UTILS_DIR to a compatible, complete utility directory. "
+        "No alternative directory will be searched. Video targets, tests, and "
+        "installation rules will not be generated.")
+    if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+        message(WARNING "No rocPyDecode components remain; nothing will be built.")
+    endif()
+    return()
+endif()
+
 list(APPEND CMAKE_PREFIX_PATH "${ROCM_PATH}/lib/cmake")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set(HIP_PLATFORM amd CACHE STRING "HIP platform")
@@ -26,10 +58,6 @@ find_package(HIP REQUIRED)
 find_package(rocdecode 1.0.0 REQUIRED)
 find_package(FFmpeg QUIET)
 
-set(ROCPYVIDEO_UTILS "${ROCM_PATH}/share/rocdecode/utils")
-if(NOT IS_DIRECTORY "${ROCPYVIDEO_UTILS}/rocvideodecode")
-    message(FATAL_ERROR "rocDecode utility sources were not found under ${ROCPYVIDEO_UTILS}")
-endif()
 find_library(ROCPYVIDEO_HOST_LIBRARY NAMES rocdecode-host rocdecodehost
     PATHS "${ROCM_PATH}/lib" NO_DEFAULT_PATH)
 set(ROCPYVIDEO_USE_FFMPEG OFF)
