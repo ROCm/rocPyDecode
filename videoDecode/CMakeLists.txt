@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.18)
 
 if(DEFINED ENV{ROCM_PATH})
     set(ROCM_PATH "$ENV{ROCM_PATH}" CACHE PATH "ROCm installation path")
@@ -63,9 +63,9 @@ endif()
 
 set(Python3_FIND_VIRTUALENV FIRST)
 if(PYTHON_VERSION_SUGGESTED)
-    find_package(Python3 ${PYTHON_VERSION_SUGGESTED} EXACT REQUIRED COMPONENTS Interpreter Development)
+    find_package(Python3 ${PYTHON_VERSION_SUGGESTED} EXACT REQUIRED COMPONENTS Interpreter Development.Module)
 else()
-    find_package(Python3 3.9 REQUIRED COMPONENTS Interpreter Development)
+    find_package(Python3 3.9 REQUIRED COMPONENTS Interpreter Development.Module)
 endif()
 if(Python3_VERSION VERSION_LESS "3.9")
     message(FATAL_ERROR "Bundled pybind11 3.1.0 requires Python 3.9 or newer")
