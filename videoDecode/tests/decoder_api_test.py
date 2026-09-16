@@ -22,6 +22,7 @@ import rocpydecode
 from rocpydecode import DLPackPyTensor
 import argparse
 import sys
+import tempfile
  
 parser = argparse.ArgumentParser(description='PyRocDecode Video Decode Input Arguments')
 parser.add_argument(
@@ -42,11 +43,13 @@ if hasattr(rocpydecode, "TestAllClassCalls"):
     rocpydecode.TestAllClassCalls(input_file_path)
     rocpydecode.TestAll_roc_pybuffer()
     rocpydecode.Test_DLPack()
-    rocpydecode.Test_PyReconfigureFlushCallback()
+    with tempfile.TemporaryDirectory(prefix="rocpydecode-flush-") as output_directory:
+        rocpydecode.Test_PyReconfigureFlushCallback(input_file_path, output_directory)
     rocpydecode.Test_CalculateRgbImageSize()
     print('rocPyDecode APIs test finished.\n')
 
     DLPackPyTensor.test_all()
     print('rocPyDecode DLPackPyTensor APIs test completed successfully.\n')
 else:
-    print("rocPyDecode host/CPU test APIs not built; skipping decoder_api_test.")
+    print("rocPyDecode debug host/CPU test APIs not built; skipping decoder_api_test.")
+    sys.exit(77)
