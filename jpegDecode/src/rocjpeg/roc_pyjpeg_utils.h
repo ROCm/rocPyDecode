@@ -25,6 +25,7 @@ THE SOFTWARE.
 #pragma once
 
 #include <iostream>
+#include <limits>
 #include <fstream>
 #include <iomanip>
 #include <string>
@@ -154,6 +155,8 @@ public:
     int GetChannelPitchAndSizes(RocJpegDecodeParams decode_params, RocJpegChromaSubsampling subsampling, uint32_t *widths, uint32_t *heights,
                                 uint32_t &num_channels, RocJpegImage &output_image, uint32_t *channel_sizes) {
         
+        uint64_t pitches[ROCJPEG_MAX_COMPONENT] = {};
+        uint32_t plane_heights[ROCJPEG_MAX_COMPONENT] = {};
         bool is_roi_valid = false;
         uint32_t roi_width;
         uint32_t roi_height;
@@ -167,30 +170,30 @@ public:
                 switch (subsampling) {
                     case ROCJPEG_CSS_444:
                         num_channels = 3;
-                        output_image.pitch[2] = output_image.pitch[1] = output_image.pitch[0] = is_roi_valid ? roi_width : widths[0];
-                        channel_sizes[2] = channel_sizes[1] = channel_sizes[0] = align(output_image.pitch[0] * (is_roi_valid ? roi_height : heights[0]), mem_alignment);
+                        pitches[2] = pitches[1] = pitches[0] = is_roi_valid ? roi_width : widths[0];
+                        plane_heights[2] = plane_heights[1] = plane_heights[0] = (is_roi_valid ? roi_height : heights[0]);
                         break;
                     case ROCJPEG_CSS_440:
                         num_channels = 3;
-                        output_image.pitch[2] = output_image.pitch[1] = output_image.pitch[0] = is_roi_valid ? roi_width : widths[0];
-                        channel_sizes[0] = align(output_image.pitch[0] * (is_roi_valid ? roi_height : heights[0]), mem_alignment);
-                        channel_sizes[2] = channel_sizes[1] = align(output_image.pitch[0] * ((is_roi_valid ? roi_height : heights[0]) >> 1), mem_alignment);
+                        pitches[2] = pitches[1] = pitches[0] = is_roi_valid ? roi_width : widths[0];
+                        plane_heights[0] = (is_roi_valid ? roi_height : heights[0]);
+                        plane_heights[2] = plane_heights[1] = ((is_roi_valid ? roi_height : heights[0]) >> 1);
                         break;
                     case ROCJPEG_CSS_422:
                         num_channels = 1;
-                        output_image.pitch[0] = (is_roi_valid ? roi_width : widths[0]) * 2;
-                        channel_sizes[0] = align(output_image.pitch[0] * (is_roi_valid ? roi_height : heights[0]), mem_alignment);
+                        pitches[0] = uint64_t(is_roi_valid ? roi_width : widths[0]) * 2;
+                        plane_heights[0] = (is_roi_valid ? roi_height : heights[0]);
                         break;
                     case ROCJPEG_CSS_420:
                         num_channels = 2;
-                        output_image.pitch[1] = output_image.pitch[0] = is_roi_valid ? roi_width : widths[0];
-                        channel_sizes[0] = align(output_image.pitch[0] * (is_roi_valid ? roi_height : heights[0]), mem_alignment);
-                        channel_sizes[1] = align(output_image.pitch[1] * ((is_roi_valid ? roi_height : heights[0]) >> 1), mem_alignment);
+                        pitches[1] = pitches[0] = is_roi_valid ? roi_width : widths[0];
+                        plane_heights[0] = (is_roi_valid ? roi_height : heights[0]);
+                        plane_heights[1] = ((is_roi_valid ? roi_height : heights[0]) >> 1);
                         break;
                     case ROCJPEG_CSS_400:
                         num_channels = 1;
-                        output_image.pitch[0] = is_roi_valid ? roi_width : widths[0];
-                        channel_sizes[0] = align(output_image.pitch[0] * (is_roi_valid ? roi_height : heights[0]), mem_alignment);
+                        pitches[0] = is_roi_valid ? roi_width : widths[0];
+                        plane_heights[0] = (is_roi_valid ? roi_height : heights[0]);
                         break;
                     default:
                         std::cout << "Unknown chroma subsampling!" << std::endl;
@@ -200,36 +203,47 @@ public:
             case ROCJPEG_OUTPUT_YUV_PLANAR:
                 if (subsampling == ROCJPEG_CSS_400) {
                     num_channels = 1;
-                    output_image.pitch[0] = is_roi_valid ? roi_width : widths[0];
-                    channel_sizes[0] = align(output_image.pitch[0] * (is_roi_valid ? roi_height : heights[0]), mem_alignment);
+                    pitches[0] = is_roi_valid ? roi_width : widths[0];
+                    plane_heights[0] = (is_roi_valid ? roi_height : heights[0]);
                 } else {
                     num_channels = 3;
-                    output_image.pitch[0] = is_roi_valid ? roi_width : widths[0];
-                    output_image.pitch[1] = is_roi_valid ? roi_width : widths[1];
-                    output_image.pitch[2] = is_roi_valid ? roi_width : widths[2];
-                    channel_sizes[0] = align(output_image.pitch[0] * (is_roi_valid ? roi_height : heights[0]), mem_alignment);
-                    channel_sizes[1] = align(output_image.pitch[1] * (is_roi_valid ? roi_height : heights[1]), mem_alignment);
-                    channel_sizes[2] = align(output_image.pitch[2] * (is_roi_valid ? roi_height : heights[2]), mem_alignment);
+                    pitches[0] = is_roi_valid ? roi_width : widths[0];
+                    pitches[1] = is_roi_valid ? roi_width : widths[1];
+                    pitches[2] = is_roi_valid ? roi_width : widths[2];
+                    plane_heights[0] = (is_roi_valid ? roi_height : heights[0]);
+                    plane_heights[1] = (is_roi_valid ? roi_height : heights[1]);
+                    plane_heights[2] = (is_roi_valid ? roi_height : heights[2]);
                 }
                 break;
             case ROCJPEG_OUTPUT_Y:
                 num_channels = 1;
-                output_image.pitch[0] = is_roi_valid ? roi_width : widths[0];
-                channel_sizes[0] = align(output_image.pitch[0] * (is_roi_valid ? roi_height : heights[0]), mem_alignment);
+                pitches[0] = is_roi_valid ? roi_width : widths[0];
+                plane_heights[0] = (is_roi_valid ? roi_height : heights[0]);
                 break;
             case ROCJPEG_OUTPUT_RGB:
                 num_channels = 1;
-                output_image.pitch[0] = (is_roi_valid ? roi_width : widths[0]) * 3;
-                channel_sizes[0] = align(output_image.pitch[0] * (is_roi_valid ? roi_height : heights[0]), mem_alignment);
+                pitches[0] = uint64_t(is_roi_valid ? roi_width : widths[0]) * 3;
+                plane_heights[0] = (is_roi_valid ? roi_height : heights[0]);
                 break;
             case ROCJPEG_OUTPUT_RGB_PLANAR:
                 num_channels = 3;
-                output_image.pitch[2] = output_image.pitch[1] = output_image.pitch[0] = is_roi_valid ? roi_width : widths[0];
-                channel_sizes[2] = channel_sizes[1] = channel_sizes[0] = align(output_image.pitch[0] * (is_roi_valid ? roi_height : heights[0]), mem_alignment);
+                pitches[2] = pitches[1] = pitches[0] = is_roi_valid ? roi_width : widths[0];
+                plane_heights[2] = plane_heights[1] = plane_heights[0] = (is_roi_valid ? roi_height : heights[0]);
                 break;
             default:
                 std::cout << "Unknown output format!" << std::endl;
                 return EXIT_FAILURE;
+        }
+        for (uint32_t i = 0; i < num_channels; ++i) {
+            if (pitches[i] > std::numeric_limits<uint32_t>::max())
+                return EXIT_FAILURE;
+            // With a checked uint32_t pitch and height, multiplication and the
+            // alignment addition fit uint64_t. Reject before narrowing the size.
+            const uint64_t bytes = align(pitches[i] * plane_heights[i], mem_alignment);
+            if (bytes > std::numeric_limits<uint32_t>::max())
+                return EXIT_FAILURE;
+            output_image.pitch[i] = static_cast<uint32_t>(pitches[i]);
+            channel_sizes[i] = static_cast<uint32_t>(bytes);
         }
         return EXIT_SUCCESS;
     }
@@ -245,7 +259,7 @@ private:
      * @param alignment The alignment value.
      * @return The aligned value.
      */
-    static inline uint32_t align(uint32_t value, uint32_t alignment) {
+    static inline uint64_t align(uint64_t value, uint64_t alignment) {
         return (value + alignment - 1) & ~(alignment - 1);
     }
 };

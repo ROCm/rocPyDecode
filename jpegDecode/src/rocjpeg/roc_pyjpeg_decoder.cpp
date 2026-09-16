@@ -254,13 +254,18 @@ int Decoder::GetImageInfo(RocJpegStreamHandle stream_handle, PyJpegImages& img) 
     }
     // Hardware output pitches are aligned; logical tensor widths remain unchanged.
     for (uint32_t i = 0; i < img.num_channels; ++i) {
-        img.output_image.pitch[i] = (img.output_image.pitch[i] + 255u) & ~255u;
+        const uint64_t pitch = (uint64_t(img.output_image.pitch[i]) + 255u) & ~uint64_t(255u);
         // channel_sizes already includes the minimum allocation alignment.
         // RGB and RGB_PLANAR both have full-height output channels.
-        const size_t allocation_size = std::max<size_t>(
-            channel_sizes[i], size_t(img.output_image.pitch[i]) * static_cast<size_t>(img.m_height));
+        const uint64_t allocation_size = std::max<uint64_t>(
+            channel_sizes[i], pitch * static_cast<uint32_t>(img.m_height));
+        if (pitch > std::numeric_limits<uint32_t>::max() ||
+            allocation_size > std::numeric_limits<uint32_t>::max() ||
+            allocation_size > std::numeric_limits<size_t>::max())
+            return EXIT_FAILURE;
+        img.output_image.pitch[i] = static_cast<uint32_t>(pitch);
         void* allocation = nullptr;
-        hipError_t status = hipMalloc(&allocation, allocation_size);
+        hipError_t status = hipMalloc(&allocation, static_cast<size_t>(allocation_size));
         if (status != hipSuccess)
             throw std::runtime_error(hipGetErrorString(status));
         img.ext_buf[i]->KeepAlive(std::shared_ptr<void>(allocation, [](void* ptr) { (void)hipFree(ptr); }));

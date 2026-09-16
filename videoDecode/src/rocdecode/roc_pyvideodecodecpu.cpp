@@ -90,8 +90,6 @@ PyRocVideoDecoderCpu::~PyRocVideoDecoderCpu() {
 
 void PyRocVideoDecoderCpu::ParseBitDepth(const PyPacketData& packet) {
     if (!packet.bitstream_adrs || packet.bitstream_size <= 0) return;
-    if (packet.bitstream_size > std::numeric_limits<int>::max())
-        throw std::invalid_argument("CPU parser packet exceeds the FFmpeg integer range");
     const auto packet_size = static_cast<size_t>(packet.bitstream_size);
     if (!bit_depth_context_) {
         AVCodecID codec = AV_CODEC_ID_NONE;
@@ -125,6 +123,10 @@ void PyRocVideoDecoderCpu::ParseBitDepth(const PyPacketData& packet) {
 }
 
 int PyRocVideoDecoderCpu::PyDecodeFrame(PyPacketData& packet) {
+    if (packet.bitstream_size < 0 || packet.bitstream_size > std::numeric_limits<int>::max())
+        throw std::invalid_argument("CPU decode packet size is outside the FFmpeg integer range");
+    if (packet.bitstream_size > 0 && !packet.bitstream_adrs)
+        throw std::invalid_argument("Non-empty CPU decode packet requires a bitstream address");
     ParseBitDepth(packet);
     if(packet.bitstream_size == 0)
         packet.pkt_flags |= ROCDEC_PKT_ENDOFSTREAM;
@@ -348,13 +350,14 @@ uint32_t PyRocVideoDecoderCpu::PyGetBitDepth() {
 #if ROCDECODE_CHECK_VERSION(0,6,0)
 // for python binding, Session overhead refers to decoder initialization and deinitialization time
 py::object PyRocVideoDecoderCpu::PyAddDecoderSessionOverHead(int session_id, double duration) {
-    AddDecoderSessionOverHead(std::thread::id(static_cast<std::thread::native_handle_type>(session_id)), duration);
+    python_session_overhead_[session_id] += duration;
     return py::cast<py::none>(Py_None);
 }
 
 // for python binding, Session overhead refers to decoder initialization and deinitialization time
 py::object PyRocVideoDecoderCpu::PyGetDecoderSessionOverHead(int session_id) {
-    return py::cast(GetDecoderSessionOverHead(std::thread::id(static_cast<std::thread::native_handle_type>(session_id))));
+    const auto it = python_session_overhead_.find(session_id);
+    return py::cast(it == python_session_overhead_.end() ? 0.0 : it->second);
 }
 
 #endif
