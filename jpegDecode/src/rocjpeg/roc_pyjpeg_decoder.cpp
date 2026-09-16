@@ -244,6 +244,7 @@ int Decoder::GetImageInfo(RocJpegStreamHandle stream_handle, PyJpegImages& img) 
     // save the output w/h to the image instance
     if (static_cast<uint64_t>(widths[0]) > static_cast<uint64_t>(std::numeric_limits<int>::max()) ||
         static_cast<uint64_t>(heights[0]) > static_cast<uint64_t>(std::numeric_limits<int>::max()))
+        return EXIT_FAILURE;
     img.m_width = static_cast<int>(widths[0]);
     img.m_height = static_cast<int>(heights[0]);
     // Get Channel Pitch And Sizes
