@@ -167,12 +167,12 @@ py::object PyRocVideoDecoder::PyGetFrameYuv(PyPacketData& packet, bool separate)
     const auto device = info->mem_type == OUT_SURFACE_MEM_HOST_COPIED ? kDLCPU : kDLROCM;
     size_t samples = size_t(info->output_width) * info->output_height;
     if (!separate)
-        for (int i = 1; i < layout.count; ++i)
+        for (size_t i = 1; i < layout.count; ++i)
             samples += size_t(layout.planes[i].width) * layout.planes[i].channels * layout.planes[i].height;
     // Divide after summing: individual planar chroma planes can occupy half a
     // luma-width row (for example, YUV420 with a height of 50).
     const size_t rows = samples / info->output_width;
-    for (int i = 0; i < (separate ? layout.count : 1); ++i) {
+    for (size_t i = 0; i < (separate ? layout.count : 1); ++i) {
         const auto& plane = layout.planes[i];
         std::vector<size_t> shape{i == 0 ? rows : plane.height, size_t(plane.width) * plane.channels};
         std::vector<size_t> strides{plane.pitch, info->bytes_per_pixel};
@@ -246,7 +246,7 @@ uintptr_t PyRocVideoDecoder::PyGetResizedOutputSurfaceInfo() {
 uintptr_t PyRocVideoDecoder::PyResizeFrame(PyPacketData& packet, Dim* dim, uintptr_t& surface_info) {
     if (!dim || !surface_info || !packet.frame_adrs) return 0;
     const auto* info = reinterpret_cast<OutputSurfaceInfo*>(surface_info);
-    if (dim->w == info->output_width && dim->h == info->output_height) return 0;
+    if (int64_t(dim->w) == info->output_width && int64_t(dim->h) == info->output_height) return 0;
     HIP_API_CALL(hipSetDevice(device_id_));
     resized_surface_.Resize(reinterpret_cast<uint8_t*>(packet.frame_adrs), *info, dim->w, dim->h);
     packet.frame_adrs_resized = reinterpret_cast<uintptr_t>(resized_surface_.data());
@@ -343,13 +343,13 @@ uint32_t PyRocVideoDecoder::PyGetBitDepth() {
 #if ROCDECODE_CHECK_VERSION(0,6,0)
 // for python binding, Session overhead refers to decoder initialization and deinitialization time
 py::object PyRocVideoDecoder::PyAddDecoderSessionOverHead(int session_id, double duration) {
-    AddDecoderSessionOverHead(static_cast<std::thread::id>(session_id), duration);
+    AddDecoderSessionOverHead(std::thread::id(static_cast<std::thread::native_handle_type>(session_id)), duration);
     return py::cast<py::none>(Py_None);
 }
 
 // for python binding, Session overhead refers to decoder initialization and deinitialization time
 py::object PyRocVideoDecoder::PyGetDecoderSessionOverHead(int session_id) {
-    return py::cast(GetDecoderSessionOverHead(static_cast<std::thread::id>(session_id)));
+    return py::cast(GetDecoderSessionOverHead(std::thread::id(static_cast<std::thread::native_handle_type>(session_id))));
 }
 
 #endif

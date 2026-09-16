@@ -157,8 +157,8 @@ public:
         bool is_roi_valid = false;
         uint32_t roi_width;
         uint32_t roi_height;
-        roi_width = decode_params.crop_rectangle.right - decode_params.crop_rectangle.left;
-        roi_height = decode_params.crop_rectangle.bottom - decode_params.crop_rectangle.top;
+        roi_width = static_cast<uint32_t>(decode_params.crop_rectangle.right - decode_params.crop_rectangle.left);
+        roi_height = static_cast<uint32_t>(decode_params.crop_rectangle.bottom - decode_params.crop_rectangle.top);
         if (roi_width > 0 && roi_height > 0 && roi_width <= widths[0] && roi_height <= heights[0]) {
             is_roi_valid = true; 
         }
@@ -235,7 +235,7 @@ public:
     }
 
 private:
-    static const int mem_alignment = 4 * 1024 * 1024;
+    static const uint32_t mem_alignment = 4 * 1024 * 1024;
     /**
      * @brief Aligns a value to a specified alignment.
      *
@@ -245,7 +245,7 @@ private:
      * @param alignment The alignment value.
      * @return The aligned value.
      */
-    static inline int align(int value, int alignment) {
+    static inline uint32_t align(uint32_t value, uint32_t alignment) {
         return (value + alignment - 1) & ~(alignment - 1);
     }
 };

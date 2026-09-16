@@ -80,9 +80,9 @@ public:
         // We simply copy from the mapped memory in this example. You may get your data from network or somewhere else
         if (!buffer_size_)
             return AVERROR_EOF;
-        memcpy(p_buf, buf_ptr_, n_buf);
+        memcpy(p_buf, buf_ptr_, static_cast<size_t>(n_buf));
         buf_ptr_ += n_buf;
-        buffer_size_ -= n_buf;
+        buffer_size_ -= static_cast<size_t>(n_buf);
         return n_buf;
     }
 

@@ -13,7 +13,7 @@
 #include <cstdint>
 #include <memory>
 
-void TestAllClassCalls(const char* input_file) {
+void TestAllClassCalls([[maybe_unused]] const char* input_file) {
 #ifndef NDEBUG
     // here check input_file, ret if invalid str or null
     if(!input_file){
@@ -32,7 +32,6 @@ void TestAllClassCalls(const char* input_file) {
     (void)codec; (void)depth; (void)pkt1; (void)pkt2;
 
     int codec_id = demuxer.GetCodecId();
-    uint32_t bit_depth = demuxer.PyGetBitDepth();
     rocDecVideoCodec dec_codec = ConvertAVCodec2RocDecVideoCodec(codec_id);
 
     int device_id = 0;

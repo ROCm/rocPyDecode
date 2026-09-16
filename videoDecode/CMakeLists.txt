@@ -75,7 +75,8 @@ set(ROCPYVIDEO_SOURCES
     src/roc_pybuffer.cpp
     src/roc_pydlpack.cpp
     src/rocdecode/roc_pydecode.cpp
-    src/rocdecode/roc_pyvideodecode.cpp
+    src/rocdecode/roc_pyvideodecode.cpp)
+set(ROCPYVIDEO_SDK_SOURCES
     "${ROCPYVIDEO_UTILS}/colorspace_kernels.cpp"
     "${ROCPYVIDEO_UTILS}/rocvideodecode/roc_video_dec.cpp")
 if(ROCPYVIDEO_USE_FFMPEG)
@@ -86,7 +87,7 @@ if(ROCPYVIDEO_ENABLE_HOST)
         src/rocdecode/roc_pydecode_test.cpp
         src/rocdecode/roc_pyvideodecodecpu.cpp)
     file(GLOB ROCPYVIDEO_FFMPEG_SOURCES "${ROCPYVIDEO_UTILS}/ffmpegvideodecode/*.cpp")
-    list(APPEND ROCPYVIDEO_SOURCES ${ROCPYVIDEO_FFMPEG_SOURCES})
+    list(APPEND ROCPYVIDEO_SDK_SOURCES ${ROCPYVIDEO_FFMPEG_SOURCES})
 endif()
 
 set(Python3_FIND_VIRTUALENV FIRST)
@@ -104,10 +105,21 @@ string(REPLACE "." "_" ROCPYVIDEO_PYTHON_SUFFIX
     "${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}")
 set(ROCPYVIDEO_TARGET "rocpydecode_${ROCPYVIDEO_PYTHON_SUFFIX}")
 
-pybind11_add_module(${ROCPYVIDEO_TARGET} MODULE ${ROCPYVIDEO_SOURCES})
+pybind11_add_module(${ROCPYVIDEO_TARGET} MODULE
+    ${ROCPYVIDEO_SOURCES} ${ROCPYVIDEO_SDK_SOURCES})
 target_include_directories(${ROCPYVIDEO_TARGET} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/rocdecode"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/rocdecode")
+
+# SDK utility warnings remain visible but do not inherit -Werror. SDK headers
+# are SYSTEM includes so their diagnostics do not fail project translation units.
+# Project sources still honor the caller's warning/error flags.
+set_property(SOURCE ${ROCPYVIDEO_SDK_SOURCES} APPEND PROPERTY COMPILE_OPTIONS
+    "$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wno-error>"
+    "$<$<CXX_COMPILER_ID:MSVC>:/WX->")
+message(STATUS "rocDecode SDK source warnings remain visible and non-fatal; "
+    "SDK headers use SYSTEM includes. SDK warnings are not fixed.")
+target_include_directories(${ROCPYVIDEO_TARGET} SYSTEM PRIVATE
     "${ROCM_PATH}/include/rocdecode"
     "${ROCPYVIDEO_UTILS}"
     "${ROCPYVIDEO_UTILS}/rocvideodecode"

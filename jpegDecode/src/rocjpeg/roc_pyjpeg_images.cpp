@@ -81,14 +81,14 @@ void PyJpegImages::ExportToPython(py::module& m) {
 py::array_t<uint8_t> PyJpegImages::to_numpy(int index) {
     if (index < 0 || index >= static_cast<int>(ext_buf.size()))
         throw std::out_of_range("Invalid channel index");
-    const auto& tensor = ext_buf[index]->dlTensor();
+    const auto& tensor = ext_buf[static_cast<size_t>(index)]->dlTensor();
     if (!tensor.data || (tensor.ndim != 2 && tensor.ndim != 3))
         throw std::runtime_error("Image plane is not initialized");
     std::vector<ssize_t> shape(tensor.shape, tensor.shape + tensor.ndim);
     py::array_t<uint8_t> result(shape);
-    const size_t row_bytes = shape[1] * (tensor.ndim == 3 ? shape[2] : 1);
+    const size_t row_bytes = static_cast<size_t>(shape[1]) * (tensor.ndim == 3 ? static_cast<size_t>(shape[2]) : 1);
     hipError_t status = hipMemcpy2D(result.mutable_data(), row_bytes,
-        tensor.data, tensor.strides[0], row_bytes, shape[0], hipMemcpyDeviceToHost);
+        tensor.data, static_cast<size_t>(tensor.strides[0]), row_bytes, static_cast<size_t>(shape[0]), hipMemcpyDeviceToHost);
     if (status != hipSuccess)
         throw std::runtime_error(hipGetErrorString(status));
     return result;
@@ -96,10 +96,10 @@ py::array_t<uint8_t> PyJpegImages::to_numpy(int index) {
 
 bool PyJpegImages::GetOutputDims(std::vector<uint32_t>& widths, std::vector<uint32_t>& heights, 
                                 uint32_t img_width, uint32_t img_height, RocJpegOutputFormat output_format, 
-                                RocJpegChromaSubsampling subsampling) {
+                                RocJpegChromaSubsampling chroma_subsampling) {
     switch (output_format) {
         case ROCJPEG_OUTPUT_NATIVE:
-            switch (subsampling) {
+            switch (chroma_subsampling) {
                 case ROCJPEG_CSS_444:
                     widths[2] = widths[1] = widths[0] = img_width;
                     heights[2] = heights[1] = heights[0] = img_height;
@@ -128,7 +128,7 @@ bool PyJpegImages::GetOutputDims(std::vector<uint32_t>& widths, std::vector<uint
             }
             break;
         case ROCJPEG_OUTPUT_YUV_PLANAR:
-            switch (subsampling) {
+            switch (chroma_subsampling) {
                 case ROCJPEG_CSS_444:
                     widths[2] = widths[1] = widths[0] = img_width;
                     heights[2] = heights[1] = heights[0] = img_height;
@@ -178,8 +178,8 @@ bool PyJpegImages::GetOutputDims(std::vector<uint32_t>& widths, std::vector<uint
 }
 
 bool PyJpegImages::ToDlpackTensor(RocJpegOutputFormat output_format, int device_id) {
-    uint32_t img_width = m_width;
-    uint32_t img_height = m_height;    
+    uint32_t img_width = static_cast<uint32_t>(m_width);
+    uint32_t img_height = static_cast<uint32_t>(m_height);
     std::vector<uint32_t> widths;
     std::vector<uint32_t> heights;
     widths.resize(ROCJPEG_MAX_COMPONENT);
@@ -191,7 +191,7 @@ bool PyJpegImages::ToDlpackTensor(RocJpegOutputFormat output_format, int device_
     switch(output_format) {
         case ROCJPEG_OUTPUT_RGB_PLANAR: { // each color plane in a channel separately R[0], G[1], and B[2]
             uint32_t surf_stride[3] = {output_image.pitch[0], output_image.pitch[1], output_image.pitch[2]}; // ROCJPEG_OUTPUT_RGB_PLANAR all same width = img_width
-            for(int i = 0; i < 3; i++) {
+            for(size_t i = 0; i < 3; i++) {
                 std::vector<size_t> shape{ static_cast<size_t>(heights[i]), static_cast<size_t>(widths[i])}; // depend on get_output_dims()
                 std::vector<size_t> stride{ static_cast<size_t>(surf_stride[i]), 1, 0};
                 // RGB PLANAR using VCN JPEG decoder @ first, second, and third channel of RocJpegImage

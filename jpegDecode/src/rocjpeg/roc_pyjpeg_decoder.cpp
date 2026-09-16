@@ -21,6 +21,7 @@ THE SOFTWARE.
 */
 
 #include "roc_pyjpeg_decoder.h"
+#include <limits>
 #include "roc_pyjpeg_utils.h"
 #include "roc_pyjpeg_codestream.h"
 #include <algorithm>
@@ -136,7 +137,9 @@ std::pair<float, std::vector<PyJpegImages>> Decoder::decode(std::vector<DecodeSo
 
     float elapsed_ms = 0.0;
     RocJpegStatus status = ROCJPEG_STATUS_SUCCESS;
-    int batch_size = decode_source_arg.size();
+    const size_t batch_size = decode_source_arg.size();
+    if (batch_size > static_cast<size_t>(std::numeric_limits<int>::max()))
+        throw std::invalid_argument("JPEG batch exceeds the SDK integer range");
     int count_of_valid_instances = 0;
     std::vector<RocJpegStreamHandle> stream_handles;
     std::vector<RocJpegDecodeParams> decode_params_list;
@@ -190,7 +193,7 @@ std::pair<float, std::vector<PyJpegImages>> Decoder::decode(std::vector<DecodeSo
         // to export to python (use dlpack(GPU MEM) {and numpy host array})
         if (status == ROCJPEG_STATUS_SUCCESS) {
             for(int i = 0; i < count_of_valid_instances; i++) {
-                images_[i].ToDlpackTensor(user_output_format, m_device_id); // GPU Tensor
+                images_[static_cast<size_t>(i)].ToDlpackTensor(user_output_format, m_device_id); // GPU Tensor
             }
         }
     }
@@ -239,8 +242,10 @@ int Decoder::GetImageInfo(RocJpegStreamHandle stream_handle, PyJpegImages& img) 
         return EXIT_FAILURE;
     }    
     // save the output w/h to the image instance
-    img.m_width = widths[0];
-    img.m_height = heights[0];
+    if (widths[0] > std::numeric_limits<int>::max() || heights[0] > std::numeric_limits<int>::max())
+        return EXIT_FAILURE;
+    img.m_width = static_cast<int>(widths[0]);
+    img.m_height = static_cast<int>(heights[0]);
     // Get Channel Pitch And Sizes
     PyRocJpegUtils rocjpeg_utils;
     if (rocjpeg_utils.GetChannelPitchAndSizes(img.decode_params, img.subsampling, widths, heights, img.num_channels, img.output_image, channel_sizes)) {
@@ -253,7 +258,7 @@ int Decoder::GetImageInfo(RocJpegStreamHandle stream_handle, PyJpegImages& img) 
         // channel_sizes already includes the minimum allocation alignment.
         // RGB and RGB_PLANAR both have full-height output channels.
         const size_t allocation_size = std::max<size_t>(
-            channel_sizes[i], size_t(img.output_image.pitch[i]) * img.m_height);
+            channel_sizes[i], size_t(img.output_image.pitch[i]) * static_cast<size_t>(img.m_height));
         void* allocation = nullptr;
         hipError_t status = hipMalloc(&allocation, allocation_size);
         if (status != hipSuccess)
