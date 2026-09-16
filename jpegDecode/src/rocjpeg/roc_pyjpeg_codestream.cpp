@@ -70,7 +70,7 @@ void CodeStream::ExportToPython(py::module& m) {
             )pbdoc");
 }
 
-int CodeStream::ReadFromFile(const std::filesystem::path& filename, std::shared_ptr<std::vector<char>>& file_data, int& file_size) {
+int CodeStream::ReadFromFile(const std::filesystem::path& filename, std::shared_ptr<std::vector<char>>& buffer, size_t& file_size) {
     // Open image file in binary mode and go to the end to get file size
     std::ifstream input(filename, std::ios::in | std::ios::binary | std::ios::ate);
     if (!input.is_open()) {
@@ -78,14 +78,17 @@ int CodeStream::ReadFromFile(const std::filesystem::path& filename, std::shared_
         return EXIT_FAILURE;
     }
     // Get the size
-    file_size = static_cast<int>(input.tellg());
+    const auto length = input.tellg();
+    if (length < 0)
+        return EXIT_FAILURE;
+    file_size = static_cast<size_t>(length);
     input.seekg(0, std::ios::beg);
     // Allocate shared buffer if not already allocated or too small
-    if (!file_data || file_data->size() < static_cast<size_t>(file_size)) {
-        file_data = std::make_shared<std::vector<char>>(file_size);
+    if (!buffer || buffer->size() < file_size) {
+        buffer = std::make_shared<std::vector<char>>(file_size);
     }
     // Read the file into the buffer
-    if (!input.read(file_data->data(), file_size)) {
+    if (!input.read(buffer->data(), static_cast<std::streamsize>(file_size))) {
         std::cerr << "ERROR: Cannot read from file: " << filename << std::endl;
         return EXIT_FAILURE;
     }
@@ -93,7 +96,7 @@ int CodeStream::ReadFromFile(const std::filesystem::path& filename, std::shared_
 }
 
 // Use the dat and its size if valid, otherwise use the file to load the data
-int CodeStream::InitializeSingleImage(const std::filesystem::path& filename, const unsigned char* data, int data_size) {
+int CodeStream::InitializeSingleImage(const std::filesystem::path& filename, const unsigned char* data, size_t data_size) {
     // File sanity check
     if(!filename.empty()) {
         if(!std::filesystem::exists(filename)) {
@@ -156,9 +159,9 @@ CodeStream::CodeStream(py::bytes data) {
 
 CodeStream::CodeStream(py::array_t<uint8_t> arr) {
     auto data = arr.unchecked<1>();
-    std::vector<unsigned char> contiguous(data.size());
+    std::vector<unsigned char> contiguous(static_cast<size_t>(data.size()));
     for (ssize_t i = 0; i < data.size(); ++i)
-        contiguous[i] = data(i);
+        contiguous[static_cast<size_t>(i)] = data(i);
     py::gil_scoped_release release;
     InitializeSingleImage(std::filesystem::path(), contiguous.data(), contiguous.size());
 }

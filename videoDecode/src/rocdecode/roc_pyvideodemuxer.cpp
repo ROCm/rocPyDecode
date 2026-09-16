@@ -97,7 +97,7 @@ shared_ptr<PyPacketData> PyVideoDemuxer::SeekFrame(int frame_number, int seek_mo
     int video_size = 0;
 
     VideoSeekContext video_seek;
-    video_seek.seek_frame_ = frame_number;
+    video_seek.seek_frame_ = static_cast<uint64_t>(frame_number);
     video_seek.seek_mode_ = static_cast<SeekMode>(seek_mode);
     video_seek.seek_crit_ = static_cast<SeekCriteria>(seek_criteria);
 

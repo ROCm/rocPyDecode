@@ -90,6 +90,7 @@ PyRocVideoDecoderCpu::~PyRocVideoDecoderCpu() {
 
 void PyRocVideoDecoderCpu::ParseBitDepth(const PyPacketData& packet) {
     if (!packet.bitstream_adrs || packet.bitstream_size <= 0) return;
+    const auto packet_size = static_cast<size_t>(packet.bitstream_size);
     if (!bit_depth_context_) {
         AVCodecID codec = AV_CODEC_ID_NONE;
         switch (codec_id_) {
@@ -109,19 +110,23 @@ void PyRocVideoDecoderCpu::ParseBitDepth(const PyPacketData& packet) {
     }
     // The host library may report storage width (16) instead of sample depth
     // (10 or 12). Obtain the sample depth from FFmpeg's bitstream parser.
-    std::vector<uint8_t> padded(packet.bitstream_size + AV_INPUT_BUFFER_PADDING_SIZE, 0);
-    memcpy(padded.data(), reinterpret_cast<void*>(packet.bitstream_adrs), packet.bitstream_size);
+    std::vector<uint8_t> padded(packet_size + AV_INPUT_BUFFER_PADDING_SIZE, 0);
+    memcpy(padded.data(), reinterpret_cast<void*>(packet.bitstream_adrs), packet_size);
     uint8_t* parsed = nullptr;
     int parsed_size = 0;
     const int result = av_parser_parse2(bit_depth_parser_.get(), bit_depth_context_.get(),
-        &parsed, &parsed_size, padded.data(), packet.bitstream_size,
+        &parsed, &parsed_size, padded.data(), static_cast<int>(packet_size),
         AV_NOPTS_VALUE, AV_NOPTS_VALUE, 0);
     if (result < 0) throw std::runtime_error("Could not parse the CPU video format");
     const auto* desc = av_pix_fmt_desc_get(static_cast<AVPixelFormat>(bit_depth_parser_->format));
-    if (desc) parsed_bit_depth_ = desc->comp[0].depth;
+    if (desc) parsed_bit_depth_ = static_cast<uint32_t>(desc->comp[0].depth);
 }
 
 int PyRocVideoDecoderCpu::PyDecodeFrame(PyPacketData& packet) {
+    if (packet.bitstream_size < 0 || packet.bitstream_size > std::numeric_limits<int>::max())
+        throw std::invalid_argument("CPU decode packet size is outside the FFmpeg integer range");
+    if (packet.bitstream_size > 0 && !packet.bitstream_adrs)
+        throw std::invalid_argument("Non-empty CPU decode packet requires a bitstream address");
     ParseBitDepth(packet);
     if(packet.bitstream_size == 0)
         packet.pkt_flags |= ROCDEC_PKT_ENDOFSTREAM;
@@ -164,12 +169,12 @@ py::object PyRocVideoDecoderCpu::PyGetFrameYuv(PyPacketData& packet, bool separa
     const auto device = info->mem_type == OUT_SURFACE_MEM_HOST_COPIED ? kDLCPU : kDLROCM;
     size_t samples = size_t(info->output_width) * info->output_height;
     if (!separate)
-        for (int i = 1; i < layout.count; ++i)
+        for (size_t i = 1; i < layout.count; ++i)
             samples += size_t(layout.planes[i].width) * layout.planes[i].channels * layout.planes[i].height;
     // Divide after summing: individual planar chroma planes can occupy half a
     // luma-width row (for example, YUV420 with a height of 50).
     const size_t rows = samples / info->output_width;
-    for (int i = 0; i < (separate ? layout.count : 1); ++i) {
+    for (size_t i = 0; i < (separate ? layout.count : 1); ++i) {
         const auto& plane = layout.planes[i];
         std::vector<size_t> shape{i == 0 ? rows : plane.height, size_t(plane.width) * plane.channels};
         std::vector<size_t> strides{plane.pitch, info->bytes_per_pixel};
@@ -183,13 +188,8 @@ py::object PyRocVideoDecoderCpu::PyGetFrameYuv(PyPacketData& packet, bool separa
 }
 
 size_t PyRocVideoDecoderCpu::CalculateRgbImageSize(OutputFormatEnum& e_output_format, OutputSurfaceInfo * p_surf_info) {
-    const int format = static_cast<int>(e_output_format);
-    if (format < 1 || format > 8)
-        throw std::invalid_argument("RGB format must be in the range 1 through 8");
-    const size_t channels = format >= 5 ? 4 : 3;
-    const size_t item_size = format % 2 == 0 ? 2 : 1;
-    return size_t((p_surf_info->output_width + 1) & ~1u) *
-        p_surf_info->output_height * channels * item_size;
+    return size_t(CalculateRgbPitch(p_surf_info->output_width, e_output_format)) *
+        p_surf_info->output_height;
 }
 
 // for python binding
@@ -209,7 +209,7 @@ py::object PyRocVideoDecoderCpu::PyGetFrameRgb(PyPacketData& packet, int rgb_for
         GetPythonSurfaceInfo(&info);
         if (!info) throw std::runtime_error("Missing output surface information");
         HIP_API_CALL(hipSetDevice(device_id_));
-        const uint32_t pitch = ((info->output_width + 1) & ~1u) * channels * item_size;
+        const uint32_t pitch = CalculateRgbPitch(info->output_width, format);
         const size_t size = size_t(pitch) * info->output_height;
         if (!rgb_owner_ || rgb_owner_.use_count() > 1 || rgb_capacity_ != size) {
             void* allocation = nullptr;
@@ -247,7 +247,7 @@ uintptr_t PyRocVideoDecoderCpu::PyGetResizedOutputSurfaceInfo() {
 uintptr_t PyRocVideoDecoderCpu::PyResizeFrame(PyPacketData& packet, Dim* dim, uintptr_t& surface_info) {
     if (!dim || !surface_info || !packet.frame_adrs) return 0;
     const auto* info = reinterpret_cast<OutputSurfaceInfo*>(surface_info);
-    if (dim->w == info->output_width && dim->h == info->output_height) return 0;
+    if (int64_t(dim->w) == info->output_width && int64_t(dim->h) == info->output_height) return 0;
     HIP_API_CALL(hipSetDevice(device_id_));
     resized_surface_.Resize(reinterpret_cast<uint8_t*>(packet.frame_adrs), *info, dim->w, dim->h);
     packet.frame_adrs_resized = reinterpret_cast<uintptr_t>(resized_surface_.data());
@@ -345,13 +345,14 @@ uint32_t PyRocVideoDecoderCpu::PyGetBitDepth() {
 #if ROCDECODE_CHECK_VERSION(0,6,0)
 // for python binding, Session overhead refers to decoder initialization and deinitialization time
 py::object PyRocVideoDecoderCpu::PyAddDecoderSessionOverHead(int session_id, double duration) {
-    AddDecoderSessionOverHead(static_cast<std::thread::id>(session_id), duration);
+    python_session_overhead_[session_id] += duration;
     return py::cast<py::none>(Py_None);
 }
 
 // for python binding, Session overhead refers to decoder initialization and deinitialization time
 py::object PyRocVideoDecoderCpu::PyGetDecoderSessionOverHead(int session_id) {
-    return py::cast(GetDecoderSessionOverHead(static_cast<std::thread::id>(session_id)));
+    const auto it = python_session_overhead_.find(session_id);
+    return py::cast(it == python_session_overhead_.end() ? 0.0 : it->second);
 }
 
 #endif

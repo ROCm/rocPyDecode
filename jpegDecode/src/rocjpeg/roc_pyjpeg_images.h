@@ -65,7 +65,7 @@ public:
     bool ToDlpackTensor(RocJpegOutputFormat output_format, int device_id);
 
 private:
-    bool GetOutputDims(std::vector<uint32_t>& widths, std::vector<uint32_t>& heights, uint32_t img_width, uint32_t img_height, RocJpegOutputFormat output_format, RocJpegChromaSubsampling subsampling);
+    bool GetOutputDims(std::vector<uint32_t>& widths, std::vector<uint32_t>& heights, uint32_t img_width, uint32_t img_height, RocJpegOutputFormat output_format, RocJpegChromaSubsampling chroma_subsampling);
 };
 
 #endif // PY_ROC_JPEG_IMAGES_HEADER

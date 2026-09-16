@@ -15,7 +15,8 @@ struct Plane {
 };
 struct Layout {
     std::array<Plane, 3> planes{};
-    int count = 1, x_shift = 0, y_shift = 0;
+    size_t count = 1;
+    int x_shift = 0, y_shift = 0;
     size_t size = 0;
 };
 inline Layout Planes(const OutputSurfaceInfo& info) {
@@ -39,7 +40,7 @@ inline Layout Planes(const OutputSurfaceInfo& info) {
     if (info.num_chroma_planes) {
         result.count = interleaved ? 2 : 3;
         const size_t pitch = interleaved ? info.output_pitch : info.output_pitch >> result.x_shift;
-        for (int i = 1; i < result.count; ++i) {
+        for (size_t i = 1; i < result.count; ++i) {
             result.planes[i] = {result.size, pitch, info.output_width >> result.x_shift,
                 info.output_height >> result.y_shift, interleaved ? 2u : 1u};
             result.size += pitch * (info.output_vstride >> result.y_shift);
@@ -70,10 +71,10 @@ inline OutputSurfaceInfo Describe(const OutputSurfaceInfo& source, int width, in
     if (size_t(width) * source.bytes_per_pixel > std::numeric_limits<uint32_t>::max())
         throw std::invalid_argument("YUV row size is too large");
     auto info = source;
-    info.output_width = width; info.output_height = height;
-    info.output_pitch = width * source.bytes_per_pixel;
-    info.output_vstride = height;
-    info.chroma_height = height >> layout.y_shift;
+    info.output_width = static_cast<uint32_t>(width); info.output_height = static_cast<uint32_t>(height);
+    info.output_pitch = static_cast<uint32_t>(width) * source.bytes_per_pixel;
+    info.output_vstride = static_cast<uint32_t>(height);
+    info.chroma_height = static_cast<uint32_t>(height) >> layout.y_shift;
     info.disp_rect = {0, 0, width, height};
     info.mem_type = host ? OUT_SURFACE_MEM_HOST_COPIED : OUT_SURFACE_MEM_DEV_COPIED;
     info.output_surface_size_in_bytes = Planes(info).size;
@@ -121,7 +122,7 @@ public:
     void Copy(uint8_t* input, const OutputSurfaceInfo& source, Rect rect, bool host) {
         CheckCrop(rect);
         const auto src = Planes(source);
-        if (rect.right > source.output_width || rect.bottom > source.output_height ||
+        if (int64_t(rect.right) > source.output_width || int64_t(rect.bottom) > source.output_height ||
             rect.left % (1 << src.x_shift) || rect.top % (1 << src.y_shift))
             throw std::invalid_argument("Crop must lie within the frame and align to chroma subsampling");
         Allocate(Describe(source, rect.right - rect.left, rect.bottom - rect.top, host));
@@ -129,7 +130,7 @@ public:
         const bool src_host = source.mem_type == OUT_SURFACE_MEM_HOST_COPIED;
         const auto kind = src_host ? (host ? hipMemcpyHostToHost : hipMemcpyHostToDevice) :
                                     (host ? hipMemcpyDeviceToHost : hipMemcpyDeviceToDevice);
-        for (int i = 0; i < src.count; ++i) {
+        for (size_t i = 0; i < src.count; ++i) {
             const int left = i ? rect.left >> src.x_shift : rect.left;
             const int top = i ? rect.top >> src.y_shift : rect.top;
             const auto& s = src.planes[i]; const auto& d = dst.planes[i];
@@ -155,7 +156,7 @@ public:
         }
         Allocate(description);
         const auto src = Planes(*in_info), dst = Planes(info);
-        for (int i = 0; i < src.count; ++i) {
+        for (size_t i = 0; i < src.count; ++i) {
             const auto& s = src.planes[i]; const auto& d = dst.planes[i];
             const dim3 block(16,16), grid((d.width + 15)/16, (d.height + 15)/16);
             if (source.bytes_per_pixel == 1)
