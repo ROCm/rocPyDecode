@@ -38,6 +38,9 @@ def check_inputs(path, without_numpy):
     import rocpyjpegdecode as native
     import pyRocJpegDecode.decoder as jpeg
 
+    _, ready = jpeg.initialize_hip()
+    assert ready, "HIP initialization failed"
+
     data = path.read_bytes()
     stream = native.CodeStream(data)
     source = native.DecodeSource(stream)
