@@ -46,11 +46,6 @@ void DecodeSource::ExportToPython(py::module& m) {
             }),
             "Constructor initializing DecodeSource with a code stream of the image to decode.",
             "code_stream"_a)
-        .def(py::init([](const py::array_t<uint8_t> arr) {
-                return new DecodeSource(std::make_unique<CodeStream>(arr));
-            }),
-            "Constructor initializing DecodeSource with a numpy array.",
-            "array"_a)
         .def(py::init([](const py::bytes bytes) {
                 return new DecodeSource(std::make_unique<CodeStream>(bytes));
             }),
@@ -61,10 +56,23 @@ void DecodeSource::ExportToPython(py::module& m) {
             }),
             "Constructor initializing DecodeSource with filename pointing to the file with image.",
             "filename"_a)
+        // Match ordinary inputs before probing the NumPy array type.
+        .def(py::init([](const py::array_t<uint8_t> arr) {
+                return new DecodeSource(std::make_unique<CodeStream>(arr));
+            }),
+            "Constructor initializing DecodeSource with a numpy array.",
+            "array"_a)
         .def_property_readonly("code_stream", &DecodeSource::CodeStreamInstance, py::return_value_policy::reference_internal,
             "Returns the code stream to be decoded into an image.");
     py::implicitly_convertible<py::bytes, DecodeSource>();
     py::implicitly_convertible<py::array_t<uint8_t>, DecodeSource>();
+    // NumPy arrays export a buffer. Avoid importing NumPy for unrelated
+    // arguments, while retaining the original array/dtype conversion rules.
+    auto& conversions = py::detail::get_type_info(typeid(DecodeSource))->implicit_conversions;
+    static const auto array_conversion = conversions.back();
+    conversions.back() = [](PyObject* object, PyTypeObject* type) -> PyObject* {
+        return PyObject_CheckBuffer(object) ? array_conversion(object, type) : nullptr;
+    };
     py::implicitly_convertible<std::string, DecodeSource>();
     py::implicitly_convertible<py::tuple, DecodeSource>();
     py::implicitly_convertible<CodeStream, DecodeSource>();

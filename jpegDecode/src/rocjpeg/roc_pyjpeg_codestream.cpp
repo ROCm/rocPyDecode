@@ -48,16 +48,6 @@ void CodeStream::ExportToPython(py::module& m) {
             Args:
                 bytes: The byte data representing the encoded stream.
             )pbdoc")
-        .def(py::init([](py::array_t<uint8_t> arr) {
-            return new CodeStream(arr);
-            }),
-            "array"_a,
-            R"pbdoc(
-            Initialize a CodeStream using a numpy array of uint8 as input.
-
-            Args:
-                array: The numpy array containing the encoded stream.
-            )pbdoc")
         .def(py::init([](const std::filesystem::path& filename) {
             return new CodeStream(filename);
             }),
@@ -67,6 +57,17 @@ void CodeStream::ExportToPython(py::module& m) {
 
             Args:
                 filename: The file path to the encoded stream data.
+            )pbdoc")
+        // Match paths before probing the NumPy array type.
+        .def(py::init([](py::array_t<uint8_t> arr) {
+            return new CodeStream(arr);
+            }),
+            "array"_a,
+            R"pbdoc(
+            Initialize a CodeStream using a numpy array of uint8 as input.
+
+            Args:
+                array: The numpy array containing the encoded stream.
             )pbdoc");
 }
 
