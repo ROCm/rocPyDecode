@@ -19,6 +19,9 @@ if(ROCPYJPEG_TEST_IMAGES)
     rocpyjpeg_add_test(jpeg_decode_regressions
         "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/jpeg_regression_test.py"
         --media-dir "${ROCPYJPEG_MEDIA_DIR}")
+    rocpyjpeg_add_test(jpeg_decode_input_regressions
+        "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/jpeg_input_test.py"
+        --media-dir "${ROCPYJPEG_MEDIA_DIR}")
 else()
     message(STATUS "rocJPEG *.jpg test images unavailable; JPEG runtime tests are not registered")
 endif()
