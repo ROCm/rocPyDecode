@@ -45,10 +45,14 @@ def frame_bytes(frame):
 
 
 def check_decode(path, pts_offset=0, clear_timestamps=False, separate_planes=True):
+    references = []
+    reference_depth = None
     with av.open(str(path)) as container:
-        references = [(hashlib.sha256(frame_bytes(f)).digest(),
-                       int(f.pts * f.time_base * 1000) if f.pts is not None else 0)
-                      for f in container.decode(video=0)]
+        for frame in container.decode(video=0):
+            if reference_depth is None:
+                reference_depth = max(component.bits for component in frame.format.components)
+            references.append((hashlib.sha256(frame_bytes(frame)).digest(),
+                               int(frame.pts * frame.time_base * 1000) if frame.pts is not None else 0))
     assert references, "Reference decoder returned no frames"
     if clear_timestamps:
         references = [(pixels, 0) for pixels, _ in references]
@@ -58,6 +62,9 @@ def check_decode(path, pts_offset=0, clear_timestamps=False, separate_planes=Tru
     saved = None
     returned = 0
     with demuxer(path) as mux:
+        # Metadata queries before decoding must preserve the packet position.
+        assert mux.GetBitDepth() == reference_depth
+        assert mux.GetBitDepth() == reference_depth
         cpu = decodercpu(GetRocDecCodecID(mux.GetCodecId()), mem_type=2)
         while True:
             packet = mux.DemuxFrame()
@@ -176,6 +183,7 @@ def main():
             reading.result(timeout=30)
             closing.result(timeout=30)
     with demuxer(args.input) as file_mux, stream_provider(args.input) as provider, demuxer(provider) as mem_mux:
+        assert file_mux.GetBitDepth() == mem_mux.GetBitDepth() > 0
         assert packet_digest(file_mux) == packet_digest(mem_mux)
     with stream_provider(args.input) as provider:
         size = provider.GetBufferSize()
