@@ -58,7 +58,7 @@ that runs rocPyDecode. From the ``videoDecode`` directory, install it using
 PyAV wheels include their FFmpeg libraries. rocPyDecode does not require
 system FFmpeg headers, libraries, an executable, or the rocDecode host library.
 Building PyAV from source has separate native dependencies; use a supported wheel.
-GPU decoding still requires HIP, the rocDecode SDK and its GPU utility sources.
+GPU decoding still requires HIP, the rocDecode SDK, and its GPU utility sources.
 Raw-stream GPU decoding and JPEG do not require PyAV. Optional PyAV tests are
 registered when it is available during configuration.
 
