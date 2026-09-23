@@ -110,4 +110,4 @@ with dmx.demuxer(input_file_path) as legacy_mux:
 # CPU conversion must handle its planar YUV output in both memory modes.
 from decoder_rgb_dlpack_test import test_rgb_dlpack
 for memory_type in (1, 2):
-    test_rgb_dlpack(input_file_path, dec.decodercpu, memory_type)
+    test_rgb_dlpack(input_file_path, dec.decodercpu, memory_type, zero_latency=False)

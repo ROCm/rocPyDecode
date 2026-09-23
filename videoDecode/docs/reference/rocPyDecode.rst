@@ -72,6 +72,12 @@ require an AMD GPU even when the compressed stream is decoded on the CPU.
 Exported tensors retain their frame allocations. CPU decode calls on the same
 instance are serialized. Create a new CPU decoder after end of stream.
 
+For CPU decoding, use ``b_force_zero_latency=False`` and
+``max_width=max_height=0``. Frame dimensions follow the input stream; requesting
+forced zero latency or nonzero maximum dimensions raises ``ValueError``.
+The ``PyRocVideoDecoderCpu`` entry point names the latency option
+``force_zero_latency``. These restrictions do not apply to the GPU decoder.
+
 Seeking supports modes 0 (exact packet) and 1 (previous keyframe), and criteria 0
 (frame number at a known constant rate) and 1 (timestamp in seconds). Packet
 presentation timestamps use milliseconds for the default decoder clock. Exact

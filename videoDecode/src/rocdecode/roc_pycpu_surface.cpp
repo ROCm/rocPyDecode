@@ -66,7 +66,9 @@ public:
         const auto device = info.mem_type == OUT_SURFACE_MEM_HOST_COPIED ? kDLCPU : kDLROCM;
         for (size_t i = 0; i < (separate ? layout.count : 1); ++i) {
             const auto& plane = layout.planes[i];
-            // Packed planar output is represented as concatenated luma-width rows.
+            // Storage contains consecutive Y, U and V samples without padding.
+            // The combined view groups these samples into luma-width rows;
+            // two subsampled chroma rows occupy one such row.
             const size_t rows = separate ? plane.height : layout.size / info.output_pitch;
             Export(packet, surface_.data() + plane.offset, surface_.owner,
                    {rows, size_t(plane.width) * plane.channels},

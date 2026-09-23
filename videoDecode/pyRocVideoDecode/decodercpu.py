@@ -38,6 +38,10 @@ class decodercpu:
             raise ValueError("CPU decoding supports host-copied or device-copied output")
         if device_id < 0 or max_width < 0 or max_height < 0 or clk_rate <= 0:
             raise ValueError("Invalid device, dimensions or clock rate")
+        if b_force_zero_latency:
+            raise ValueError("PyAV CPU decoding requires b_force_zero_latency=False")
+        if max_width or max_height:
+            raise ValueError("PyAV CPU decoding requires max_width=0 and max_height=0; dimensions follow the stream")
         self._crop = GetRectangle(crop_rect)
         if crop_rect is not None and any(crop_rect) and (min(crop_rect) < 0 or crop_rect[2] <= crop_rect[0] or crop_rect[3] <= crop_rect[1]):
             raise ValueError("Invalid crop rectangle")

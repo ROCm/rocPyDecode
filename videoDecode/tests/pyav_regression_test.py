@@ -44,7 +44,7 @@ def frame_bytes(frame):
     return b"".join(parts)
 
 
-def check_decode(path, pts_offset=0, clear_timestamps=False):
+def check_decode(path, pts_offset=0, clear_timestamps=False, separate_planes=True):
     with av.open(str(path)) as container:
         references = [(hashlib.sha256(frame_bytes(f)).digest(),
                        int(f.pts * f.time_base * 1000) if f.pts is not None else 0)
@@ -69,10 +69,11 @@ def check_decode(path, pts_offset=0, clear_timestamps=False):
                 assert cpu.GetStride() > 0 and cpu.GetFrameSize() > 0
                 assert cpu.GetOutputSurfaceInfo(), "Metadata must be available before retrieving a frame"
             for _ in range(count):
-                pts = cpu.GetFrameYuv(packet, separate_planes=True)
+                pts = cpu.GetFrameYuv(packet, separate_planes=separate_planes)
                 assert pts != -1
                 parts = []
-                for buf in packet.ext_buf:
+                buffers = packet.ext_buf[:] if separate_planes else packet.ext_buf[:1]
+                for buf in buffers:
                     rows, width = buf.shape
                     size = width * (2 if buf.dtype == "|u2" else 1)
                     # Separate planes are packed by the native surface helper.
@@ -80,10 +81,14 @@ def check_decode(path, pts_offset=0, clear_timestamps=False):
                     parts.append(view.tobytes())
                     assert len(parts[-1]) == rows * size
                     assert buf.__dlpack_device__()[0] == 1
+                    if not separate_planes:
+                        assert width == cpu.GetWidth()
+                        assert buf.strides == (width, 1)
+                        assert view.nbytes == packet.frame_size == cpu.GetFrameSize()
                 pixels = b"".join(parts)
                 output.append((hashlib.sha256(pixels).digest(), pts))
                 if saved is None:
-                    saved = (packet.ext_buf[:], pixels)
+                    saved = (buffers, pixels)
                 cpu.ReleaseFrame(packet)
             if packet.end_of_stream:
                 assert cpu.DecodeFrame(packet) == 0
@@ -94,7 +99,8 @@ def check_decode(path, pts_offset=0, clear_timestamps=False):
         print("First mismatches:", [(i, a[0] == b[0], a[1], b[1]) for i, (a, b) in enumerate(zip(output, references)) if a != b][:10])
     assert output == references, f"CPU pixels/timestamps differ for {path}: {len(output)} vs {len(references)}"
     assert b"".join(np.from_dlpack(b).tobytes() for b in saved[0]) == saved[1], "Released frame allocation lost"
-    print(f"CPU pixel/timestamp/ownership match: {Path(path).name}, {len(output)} frames")
+    layout = "separate" if separate_planes else "combined"
+    print(f"CPU pixel/timestamp/ownership match: {Path(path).name}, {len(output)} frames, {layout}")
 
 
 def packet_digest(mux):
@@ -108,10 +114,32 @@ def packet_digest(mux):
     return result
 
 
+def check_cpu_options():
+    codec = GetRocDecCodecID("h264")
+    for constructor, latency_option in (
+        (decodercpu, "b_force_zero_latency"),
+        (native.PyRocVideoDecoderCpu, "force_zero_latency"),
+    ):
+        constructor(codec=codec, **{latency_option: False, "max_width": 0, "max_height": 0})
+        for options, message in (
+            ({latency_option: True}, "zero_latency"),
+            ({"max_width": 1920}, "max_width"),
+            ({"max_height": 1080}, "max_height"),
+            ({"max_width": 1920, "max_height": 1080}, "max_width"),
+        ):
+            try:
+                constructor(codec=codec, **options)
+            except ValueError as error:
+                assert message in str(error), str(error)
+            else:
+                raise AssertionError(f"Unsupported CPU options accepted: {options}")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input", type=Path, required=True)
     args = parser.parse_args()
+    check_cpu_options()
     with demuxer(args.input) as mux:
         first = mux.DemuxFrame()
         expected = ctypes.string_at(first.bitstream_adrs, first.bitstream_size)
@@ -206,20 +234,27 @@ def main():
             path = Path(tmp) / (fmt + ".mkv")
             with av.open(str(path), "w") as container:
                 stream = container.add_stream("libx264", rate=24)
-                stream.width, stream.height, stream.pix_fmt = 64, 48, fmt
+                stream.width, stream.height, stream.pix_fmt = 66, 50, fmt
                 stream.options = {"crf": "0"}
                 for index in range(4):
-                    frame = av.VideoFrame(64, 48, fmt)
+                    frame = av.VideoFrame(66, 50, fmt)
                     itemsize = 2 if "10" in fmt else 1
                     for number, plane in enumerate(frame.planes):
-                        value = (30 + number * 35 + index * 5) * (4 if itemsize == 2 else 1)
-                        plane.update(value.to_bytes(itemsize, "little") * (plane.buffer_size // itemsize))
+                        data = bytearray(plane.buffer_size)
+                        rows = np.ndarray((plane.height, plane.line_size // itemsize),
+                                          dtype="<u2" if itemsize == 2 else "u1", buffer=data)
+                        # Vary every row and column; source row padding stays zero.
+                        values = np.arange(plane.height * plane.width, dtype=np.uint32)
+                        values = (values * 13 + number * 53 + index * 17) % (1024 if itemsize == 2 else 256)
+                        rows[:, :plane.width] = values.reshape(plane.height, plane.width)
+                        plane.update(data)
                     frame.pts = index
                     for packet in stream.encode(frame):
                         container.mux(packet)
                 for packet in stream.encode(None):
                     container.mux(packet)
             check_decode(path)
+            check_decode(path, separate_planes=False)
             if fmt == "yuv420p":
                 check_decode(path, pts_offset=10000)
                 check_decode(path, clear_timestamps=True)
