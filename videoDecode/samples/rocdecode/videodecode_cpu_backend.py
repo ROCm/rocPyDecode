@@ -29,7 +29,7 @@ def Decoder(
     # get the used coded id
     codec_id = dec.GetRocDecCodecID(demuxer.GetCodecId())
 
-    # ffmpeg decoder instance
+    # PyAV CPU decoder instance
     print("info: rocPyDecode is using CPU backend!")
     viddec = dec.decodercpu(
         codec_id,

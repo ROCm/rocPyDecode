@@ -19,6 +19,7 @@
 # THE SOFTWARE.
 
 """Exercise raw sample frame limits and failure exit codes using SDK media."""
+import importlib.util
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 import ctypes
@@ -48,7 +49,7 @@ def run(sample, args, expected_frames=None, error=None):
 def packet_and_session_boundaries(media):
     codec = native.decTypes.rocDecVideoCodec.rocDecVideoCodec_AVC
     classes = [native.PyRocVideoDecoder]
-    if hasattr(native, "PyRocVideoDecoderCpu"):
+    if importlib.util.find_spec("av") is not None:
         classes.append(native.PyRocVideoDecoderCpu)
     for cls in classes:
         decoder = cls(codec=codec, out_mem_type=1)
@@ -94,7 +95,7 @@ def packet_and_session_boundaries(media):
         assert decoder.DecodeFrame(packet) == 0  # Valid EOS still works.
         del decoder, other
 
-    if hasattr(native, "PyFileStreamProvider"):
+    if importlib.util.find_spec("av") is not None:
         def packets(mux):
             result = []
             for _ in range(10000):

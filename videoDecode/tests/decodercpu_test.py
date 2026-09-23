@@ -55,7 +55,7 @@ resize_dim = GetDim((640, 360))
 surface_info = GetOutputSurfaceInfo()
 demuxer = dmx.demuxer(input_file_path)
 codec_id = dec.GetRocDecCodecID(demuxer.GetCodecId())
-decoder = dec.decodercpu(codec_id,0,1)
+decoder = dec.decodercpu(codec_id, 0, 1, crop_rect=(0, 0, 0, 0))
 gpu_info = decoder.GetGpuInfo()
 buffer = np.zeros((1080 * 1920 * 3,), dtype=np.uint8)
 while True:
@@ -92,6 +92,20 @@ with tempfile.TemporaryDirectory() as directory:
     assert output.stat().st_size > 0, "CPU API smoke test saved an empty frame"
 decoder.ReleaseFrame(packet)
 print("CPU API smoke test decoded, resized, saved, and released a frame.")
+
+# The PyRocVideoDecoderCpu entry point accepts a bound Dim for resizing.
+import rocpydecode as native
+with dmx.demuxer(input_file_path) as legacy_mux:
+    legacy = native.PyRocVideoDecoderCpu(codec=codec_id)
+    while True:
+        legacy_packet = legacy_mux.DemuxFrame()
+        if legacy.DecodeFrame(legacy_packet):
+            break
+        assert not legacy_packet.end_of_stream, "Legacy CPU API decoded no frame"
+    assert legacy.GetFrameYuv(legacy_packet) != -1
+    assert legacy.ResizeFrame(legacy_packet, resize_dim, legacy.GetOutputSurfaceInfo())
+    assert legacy.GetResizedOutputSurfaceInfo()
+    legacy.ReleaseFrame(legacy_packet)
 
 # CPU conversion must handle its planar YUV output in both memory modes.
 from decoder_rgb_dlpack_test import test_rgb_dlpack

@@ -21,50 +21,66 @@ THE SOFTWARE.
 */
 
 #include "roc_pybuffer.h"
+#include <limits>
 #include "roc_pyvideodecode.h"
-#if defined(ROCPYDECODE_ENABLE_HOST) && ROCPYDECODE_ENABLE_HOST
-#include "roc_pyvideodecodecpu.h"
-#endif
 
 using namespace std;
-
-#if defined(ROCPYDECODE_ENABLE_HOST) && ROCPYDECODE_ENABLE_HOST
-// Testing (works only in DEBUG build)
-void TestAllClassCalls(const char* input_file);
+#ifndef NDEBUG
+void TestAllClassCalls(const char*);
 void TestAll_roc_pybuffer();
 void Test_DLPackPyTensor_ConstructorsAndOperators();
-void Test_PyReconfigureFlushCallback(const char* input_file, const std::string& output_directory);
+void Test_PyReconfigureFlushCallback(const char*, const std::string&);
 void Test_CalculateRgbImageSize();
 #endif
+
 
 PYBIND11_MODULE(rocpydecode, m) {
  
     m.doc() = "Python bindings for the C++ portions of rocDecode ..";
 
-    // convert between demuxer & decoder
-#if ROCPYDECODE_USE_FFMPEG
-    m.def("AVCodec2RocDecVideoCodec", &ConvertAVCodec2RocDecVideoCodec, "Convert AVCodecID to rocDecVideoCodec ID");
-    m.def("AVCodecString2RocDecVideoCodec", &ConvertAVCodecString2RocDecVideoCodec, "Convert AVCodec string to rocDecVideoCodec ID");
+#ifndef NDEBUG
+    m.def("TestAllClassCalls", &TestAllClassCalls);
+    m.def("TestAll_roc_pybuffer", &TestAll_roc_pybuffer);
+    m.def("Test_DLPack", &Test_DLPackPyTensor_ConstructorsAndOperators);
+    m.def("Test_PyReconfigureFlushCallback", &Test_PyReconfigureFlushCallback);
+    m.def("Test_CalculateRgbImageSize", &Test_CalculateRgbImageSize);
 #endif
-    
-    // Testing (works only in DEBUG build)
-#if defined(ROCPYDECODE_ENABLE_HOST) && ROCPYDECODE_ENABLE_HOST && !defined(NDEBUG)
-    m.def("TestAllClassCalls", &TestAllClassCalls, "Testing  and validation");
-    m.def("TestAll_roc_pybuffer", &TestAll_roc_pybuffer, "Testing  and validation");
-    m.def("Test_DLPack", &Test_DLPackPyTensor_ConstructorsAndOperators, "Testing  and validation");
-    m.def("Test_PyReconfigureFlushCallback", &Test_PyReconfigureFlushCallback, "Testing  and validation");
-    m.def("Test_CalculateRgbImageSize", &Test_CalculateRgbImageSize, "Testing  and validation");
-#endif
+    m.def("GetRocPyDecPacket", [](int64_t pts, int64_t size, py::buffer buffer) {
+        auto info = buffer.request();
+        if (size < 0 || size > std::numeric_limits<uint32_t>::max() ||
+            size > info.size * info.itemsize)
+            throw std::invalid_argument("Packet size exceeds its buffer or decoder limit");
+        py::ssize_t stride = info.itemsize;
+        for (py::ssize_t i = info.ndim; i-- > 0;) {
+            if (info.shape[static_cast<size_t>(i)] > 1 && info.strides[static_cast<size_t>(i)] != stride)
+                throw std::invalid_argument("Packet buffer must be C-contiguous");
+            stride *= info.shape[static_cast<size_t>(i)];
+        }
+        auto packet = make_shared<PyPacketData>();
+        packet->frame_pts = pts;
+        packet->pkt_flags = ROCDEC_PKT_TIMESTAMP;
+        packet->bitstream_size = size;
+        packet->bitstream_adrs = size ? reinterpret_cast<uintptr_t>(info.ptr) : 0;
+        packet->end_of_stream = size == 0;
+        auto result = py::cast(packet);
+        // Hold an exported view, not just the exporter: a bytearray must not
+        // resize and invalidate the address while this packet is alive.
+        result.attr("_buffer_owner") = py::memoryview(buffer);
+        return result;
+    }, "Wrap a contiguous packet buffer and retain its exported view");
 
-    m.def("GetRocPyDecPacket", [](int pts, int size, py::buffer buffer) {
-        std::shared_ptr<PyPacketData> packet = make_shared<PyPacketData>();
-        packet->frame_pts = static_cast<int64_t>(pts);
-        packet->bitstream_size = static_cast<int64_t>(size);
-        // process py::buffer object to an address ptr for bitstream
-        py::buffer_info buffer_info = buffer.request();
-        packet->bitstream_adrs = reinterpret_cast<uintptr_t>(buffer_info.ptr);
-        return packet;
-    }, "Convert packet info from user to rocpydecode's PyPacketData");
+    // Resolve Python API classes and codec helpers on demand.
+    m.def("__getattr__", [](const std::string& name) -> py::object {
+        if (name == "PyVideoDemuxer" || name == "PyFileStreamProvider") {
+            auto module = py::module_::import("pyRocVideoDecode.demuxer");
+            return module.attr(name == "PyVideoDemuxer" ? "demuxer" : "stream_provider");
+        }
+        if (name == "PyRocVideoDecoderCpu")
+            return py::module_::import("pyRocVideoDecode.decodercpu").attr("PyRocVideoDecoderCpu");
+        if (name == "AVCodec2RocDecVideoCodec" || name == "AVCodecString2RocDecVideoCodec")
+            return py::module_::import("pyRocVideoDecode._pyav").attr("codec_id");
+        throw py::attribute_error("module rocpydecode has no attribute " + name);
+    });
 
     // ------
     // Types:
@@ -92,6 +108,10 @@ PYBIND11_MODULE(rocpydecode, m) {
 
     // rocDecVideoSurfaceFormat
     py::enum_<rocDecVideoSurfaceFormat>(types_m, "rocDecVideoSurfaceFormat")
+        .value("rocDecVideoSurfaceFormat_YUV420",rocDecVideoSurfaceFormat_YUV420)
+        .value("rocDecVideoSurfaceFormat_YUV420_16Bit",rocDecVideoSurfaceFormat_YUV420_16Bit)
+        .value("rocDecVideoSurfaceFormat_YUV422",rocDecVideoSurfaceFormat_YUV422)
+        .value("rocDecVideoSurfaceFormat_YUV422_16Bit",rocDecVideoSurfaceFormat_YUV422_16Bit)
         .value("rocDecVideoSurfaceFormat_NV12",rocDecVideoSurfaceFormat_NV12)					
         .value("rocDecVideoSurfaceFormat_P016",rocDecVideoSurfaceFormat_P016)					
         .value("rocDecVideoSurfaceFormat_YUV444",rocDecVideoSurfaceFormat_YUV444)				
@@ -107,6 +127,13 @@ PYBIND11_MODULE(rocpydecode, m) {
         .export_values(); 
 
     py::enum_<rocDecVideoCodec>(types_m,"rocDecVideoCodec","Video Codec") 
+        .value("rocDecVideoCodec_MPEG1",rocDecVideoCodec_MPEG1)
+        .value("rocDecVideoCodec_MPEG2",rocDecVideoCodec_MPEG2)
+        .value("rocDecVideoCodec_MPEG4",rocDecVideoCodec_MPEG4)
+        .value("rocDecVideoCodec_JPEG",rocDecVideoCodec_JPEG)
+        .value("rocDecVideoCodec_VP8",rocDecVideoCodec_VP8)
+        .value("rocDecVideoCodec_VP9",rocDecVideoCodec_VP9)
+        .value("rocDecVideoCodec_AV1",rocDecVideoCodec_AV1)
         .value("rocDecVideoCodec_AVC",rocDecVideoCodec_AVC)            
         .value("rocDecVideoCodec_HEVC",rocDecVideoCodec_HEVC)          
         .export_values(); 
@@ -128,29 +155,7 @@ PYBIND11_MODULE(rocpydecode, m) {
     // ---------
     BufferInterface::ExportToPython(m);
 
-    // -----------------------------
-    // User Demuxer 'PyVideoDemuxer'
-    // -----------------------------
-#if ROCPYDECODE_USE_FFMPEG
-    PyVideoDemuxerInitializer(m);
-
-    // ------------------------------------------------
-    // StreamProvider 'PyVideoStreamProvider' for demux
-    // ------------------------------------------------
-    PyVideoStreamProviderInitializer(m);
-#endif
-
-    // --------------------------------------
-    // AMD Video Decoder 'PyRocVideoDecoder'
-    // --------------------------------------
     PyRocVideoDecoderInitializer(m);
-
-    // --------------------------------------
-    // AMD Video Decoder 'PyRocVideoDecoderCpu' -- FFMpeg Decode
-    // --------------------------------------
-#if defined(ROCPYDECODE_ENABLE_HOST) && ROCPYDECODE_ENABLE_HOST
-    PyRocVideoDecoderCpuInitializer(m);
-#endif
 
     // ----------------
     // Structures:
@@ -185,7 +190,7 @@ PYBIND11_MODULE(rocpydecode, m) {
         .def_readwrite("height",&Dim::h);
 
     // PyPacketData
-    py::class_<PyPacketData, shared_ptr<PyPacketData>>(m, "PyPacketData", py::module_local())
+    py::class_<PyPacketData, shared_ptr<PyPacketData>>(m, "PyPacketData", py::module_local(), py::dynamic_attr())
         .def(py::init<>())
         .def_readwrite("end_of_stream", &PyPacketData::end_of_stream)
         .def_readwrite("pkt_flags",     &PyPacketData::pkt_flags)
@@ -223,9 +228,8 @@ PYBIND11_MODULE(rocpydecode, m) {
         .def("__dlpack__", [](std::shared_ptr<PyPacketData>& self, py::object stream) {
             return self->ext_buf[0]->dlpack(stream);
             }, py::arg("stream") = NULL, "Export the buffer as a DLPack tensor")
-        .def("__dlpack_device__", [](std::shared_ptr<PyPacketData>& /*self*/) {
-                return py::make_tuple(py::int_(static_cast<int>(DLDeviceType::kDLROCM)),
-                        py::int_(static_cast<int>(0)));
+        .def("__dlpack_device__", [](std::shared_ptr<PyPacketData>& self) {
+                return self->ext_buf[0]->dlpackDevice();
             }, "Get the device associated with the buffer");   
 
     // ConfigInfo
@@ -236,6 +240,8 @@ PYBIND11_MODULE(rocpydecode, m) {
         .def_readwrite("pci_bus_id",    &ConfigInfo::pci_bus_id)
         .def_readwrite("pci_domain_id", &ConfigInfo::pci_domain_id)
         .def_readwrite("pci_device_id", &ConfigInfo::pci_device_id);
+
+    PyCpuSurfaceInitializer(m);
 
     py::class_<DLPackPyTensor>(m, "DLPackPyTensor")
         .def(py::init<>())
