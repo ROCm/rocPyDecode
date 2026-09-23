@@ -65,9 +65,9 @@ class demuxer:
             self._filter = None
             codec = self._stream.codec_context.name
             if codec in ("h264", "hevc"):
-                self._filter = av.BitStreamFilterContext(codec + "_mp4toannexb", self._stream)
+                self._filter = av.bitstream.BitStreamFilterContext(codec + "_mp4toannexb", self._stream)
             elif codec == "mpeg4":
-                self._filter = av.BitStreamFilterContext("dump_extra", self._stream)
+                self._filter = av.bitstream.BitStreamFilterContext("dump_extra", self._stream)
             self._packets = iter(self._container.demux(self._stream))
             self._pending = deque()
             self._drained = False
