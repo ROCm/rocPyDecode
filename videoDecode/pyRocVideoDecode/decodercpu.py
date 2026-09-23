@@ -212,7 +212,9 @@ class decodercpu:
         self._surface.Save(output_file_path, frame_adrs, surface_info, GetOutputFormat(output_format))
 
     def ReleaseFrame(self, packet):
-        # Exported DLPack buffers retain their allocations independently.
+        with self._lock:
+            # Drop packet references; buffers retained by callers keep their owners.
+            packet.ext_buf = rocpydec.PyPacketData().ext_buf
         return True
 
     def GetNumOfFlushedFrames(self):
@@ -237,7 +239,7 @@ class decodercpu:
 
 class PyRocVideoDecoderCpu(decodercpu):
     """CPU decoder entry point with device and memory type as leading arguments."""
-    def __init__(self, device_id=0, out_mem_type=2, codec=dectypes.rocDecVideoCodec_HEVC,
+    def __init__(self, device_id=0, out_mem_type=dectypes.OUT_SURFACE_MEM_HOST_COPIED, codec=dectypes.rocDecVideoCodec_HEVC,
                  force_zero_latency=False, p_crop_rect=None, max_width=0, max_height=0,
                  clk_rate=1000):
         crop = None if p_crop_rect is None else (p_crop_rect.left, p_crop_rect.top,

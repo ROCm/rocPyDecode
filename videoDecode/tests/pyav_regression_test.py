@@ -65,7 +65,7 @@ def check_decode(path, pts_offset=0, clear_timestamps=False, separate_planes=Tru
         # Metadata queries before decoding must preserve the packet position.
         assert mux.GetBitDepth() == reference_depth
         assert mux.GetBitDepth() == reference_depth
-        cpu = decodercpu(GetRocDecCodecID(mux.GetCodecId()), mem_type=2)
+        cpu = decodercpu(GetRocDecCodecID(mux.GetCodecId()))
         while True:
             packet = mux.DemuxFrame()
             if not packet.end_of_stream:
@@ -97,8 +97,9 @@ def check_decode(path, pts_offset=0, clear_timestamps=False, separate_planes=Tru
                 pixels = b"".join(parts)
                 output.append((hashlib.sha256(pixels).digest(), pts))
                 if saved is None:
-                    saved = (buffers, pixels)
+                    saved = (buffers, pixels, tuple(np.from_dlpack(b) for b in buffers))
                 cpu.ReleaseFrame(packet)
+                assert all(not b.shape for b in packet.ext_buf), "Released packet retains frame exports"
             if packet.end_of_stream:
                 assert returned + cpu.GetNumOfFlushedFrames() == len(references), "Drained frames counted twice"
                 assert cpu.DecodeFrame(packet) == 0
@@ -110,6 +111,7 @@ def check_decode(path, pts_offset=0, clear_timestamps=False, separate_planes=Tru
         print("First mismatches:", [(i, a[0] == b[0], a[1], b[1]) for i, (a, b) in enumerate(zip(output, references)) if a != b][:10])
     assert output == references, f"CPU pixels/timestamps differ for {path}: {len(output)} vs {len(references)}"
     assert b"".join(np.from_dlpack(b).tobytes() for b in saved[0]) == saved[1], "Released frame allocation lost"
+    assert b"".join(view.tobytes() for view in saved[2]) == saved[1], "Retained DLPack views lost their allocation"
     layout = "separate" if separate_planes else "combined"
     print(f"CPU pixel/timestamp/ownership match: {Path(path).name}, {len(output)} frames, {layout}")
 

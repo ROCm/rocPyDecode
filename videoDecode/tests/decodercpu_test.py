@@ -105,6 +105,7 @@ with dmx.demuxer(input_file_path) as legacy_mux:
         assert not legacy_packet.end_of_stream, "Legacy CPU API decoded no frame"
     legacy_surface = legacy.GetOutputSurfaceInfo()
     assert legacy.GetFrameYuv(legacy_packet) != -1
+    assert legacy_packet.ext_buf[0].__dlpack_device__()[0] == 1, "Default CPU output must be host memory"
     assert legacy.GetOutputSurfaceInfo() == legacy_surface
     assert legacy.ResizeFrame(legacy_packet, resize_dim, legacy_surface)
     assert legacy.GetResizedOutputSurfaceInfo()
@@ -125,4 +126,5 @@ for memory_type in (1, 2):
         assert rgb_decoder.GetFrameRgb(rgb_packet, rgb_format=1) != -1
         assert rgb_decoder.GetOutputSurfaceInfo() == rgb_surface, "RGB retrieval invalidated surface metadata"
         rgb_decoder.ReleaseFrame(rgb_packet)
+        assert all(not b.shape for b in rgb_packet.ext_buf), "Released packet retains RGB exports"
     test_rgb_dlpack(input_file_path, dec.decodercpu, memory_type, zero_latency=False)
