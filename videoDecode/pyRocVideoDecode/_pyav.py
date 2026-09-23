@@ -25,6 +25,9 @@ _NAMES = {"mpeg1video": "MPEG1", "mpeg2video": "MPEG2", "mpeg4": "MPEG4",
           "h264": "AVC", "hevc": "HEVC", "mjpeg": "JPEG", "vp8": "VP8",
           "vp9": "VP9", "av1": "AV1"}
 _ALIASES = {"h265": "hevc", "mpeg1": "mpeg1video", "mpeg2": "mpeg2video"}
+# Stable numeric codec IDs exposed by demuxer.GetCodecId().
+_CODEC_IDS = {1: "mpeg1video", 2: "mpeg2video", 7: "mjpeg", 12: "mpeg4",
+              27: "h264", 139: "vp8", 167: "vp9", 173: "hevc", 225: "av1"}
 
 def require_av():
     try:
@@ -46,10 +49,8 @@ def codec_name(value):
         if name in _NAMES:
             return name
     elif isinstance(value, int):
-        av = require_av()
-        for name in _NAMES:
-            if av.Codec(name, "r").id == value:
-                return name
+        if value in _CODEC_IDS:
+            return _CODEC_IDS[value]
     raise ValueError(f"Unsupported video codec: {value!r}")
 
 def codec_id(value):

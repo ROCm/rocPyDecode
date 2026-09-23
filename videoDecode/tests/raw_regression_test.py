@@ -30,6 +30,35 @@ import re
 import subprocess
 import sys
 import tempfile
+from unittest.mock import patch
+from pyRocVideoDecode.decoder import GetRocDecCodecID
+
+
+def codec_translation():
+    codecs = ((1, "mpeg1video", "MPEG1"), (2, "mpeg2video", "MPEG2"),
+              (7, "mjpeg", "JPEG"), (12, "mpeg4", "MPEG4"), (27, "h264", "AVC"),
+              (139, "vp8", "VP8"), (167, "vp9", "VP9"), (173, "hevc", "HEVC"),
+              (225, "av1", "AV1"))
+    # GPU codec translation must work even when PyAV cannot be imported.
+    with patch.dict(sys.modules, {"av": None}):
+        for number, name, suffix in codecs:
+            expected = getattr(native.decTypes.rocDecVideoCodec, "rocDecVideoCodec_" + suffix)
+            for value in (number, name, expected):
+                assert GetRocDecCodecID(value) == expected, value
+        for alias, name in (("h265", "hevc"), ("mpeg1", "mpeg1video"), ("mpeg2", "mpeg2video")):
+            assert GetRocDecCodecID(alias) == GetRocDecCodecID(name)
+        for value in (-1, 0, 2**31, "unknown"):
+            try:
+                GetRocDecCodecID(value)
+            except ValueError:
+                pass
+            else:
+                raise AssertionError(f"Unsupported codec accepted: {value}")
+    if importlib.util.find_spec("av") is not None:
+        import av
+        for number, name, _ in codecs:
+            assert av.Codec(name, "r").id == number, name
+    print("Codec translation with and without PyAV passed")
 
 
 def run(sample, args, expected_frames=None, error=None):
@@ -119,6 +148,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--media-dir", required=True, type=Path)
     args = parser.parse_args()
+    codec_translation()
     packet_and_session_boundaries(args.media_dir / "AMD_driving_virtual_20-H264.264")
     sample = Path(__file__).resolve().parents[1] / "samples/rocdecode/videodecoderaw.py"
     for codec in ("264", "265"):
