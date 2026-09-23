@@ -56,6 +56,7 @@ def check_decode(path, pts_offset=0, clear_timestamps=False, separate_planes=Tru
         references = [(pixels, pts + pts_offset) for pixels, pts in references]
     output = []
     saved = None
+    returned = 0
     with demuxer(path) as mux:
         cpu = decodercpu(GetRocDecCodecID(mux.GetCodecId()), mem_type=2)
         while True:
@@ -65,6 +66,7 @@ def check_decode(path, pts_offset=0, clear_timestamps=False, separate_planes=Tru
                 if clear_timestamps:
                     packet.pkt_flags &= ~int(native.decTypes.ROCDEC_PKT_TIMESTAMP)
             count = cpu.DecodeFrame(packet)
+            returned += count
             if count:
                 assert cpu.GetStride() > 0 and cpu.GetFrameSize() > 0
                 assert cpu.GetOutputSurfaceInfo(), "Metadata must be available before retrieving a frame"
@@ -91,7 +93,9 @@ def check_decode(path, pts_offset=0, clear_timestamps=False, separate_planes=Tru
                     saved = (buffers, pixels)
                 cpu.ReleaseFrame(packet)
             if packet.end_of_stream:
+                assert returned + cpu.GetNumOfFlushedFrames() == len(references), "Drained frames counted twice"
                 assert cpu.DecodeFrame(packet) == 0
+                assert cpu.GetNumOfFlushedFrames() == 0
                 break
     del cpu, packet
     gc.collect()

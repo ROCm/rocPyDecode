@@ -58,10 +58,10 @@ class decodercpu:
         self._device, self._memory, self._clock = device_id, mem_type, clk_rate
         self._frames = deque()
         self._surface = None
+        self._surface_frame = None
         self._last_frame = None
         self._time_base = Fraction(1, clk_rate)
         self._eos = False
-        self._flushed = 0
         self._overhead = {}
         self._lock = threading.RLock()
 
@@ -82,7 +82,6 @@ class decodercpu:
                 self._eos = True
                 packet.pkt_flags |= int(dectypes.ROCDEC_PKT_ENDOFSTREAM)
                 frames = self._codec.decode(None) if self._codec.is_open else []
-                self._flushed = len(frames)
             else:
                 if self._eos:
                     raise ValueError("CPU decoder has reached end of stream; create a new decoder")
@@ -117,6 +116,8 @@ class decodercpu:
             return len(frames)
 
     def _prepare_surface(self, frame):
+        if self._surface_frame is frame:
+            return
         depth = max(c.bits for c in frame.format.components)
         formats = {
             "yuv420p": "YUV420", "yuvj420p": "YUV420", "yuv422p": "YUV422",
@@ -131,6 +132,7 @@ class decodercpu:
         self._surface = rocpydec._CpuSurface(
             frame.planes, [p.line_size for p in frame.planes], frame.width, frame.height,
             depth, surface_format, self._device, self._memory, self._crop)
+        self._surface_frame = frame
 
     def _take_frame(self):
         if not self._frames:
@@ -214,7 +216,8 @@ class decodercpu:
         return True
 
     def GetNumOfFlushedFrames(self):
-        return self._flushed
+        # DecodeFrame already returns all frames drained at end of stream.
+        return 0
 
     def AddDecoderSessionOverHead(self, session_id, duration):
         with self._lock:
