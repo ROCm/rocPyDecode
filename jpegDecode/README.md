@@ -4,8 +4,9 @@ Python bindings and samples for the ROCm rocJPEG library.
 
 ## Prerequisites
 
-Use Linux and an AMD GPU supported by the selected ROCm release and the
-underlying decoder library. Install a complete ROCm 7.0 or newer SDK with
+Use Linux. GPU decoding and runtime tests require an AMD GPU supported by the
+selected ROCm release and decoder library; building and installing do not require
+a GPU. Install a complete ROCm 7.0 or newer SDK with
 AMD Clang 18 or newer and C++17 support. See the
 [ROCm installation guide](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/) for OS, GPU, driver,
 and repository setup. The Ubuntu package examples below target Ubuntu 24.04
@@ -75,14 +76,16 @@ export PATH="$ROCM_PATH/bin:$ROCM_PATH/lib/llvm/bin:$PATH"
 export CMAKE_PREFIX_PATH="$ROCM_PATH${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}"
 export LD_LIBRARY_PATH="$ROCM_PATH/lib:$ROCM_PATH/lib/rocm_sysdeps/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
+# Runtime GPU check; skip on build-only machines.
 "$ROCM_PATH/bin/rocminfo"
 ls "$ROCM_PATH/share/rocjpeg/images"
 ```
 
 The `rocm_sysdeps/lib` directory is used by SDK distributions that bundle
 runtime dependencies; it may be absent in a system-package installation.
-Ensure the user can access the GPU devices. In a container, the host driver
-and GPU device access must also be available to that container.
+For GPU decoding and runtime tests, ensure the user can access the GPU devices.
+In a runtime container, the host driver and GPU device access must also be
+available to that container.
 
 A missing decoder CMake package requires the corresponding development
 package or a corrected SDK prefix. Changing `CMAKE_PREFIX_PATH` cannot supply
@@ -100,6 +103,7 @@ cmake -S . -B build \
     -DPYTHON_VERSION_SUGGESTED=3.12
 cmake --build build --parallel
 cmake --install build
+# Runtime tests require a supported GPU; skip on build-only machines.
 ctest --test-dir build --output-on-failure -V
 ```
 
