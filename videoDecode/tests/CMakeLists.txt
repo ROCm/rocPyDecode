@@ -39,7 +39,8 @@ endif()
 
 # Exercise optional API smoke tests only when their backend and media exist.
 set(_rocpyvideo_api_media "${ROCPYVIDEO_MEDIA_DIR}/AMD_driving_virtual_20-H264.mp4")
-execute_process(COMMAND "${Python3_EXECUTABLE}" -c "import av, numpy"
+execute_process(COMMAND "${Python3_EXECUTABLE}" -c
+    "import av, numpy, sys; sys.exit(tuple(map(int, av.__version__.split('.')[:2])) < (18, 1))"
     RESULT_VARIABLE _rocpyvideo_av_status OUTPUT_QUIET ERROR_QUIET)
 if(_rocpyvideo_av_status EQUAL 0 AND EXISTS "${_rocpyvideo_api_media}")
     rocpyvideo_add_test(video_decode_pyav_regressions

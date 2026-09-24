@@ -19,7 +19,6 @@
 # THE SOFTWARE.
 
 """Exercise raw sample frame limits and failure exit codes using SDK media."""
-import importlib.util
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 import ctypes
@@ -32,6 +31,12 @@ import sys
 import tempfile
 from unittest.mock import patch
 from pyRocVideoDecode.decoder import GetRocDecCodecID
+from pyRocVideoDecode._pyav import require_av
+
+try:
+    av = require_av()
+except ImportError:
+    av = None
 
 
 def codec_translation():
@@ -54,8 +59,7 @@ def codec_translation():
                 pass
             else:
                 raise AssertionError(f"Unsupported codec accepted: {value}")
-    if importlib.util.find_spec("av") is not None:
-        import av
+    if av is not None:
         for number, name, _ in codecs:
             assert av.Codec(name, "r").id == number, name
     print("Codec translation with and without PyAV passed")
@@ -78,7 +82,7 @@ def run(sample, args, expected_frames=None, error=None):
 def packet_and_session_boundaries(media):
     codec = native.decTypes.rocDecVideoCodec.rocDecVideoCodec_AVC
     classes = [native.PyRocVideoDecoder]
-    if importlib.util.find_spec("av") is not None:
+    if av is not None:
         classes.append(native.PyRocVideoDecoderCpu)
     for cls in classes:
         decoder = cls(codec=codec, out_mem_type=1)
@@ -124,7 +128,7 @@ def packet_and_session_boundaries(media):
         assert decoder.DecodeFrame(packet) == 0  # Valid EOS still works.
         del decoder, other
 
-    if importlib.util.find_spec("av") is not None:
+    if av is not None:
         def packets(mux):
             result = []
             for _ in range(10000):

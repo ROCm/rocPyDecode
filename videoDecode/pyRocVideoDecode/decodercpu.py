@@ -107,6 +107,9 @@ class decodercpu:
                 if encoded.time_base is not None:
                     self._time_base = encoded.time_base
                 frames = self._codec.decode(encoded)
+                if packet.pkt_flags & int(dectypes.ROCDEC_PKT_ENDOFSTREAM):
+                    self._eos = True
+                    frames.extend(self._codec.decode(None))
             for frame in frames:
                 if frame.time_base is None:
                     frame.time_base = self._time_base
@@ -129,9 +132,12 @@ class decodercpu:
         if suffix is None:
             raise ValueError(f"Unsupported CPU output format: {frame.format.name}")
         surface_format = getattr(dectypes.rocDecVideoSurfaceFormat, "rocDecVideoSurfaceFormat_" + suffix)
-        self._surface = rocpydec._CpuSurface(
-            frame.planes, [p.line_size for p in frame.planes], frame.width, frame.height,
-            depth, surface_format, self._device, self._memory, self._crop)
+        args = (frame.planes, [p.line_size for p in frame.planes], frame.width,
+                frame.height, depth, surface_format)
+        if self._surface is None:
+            self._surface = rocpydec._CpuSurface(*args, self._device, self._memory, self._crop)
+        else:
+            self._surface.Update(*args, self._crop)
         self._surface_frame = frame
 
     def _take_frame(self):

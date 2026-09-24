@@ -44,7 +44,7 @@ def frame_bytes(frame):
     return b"".join(parts)
 
 
-def check_decode(path, pts_offset=0, clear_timestamps=False, separate_planes=True):
+def check_decode(path, pts_offset=0, clear_timestamps=False, separate_planes=True, payload_eos=False):
     references = []
     reference_depth = None
     with av.open(str(path)) as container:
@@ -66,8 +66,11 @@ def check_decode(path, pts_offset=0, clear_timestamps=False, separate_planes=Tru
         assert mux.GetBitDepth() == reference_depth
         assert mux.GetBitDepth() == reference_depth
         cpu = decodercpu(GetRocDecCodecID(mux.GetCodecId()))
+        packet = mux.DemuxFrame()
         while True:
-            packet = mux.DemuxFrame()
+            following = mux.DemuxFrame() if payload_eos and packet.bitstream_size else None
+            if following is not None and following.end_of_stream:
+                packet.pkt_flags |= int(native.decTypes.ROCDEC_PKT_ENDOFSTREAM)
             if not packet.end_of_stream:
                 packet.frame_pts += pts_offset
                 if clear_timestamps:
@@ -100,11 +103,19 @@ def check_decode(path, pts_offset=0, clear_timestamps=False, separate_planes=Tru
                     saved = (buffers, pixels, tuple(np.from_dlpack(b) for b in buffers))
                 cpu.ReleaseFrame(packet)
                 assert all(not b.shape for b in packet.ext_buf), "Released packet retains frame exports"
-            if packet.end_of_stream:
+            if packet.pkt_flags & int(native.decTypes.ROCDEC_PKT_ENDOFSTREAM):
                 assert returned + cpu.GetNumOfFlushedFrames() == len(references), "Drained frames counted twice"
-                assert cpu.DecodeFrame(packet) == 0
+                if packet.bitstream_size:
+                    try:
+                        cpu.DecodeFrame(packet)
+                    except ValueError as error:
+                        assert "end of stream" in str(error)
+                    else:
+                        raise AssertionError("CPU decoder accepted a payload after EOS")
+                assert cpu.DecodeFrame(native.PyPacketData()) == 0
                 assert cpu.GetNumOfFlushedFrames() == 0
                 break
+            packet = following if following is not None else mux.DemuxFrame()
     del cpu, packet
     gc.collect()
     if output != references:
@@ -114,6 +125,49 @@ def check_decode(path, pts_offset=0, clear_timestamps=False, separate_planes=Tru
     assert b"".join(view.tobytes() for view in saved[2]) == saved[1], "Retained DLPack views lost their allocation"
     layout = "separate" if separate_planes else "combined"
     print(f"CPU pixel/timestamp/ownership match: {Path(path).name}, {len(output)} frames, {layout}")
+
+
+def check_rgb_reuse(path):
+    hip = ctypes.CDLL("libamdhip64.so")
+    hip.hipMemcpy.argtypes = (ctypes.c_void_p, ctypes.c_void_p, ctypes.c_size_t, ctypes.c_int)
+    hip.hipMemcpy.restype = ctypes.c_int
+
+    def read_pixels(address, size):
+        data = ctypes.create_string_buffer(size)
+        assert hip.hipMemcpy(data, address, size, 2) == 0  # Device to host.
+        return data.raw
+
+    for memory in (1, 2):
+        retained = []
+        addresses = []
+        with demuxer(path) as mux:
+            cpu = decodercpu(GetRocDecCodecID(mux.GetCodecId()), mem_type=memory)
+            available = 0
+            for index, fmt in enumerate((5, 5, 5, 5, 5, 5, 1, 2, 5, 5)):
+                while available == 0:
+                    packet = mux.DemuxFrame()
+                    available = cpu.DecodeFrame(packet)
+                    assert available or not packet.end_of_stream, "Not enough RGB test frames"
+                assert cpu.GetFrameRgb(packet, fmt) != -1
+                available -= 1
+                address = packet.frame_adrs_rgb
+                size = cpu.GetWidth() * cpu.GetHeight() * (4 if fmt >= 5 else 3) * (2 if fmt % 2 == 0 else 1)
+                if index in (1, 3, 5, 9):
+                    assert address == addresses[-1], "Released RGB allocation was not reused"
+                elif index:
+                    assert address != addresses[-1], "Retained or differently sized RGB allocation was reused"
+                addresses.append(address)
+                if index in (1, 3):
+                    # Retain one buffer and one DLPack capsule independently of the packet.
+                    owner = packet.ext_buf[0] if index == 1 else packet.ext_buf[0].__dlpack__()
+                    retained.append((owner, address, read_pixels(address, size)))
+                cpu.ReleaseFrame(packet)
+                assert all(not b.shape for b in packet.ext_buf)
+        del cpu, packet
+        gc.collect()
+        for owner, address, pixels in retained:
+            assert read_pixels(address, len(pixels)) == pixels, "Retained RGB pixels were overwritten"
+    print("CPU RGB reuse, format changes and retained buffer/DLPack pixels passed")
 
 
 def packet_digest(mux):
@@ -250,7 +304,9 @@ def main():
                 stream = container.add_stream("libx264", rate=24)
                 stream.width, stream.height, stream.pix_fmt = 66, 50, fmt
                 stream.options = {"crf": "0"}
-                for index in range(4):
+                if fmt == "yuv420p":
+                    stream.options = {"crf": "20", "bf": "2", "b-adapt": "0"}
+                for index in range(12 if fmt == "yuv420p" else 4):
                     frame = av.VideoFrame(66, 50, fmt)
                     itemsize = 2 if "10" in fmt else 1
                     for number, plane in enumerate(frame.planes):
@@ -270,6 +326,10 @@ def main():
             check_decode(path)
             check_decode(path, separate_planes=False)
             if fmt == "yuv420p":
+                with av.open(str(path)) as container:
+                    assert any(frame.pict_type == 3 for frame in container.decode(video=0)), "EOS fixture needs B-frames"
+                check_decode(path, payload_eos=True)
+                check_rgb_reuse(path)
                 check_decode(path, pts_offset=10000)
                 check_decode(path, clear_timestamps=True)
     print("PYAV_REGRESSIONS_PASS")

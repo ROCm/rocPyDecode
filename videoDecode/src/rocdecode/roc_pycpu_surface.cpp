@@ -13,7 +13,7 @@ class CpuSurface {
     rocpy::Surface surface_, resized_;
     std::shared_ptr<void> rgb_;
     size_t rgb_size_ = 0;
-    int device_;
+    int device_, memory_;
 
     void Export(PyPacketData& packet, void* data, std::shared_ptr<void> owner,
                 std::vector<size_t> shape, std::vector<size_t> strides,
@@ -27,10 +27,17 @@ class CpuSurface {
 public:
     CpuSurface(const std::vector<py::buffer>& planes, const std::vector<size_t>& pitches,
                int width, int height, uint32_t depth, rocDecVideoSurfaceFormat format,
-               int device, int memory, const Rect& crop) : device_(device) {
-        if (device < 0 || (memory != OUT_SURFACE_MEM_HOST_COPIED && memory != OUT_SURFACE_MEM_DEV_COPIED) ||
-            depth < 8 || depth > 16)
-            throw std::invalid_argument("Invalid CPU frame device, memory type or bit depth");
+               int device, int memory, const Rect& crop) : device_(device), memory_(memory) {
+        if (device < 0 || (memory != OUT_SURFACE_MEM_HOST_COPIED && memory != OUT_SURFACE_MEM_DEV_COPIED))
+            throw std::invalid_argument("Invalid CPU frame device or memory type");
+        Update(planes, pitches, width, height, depth, format, crop);
+    }
+
+    void Update(const std::vector<py::buffer>& planes, const std::vector<size_t>& pitches,
+                int width, int height, uint32_t depth, rocDecVideoSurfaceFormat format,
+                const Rect& crop) {
+        if (depth < 8 || depth > 16)
+            throw std::invalid_argument("Invalid CPU frame bit depth");
         OutputSurfaceInfo source{};
         source.surface_format = format;
         source.bytes_per_pixel = depth > 8 ? 2 : 1;
@@ -53,9 +60,10 @@ public:
                 memcpy(packed.data() + plane.offset + y * plane.pitch,
                        static_cast<uint8_t*>(input.ptr) + y * pitches[i], row);
         }
-        const bool host = memory == OUT_SURFACE_MEM_HOST_COPIED;
+        const bool host = memory_ == OUT_SURFACE_MEM_HOST_COPIED;
         if (!host) HIP_API_CALL(hipSetDevice(device_));
         surface_.Copy(packed.data(), source, rocpy::HasCrop(crop) ? crop : Rect{0, 0, width, height}, host);
+        resized_ = rocpy::Surface{};
     }
 
     void Yuv(PyPacketData& packet, bool separate) {
@@ -83,10 +91,14 @@ public:
         auto& info = surface_.info;
         auto format = static_cast<OutputFormatEnum>(output_format);
         const uint32_t pitch = CalculateRgbPitch(info.output_width, format);
-        rgb_size_ = size_t(pitch) * info.output_height;
-        void* data = nullptr;
-        HIP_API_CALL(hipMalloc(&data, rgb_size_));
-        rgb_ = std::shared_ptr<void>(data, [](void* p) { (void)hipFree(p); });
+        const size_t size = size_t(pitch) * info.output_height;
+        if (!rgb_ || rgb_.use_count() > 1 || rgb_size_ != size) {
+            void* allocation = nullptr;
+            HIP_API_CALL(hipMalloc(&allocation, size));
+            rgb_ = std::shared_ptr<void>(allocation, [](void* p) { (void)hipFree(p); });
+            rgb_size_ = size;
+        }
+        void* data = rgb_.get();
         ConvertCpuRgbFrame(surface_.data(), &info, static_cast<uint8_t*>(data), format, pitch);
         const size_t channels = output_format >= 5 ? 4 : 3;
         const uint32_t bytes = output_format % 2 == 0 ? 2 : 1;
@@ -160,6 +172,7 @@ void PyCpuSurfaceInitializer(py::module& m) {
         .def(py::init<const std::vector<py::buffer>&, const std::vector<size_t>&, int, int,
              uint32_t, rocDecVideoSurfaceFormat, int, int, const Rect&>())
         .def("Yuv", &CpuSurface::Yuv).def("Rgb", &CpuSurface::Rgb)
+        .def("Update", &CpuSurface::Update)
         .def("Resize", &CpuSurface::Resize).def("Save", &CpuSurface::Save)
         .def_property_readonly("info_address", &CpuSurface::InfoAddress)
         .def_property_readonly("resized_info_address", &CpuSurface::ResizedInfoAddress)
