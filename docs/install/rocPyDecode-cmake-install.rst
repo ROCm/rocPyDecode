@@ -4,6 +4,26 @@ CMake installation
 Prepare the SDK, development dependencies, and media described in
 :doc:`rocPyDecode-prerequisites` before configuring.
 
+GPU targets
+-----------
+
+Building and installing do not require a GPU on the build machine. By default,
+both components use the 25 GPU targets listed in their ``CMakeLists.txt`` files.
+The selected targets are printed during configuration. The ROCm compiler must
+support every selected target; use an explicit subset with older toolchains.
+
+To build for one GPU or a smaller set, pass a semicolon-separated list:
+
+.. code-block:: shell
+
+   cmake -S . -B build -DGPU_TARGETS="gfx90a;gfx942;gfx1100"
+
+An explicit ``GPU_TARGETS`` list replaces the defaults and is retained in the
+CMake cache. These settings also apply to standalone component builds.
+GPU decoding and runtime tests still require compatible
+hardware, drivers, and SDK libraries; compiling a target does not add decoding
+capabilities absent from the GPU or SDK.
+
 Build, install, and test
 ------------------------
 
@@ -29,10 +49,11 @@ standalone build, run the same commands directly inside ``videoDecode`` or
 ``jpegDecode``.
 
 For a root build with both components available, testing enabled, and all test
-assets present, the core suite contains **seven tests**: binding types, raw H.264,
-raw H.265, batched JPEG decoding, video/JPEG regression checks, and the configure
-regression suite. The configure suite also runs when video is skipped or
-disabled, provided a Python 3 interpreter is available. Set
+assets present, the core suite covers binding types, raw H.264,
+raw H.265, batched JPEG decoding, video/JPEG regression checks, and configuration
+regressions for missing SDK utilities. The configure
+suite also runs when video is skipped or disabled, provided a Python 3
+interpreter is available. Set
 ``-DBUILD_TESTING=OFF`` to omit test registration.
 
 When the optional CPU backend and H.264 MP4 fixture are available, CTest also
