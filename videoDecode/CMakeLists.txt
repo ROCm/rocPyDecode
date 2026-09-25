@@ -54,6 +54,31 @@ endif()
 list(APPEND CMAKE_PREFIX_PATH "${ROCM_PATH}/lib/cmake")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set(HIP_PLATFORM amd CACHE STRING "HIP platform")
+# Preserve HIP's legacy target override when GPU_TARGETS is not supplied.
+if(NOT DEFINED GPU_TARGETS AND DEFINED AMDGPU_TARGETS)
+    set(GPU_TARGETS "${AMDGPU_TARGETS}" CACHE STRING "AMD GPU targets to compile for")
+endif()
+
+# Select GPU targets before HIP discovery, without probing local devices.
+if(NOT DEFINED GPU_TARGETS)
+    set(GPU_TARGETS
+        gfx950 gfx942 gfx90a gfx908 gfx1250
+        gfx1201 gfx1200 gfx1153 gfx1152 gfx1151 gfx1150
+        gfx1103 gfx1102 gfx1101 gfx1100
+        gfx1036 gfx1035 gfx1034 gfx1033 gfx1032 gfx1031 gfx1030
+        gfx1012 gfx1011 gfx1010
+        CACHE STRING "AMD GPU targets to compile for")
+endif()
+
+if(NOT GPU_TARGETS)
+    message(FATAL_ERROR "GPU_TARGETS must contain at least one GPU architecture, for example -DGPU_TARGETS=gfx942")
+endif()
+
+# HIP caches this derived list separately; refresh it when targets change.
+set(GPU_BUILD_TARGETS "${GPU_TARGETS}" CACHE STRING "GPU targets to compile for" FORCE)
+
+message(STATUS "${PROJECT_NAME} GPU targets: ${GPU_TARGETS}")
+
 find_package(HIP REQUIRED)
 find_package(rocdecode 1.0.0 REQUIRED)
 find_package(FFmpeg QUIET)

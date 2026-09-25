@@ -17,12 +17,20 @@ testing. The top-level build supports building both components together.
 
 ## Prerequisites
 
-Use Linux and an AMD GPU supported by the selected ROCm release and the
-underlying decoder library. Install a complete ROCm 7.0 or newer SDK with
+Use Linux. GPU decoding and runtime tests require an AMD GPU supported by the
+selected ROCm release and decoder library; building and installing do not require
+a GPU. Install a complete ROCm 7.0 or newer SDK with
 AMD Clang 18 or newer and C++17 support. See the
 [ROCm installation guide](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/) for OS, GPU, driver,
 and repository setup. The Ubuntu package examples below target Ubuntu 24.04
 and Python 3.12; use packages appropriate to your OS and selected ROCm release.
+
+The minimum ROCm/compiler versions above apply only when the compiler supports
+the selected GPU targets; they do not guarantee support for all 25 defaults.
+The default build requires a compiler that supports the entire default list.
+With an older compiler, pass an explicit `GPU_TARGETS` list to CMake,
+for example `-DGPU_TARGETS=gfx1100` for a compiler supporting gfx1100.
+Choose targets for the GPUs where the bindings will run.
 
 Required build dependencies:
 
@@ -112,6 +120,7 @@ export PATH="$ROCM_PATH/bin:$ROCM_PATH/lib/llvm/bin:$PATH"
 export CMAKE_PREFIX_PATH="$ROCM_PATH${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}"
 export LD_LIBRARY_PATH="$ROCM_PATH/lib:$ROCM_PATH/lib/rocm_sysdeps/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
+# Runtime GPU check; skip on build-only machines.
 "$ROCM_PATH/bin/rocminfo"
 test -d "$ROCM_PATH/share/rocdecode/utils/rocvideodecode"
 ls "$ROCM_PATH/share/rocdecode/video/AMD_driving_virtual_20-H264.264"
@@ -121,8 +130,9 @@ ls "$ROCM_PATH/share/rocjpeg/images"
 
 The `rocm_sysdeps/lib` directory is used by SDK distributions that bundle
 runtime dependencies; it may be absent in a system-package installation.
-Ensure the user can access the GPU devices. In a container, the host driver
-and GPU device access must also be available to that container.
+For GPU decoding and runtime tests, ensure the user can access the GPU devices.
+In a runtime container, the host driver and GPU device access must also be
+available to that container.
 
 A missing decoder CMake package requires the corresponding development
 package or a corrected SDK prefix. Changing `CMAKE_PREFIX_PATH` cannot supply
@@ -140,6 +150,7 @@ cmake -S . -B build \
     -DPYTHON_VERSION_SUGGESTED=3.12
 cmake --build build --parallel
 cmake --install build
+# Runtime tests require a supported GPU; skip on build-only machines.
 ctest --test-dir build --output-on-failure -V
 ```
 
@@ -153,10 +164,11 @@ standalone build, run the same commands directly inside `videoDecode` or
 `jpegDecode`.
 
 For a root build with both components available, testing enabled, and all test
-assets present, the core suite contains **seven tests**: binding types, raw H.264,
-raw H.265, batched JPEG decoding, video/JPEG regression checks, and the configure
-regression suite. The configure suite also runs when video is skipped or
-disabled, provided a Python 3 interpreter is available. Set
+assets present, the core suite covers binding types, raw H.264,
+raw H.265, batched JPEG decoding, video/JPEG regression checks, JPEG input conversion,
+and configuration regressions for missing SDK utilities and GPU target selection.
+The configure suite also runs when video is skipped or disabled, provided a
+Python 3 interpreter is available. Set
 `-DBUILD_TESTING=OFF` to omit test registration.
 
 When the optional CPU backend and H.264 MP4 fixture are available, CTest also
