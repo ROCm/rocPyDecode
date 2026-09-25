@@ -115,6 +115,12 @@ The selected targets are printed during configuration and retained in the CMake
 cache. JPEG GPU kernels are provided by the installed rocJPEG SDK; building this
 binding does not rebuild that SDK or change its GPU targets.
 
+The 25-target default applies to fresh builds without an explicit target selection.
+Existing build directories retain their cached targets, including targets
+previously detected by HIP. To change them, pass ``-DGPU_TARGETS=...`` explicitly.
+To use the current defaults, configure a new build directory without
+``GPU_TARGETS`` or the legacy ``AMDGPU_TARGETS`` override.
+
 Build, install, and test
 ------------------------
 
@@ -134,7 +140,8 @@ The local install prefix does not require ``sudo``. Replace ``build`` and ``inst
 consistently if you need separate host, container, or SDK-specific builds.
 CTest uses the build-tree bindings; ``-V`` also displays successful tests' output.
 
-With the image directory available, expect **two tests**: batched JPEG decoding and RGB-layout/error regressions.
+With the image directory available, tests cover batched JPEG decoding,
+RGB-layout/error regressions, and input conversion with and without NumPy.
 
 Media-dependent tests are registered during configuration only when their
 assets are present. A passing run with fewer tests does not establish full

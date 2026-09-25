@@ -142,7 +142,7 @@ The local install prefix does not require `sudo`. Replace `build` and `install`
 consistently if you need separate host, container, or SDK-specific builds.
 CTest uses the build-tree bindings; `-V` also displays successful tests' output.
 
-With both raw videos available, expect **four tests**: binding types, raw
+With both raw videos available, tests cover binding types, raw
 H.264 decoding, raw H.265 decoding, and frame-limit/error regressions.
 
 Media-dependent tests are registered during configuration only when their

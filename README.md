@@ -164,10 +164,11 @@ standalone build, run the same commands directly inside `videoDecode` or
 `jpegDecode`.
 
 For a root build with both components available, testing enabled, and all test
-assets present, the core suite contains **seven tests**: binding types, raw H.264,
-raw H.265, batched JPEG decoding, video/JPEG regression checks, and the configure
-regression suite. The configure suite also runs when video is skipped or
-disabled, provided a Python 3 interpreter is available. Set
+assets present, the core suite covers binding types, raw H.264,
+raw H.265, batched JPEG decoding, video/JPEG regression checks, JPEG input conversion,
+and configuration regressions for missing SDK utilities and GPU target selection.
+The configure suite also runs when video is skipped or disabled, provided a
+Python 3 interpreter is available. Set
 `-DBUILD_TESTING=OFF` to omit test registration.
 
 When the optional CPU backend and H.264 MP4 fixture are available, CTest also

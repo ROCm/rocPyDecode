@@ -118,7 +118,8 @@ The local install prefix does not require `sudo`. Replace `build` and `install`
 consistently if you need separate host, container, or SDK-specific builds.
 CTest uses the build-tree bindings; `-V` also displays successful tests' output.
 
-With the image directory available, expect **two tests**: batched JPEG decoding and RGB-layout/error regressions.
+With the image directory available, tests cover batched JPEG decoding,
+RGB-layout/error regressions, and input conversion with and without NumPy.
 
 Media-dependent tests are registered during configuration only when their
 assets are present. A passing run with fewer tests does not establish full

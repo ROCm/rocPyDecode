@@ -27,6 +27,12 @@ GPU decoding and runtime tests still require compatible
 hardware, drivers, and SDK libraries; compiling a target does not add decoding
 capabilities absent from the GPU or SDK.
 
+The 25-target default applies to fresh builds without an explicit target selection.
+Existing build directories retain their cached targets, including targets
+previously detected by HIP. To change them, pass ``-DGPU_TARGETS=...`` explicitly.
+To use the current defaults, configure a new build directory without
+``GPU_TARGETS`` or the legacy ``AMDGPU_TARGETS`` override.
+
 Build, install, and test
 ------------------------
 
@@ -53,10 +59,10 @@ standalone build, run the same commands directly inside ``videoDecode`` or
 
 For a root build with both components available, testing enabled, and all test
 assets present, the core suite covers binding types, raw H.264,
-raw H.265, batched JPEG decoding, video/JPEG regression checks, and configuration
-regressions for missing SDK utilities. The configure
-suite also runs when video is skipped or disabled, provided a Python 3
-interpreter is available. Set
+raw H.265, batched JPEG decoding, video/JPEG regression checks, JPEG input conversion,
+and configuration regressions for missing SDK utilities and GPU target selection.
+The configure suite also runs when video is skipped or disabled, provided a
+Python 3 interpreter is available. Set
 ``-DBUILD_TESTING=OFF`` to omit test registration.
 
 When the optional CPU backend and H.264 MP4 fixture are available, CTest also

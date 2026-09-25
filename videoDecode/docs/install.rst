@@ -140,6 +140,12 @@ must support the selected targets; an older compiler may require a smaller list.
 The selected targets are printed during configuration and retained in the CMake
 cache. GPU decoding also requires a compatible installed rocDecode SDK.
 
+The 25-target default applies to fresh builds without an explicit target selection.
+Existing build directories retain their cached targets, including targets
+previously detected by HIP. To change them, pass ``-DGPU_TARGETS=...`` explicitly.
+To use the current defaults, configure a new build directory without
+``GPU_TARGETS`` or the legacy ``AMDGPU_TARGETS`` override.
+
 Build, install, and test
 ------------------------
 
@@ -159,7 +165,7 @@ The local install prefix does not require ``sudo``. Replace ``build`` and ``inst
 consistently if you need separate host, container, or SDK-specific builds.
 CTest uses the build-tree bindings; ``-V`` also displays successful tests' output.
 
-With both raw videos available, expect **four tests**: binding types, raw
+With both raw videos available, tests cover binding types, raw
 H.264 decoding, raw H.265 decoding, and frame-limit/error regressions.
 
 Media-dependent tests are registered during configuration only when their
