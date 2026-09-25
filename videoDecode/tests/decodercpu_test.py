@@ -55,7 +55,7 @@ resize_dim = GetDim((640, 360))
 surface_info = GetOutputSurfaceInfo()
 demuxer = dmx.demuxer(input_file_path)
 codec_id = dec.GetRocDecCodecID(demuxer.GetCodecId())
-decoder = dec.decodercpu(codec_id,0,1)
+decoder = dec.decodercpu(codec_id, 0, 1, crop_rect=(0, 0, 0, 0))
 gpu_info = decoder.GetGpuInfo()
 buffer = np.zeros((1080 * 1920 * 3,), dtype=np.uint8)
 while True:
@@ -64,7 +64,10 @@ while True:
         break
     if packet.bitstream_size <= 0:
         raise AssertionError("CPU API smoke test did not decode a frame")
+surface_info = decoder.GetOutputSurfaceInfo()
+assert surface_info
 assert decoder.GetFrameYuv(packet, separate_planes=False) != -1
+assert decoder.GetOutputSurfaceInfo() == surface_info, "Frame retrieval invalidated surface metadata"
 assert packet.frame_adrs, "CPU API smoke test did not retrieve a frame"
 try:
     decoder.GetFrameRgb(packet, rgb_format=0)
@@ -77,8 +80,6 @@ assert decoder.GetWidth() > 0
 assert decoder.GetHeight() > 0
 assert decoder.GetStride() > 0
 assert decoder.GetFrameSize() > 0
-surface_info = decoder.GetOutputSurfaceInfo()
-assert surface_info
 assert decoder.ResizeFrame(packet, (640, 360), surface_info)
 assert decoder.GetResizedOutputSurfaceInfo()
 decoder.GetNumOfFlushedFrames()
@@ -93,7 +94,37 @@ with tempfile.TemporaryDirectory() as directory:
 decoder.ReleaseFrame(packet)
 print("CPU API smoke test decoded, resized, saved, and released a frame.")
 
+# The PyRocVideoDecoderCpu entry point accepts a bound Dim for resizing.
+import rocpydecode as native
+with dmx.demuxer(input_file_path) as legacy_mux:
+    legacy = native.PyRocVideoDecoderCpu(codec=codec_id)
+    while True:
+        legacy_packet = legacy_mux.DemuxFrame()
+        if legacy.DecodeFrame(legacy_packet):
+            break
+        assert not legacy_packet.end_of_stream, "Legacy CPU API decoded no frame"
+    legacy_surface = legacy.GetOutputSurfaceInfo()
+    assert legacy.GetFrameYuv(legacy_packet) != -1
+    assert legacy_packet.ext_buf[0].__dlpack_device__()[0] == 1, "Default CPU output must be host memory"
+    assert legacy.GetOutputSurfaceInfo() == legacy_surface
+    assert legacy.ResizeFrame(legacy_packet, resize_dim, legacy_surface)
+    assert legacy.GetResizedOutputSurfaceInfo()
+    legacy.ReleaseFrame(legacy_packet)
+
 # CPU conversion must handle its planar YUV output in both memory modes.
 from decoder_rgb_dlpack_test import test_rgb_dlpack
 for memory_type in (1, 2):
-    test_rgb_dlpack(input_file_path, dec.decodercpu, memory_type)
+    with dmx.demuxer(input_file_path) as rgb_mux:
+        rgb_decoder = dec.decodercpu(codec_id, mem_type=memory_type)
+        while True:
+            rgb_packet = rgb_mux.DemuxFrame()
+            if rgb_decoder.DecodeFrame(rgb_packet):
+                break
+            assert not rgb_packet.end_of_stream, "CPU RGB API decoded no frame"
+        rgb_surface = rgb_decoder.GetOutputSurfaceInfo()
+        assert rgb_surface
+        assert rgb_decoder.GetFrameRgb(rgb_packet, rgb_format=1) != -1
+        assert rgb_decoder.GetOutputSurfaceInfo() == rgb_surface, "RGB retrieval invalidated surface metadata"
+        rgb_decoder.ReleaseFrame(rgb_packet)
+        assert all(not b.shape for b in rgb_packet.ext_buf), "Released packet retains RGB exports"
+    test_rgb_dlpack(input_file_path, dec.decodercpu, memory_type, zero_latency=False)

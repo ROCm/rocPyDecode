@@ -135,8 +135,7 @@ inline void ConvertRgbFrame(uint8_t* input, OutputSurfaceInfo* info, uint8_t* ou
     HIP_API_CALL(hipStreamSynchronize(0));
 }
 
-#if ROCPYDECODE_ENABLE_HOST
-// FFmpeg returns planar, low-bit-aligned samples. Expand chroma and align
+// CPU decoders return planar, low-bit-aligned samples. Expand chroma and align
 // high-bit-depth samples before using rocDecode's existing RGB kernels.
 template<class T>
 __global__ static void ExpandPlanarYuv(const T* input, T* output, uint32_t width,
@@ -210,4 +209,3 @@ inline void ConvertCpuRgbFrame(uint8_t* input, OutputSurfaceInfo* info, uint8_t*
     ConvertRgbFrame(static_cast<uint8_t*>(expanded.get()), &planar, output, format, pitch);
     HIP_API_CALL(hipStreamSynchronize(0));
 }
-#endif

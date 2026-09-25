@@ -1,6 +1,13 @@
 """Configure-only regressions; run with Python 3, CMake, and a C++ compiler.
 
 No ROCm SDK is needed: incomplete utilities must skip video before SDK discovery.
+
+CI usage: Run
+`python3 cmake/tests/test_missing_video_utils.py` from the repository root as an
+early build-configuration check, and fail the job if it fails. It verifies that
+missing SDK utility sources are handled correctly. It needs only Python 3,
+CMake, and a C++ compiler. It is also included in the regular CTest suite when
+BUILD_TESTING=ON, so running it separately is optional.
 """
 import os
 import pathlib

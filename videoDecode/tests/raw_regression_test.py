@@ -29,6 +29,59 @@ import re
 import subprocess
 import sys
 import tempfile
+from types import SimpleNamespace
+from unittest.mock import patch
+from pyRocVideoDecode.decoder import GetRocDecCodecID
+from pyRocVideoDecode._pyav import require_av
+
+try:
+    av = require_av()
+except ImportError:
+    av = None
+
+
+def pyav_version_boundaries():
+    for version, supported in (("17.0.0", False), ("18.0.0", False),
+                               ("18.1.0", True), ("18.2.0", True),
+                               ("19.0.0", False), ("20.0.0", False)):
+        module = SimpleNamespace(__version__=version)
+        with patch.dict(sys.modules, {"av": module}):
+            if supported:
+                assert require_av() is module, version
+            else:
+                try:
+                    require_av()
+                except ImportError as error:
+                    assert ">=18.1,<19" in str(error), error
+                else:
+                    raise AssertionError(f"Unsupported PyAV accepted: {version}")
+    print("PyAV version boundary checks passed")
+
+
+def codec_translation():
+    codecs = ((1, "mpeg1video", "MPEG1"), (2, "mpeg2video", "MPEG2"),
+              (7, "mjpeg", "JPEG"), (12, "mpeg4", "MPEG4"), (27, "h264", "AVC"),
+              (139, "vp8", "VP8"), (167, "vp9", "VP9"), (173, "hevc", "HEVC"),
+              (225, "av1", "AV1"))
+    # GPU codec translation must work even when PyAV cannot be imported.
+    with patch.dict(sys.modules, {"av": None}):
+        for number, name, suffix in codecs:
+            expected = getattr(native.decTypes.rocDecVideoCodec, "rocDecVideoCodec_" + suffix)
+            for value in (number, name, expected):
+                assert GetRocDecCodecID(value) == expected, value
+        for alias, name in (("h265", "hevc"), ("mpeg1", "mpeg1video"), ("mpeg2", "mpeg2video")):
+            assert GetRocDecCodecID(alias) == GetRocDecCodecID(name)
+        for value in (-1, 0, 2**31, "unknown"):
+            try:
+                GetRocDecCodecID(value)
+            except ValueError:
+                pass
+            else:
+                raise AssertionError(f"Unsupported codec accepted: {value}")
+    if av is not None:
+        for number, name, _ in codecs:
+            assert av.Codec(name, "r").id == number, name
+    print("Codec translation with and without PyAV passed")
 
 
 def run(sample, args, expected_frames=None, error=None):
@@ -48,7 +101,7 @@ def run(sample, args, expected_frames=None, error=None):
 def packet_and_session_boundaries(media):
     codec = native.decTypes.rocDecVideoCodec.rocDecVideoCodec_AVC
     classes = [native.PyRocVideoDecoder]
-    if hasattr(native, "PyRocVideoDecoderCpu"):
+    if av is not None:
         classes.append(native.PyRocVideoDecoderCpu)
     for cls in classes:
         decoder = cls(codec=codec, out_mem_type=1)
@@ -94,7 +147,7 @@ def packet_and_session_boundaries(media):
         assert decoder.DecodeFrame(packet) == 0  # Valid EOS still works.
         del decoder, other
 
-    if hasattr(native, "PyFileStreamProvider"):
+    if av is not None:
         def packets(mux):
             result = []
             for _ in range(10000):
@@ -118,6 +171,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--media-dir", required=True, type=Path)
     args = parser.parse_args()
+    pyav_version_boundaries()
+    codec_translation()
     packet_and_session_boundaries(args.media_dir / "AMD_driving_virtual_20-H264.264")
     sample = Path(__file__).resolve().parents[1] / "samples/rocdecode/videodecoderaw.py"
     for codec in ("264", "265"):

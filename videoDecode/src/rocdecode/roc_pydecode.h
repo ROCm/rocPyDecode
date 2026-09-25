@@ -24,16 +24,6 @@ THE SOFTWARE.
 
 #include <iostream>
 
-#if ROCPYDECODE_USE_FFMPEG
-extern "C" {
-    #include <libavcodec/avcodec.h>
-    #include <libavformat/avformat.h>
-    #if USE_AVCODEC_GREATER_THAN_58_134
-        #include <libavcodec/bsf.h>
-    #endif
-}
-#endif
-
 #include "roc_video_dec.h"
 #include "roc_pybuffer.h"
   
@@ -48,15 +38,15 @@ extern "C" {
 namespace py = pybind11;
 
 struct PyPacketData {
-    bool      end_of_stream;
-    int       pkt_flags;
-    int64_t   frame_pts;
-    int64_t   frame_size;
-    int64_t   bitstream_size;
-    uintptr_t frame_adrs;       // yuv frame address
-    uintptr_t bitstream_adrs;
-    uintptr_t frame_adrs_rgb;   // rgb frame address
-    uintptr_t frame_adrs_resized; // new resized yuv frame
+    bool      end_of_stream{};
+    int       pkt_flags{};
+    int64_t   frame_pts{};
+    int64_t   frame_size{};
+    int64_t   bitstream_size{};
+    uintptr_t frame_adrs{};       // yuv frame address
+    uintptr_t bitstream_adrs{};
+    uintptr_t frame_adrs_rgb{};   // rgb frame address
+    uintptr_t frame_adrs_resized{}; // new resized yuv frame
     std::vector<std::shared_ptr<BufferInterface>> ext_buf;
     PyPacketData(){
         ext_buf.push_back(std::make_shared<BufferInterface>()); //index[0]: always Y Tensor
@@ -68,21 +58,10 @@ struct PyPacketData {
 struct ConfigInfo {
     std::string device_name;
     std::string gcn_arch_name;
-    int         pci_bus_id;
-    int         pci_domain_id;
-    int         pci_device_id;
+    int         pci_bus_id{};
+    int         pci_domain_id{};
+    int         pci_device_id{};
 };
 
-// defined in roc_pyvideodemuxer.cpp (FFmpeg dependent)
-#if ROCPYDECODE_USE_FFMPEG
-void PyVideoDemuxerInitializer(py::module& m);
-void PyVideoStreamProviderInitializer(py::module& m);
-rocDecVideoCodec ConvertAVCodec2RocDecVideoCodec(int av_codec);
-rocDecVideoCodec ConvertAVCodecString2RocDecVideoCodec(std::string codec_name);
-#endif
-
-// defined in roc_pyvideodecoder.cpp
 void PyRocVideoDecoderInitializer(py::module& m);
-
-// defined in roc_pyvideodecodercpu.cpp
-void PyRocVideoDecoderCpuInitializer(py::module& m);
+void PyCpuSurfaceInitializer(py::module& m);

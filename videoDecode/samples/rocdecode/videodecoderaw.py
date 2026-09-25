@@ -166,7 +166,7 @@ def decode_raw(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Decode a raw bitstream with rocPyDecode (no FFmpeg demux).")
+    parser = argparse.ArgumentParser(description="Decode a raw bitstream directly with rocPyDecode.")
     parser.add_argument(
         "-i", 
         "--input", 

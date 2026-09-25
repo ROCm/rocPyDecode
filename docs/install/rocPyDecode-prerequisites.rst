@@ -12,7 +12,7 @@ Required build dependencies:
 
 - CMake 3.20 or newer for the commands below, including ``ctest --test-dir``.
   The CMake project itself requires CMake 3.18 or newer for Python module discovery.
-- Python 3.9 or newer and matching development headers. The examples
+- Python 3.11 or newer and matching development headers. The examples
   select Python 3.12; change ``PYTHON_VERSION_SUGGESTED`` to your installed version.
 - pybind11 3.1.0 and DLPack 1.3 headers; bundled in the repository.
 - rocDecode **1.0.0 or newer**, including development files, CMake package
@@ -46,17 +46,22 @@ packages installed inside a container do not provision the bare-metal host.
 Optional video features
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-FFmpeg development libraries enable demuxing. The matching rocDecode host
-library and its utility sources additionally enable the CPU backend:
+Demuxing and CPU decoding use PyAV, installed in the Python environment
+that runs rocPyDecode. From the repository root, install it using
+``videoDecode/requirements.txt``:
 
-.. code-block:: shell
+.. code:: shell
 
-   sudo apt-get install -y libavcodec-dev libavformat-dev libavutil-dev \
-       libswscale-dev rocdecode-host
+   python -m pip install --only-binary=:all: -r videoDecode/requirements.txt
 
-
-These paths are omitted when their complete dependencies are unavailable.
-The default raw-video tests do not require them.
+PyAV wheels include their FFmpeg libraries. rocPyDecode does not require
+system FFmpeg headers, libraries, an executable, or the rocDecode host library.
+Use a prebuilt PyAV wheel compatible with your Python version and platform.
+The command above installs only wheels and fails if no compatible PyAV wheel
+is available. Building PyAV from source requires additional native dependencies.
+GPU decoding still requires HIP, the rocDecode SDK, and its GPU utility sources.
+Raw-stream GPU decoding and JPEG do not require PyAV. Optional PyAV tests are
+registered when it is available during configuration.
 
 NumPy, ROCm-compatible PyTorch, and hip-python are needed only by samples that
 use them, not by the native build or default CTest suite. Install those optional
