@@ -9,10 +9,13 @@ GPU targets
 
 Building and installing do not require a GPU on the build machine. By default,
 both components use the 25 GPU targets listed in their ``CMakeLists.txt`` files.
-The selected targets are printed during configuration. The ROCm compiler must
-support every selected target; use an explicit subset with older toolchains.
+The selected targets are printed during configuration. The default build
+requires a compiler supporting all 25 targets. The minimum ROCm 7.0 / AMD
+Clang 18 prerequisites do not guarantee support for the full default list.
 
-To build for one GPU or a smaller set, pass a semicolon-separated list:
+With an older toolchain, explicitly select targets supported by its compiler
+and matching the GPUs where the bindings will run. For example, if the compiler
+supports all three targets below:
 
 .. code-block:: shell
 

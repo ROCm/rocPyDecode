@@ -9,6 +9,13 @@ AMD Clang 18 or newer and C++17 support. See the
 and repository setup. The Ubuntu package examples below target Ubuntu 24.04
 and Python 3.12; use packages appropriate to your OS and selected ROCm release.
 
+The minimum ROCm/compiler versions above apply only when the compiler supports
+the selected GPU targets; they do not guarantee support for all 25 defaults.
+The default build requires a compiler that supports the entire default list.
+With an older compiler, pass an explicit ``GPU_TARGETS`` list to CMake,
+for example ``-DGPU_TARGETS=gfx1100`` for a compiler supporting gfx1100.
+Choose targets for the GPUs where the bindings will run.
+
 Required build dependencies:
 
 - CMake 3.20 or newer for the commands below, including ``ctest --test-dir``.
