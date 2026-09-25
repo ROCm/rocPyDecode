@@ -35,8 +35,8 @@ def require_av():
     except ImportError as error:
         raise ImportError("Demuxing and CPU decoding require PyAV: "
                           "python -m pip install 'av>=18.1,<19'") from error
-    if tuple(map(int, av.__version__.split(".")[:2])) < (18, 1):
-        raise ImportError("rocPyDecode requires PyAV 18.1 or newer")
+    if not (18, 1) <= tuple(map(int, av.__version__.split(".")[:2])) < (19, 0):
+        raise ImportError("rocPyDecode requires PyAV >=18.1,<19")
     return av
 
 def codec_name(value):

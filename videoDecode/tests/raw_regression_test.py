@@ -29,6 +29,7 @@ import re
 import subprocess
 import sys
 import tempfile
+from types import SimpleNamespace
 from unittest.mock import patch
 from pyRocVideoDecode.decoder import GetRocDecCodecID
 from pyRocVideoDecode._pyav import require_av
@@ -37,6 +38,24 @@ try:
     av = require_av()
 except ImportError:
     av = None
+
+
+def pyav_version_boundaries():
+    for version, supported in (("17.0.0", False), ("18.0.0", False),
+                               ("18.1.0", True), ("18.2.0", True),
+                               ("19.0.0", False), ("20.0.0", False)):
+        module = SimpleNamespace(__version__=version)
+        with patch.dict(sys.modules, {"av": module}):
+            if supported:
+                assert require_av() is module, version
+            else:
+                try:
+                    require_av()
+                except ImportError as error:
+                    assert ">=18.1,<19" in str(error), error
+                else:
+                    raise AssertionError(f"Unsupported PyAV accepted: {version}")
+    print("PyAV version boundary checks passed")
 
 
 def codec_translation():
@@ -152,6 +171,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--media-dir", required=True, type=Path)
     args = parser.parse_args()
+    pyav_version_boundaries()
     codec_translation()
     packet_and_session_boundaries(args.media_dir / "AMD_driving_virtual_20-H264.264")
     sample = Path(__file__).resolve().parents[1] / "samples/rocdecode/videodecoderaw.py"
