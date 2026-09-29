@@ -41,7 +41,7 @@ def jpeg_decode(
     devices_count, ret = jdec.initialize_hip(device_id)
     if(ret == False):
         print(f"Exiting jpegdecode application, Device#: {device_id} not found.")
-        sys.exit()
+        sys.exit(1)
 
     # create the decode instance
     decoder = jdec.decoder(device_id, backend)
@@ -107,10 +107,7 @@ if __name__ == "__main__":
         help='Output File Name Path - optional',
         required=False)
 
-    try:
-        args = parser.parse_args()
-    except BaseException:
-        sys.exit()
+    args = parser.parse_args()
 
     # get params
     input_file_path = args.input
@@ -121,6 +118,6 @@ if __name__ == "__main__":
 
     if not os.path.isfile(input_file_path):  # Input must be a file
         print("ERROR: input passed with -i must be an existing file.")
-        exit()
+        sys.exit(1)
 
     jpeg_decode(input_file_path, output_format, device_id, backend, output_file_path)

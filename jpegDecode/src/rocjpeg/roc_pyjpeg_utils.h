@@ -29,6 +29,7 @@ THE SOFTWARE.
 #include <fstream>
 #include <iomanip>
 #include <string>
+#include <stdexcept>
 #include <vector>
 #include <thread>
 #include <mutex>
@@ -45,16 +46,14 @@ namespace fs = std::experimental::filesystem;
 #define PY_CHECK_ROCJPEG(call) {                                          \
     RocJpegStatus rocjpeg_status = (call);                                \
     if (rocjpeg_status != ROCJPEG_STATUS_SUCCESS) {                       \
-        std::cerr << #call << " returned " << rocJpegGetErrorName(rocjpeg_status) << " at " <<  __FILE__ << ":" << __LINE__ << std::endl;\
-        exit(1);                                                          \
+        throw std::runtime_error(std::string(#call) + " returned " + rocJpegGetErrorName(rocjpeg_status)); \
     }                                                                     \
 }
 
 #define PY_CHECK_HIP(call) {                                          \
     hipError_t hip_status = (call);                                   \
     if (hip_status != hipSuccess) {                                   \
-        std::cout << "rocJPEG failure: '#" << hip_status << "' at " <<  __FILE__ << ":" << __LINE__ << std::endl;\
-        exit(1);                                                      \
+        throw std::runtime_error(std::string(#call) + " returned " + hipGetErrorName(hip_status)); \
     }                                                                 \
 }
 
@@ -76,12 +75,14 @@ public:
      * @return True if successful, false otherwise.
      */
     std::tuple<int, bool> InitHipDevice(int device_id, bool display_prop = true) {
-        int num_devices;
+        int num_devices = 0;
         hipDeviceProp_t hip_dev_prop;
-        PY_CHECK_HIP(hipGetDeviceCount(&num_devices));
-        if (num_devices < 1) {
+        hipError_t status = hipGetDeviceCount(&num_devices);
+        if (status != hipSuccess && status != hipErrorNoDevice)
+            throw std::runtime_error(std::string("hipGetDeviceCount returned ") + hipGetErrorName(status));
+        if (status == hipErrorNoDevice || num_devices < 1) {
             std::cerr << "ERROR: didn't find any GPU!" << std::endl;
-            return std::make_tuple(num_devices, false);
+            return std::make_tuple(0, false);
         }
         // if '-' then caller needs only count of devices
         if(device_id<0)

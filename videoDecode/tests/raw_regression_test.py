@@ -23,6 +23,7 @@ import argparse
 from concurrent.futures import ThreadPoolExecutor
 import ctypes
 import hashlib
+import importlib.util
 import rocpydecode as native
 from pathlib import Path
 import re
@@ -96,6 +97,29 @@ def run(sample, args, expected_frames=None, error=None):
         assert result.returncode == 0, output
         counts = re.findall(r"Decoded (\d+) frames", output)
         assert counts == [str(expected_frames)], output
+
+
+def check_cli_errors():
+    samples = Path(__file__).resolve().parents[1] / "samples/rocdecode"
+    scripts = [samples / name for name in ("videodecode.py", "videodecodemem.py",
+               "videodecodergb.py", "videodecoderaw.py")]
+    scripts += [Path(__file__).with_name(name) for name in
+                ("decoder_api_test.py", "decoder_rgb_dlpack_test.py", "demuxer_test.py")]
+    if importlib.util.find_spec("numpy") is not None:
+        scripts.append(samples / "videodecode_cpu_backend.py")
+        scripts.append(Path(__file__).with_name("decoder_test.py"))
+    with tempfile.TemporaryDirectory() as directory:
+        for script in scripts:
+            cases = [([], 2, "required"), (["--help"], 0, "usage:")]
+            if script.parent == samples:
+                message = "Input file not found" if script.name == "videodecoderaw.py" else "ERROR:"
+                cases.append((["-i", str(Path(directory) / "missing.mp4")], 1, message))
+            for arguments, status, message in cases:
+                result = subprocess.run([sys.executable, str(script), *arguments],
+                                        capture_output=True, text=True, timeout=60)
+                output = result.stdout + result.stderr
+                assert result.returncode == status and message in output, (script, arguments, result.returncode, output)
+    print("Video CLI exit-status checks passed")
 
 
 def packet_and_session_boundaries(media):
@@ -173,6 +197,7 @@ def main():
     args = parser.parse_args()
     pyav_version_boundaries()
     codec_translation()
+    check_cli_errors()
     packet_and_session_boundaries(args.media_dir / "AMD_driving_virtual_20-H264.264")
     sample = Path(__file__).resolve().parents[1] / "samples/rocdecode/videodecoderaw.py"
     for codec in ("264", "265"):

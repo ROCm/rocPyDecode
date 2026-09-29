@@ -52,7 +52,7 @@ def Decoder(
     # Check if codec is supported, exit otherwise
     if (viddec.IsCodecSupported(0, codec_id, demuxer.GetBitDepth()) == False):
         print("ERROR: Codec is not supported on this GPU " + viddec.GetGpuInfo().device_name)
-        exit()
+        MPI.COMM_WORLD.Abort(1)
 
     # ---------
     # MPI Setup
@@ -185,10 +185,7 @@ if __name__ == "__main__":
         help='Output File Path - optional',
         required=False)
 
-    try:
-        args = parser.parse_args()
-    except BaseException:
-        sys.exit()
+    args = parser.parse_args()
 
     # get params
     input_file_path = args.input
@@ -197,7 +194,7 @@ if __name__ == "__main__":
     # handle params
     if not os.path.exists(input_file_path):  # Input file (must exist)
         print("ERROR: input file doesn't exist.")
-        exit()
+        MPI.COMM_WORLD.Abort(1)
 
     # call main routine
     Decoder(

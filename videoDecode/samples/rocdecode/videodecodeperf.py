@@ -38,7 +38,7 @@ def DecProc(input_file_path, device_id, p_frames, p_fps, user_mem_type):
     # check if codec is supported
     if (viddec.IsCodecSupported(device_id, codec_id, demuxer.GetBitDepth()) == False):
         print("ERROR: Codec is not supported on this GPU " + cfg.device_name)
-        exit()
+        sys.exit(1)
 
     #  print some GPU info out
     print("\ninfo: Input file: " +
@@ -122,10 +122,7 @@ if __name__ == "__main__":
         default=dectypes.OUT_SURFACE_MEM_NOT_MAPPED,
         help='mem_type of output surface - 0: Internal 1: dev_copied 2: host_copied 3: MEM not mapped, optional, default 3',
         required=False)
-    try:
-        args = parser.parse_args()
-    except BaseException:
-        sys.exit()
+    args = parser.parse_args()
 
     # get params
     input_file_path = args.input
@@ -138,7 +135,7 @@ if __name__ == "__main__":
     user_mem_type = dectypes.OUT_SURFACE_MEM_NOT_MAPPED if (user_mem_type < dectypes.OUT_SURFACE_MEM_DEV_INTERNAL or user_mem_type > dectypes.OUT_SURFACE_MEM_NOT_MAPPED) else user_mem_type
     if not os.path.exists(input_file_path):  # Input file (must exist)
         print("ERROR: input file doesn't exist.")
-        exit()
+        sys.exit(1)
 
     print("info: number of parallel runs: ", num_process)
 
@@ -150,7 +147,7 @@ if __name__ == "__main__":
     num_devices = HipCheck(hip.hipGetDeviceCount())
     if (num_devices < 1):
         print("ERROR: no GPUs found")
-        sys.exit()
+        sys.exit(1)
     if (gcn_arch_name == 'gfx90a' and num_devices > 1):
         sd = 1
 
@@ -177,7 +174,7 @@ if __name__ == "__main__":
         multiprocessing.set_start_method('spawn')
     except RuntimeError:
         print('ERROR: Could not create processes')
-        exit()
+        sys.exit(1)
 
     # multiprocess shared variables
     processes = []
@@ -193,6 +190,8 @@ if __name__ == "__main__":
     # launch the processes and synchronize collecting its data
     for p in processes:
         p.join()
+    if any(p.exitcode != 0 for p in processes):
+        sys.exit("ERROR: a decoding process failed.")
 
     # aggregate results from all processes
     total_frames += sum(v.value for v in p_frames)
