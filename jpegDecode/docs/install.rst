@@ -12,12 +12,9 @@ AMD Clang 18 or newer and C++17 support. See the
 and repository setup. The Ubuntu package examples below target Ubuntu 24.04
 and Python 3.12; use packages appropriate to your OS and selected ROCm release.
 
-The minimum ROCm/compiler versions above apply only when the compiler supports
-the selected GPU targets; they do not guarantee support for all 25 defaults.
-The default build requires a compiler that supports the entire default list.
-With an older compiler, pass an explicit ``GPU_TARGETS`` list to CMake,
-for example ``-DGPU_TARGETS=gfx1100`` for a compiler supporting gfx1100.
-Choose targets for the GPUs where the bindings will run.
+The JPEG binding compiles host code only. GPU kernels are supplied by the
+installed rocJPEG library, which must support the GPU used at runtime.
+No GPU target selection is required when building this binding.
 
 Required build dependencies:
 
@@ -107,19 +104,11 @@ reusing cached compiler and dependency paths.
 GPU targets
 -----------
 
-By default, this component uses the 25-target setting in
-its ``CMakeLists.txt``, without detecting local GPUs.
-Pass ``-DGPU_TARGETS="gfx90a;gfx942;gfx1100"`` to select a subset. The compiler
-must support the selected targets; an older compiler may require a smaller list.
-The selected targets are printed during configuration and retained in the CMake
-cache. JPEG GPU kernels are provided by the installed rocJPEG SDK; building this
-binding does not rebuild that SDK or change its GPU targets.
+This component links to the HIP host runtime and the installed rocJPEG SDK.
+It does not compile GPU kernels or use ``GPU_TARGETS``. Building the binding
+does not rebuild the SDK or change its GPU coverage. Select a rocJPEG package
+that supports the GPUs where decoding will run.
 
-The 25-target default applies to fresh builds without an explicit target selection.
-Existing build directories retain their cached targets, including targets
-previously detected by HIP. To change them, pass ``-DGPU_TARGETS=...`` explicitly.
-To use the current defaults, configure a new build directory without
-``GPU_TARGETS`` or the legacy ``AMDGPU_TARGETS`` override.
 
 Build, install, and test
 ------------------------

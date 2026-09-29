@@ -80,6 +80,38 @@ set(GPU_BUILD_TARGETS "${GPU_TARGETS}" CACHE STRING "GPU targets to compile for"
 message(STATUS "${PROJECT_NAME} GPU targets: ${GPU_TARGETS}")
 
 find_package(HIP REQUIRED)
+
+# Compile a small kernel for each requested target; no GPU is needed.
+function(rocpyvideo_check_gpu_targets)
+    include(CheckCXXSourceCompiles)
+    set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+    set(CMAKE_REQUIRED_LIBRARIES hip::host)
+    set(_unsupported_targets)
+    foreach(_target IN LISTS GPU_TARGETS)
+        set(CMAKE_REQUIRED_FLAGS "-x hip --offload-arch=${_target}")
+        # Recheck on reconfiguration, including SDK/compiler changes.
+        unset(_rocpyvideo_target_supported CACHE)
+        check_cxx_source_compiles(
+            "#include <hip/hip_runtime.h>
+__global__ void rocpyvideo_target_probe() {}"
+            _rocpyvideo_target_supported)
+        if(NOT _rocpyvideo_target_supported)
+            list(APPEND _unsupported_targets "${_target}")
+        endif()
+    endforeach()
+    unset(_rocpyvideo_target_supported CACHE)
+    if(_unsupported_targets)
+        message(FATAL_ERROR
+            "${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION} could not compile "
+            "HIP kernels for these GPU_TARGETS: ${_unsupported_targets}. "
+            "Use a ROCm compiler/SDK supporting every selected target, or set "
+            "-DGPU_TARGETS to a supported subset for your GPUs. "
+            "See CMake's configure logs for compiler diagnostics. "
+            "No targets were removed automatically.")
+    endif()
+endfunction()
+rocpyvideo_check_gpu_targets()
+
 find_package(rocdecode 1.0.0 REQUIRED)
 find_package(FFmpeg QUIET)
 

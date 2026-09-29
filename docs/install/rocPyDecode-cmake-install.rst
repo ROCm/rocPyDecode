@@ -8,10 +8,14 @@ GPU targets
 -----------
 
 Building and installing do not require a GPU on the build machine. By default,
-both components use the 25 GPU targets listed in their ``CMakeLists.txt`` files.
+the video component uses the 25 GPU targets listed in ``videoDecode/CMakeLists.txt``.
 The selected targets are printed during configuration. The default build
 requires a compiler supporting all 25 targets. The minimum ROCm 7.0 / AMD
 Clang 18 prerequisites do not guarantee support for the full default list.
+The full list has been verified with AMD Clang 24 from a ROCm development SDK.
+CMake compiles a small kernel for each selected target and stops configuration
+if any check fails, listing the failed targets. It never removes targets
+automatically.
 
 With an older toolchain, explicitly select targets supported by its compiler
 and matching the GPUs where the bindings will run. For example, if the compiler
@@ -22,7 +26,10 @@ supports all three targets below:
    cmake -S . -B build -DGPU_TARGETS="gfx90a;gfx942;gfx1100"
 
 An explicit ``GPU_TARGETS`` list replaces the defaults and is retained in the
-CMake cache. These settings also apply to standalone component builds.
+CMake cache. These settings also apply to standalone video builds.
+The JPEG binding uses ``hip::host`` and does not compile device kernels, so
+it does not require GPU target selection. Its GPU coverage comes from the
+installed rocJPEG SDK.
 GPU decoding and runtime tests still require compatible
 hardware, drivers, and SDK libraries; compiling a target does not add decoding
 capabilities absent from the GPU or SDK.
