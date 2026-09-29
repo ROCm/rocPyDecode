@@ -46,7 +46,7 @@ def Decoder(
     # check if codec is supported
     if (viddec.IsCodecSupported(device_id, codec_id, demuxer.GetBitDepth()) == False):
         print("ERROR: Codec is not supported on this GPU " + cfg.device_name)
-        exit()
+        sys.exit(1)
 
     #  print some GPU info out
     print("\ninfo: Input file: " +
@@ -181,10 +181,7 @@ if __name__ == "__main__":
         help='Optional ImageNet labels file',
         required=False)
 
-    try:
-        args = parser.parse_args()
-    except BaseException:
-        sys.exit()
+    args = parser.parse_args()
 
     # get params
     input_file_path = args.input
@@ -197,10 +194,10 @@ if __name__ == "__main__":
     rgb_format = 2 if (rgb_format < 1 or rgb_format > 8) else rgb_format
     if not os.path.exists(input_file_path):  # Input file (must exist)
         print("ERROR: input file doesn't exist.")
-        exit()
+        sys.exit(1)
     if labels_path is not None and not os.path.exists(labels_path):
         print("ERROR: labels file doesn't exist.")
-        exit()
+        sys.exit(1)
 
     # torch GPU
     print("\nPyTorch Using: ", torch.cuda.get_device_name(0))
