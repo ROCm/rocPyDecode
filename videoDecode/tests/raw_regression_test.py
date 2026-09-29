@@ -49,10 +49,11 @@ def run(sample, args, expected_frames=None, error=None):
 def check_cli_errors():
     samples = Path(__file__).resolve().parents[1] / "samples/rocdecode"
     scripts = [samples / name for name in ("videodecode.py", "videodecodemem.py",
-               "videodecodergb.py", "videodecode_cpu_backend.py", "videodecoderaw.py")]
+               "videodecodergb.py", "videodecoderaw.py")]
     scripts += [Path(__file__).with_name(name) for name in
                 ("decoder_api_test.py", "decoder_rgb_dlpack_test.py", "demuxer_test.py")]
     if importlib.util.find_spec("numpy") is not None:
+        scripts.append(samples / "videodecode_cpu_backend.py")
         scripts.append(Path(__file__).with_name("decoder_test.py"))
     with tempfile.TemporaryDirectory() as directory:
         for script in scripts:
