@@ -33,7 +33,7 @@ def jpeg_decode_batch_process(files_batch_full_path_list, batch_size, output_for
         _, ret = jdec.initialize_hip(device_id, False)
         if(ret == False):
             print(f"Exiting, Device#: {device_id} not found.")
-            sys.exit()
+            sys.exit(1)
 
     # create the decoder instance
     decoder = jdec.decoder(device_id, backend)
@@ -108,10 +108,7 @@ if __name__ == "__main__":
         help='Num of parallel runs - optional, default 4',
         required=False)
 
-    try:
-        args = parser.parse_args()
-    except BaseException:
-        sys.exit()
+    args = parser.parse_args()
 
     # get params
     input_file_path = args.input
@@ -124,20 +121,20 @@ if __name__ == "__main__":
     # parse/process params
     if not isinstance(batch_size, int) or batch_size <= 0:
         print(f"Args Error: batch_size must be a positive integer, got {batch_size}\n")
-        exit()
+        sys.exit(1)
     if not os.path.isdir(input_file_path):
         print(f"Args Error: '{input_file_path}' is not a directory.\n")
-        exit()
+        sys.exit(1)
     if not os.path.exists(input_file_path):  # Input file or folder (must exist)
         print("ERROR: input folder doesn't exist.")
-        exit()
+        sys.exit(1)
 
     # not initializing hip if many GPUs, just get count of devices back
     init_hip = False # init hip ONE time here as we have only 1 GPU
     devices_count, ret = jdec.initialize_hip(-1)
     if(ret == False):
         print(f"Exiting jpegdecodeperf application, Device#: {device_id} not found.")
-        sys.exit()
+        sys.exit(1)
     if(devices_count>1):
         init_hip = True # init hip in every process to distribute workload
     else:
@@ -145,7 +142,7 @@ if __name__ == "__main__":
         _, ret = jdec.initialize_hip(device_id)
         if(ret == False):
             print(f"Exiting, Device#: {device_id} not found.")
-            sys.exit()
+            sys.exit(1)
 
     # prepare data collecting containers
     print(f"Info: Number of processes:    {num_process}")
@@ -159,7 +156,7 @@ if __name__ == "__main__":
         multiprocessing.set_start_method('spawn')
     except RuntimeError:
         print('ERROR: Could not create processes')
-        exit()
+        sys.exit(1)
 
     # prepare shared containers
     images_totals = [Value('i', 0) for _ in range(num_process)]
@@ -185,6 +182,8 @@ if __name__ == "__main__":
     # launch the processes and synchronize collecting its data
     for p in processes:
         p.join()
+    if any(p.exitcode != 0 for p in processes):
+        sys.exit("ERROR: a decoding process failed.")
 
     # aggregate results from all processes
     total_images = sum(v.value for v in images_totals)

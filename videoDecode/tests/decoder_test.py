@@ -44,11 +44,7 @@ parser.add_argument(
     help='Input File Path - required',
     required=True)
 
-try:
-    args = parser.parse_args()
-except SystemExit as e:
-    print(f"Error: {e}. Please check the input arguments and try again.")
-    exit()
+args = parser.parse_args()
 
 input_file_path = args.input
 
@@ -89,22 +85,13 @@ decoder.SaveFrameToFile("outfile.yuv", packet.frame_adrs)
 decoder.ReleaseFrame(packet)
 
 # Test AVCodecString2RocDecVideoCodec
-try:
-    codec_id = rocpydecode.AVCodecString2RocDecVideoCodec("h264")
-except Exception as e:
-    print("AVCodecString2RocDecVideoCodec failed:", e)
+codec_id = rocpydecode.AVCodecString2RocDecVideoCodec("h264")
 
 # Test AVCodec2RocDecVideoCodec
-try:
-    avcodec_id = 27
-    codec_enum = rocpydecode.AVCodec2RocDecVideoCodec(avcodec_id)
-except Exception as e:
-    print("AVCodec2RocDecVideoCodec failed:", e)
+avcodec_id = 27
+codec_enum = rocpydecode.AVCodec2RocDecVideoCodec(avcodec_id)
 
 # Test GetRocPyDecPacket
-try:
-    # Create a dummy buffer with arbitrary bytes
-    data = np.frombuffer(b'\x00' * 128, dtype=np.uint8)
-    packet = rocpydecode.GetRocPyDecPacket(0, 128, data)
-except Exception as e:
-    print("GetRocPyDecPacket failed:", e)
+# Create a dummy buffer with arbitrary bytes
+data = np.frombuffer(b'\x00' * 128, dtype=np.uint8)
+packet = rocpydecode.GetRocPyDecPacket(0, 128, data)

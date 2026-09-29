@@ -213,7 +213,9 @@ void Decoder::SetOutputFormat(RocJpegOutputFormat output_format) {
 Decoder::~Decoder() {
     // delete/destroy MAIN decode obj
     if(rocjpeg_handle != nullptr) {
-        PY_CHECK_ROCJPEG(rocJpegDestroy(rocjpeg_handle));
+        RocJpegStatus status = rocJpegDestroy(rocjpeg_handle);
+        if (status != ROCJPEG_STATUS_SUCCESS)
+            std::cerr << "rocJpegDestroy returned " << rocJpegGetErrorName(status) << std::endl;
         rocjpeg_handle = nullptr;
     }
 }

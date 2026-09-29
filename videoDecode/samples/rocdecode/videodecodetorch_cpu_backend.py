@@ -151,10 +151,7 @@ if __name__ == "__main__":
         help='Width & Height of new frame, optional, default: no resizing',
         required=False)
 
-    try:
-        args = parser.parse_args()
-    except BaseException:
-        sys.exit()
+    args = parser.parse_args()
 
     # get params
     input_file_path = args.input
@@ -168,7 +165,7 @@ if __name__ == "__main__":
     mem_type = dectypes.OUT_SURFACE_MEM_HOST_COPIED if (mem_type < dectypes.OUT_SURFACE_MEM_DEV_INTERNAL or mem_type > dectypes.OUT_SURFACE_MEM_HOST_COPIED) else mem_type
     if not os.path.exists(input_file_path):  # Input file (must exist)
         print("ERROR: input file doesn't exist.")
-        exit()
+        sys.exit(1)
 
     # torch GPU
     print("\nPyTorch Using: ", torch.cuda.get_device_name(0))

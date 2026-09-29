@@ -31,11 +31,7 @@ parser.add_argument(
     type=str,
     help='Input File Path - required',
     required=True)
-try:
-    args = parser.parse_args()
-except SystemExit as e:
-    print(f"Error: {e}. Please check the input arguments and try again.")
-    sys.exit(1)
+args = parser.parse_args()
 
 input_file_path = args.input
 

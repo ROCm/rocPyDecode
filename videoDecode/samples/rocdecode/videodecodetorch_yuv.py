@@ -43,7 +43,7 @@ def Decoder(
     # check if codec is supported
     if (viddec.IsCodecSupported(device_id, codec_id, demuxer.GetBitDepth()) == False):
         print("ERROR: Codec is not supported on this GPU " + cfg.device_name)
-        exit()
+        sys.exit(1)
 
     #  print some GPU info out
     print("\ninfo: Input file: " +
@@ -188,10 +188,7 @@ if __name__ == "__main__":
         help='Crop rectangle (left, top, right, bottom), optional, default: no cropping',
         required=False)
 
-    try:
-        args = parser.parse_args()
-    except BaseException:
-        sys.exit()
+    args = parser.parse_args()
 
     # get params
     input_file_path = args.input
@@ -206,7 +203,7 @@ if __name__ == "__main__":
     b_force_zero_latency = True if b_force_zero_latency == 'YES' else False
     if not os.path.exists(input_file_path):  # Input file (must exist)
         print("ERROR: input file doesn't exist.")
-        exit()
+        sys.exit(1)
 
     # torch GPU
     print("\nPyTorch Using: ", torch.cuda.get_device_name(0))
