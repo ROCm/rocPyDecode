@@ -47,7 +47,7 @@ def Decoder(
     # check if codec is supported
     if (viddec.IsCodecSupported(device_id, codec_id, demuxer.GetBitDepth()) == False):
         print("ERROR: Codec is not supported on this GPU " + cfg.device_name)
-        exit()
+        sys.exit(1)
 
     #  print some GPU info out
     print("\ninfo: Input file: " +
@@ -230,10 +230,7 @@ if __name__ == "__main__":
         help='Separates the decoded image into Y, U and V Planes.',
         required=False)
     
-    try:
-        args = parser.parse_args()
-    except BaseException:
-        sys.exit()
+    args = parser.parse_args()
 
     # get params
     input_file_path = args.input
@@ -252,10 +249,10 @@ if __name__ == "__main__":
     if(seek_frame > 0):
         if(seek_mode != 0 and seek_mode != 1):
             print("Error: Invalid seek mode value.")
-            exit()
+            sys.exit(1)
         if(seek_criteria != 0 and seek_criteria != 1):
             print("Error: Invalid seek criteria value.")
-            exit()
+            sys.exit(1)
 
     # handle params
     mem_type = dectypes.OUT_SURFACE_MEM_DEV_INTERNAL if (mem_type < dectypes.OUT_SURFACE_MEM_DEV_INTERNAL or mem_type > dectypes.OUT_SURFACE_MEM_NOT_MAPPED) else mem_type
@@ -263,7 +260,7 @@ if __name__ == "__main__":
     separate_planes = True if separate_planes == 'YES' else False
     if not os.path.exists(input_file_path):  # Input file (must exist)
         print("ERROR: input file doesn't exist.")
-        exit()
+        sys.exit(1)
 
     Decoder(
         input_file_path,

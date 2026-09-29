@@ -20,6 +20,7 @@
 
 """Check decoded RGB metadata and batch-sample failures without PyTorch."""
 import argparse
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -30,17 +31,52 @@ import pyRocJpegDecode.decoder as jdec
 import rocpyjpegdecode as native
 
 
-def run(sample, args, expected_error=None, expected_output=None):
+def run(sample, args, expected_error=None, expected_output=None, expected_status=None):
     result = subprocess.run(
         [sys.executable, str(sample), *map(str, args)],
         capture_output=True, text=True, timeout=60,
     )
     output = result.stdout + result.stderr
+    if expected_status is not None:
+        assert result.returncode == expected_status, (result.returncode, output)
     if expected_error:
         assert result.returncode > 0 and expected_error in output, output
     else:
         assert result.returncode == 0, output
         assert expected_output in output, output
+
+
+def check_initialization_errors(device_count):
+    script = """
+import atexit, sys
+import pyRocJpegDecode.decoder as jdec
+atexit.register(print, "ATEXIT_RAN")
+try:
+    if sys.argv[1] == "no-device":
+        assert jdec.initialize_hip() == (0, False)
+        device_id = 0
+    else:
+        device_id = int(sys.argv[1])
+    try:
+        jdec.decoder(device_id=device_id)
+    except RuntimeError as error:
+        assert "rocJpegCreate" in str(error), str(error)
+        print("ERROR_CAUGHT")
+    else:
+        raise AssertionError("Decoder construction should fail")
+finally:
+    print("FINALLY_RAN")
+"""
+    for mode in ("no-device", str(device_count)):
+        env = os.environ.copy()
+        if mode == "no-device":
+            env.update(ROCR_VISIBLE_DEVICES="-1", HIP_VISIBLE_DEVICES="-1")
+        result = subprocess.run([sys.executable, "-c", script, mode], env=env,
+                                capture_output=True, text=True, timeout=60)
+        output = result.stdout + result.stderr
+        assert result.returncode == 0, output
+        for message in ("ERROR_CAUGHT", "FINALLY_RAN", "ATEXIT_RAN"):
+            assert message in result.stdout, output
 
 
 def main():
@@ -51,6 +87,7 @@ def main():
     assert files, "JPEG regression requires SDK JPEG media"
     device_count, ready = jdec.initialize_hip()
     assert ready
+    check_initialization_errors(device_count)
     for fmt in (3, 4):
         decoder = jdec.decoder()
         decoder.set_output_image_format(fmt)
@@ -92,7 +129,15 @@ def main():
         # The sample intentionally skips bad files when useful images remain.
         shutil.copyfile(files[0], folder / "valid.jpg")
         run(sample, ["-i", folder], expected_output="Total files processed : 1")
-    print("JPEG RGB-layout and batch-error regressions passed")
+    performance_sample = sample.with_name("jpegdecodeperf.py")
+    run(performance_sample, [], expected_error="required", expected_status=2)
+    run(performance_sample, ["--help"], expected_output="usage:", expected_status=0)
+    with tempfile.TemporaryDirectory() as directory:
+        run(performance_sample, ["-i", Path(directory) / "missing"],
+            expected_error="not a directory", expected_status=1)
+        run(performance_sample, ["-i", directory, "-b", "0"],
+            expected_error="positive integer", expected_status=1)
+    print("JPEG RGB-layout and sample-error regressions passed")
 
 
 if __name__ == "__main__":
