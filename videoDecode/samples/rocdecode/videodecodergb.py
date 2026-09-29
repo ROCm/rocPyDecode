@@ -35,7 +35,7 @@ def Decoder(
     # check if codec is supported
     if (viddec.IsCodecSupported(device_id, codec_id, demuxer.GetBitDepth()) == False):
         print("ERROR: Codec is not supported on this GPU " + cfg.device_name)
-        exit()
+        sys.exit(1)
 
     #  print some GPU info out
     print("\ninfo: Input file: " +
@@ -166,10 +166,7 @@ if __name__ == "__main__":
         help="Rgb Format to use - 1:bgr, 3:rgb, converts decoded YUV frame to Tensor in RGB format, optional, default: 3",
         required=False)
     
-    try:
-        args = parser.parse_args()
-    except BaseException:
-        sys.exit()
+    args = parser.parse_args()
 
     # get params
     input_file_path = args.input
@@ -186,7 +183,7 @@ if __name__ == "__main__":
     rgb_format = 3 if (rgb_format != 1 and rgb_format != 3) else rgb_format
     if not os.path.exists(input_file_path):  # Input file (must exist)
         print("ERROR: input file doesn't exist.")
-        exit()
+        sys.exit(1)
 
     Decoder(
         input_file_path,
