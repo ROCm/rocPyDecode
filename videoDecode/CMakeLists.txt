@@ -90,6 +90,7 @@ function(rocpyvideo_check_gpu_targets)
     foreach(_target IN LISTS GPU_TARGETS)
         set(CMAKE_REQUIRED_FLAGS "-x hip --offload-arch=${_target}")
         # Recheck on reconfiguration, including SDK/compiler changes.
+        unset(_rocpyvideo_target_supported)
         unset(_rocpyvideo_target_supported CACHE)
         check_cxx_source_compiles(
             "#include <hip/hip_runtime.h>

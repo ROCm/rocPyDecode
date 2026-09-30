@@ -163,6 +163,7 @@ class ConfigureRegressions(unittest.TestCase):
             (modules / "Findrocdecode.cmake").write_text(
                 'message(FATAL_ERROR "GPU_TARGET_CHECKS_COMPLETE")\n')
             # Exercise failure handling without requiring HIP on CI hosts.
+            # Mirror compiler checks that leave both normal and cache results.
             (modules / "CheckCXXSourceCompiles.cmake").write_text(
                 'macro(check_cxx_source_compiles source result)\n'
                 '  if(NOT DEFINED ${result})\n'
@@ -173,6 +174,7 @@ class ConfigureRegressions(unittest.TestCase):
                 '    else()\n'
                 '      set(${result} 1 CACHE INTERNAL "test result")\n'
                 '    endif()\n'
+                '    set(${result} "${${result}}")\n'
                 '  endif()\n'
                 'endmacro()\n')
             utils = root / "sdk/share/rocdecode/utils"
@@ -186,6 +188,7 @@ class ConfigureRegressions(unittest.TestCase):
                 build = root / label
                 for selection, rejected in (("gfx1100;gfx942", ""),
                                             ("gfx1100;gfx942", "gfx942"),
+                                            ("gfx942;gfx1100", "gfx942"),
                                             ("gfx1250;gfx-invalid", "gfx1250;gfx-invalid"),
                                             ("gfx1100", "")):
                     with self.subTest(build=label, selection=selection, rejected=rejected):
