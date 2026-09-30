@@ -42,6 +42,8 @@ class stream_provider(io.BufferedReader):
         return max(0, os.fstat(self.fileno()).st_size - self.tell())
 
     def GetData(self, buffer, n_buf):
+        if self.closed:
+            raise ValueError("read of closed file")
         n_buf = operator.index(n_buf)
         if n_buf <= 0:
             return 0

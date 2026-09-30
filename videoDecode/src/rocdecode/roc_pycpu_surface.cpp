@@ -11,6 +11,7 @@ namespace {
 // Compressed-video decoding is handled by the caller.
 class CpuSurface {
     rocpy::Surface surface_, resized_;
+    std::vector<uint8_t> packed_;
     std::shared_ptr<void> rgb_;
     size_t rgb_size_ = 0;
     int device_, memory_;
@@ -48,7 +49,7 @@ public:
         if (planes.size() != layout.count || pitches.size() != layout.count)
             throw std::invalid_argument("CPU frame has an unexpected number of planes");
         // PyAV planes may have independent padded pitches; pack each row.
-        std::vector<uint8_t> packed(source.output_surface_size_in_bytes);
+        packed_.resize(source.output_surface_size_in_bytes);
         for (size_t i = 0; i < layout.count; ++i) {
             auto input = planes[i].request();
             const auto& plane = layout.planes[i];
@@ -57,12 +58,12 @@ public:
                 pitches[i] < row || pitches[i] > size_t(input.size) / plane.height)
                 throw std::invalid_argument("CPU plane buffer is too small or non-contiguous");
             for (size_t y = 0; y < plane.height; ++y)
-                memcpy(packed.data() + plane.offset + y * plane.pitch,
+                memcpy(packed_.data() + plane.offset + y * plane.pitch,
                        static_cast<uint8_t*>(input.ptr) + y * pitches[i], row);
         }
         const bool host = memory_ == OUT_SURFACE_MEM_HOST_COPIED;
         if (!host) HIP_API_CALL(hipSetDevice(device_));
-        surface_.Copy(packed.data(), source, rocpy::HasCrop(crop) ? crop : Rect{0, 0, width, height}, host);
+        surface_.Copy(packed_.data(), source, rocpy::HasCrop(crop) ? crop : Rect{0, 0, width, height}, host);
         resized_ = rocpy::Surface{};
     }
 

@@ -276,6 +276,11 @@ def packet_digest(mux):
 
 
 def check_cpu_options():
+    from pyRocVideoDecode import PyVideoDemuxer, PyFileStreamProvider, PyRocVideoDecoderCpu
+    from pyRocVideoDecode.decodercpu import PyRocVideoDecoderCpu as CpuClass
+    assert PyVideoDemuxer is demuxer
+    assert PyFileStreamProvider is stream_provider
+    assert PyRocVideoDecoderCpu is CpuClass
     codec = GetRocDecCodecID("h264")
     for constructor, latency_option in (
         (decodercpu, "b_force_zero_latency"),
@@ -333,7 +338,9 @@ def check_provider_storage():
         assert provider.closed
         provider.close()
         for operation in (provider.GetBufferSize, lambda: provider.read(1),
-                          lambda: provider.GetData(target, 1), lambda: provider.seek(0)):
+                          lambda: provider.GetData(target, 1), lambda: provider.GetData(target, 0),
+                          lambda: provider.GetData(target, -1),
+                          lambda: provider.GetData(bytearray(), 1), lambda: provider.seek(0)):
             try:
                 operation()
             except ValueError:
