@@ -21,8 +21,11 @@ endif()
 
 list(APPEND CMAKE_PREFIX_PATH "${ROCM_PATH}/lib/cmake")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-set(HIP_PLATFORM amd CACHE STRING "HIP platform")
-find_package(HIP REQUIRED)
+# JPEG uses only the host runtime; HIP's package also probes device targets.
+find_path(ROCPYJPEG_HIP_INCLUDE_DIR hip/hip_runtime.h
+    HINTS "${ROCM_PATH}/include" REQUIRED)
+find_library(ROCPYJPEG_HIP_LIBRARY amdhip64
+    HINTS "${ROCM_PATH}/lib" "${ROCM_PATH}/lib64" REQUIRED)
 find_package(rocjpeg 1.0.0 REQUIRED)
 
 set(Python3_FIND_VIRTUALENV FIRST)
@@ -47,7 +50,10 @@ target_include_directories(${ROCPYJPEG_TARGET} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/rocjpeg"
     ${rocjpeg_INCLUDE_DIR})
-target_link_libraries(${ROCPYJPEG_TARGET} PRIVATE dlpack::dlpack hip::device rocjpeg::rocjpeg)
+target_include_directories(${ROCPYJPEG_TARGET} SYSTEM PRIVATE "${ROCPYJPEG_HIP_INCLUDE_DIR}")
+target_compile_definitions(${ROCPYJPEG_TARGET} PRIVATE __HIP_PLATFORM_AMD__=1)
+target_link_libraries(${ROCPYJPEG_TARGET} PRIVATE
+    dlpack::dlpack "${ROCPYJPEG_HIP_LIBRARY}" rocjpeg::rocjpeg)
 
 set(ROCPYJPEG_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/${ROCPYJPEG_TARGET}")
 file(COPY pyRocJpegDecode DESTINATION "${ROCPYJPEG_OUTPUT_DIR}")
