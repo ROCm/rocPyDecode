@@ -24,21 +24,22 @@ from fractions import Fraction
 from pathlib import Path
 import io
 import operator
+import os
 import threading
 import rocpydecode as rocpydec
 from ._pyav import require_av
 
 
-class stream_provider(io.BytesIO):
-    """A seekable in-memory input for container demuxing."""
+class stream_provider(io.BufferedReader):
+    """A seekable, read-only file input for container demuxing."""
     def __init__(self, input_file_path):
-        super().__init__(Path(input_file_path).read_bytes())
+        super().__init__(io.FileIO(Path(input_file_path), "rb"))
 
     def GetFileStreamProvider(self):
         return self
 
     def GetBufferSize(self):
-        return max(0, self.getbuffer().nbytes - self.tell())
+        return max(0, os.fstat(self.fileno()).st_size - self.tell())
 
     def GetData(self, buffer, n_buf):
         n_buf = operator.index(n_buf)
@@ -47,9 +48,7 @@ class stream_provider(io.BytesIO):
         target = memoryview(buffer).cast("B")
         if target.readonly:
             raise TypeError("GetData requires a writable destination buffer")
-        data = self.read(min(n_buf, target.nbytes))
-        target[:len(data)] = data
-        return len(data)
+        return self.readinto(target[:min(n_buf, target.nbytes)])
 
 
 class demuxer:

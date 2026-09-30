@@ -24,8 +24,10 @@ import ctypes
 import gc
 import hashlib
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import nullcontext
 from pathlib import Path
 import tempfile
+import tracemalloc
 import av
 import numpy as np
 import rocpydecode as native
@@ -44,7 +46,7 @@ def frame_bytes(frame):
     return b"".join(parts)
 
 
-def check_decode(path, pts_offset=0, clear_timestamps=False, separate_planes=True, payload_eos=False):
+def check_decode(path, pts_offset=0, clear_timestamps=False, separate_planes=True, payload_eos=False, use_provider=False):
     references = []
     reference_depth = None
     with av.open(str(path)) as container:
@@ -61,7 +63,7 @@ def check_decode(path, pts_offset=0, clear_timestamps=False, separate_planes=Tru
     output = []
     saved = None
     returned = 0
-    with demuxer(path) as mux:
+    with (stream_provider(path) if use_provider else nullcontext(path)) as source, demuxer(source) as mux:
         # Metadata queries before decoding must preserve the packet position.
         assert mux.GetBitDepth() == reference_depth
         assert mux.GetBitDepth() == reference_depth
@@ -202,10 +204,67 @@ def check_cpu_options():
                 raise AssertionError(f"Unsupported CPU options accepted: {options}")
 
 
+def check_provider_storage():
+    with tempfile.TemporaryDirectory() as temporary:
+        path = Path(temporary) / "input.bin"
+        size = 8 * 1024 * 1024
+        with path.open("wb") as output:
+            output.write(b"head")
+            output.seek(size - 4)
+            output.write(b"tail")
+        target = bytearray(2 * 1024 * 1024)
+        tracemalloc.start()
+        try:
+            with stream_provider(path) as provider:
+                assert tracemalloc.get_traced_memory()[1] < 1024 * 1024, "Provider loaded the entire file"
+                assert provider.GetFileStreamProvider() is provider
+                assert provider.readable() and provider.seekable() and not provider.writable()
+                assert provider.GetBufferSize() == size
+                tracemalloc.reset_peak()
+                baseline = tracemalloc.get_traced_memory()[0]
+                assert provider.GetData(target, len(target)) == len(target)
+                assert tracemalloc.get_traced_memory()[1] - baseline < 1024 * 1024, "GetData copied the read buffer"
+                assert target[:4] == b"head" and not any(memoryview(target)[4:])
+                assert provider.GetBufferSize() == size - len(target)
+                provider.seek(-4, 2)
+                assert provider.read(4) == b"tail" and provider.GetBufferSize() == 0
+                provider.seek(0)
+                try:
+                    provider.GetData(memoryview(target)[::2], 4)
+                except TypeError:
+                    assert provider.tell() == 0
+                else:
+                    raise AssertionError("Noncontiguous destination accepted")
+                assert provider.GetData(bytearray(), 4) == 0 and provider.tell() == 0
+        finally:
+            tracemalloc.stop()
+        assert provider.closed
+        provider.close()
+        for operation in (provider.GetBufferSize, lambda: provider.read(1),
+                          lambda: provider.GetData(target, 1), lambda: provider.seek(0)):
+            try:
+                operation()
+            except ValueError:
+                pass
+            else:
+                raise AssertionError("Closed provider accepted I/O")
+        path.write_bytes(b"")
+        with stream_provider(path) as empty:
+            assert empty.GetBufferSize() == 0 and empty.GetData(target, 4) == 0
+        try:
+            stream_provider(path.with_name("missing"))
+        except FileNotFoundError:
+            pass
+        else:
+            raise AssertionError("Missing file accepted")
+    print("File-backed provider memory and I/O checks passed")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input", type=Path, required=True)
     args = parser.parse_args()
+    check_provider_storage()
     check_cpu_options()
     with demuxer(args.input) as mux:
         first = mux.DemuxFrame()
@@ -241,6 +300,16 @@ def main():
     with demuxer(args.input) as file_mux, stream_provider(args.input) as provider, demuxer(provider) as mem_mux:
         assert file_mux.GetBitDepth() == mem_mux.GetBitDepth() > 0
         assert packet_digest(file_mux) == packet_digest(mem_mux)
+        for frame in (0, 1):
+            direct = file_mux.SeekFrame(frame, 1, 0)
+            streamed = mem_mux.SeekFrame(frame, 1, 0)
+            assert direct.frame_pts == streamed.frame_pts
+            assert ctypes.string_at(direct.bitstream_adrs, direct.bitstream_size) == ctypes.string_at(streamed.bitstream_adrs, streamed.bitstream_size)
+        mem_mux.close()
+        assert not provider.closed, "Demuxer closed its caller-owned input"
+        provider.seek(0)
+        with args.input.open("rb") as reference:
+            assert provider.read(4) == reference.read(4)
     with stream_provider(args.input) as provider:
         size = provider.GetBufferSize()
         provider.seek(size + 10)
@@ -249,7 +318,9 @@ def main():
         provider.seek(size - 3)
         target = bytearray(8)
         assert provider.GetData(target, 8) == 3
-        assert target[:3] == args.input.read_bytes()[-3:]
+        with args.input.open("rb") as reference:
+            reference.seek(-3, 2)
+            assert target[:3] == reference.read(3)
         provider.seek(0)
         for requested in (0, -1):
             assert provider.GetData(target, requested) == 0 and provider.tell() == 0
@@ -291,6 +362,7 @@ def main():
         else:
             raise AssertionError("Invalid packet buffer accepted")
     check_decode(args.input)
+    check_decode(args.input, use_provider=True)
     for name in ("AMD_driving_virtual_20-H265.mp4", "AMD_driving_virtual_20-AV1.mp4",
                  "AMD_driving_virtual_20-VP9.ivf"):
         sibling = args.input.parent / name
