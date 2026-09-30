@@ -4,6 +4,42 @@ CMake installation
 Prepare the SDK, development dependencies, and media described in
 :doc:`rocPyDecode-prerequisites` before configuring.
 
+GPU targets
+-----------
+
+Building and installing do not require a GPU on the build machine. By default,
+the video component uses the 25 GPU targets listed in ``videoDecode/CMakeLists.txt``.
+The selected targets are printed during configuration. The default build
+requires a compiler supporting all 25 targets. The minimum ROCm 7.0 / AMD
+Clang 18 prerequisites do not guarantee support for the full default list.
+The full list has been verified with AMD Clang 24 from a ROCm development SDK.
+CMake compiles a small kernel for each selected target and stops configuration
+if any check fails, listing the failed targets. It never removes targets
+automatically.
+
+With an older toolchain, explicitly select targets supported by its compiler
+and matching the GPUs where the bindings will run. For example, if the compiler
+supports all three targets below:
+
+.. code-block:: shell
+
+   cmake -S . -B build -DGPU_TARGETS="gfx90a;gfx942;gfx1100"
+
+An explicit ``GPU_TARGETS`` list replaces the defaults and is retained in the
+CMake cache. These settings also apply to standalone video builds.
+The JPEG binding links the HIP host runtime and does not compile device kernels, so
+it does not require GPU target selection. Its GPU coverage comes from the
+installed rocJPEG SDK.
+GPU decoding and runtime tests still require compatible
+hardware, drivers, and SDK libraries; compiling a target does not add decoding
+capabilities absent from the GPU or SDK.
+
+The 25-target default applies to fresh builds without an explicit target selection.
+Existing build directories retain their cached targets, including targets
+previously detected by HIP. To change them, pass ``-DGPU_TARGETS=...`` explicitly.
+To use the current defaults, configure a new build directory without
+``GPU_TARGETS`` or the legacy ``AMDGPU_TARGETS`` override.
+
 Build, install, and test
 ------------------------
 
@@ -29,10 +65,11 @@ standalone build, run the same commands directly inside ``videoDecode`` or
 ``jpegDecode``.
 
 For a root build with both components available, testing enabled, and all test
-assets present, the core suite contains **seven tests**: binding types, raw H.264,
-raw H.265, batched JPEG decoding, video/JPEG regression checks, and the configure
-regression suite. The configure suite also runs when video is skipped or
-disabled, provided a Python 3 interpreter is available. Set
+assets present, the core suite covers binding types, raw H.264,
+raw H.265, batched JPEG decoding, video/JPEG regression checks, JPEG input conversion,
+and configuration regressions for missing SDK utilities and GPU target selection.
+The configure suite also runs when video is skipped or disabled, provided a
+Python 3 interpreter is available. Set
 ``-DBUILD_TESTING=OFF`` to omit test registration.
 
 When the optional CPU backend and H.264 MP4 fixture are available, CTest also
