@@ -27,7 +27,7 @@ supports all three targets below:
 
 An explicit ``GPU_TARGETS`` list replaces the defaults and is retained in the
 CMake cache. These settings also apply to standalone video builds.
-The JPEG binding uses ``hip::host`` and does not compile device kernels, so
+The JPEG binding links the HIP host runtime and does not compile device kernels, so
 it does not require GPU target selection. Its GPU coverage comes from the
 installed rocJPEG SDK.
 GPU decoding and runtime tests still require compatible

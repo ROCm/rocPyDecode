@@ -140,8 +140,18 @@ class ConfigureRegressions(unittest.TestCase):
                         "GPU_TARGETS:STRING=gfx906\nGPU_BUILD_TARGETS:STRING=gfx942\n")
                     probe(source, migrated, "gfx906", *options)
                     probe(source, migrated, "gfx1100", *options, "-DGPU_TARGETS=gfx1100")
-
-
+            # Host-only JPEG must reach rocJPEG discovery without importing HIP's
+            # device configuration, even when no valid GPU target is available.
+            (modules / "FindHIP.cmake").write_text(
+                'message(FATAL_ERROR "JPEG must not discover HIP device targets")\n')
+            (modules / "Findrocjpeg.cmake").write_text(
+                'file(WRITE "${CMAKE_BINARY_DIR}/targets.txt" '
+                '"${GPU_TARGETS}\\n${GPU_BUILD_TARGETS}")\n'
+                'message(FATAL_ERROR "GPU_TARGET_PROBE_COMPLETE")\n')
+            for name in ("include/hip/hip_runtime.h", "lib/libamdhip64.so"):
+                path = root / "sdk" / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.touch()
             for label, source, options in (
                 ("root-jpeg", self.source, ("-DBUILD_VIDEO_DECODE=OFF",)),
                 ("jpeg", self.source / "jpegDecode", ()),
