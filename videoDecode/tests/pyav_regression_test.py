@@ -28,6 +28,9 @@ from contextlib import nullcontext
 from pathlib import Path
 import tempfile
 import tracemalloc
+from fractions import Fraction
+from types import SimpleNamespace
+from unittest.mock import patch
 import av
 import numpy as np
 import rocpydecode as native
@@ -127,6 +130,95 @@ def check_decode(path, pts_offset=0, clear_timestamps=False, separate_planes=Tru
     assert b"".join(view.tobytes() for view in saved[2]) == saved[1], "Retained DLPack views lost their allocation"
     layout = "separate" if separate_planes else "combined"
     print(f"CPU pixel/timestamp/ownership match: {Path(path).name}, {len(output)} frames, {layout}")
+
+
+def check_cpu_metadata_changes():
+    frames = []
+    for width, height, fmt in ((32, 24, "yuv420p"), (48, 32, "yuv420p"),
+                               (48, 32, "yuv422p10le"), (32, 24, "yuv444p")):
+        encoder = av.CodecContext.create("libx264", "w")
+        encoder.width, encoder.height, encoder.pix_fmt = width, height, fmt
+        encoder.time_base = Fraction(1, 24)
+        encoder.options = {"crf": "0", "preset": "ultrafast", "tune": "zerolatency"}
+        frame = av.VideoFrame(width, height, fmt)
+        for index, plane in enumerate(frame.planes):
+            plane.update(bytes([17 + index]) * plane.buffer_size)
+        frames.extend(encoder.encode(frame) + encoder.encode(None))
+    reference = av.CodecContext.create("h264", "r")
+    expected = []
+    cpu = decodercpu("h264")
+    assert (cpu.GetWidth(), cpu.GetHeight(), cpu.GetStride(), cpu.GetFrameSize(), cpu.GetBitDepth()) == (0, 0, 0, 0, 0)
+    for encoded in frames:
+        expected.extend(reference.decode(encoded))
+        packet = native.GetRocPyDecPacket(0, encoded.size, bytes(encoded))
+        cpu.DecodeFrame(packet)
+    expected.extend(reference.decode(None))
+    cpu.DecodeFrame(native.PyPacketData())
+    assert len(expected) == len(cpu._frames) == 4
+    retained = []
+    for frame in expected:
+        depth = max(c.bits for c in frame.format.components)
+        assert cpu.GetWidth() == frame.width, "Queued frame width is stale"
+        assert cpu.GetHeight() == frame.height, "Queued frame height is stale"
+        assert cpu.GetStride() == frame.width * (2 if depth > 8 else 1)
+        assert cpu.GetFrameSize() == len(frame_bytes(frame))
+        assert cpu.GetBitDepth() == depth, "Queued frame bit depth is stale"
+        info = cpu.GetOutputSurfaceInfo()
+        assert tuple((ctypes.c_uint32 * 3).from_address(info)) == (frame.width, frame.height, cpu.GetStride())
+        surface_frame = cpu._surface_frame
+        assert cpu.GetOutputSurfaceInfo() and cpu._surface_frame is surface_frame
+        packet = native.PyPacketData()
+        assert cpu.GetFrameYuv(packet, separate_planes=True) != -1
+        cpu.ReleaseFrame(native.PyPacketData())  # Releasing another packet must not change this frame.
+        # Queries used by resize/save must still describe the retrieved frame.
+        assert cpu.GetWidth() == frame.width and cpu.GetBitDepth() == depth
+        assert cpu.ResizeFrame(packet, (frame.width, frame.height), cpu.GetOutputSurfaceInfo()) == 0
+        views = [np.from_dlpack(b) for b in packet.ext_buf if b.shape]
+        pixels = frame_bytes(frame)
+        assert b"".join(v.tobytes() for v in views) == pixels
+        retained.append((views, pixels))
+        with tempfile.TemporaryDirectory() as tmp:
+            saved = Path(tmp) / "frame.yuv"
+            cpu.SaveFrameToFile(str(saved), packet.frame_adrs)
+            assert saved.read_bytes() == pixels
+        cpu.ReleaseFrame(packet)
+    assert cpu.GetWidth() == expected[-1].width and cpu.GetBitDepth() == 8
+    assert cpu.GetFrameYuv(native.PyPacketData()) == -1
+    for views, pixels in retained:
+        assert b"".join(v.tobytes() for v in views) == pixels
+    print("CPU queued resolution/format/depth metadata and pixels match")
+
+
+def check_av1_capabilities():
+    for available, selected in (({"libdav1d"}, "libdav1d"),
+                                ({"libaom-av1"}, "libaom-av1"),
+                                ({"av1", "libdav1d", "libaom-av1"}, "libdav1d"),
+                                ({"av1"}, "av1"), (set(), None)):
+        calls = []
+        def codec(name, mode):
+            calls.append(name)
+            if name not in available and name != "h264":
+                raise ValueError("Decoder unavailable")
+            return SimpleNamespace(name=name)
+        backend = SimpleNamespace(codecs_available=available, Codec=codec,
+                                  CodecContext=SimpleNamespace(create=codec))
+        with patch("pyRocVideoDecode.decodercpu.require_av", return_value=backend):
+            probe = decodercpu("h264")
+            for value in ("av1", 225, native.decTypes.rocDecVideoCodec_AV1):
+                assert probe.IsCodecSupported(0, value, 8) == (selected is not None)
+                if selected is not None:
+                    decoder = decodercpu(value)
+                    assert decoder._codec.name == selected and calls[-2:] == [selected, selected]
+                else:
+                    try:
+                        decodercpu(value)
+                    except ValueError:
+                        pass
+                    else:
+                        raise AssertionError("Constructed an unavailable decoder")
+            assert not probe.IsCodecSupported(0, "av1", 9)
+            assert not probe.IsCodecSupported(0, "unsupported", 8)
+    print("AV1 capability checks match decoder selection")
 
 
 def check_rgb_reuse(path):
@@ -361,6 +453,8 @@ def main():
             pass
         else:
             raise AssertionError("Invalid packet buffer accepted")
+    check_cpu_metadata_changes()
+    check_av1_capabilities()
     check_decode(args.input)
     check_decode(args.input, use_provider=True)
     for name in ("AMD_driving_virtual_20-H265.mp4", "AMD_driving_virtual_20-AV1.mp4",

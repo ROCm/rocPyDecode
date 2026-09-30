@@ -46,24 +46,28 @@ class decodercpu:
         if crop_rect is not None and any(crop_rect) and (min(crop_rect) < 0 or crop_rect[2] <= crop_rect[0] or crop_rect[3] <= crop_rect[1]):
             raise ValueError("Invalid crop rectangle")
         self._av = require_av()
-        name = codec_name(codec)
-        # The decoder named "av1" can be hardware-only. Prefer the software
-        # decoder shipped by PyAV's wheels, as PyAV container decoding does.
-        if name == "av1":
-            name = next((candidate for candidate in ("libdav1d", "libaom-av1")
-                         if candidate in self._av.codecs_available), name)
-        self._codec = self._av.CodecContext.create(name, "r")
+        self._codec = self._av.CodecContext.create(self._decoder_name(codec), "r")
         # Slice threading does not introduce frame-threading delay.
         self._codec.thread_type = "SLICE"
         self._device, self._memory, self._clock = device_id, mem_type, clk_rate
         self._frames = deque()
         self._surface = None
         self._surface_frame = None
+        self._active_packet = None
         self._last_frame = None
         self._time_base = Fraction(1, clk_rate)
         self._eos = False
         self._overhead = {}
         self._lock = threading.RLock()
+
+    def _decoder_name(self, codec):
+        name = codec_name(codec)
+        # The decoder named "av1" can be hardware-only. Prefer the software
+        # decoder shipped by PyAV's wheels, as PyAV container decoding does.
+        if name == "av1":
+            name = next((candidate for candidate in ("libdav1d", "libaom-av1")
+                         if candidate in self._av.codecs_available), name)
+        return name
 
     @property
     def viddec(self):
@@ -156,6 +160,7 @@ class decodercpu:
                 return -1
             packet.frame_pts = pts
             self._surface.Yuv(packet, separate_planes)
+            self._active_packet = packet
             return pts
 
     def GetFrameRgb(self, packet, rgb_format):
@@ -167,6 +172,7 @@ class decodercpu:
                 return -1
             packet.frame_pts = pts
             self._surface.Rgb(packet, rgb_format)
+            self._active_packet = packet
             return pts
 
     def GetGpuInfo(self):
@@ -176,7 +182,8 @@ class decodercpu:
 
     def _ensure_surface(self):
         with self._lock:
-            if self._surface is None and self._frames:
+            # Keep retrieved-frame metadata valid for resize/save until release.
+            if self._active_packet is None and self._frames:
                 self._prepare_surface(self._frames[0])
 
     def GetWidth(self):
@@ -196,7 +203,11 @@ class decodercpu:
         return self._surface.size if self._surface else 0
 
     def GetBitDepth(self):
-        return max(c.bits for c in self._last_frame.format.components) if self._last_frame else 0
+        with self._lock:
+            frame = self._surface_frame if self._active_packet is not None else (
+                self._frames[0] if self._frames else self._last_frame
+            )
+            return max(c.bits for c in frame.format.components) if frame else 0
 
     def GetOutputSurfaceInfo(self):
         self._ensure_surface()
@@ -221,6 +232,8 @@ class decodercpu:
         with self._lock:
             # Drop packet references; buffers retained by callers keep their owners.
             packet.ext_buf = rocpydec.PyPacketData().ext_buf
+            if self._active_packet is packet:
+                self._active_packet = None
         return True
 
     def GetNumOfFlushedFrames(self):
@@ -237,7 +250,7 @@ class decodercpu:
 
     def IsCodecSupported(self, device_id, codec_id, bit_depth):
         try:
-            self._av.Codec(codec_name(codec_id), "r")
+            self._av.Codec(self._decoder_name(codec_id), "r")
             return bit_depth in (8, 10, 12, 16)
         except ValueError:
             return False
