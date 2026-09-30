@@ -4,12 +4,17 @@ Install rocPyJpegDecode
 Prerequisites
 -------------
 
-Use Linux and an AMD GPU supported by the selected ROCm release and the
-underlying decoder library. Install a complete ROCm 7.0 or newer SDK with
+Use Linux. GPU decoding and runtime tests require an AMD GPU supported by the
+selected ROCm release and decoder library; building and installing do not require
+a GPU. Install a complete ROCm 7.0 or newer SDK with
 AMD Clang 18 or newer and C++17 support. See the
 `ROCm installation guide <https://rocm.docs.amd.com/projects/install-on-linux/en/latest/>`_ for OS, GPU, driver,
 and repository setup. The Ubuntu package examples below target Ubuntu 24.04
 and Python 3.12; use packages appropriate to your OS and selected ROCm release.
+
+The JPEG binding compiles host code only. GPU kernels are supplied by the
+installed rocJPEG library, which must support the GPU used at runtime.
+No GPU target selection is required when building this binding.
 
 Required build dependencies:
 
@@ -79,20 +84,31 @@ Run from the project directory. Set ``ROCM_PATH`` to the complete SDK prefix;
    export CMAKE_PREFIX_PATH="$ROCM_PATH${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}"
    export LD_LIBRARY_PATH="$ROCM_PATH/lib:$ROCM_PATH/lib/rocm_sysdeps/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
+   # Runtime GPU check; skip on build-only machines.
    "$ROCM_PATH/bin/rocminfo"
    ls "$ROCM_PATH/share/rocjpeg/images"
 
 
 The ``rocm_sysdeps/lib`` directory is used by SDK distributions that bundle
 runtime dependencies; it may be absent in a system-package installation.
-Ensure the user can access the GPU devices. In a container, the host driver
-and GPU device access must also be available to that container.
+For GPU decoding and runtime tests, ensure the user can access the GPU devices.
+In a runtime container, the host driver and GPU device access must also be
+available to that container.
 
 A missing decoder CMake package requires the corresponding development
 package or a corrected SDK prefix. Changing ``CMAKE_PREFIX_PATH`` cannot supply
 an absent or incompatible library. After changing SDKs, Python environments,
 or moving between a container and the host, use a new build directory to avoid
 reusing cached compiler and dependency paths.
+
+GPU targets
+-----------
+
+This component links to the HIP host runtime and the installed rocJPEG SDK.
+It does not compile GPU kernels or use ``GPU_TARGETS``. Building the binding
+does not rebuild the SDK or change its GPU coverage. Select a rocJPEG package
+that supports the GPUs where decoding will run.
+
 
 Build, install, and test
 ------------------------
@@ -113,7 +129,8 @@ The local install prefix does not require ``sudo``. Replace ``build`` and ``inst
 consistently if you need separate host, container, or SDK-specific builds.
 CTest uses the build-tree bindings; ``-V`` also displays successful tests' output.
 
-With the image directory available, expect **two tests**: batched JPEG decoding and RGB-layout/error regressions.
+With the image directory available, tests cover batched JPEG decoding,
+RGB-layout/error regressions, and input conversion with and without NumPy.
 
 Media-dependent tests are registered during configuration only when their
 assets are present. A passing run with fewer tests does not establish full

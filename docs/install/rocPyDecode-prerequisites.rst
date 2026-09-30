@@ -1,12 +1,22 @@
 Prerequisites
 =============
 
-Use Linux and an AMD GPU supported by the selected ROCm release and the
-underlying decoder library. Install a complete ROCm 7.0 or newer SDK with
+Use Linux. GPU decoding and runtime tests require an AMD GPU supported by the
+selected ROCm release and decoder library; building and installing do not require
+a GPU. Install a complete ROCm 7.0 or newer SDK with
 AMD Clang 18 or newer and C++17 support. See the
 `ROCm installation guide <https://rocm.docs.amd.com/projects/install-on-linux/en/latest/>`_ for OS, GPU, driver,
 and repository setup. The Ubuntu package examples below target Ubuntu 24.04
 and Python 3.12; use packages appropriate to your OS and selected ROCm release.
+
+For video builds, the compiler must support every selected GPU target. The full
+25-target default has been verified with AMD Clang 24 from a ROCm development SDK;
+the minimum versions above do not guarantee support for that entire list.
+CMake checks each selected target and stops configuration if any cannot compile.
+With an older compiler, select a supported subset explicitly, for example
+``-DGPU_TARGETS=gfx1100``. Targets are never removed automatically.
+The JPEG binding compiles host code only and uses the installed rocJPEG library
+for GPU kernels; it does not require this target list.
 
 Required build dependencies:
 
@@ -98,6 +108,7 @@ Run from the project directory. Set ``ROCM_PATH`` to the complete SDK prefix;
    export CMAKE_PREFIX_PATH="$ROCM_PATH${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}"
    export LD_LIBRARY_PATH="$ROCM_PATH/lib:$ROCM_PATH/lib/rocm_sysdeps/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
+   # Runtime GPU check; skip on build-only machines.
    "$ROCM_PATH/bin/rocminfo"
    test -d "$ROCM_PATH/share/rocdecode/utils/rocvideodecode"
    ls "$ROCM_PATH/share/rocdecode/video/AMD_driving_virtual_20-H264.264"
@@ -107,8 +118,9 @@ Run from the project directory. Set ``ROCM_PATH`` to the complete SDK prefix;
 
 The ``rocm_sysdeps/lib`` directory is used by SDK distributions that bundle
 runtime dependencies; it may be absent in a system-package installation.
-Ensure the user can access the GPU devices. In a container, the host driver
-and GPU device access must also be available to that container.
+For GPU decoding and runtime tests, ensure the user can access the GPU devices.
+In a runtime container, the host driver and GPU device access must also be
+available to that container.
 
 A missing decoder CMake package requires the corresponding development
 package or a corrected SDK prefix. Changing ``CMAKE_PREFIX_PATH`` cannot supply
