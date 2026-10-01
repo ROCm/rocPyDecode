@@ -33,29 +33,6 @@ useDefault = true
 # surrounding syntax, not the value itself.
 
 [[allowlists]]
-# Allowlist by location only where a real first-party secret structurally
-# can't live. Dependency lock files qualify: their contents are generated
-# from a manifest, and the high-entropy strings they carry are artifact
-# digests rather than credentials. Add vendored third-party trees here as
-# callers bring them in, one explicit path per entry.
-description = "Generated dependency lock files"
-paths = [
-  '''.*\.lock$''',
-]
-
-[[allowlists]]
-description = "Test fixtures using well-known dummy variable names"
-# The "tell" here is the variable name on the same line, not the value
-# (the value is a random-looking string by design). Match against the
-# full rule match (variable + value) so we anchor on the identifier.
-regexTarget = "match"
-regexes = [
-  '''(?i)\bINVALID_TOKEN\s*=''',
-  '''(?i)\bwrong_secret\s*=''',
-  '''(?i)\bsecret\s*='''
-]
-
-[[allowlists]]
 description = "Public artifact digests (variable names ending in SHA256/512/MD5)"
 # SHA-256/512/MD5 hashes of public artifacts (tarballs, GPG keys,
 # mirrored binaries) are not secrets - they're one-way digests used

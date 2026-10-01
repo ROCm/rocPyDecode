@@ -6,11 +6,10 @@
 # set of scanners lives in `security-baseline.yml`, so scanners coming
 # online are picked up here without touching this file.
 #
-# Requests human-readable reports only: findings are uploaded as a build
-# artifact and printed to the job summary, never to the Security tab, so
-# fork PRs (which never receive elevated tokens) behave identically to
-# same-repo PRs. See the scheduled counterpart (weekly-security-scan.yml)
-# for the SARIF / code-scanning upload.
+# Matrix scanners report findings as human-readable artifacts and job
+# summaries. CodeQL runs separately in the reusable baseline and can upload
+# results to the Security tab, independently of report_formats.
+# The weekly workflow also requests SARIF uploads from the matrix scanners.
 
 name: Security scan (PR)
 

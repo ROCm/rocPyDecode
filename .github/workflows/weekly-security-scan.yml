@@ -3,8 +3,8 @@
 #
 # Weekly security scan: runs on a fixed cadence and pushes SARIF findings
 # to the repository's code-scanning Security tab. Complements
-# `pr-security-scan.yml`, which scans only what changed in a PR and
-# uploads reviewer-readable artifacts for in-review browsing.
+# `pr-security-scan.yml`, which selects scans based on PR changes and
+# requests human-readable matrix reports. CodeQL reports separately.
 #
 # `security-events: write` is granted on the `uses:` job itself, not just
 # the top-level `permissions:` block above it, since a `permissions:`
