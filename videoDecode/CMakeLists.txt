@@ -119,7 +119,6 @@ set(ROCPYVIDEO_SOURCES
     src/roc_pydlpack.cpp
     src/rocdecode/roc_pydecode.cpp
     src/rocdecode/roc_pycpu_surface.cpp
-    src/rocdecode/roc_pydecode_test.cpp
     src/rocdecode/roc_pyvideodecode.cpp)
 set(ROCPYVIDEO_SDK_SOURCES
     "${ROCPYVIDEO_UTILS}/colorspace_kernels.cpp"
@@ -173,6 +172,8 @@ install(DIRECTORY pyRocVideoDecode DESTINATION ${CMAKE_INSTALL_LIBDIR})
 install(DIRECTORY samples/rocdecode DESTINATION ${CMAKE_INSTALL_DATADIR}/rocpydecode/samples)
 install(FILES LICENSE.txt DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/rocpydecode)
 if(BUILD_TESTING)
+    target_sources(${ROCPYVIDEO_TARGET} PRIVATE src/rocdecode/roc_pydecode_test.cpp)
+    target_compile_definitions(${ROCPYVIDEO_TARGET} PRIVATE ROCPYVIDEO_BUILD_TESTING)
     add_subdirectory(tests)
 endif()
 message(STATUS "rocPyVideoDecode target: ${ROCPYVIDEO_TARGET}")

@@ -85,7 +85,7 @@ public:
         }
     }
 
-    void Rgb(PyPacketData& packet, int output_format) {
+    void Rgb(PyPacketData& packet, int output_format, bool full_range, int color_space) {
         if (output_format < 1 || output_format > 8)
             throw std::invalid_argument("RGB format must be in the range 1 through 8");
         HIP_API_CALL(hipSetDevice(device_));
@@ -100,7 +100,7 @@ public:
             rgb_size_ = size;
         }
         void* data = rgb_.get();
-        ConvertCpuRgbFrame(surface_.data(), &info, static_cast<uint8_t*>(data), format, pitch);
+        ConvertCpuRgbFrame(surface_.data(), &info, static_cast<uint8_t*>(data), format, pitch, full_range, color_space);
         const size_t channels = output_format >= 5 ? 4 : 3;
         const uint32_t bytes = output_format % 2 == 0 ? 2 : 1;
         packet.frame_adrs = reinterpret_cast<uintptr_t>(surface_.data());

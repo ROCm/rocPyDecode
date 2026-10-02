@@ -127,4 +127,4 @@ for memory_type in (1, 2):
         assert rgb_decoder.GetOutputSurfaceInfo() == rgb_surface, "RGB retrieval invalidated surface metadata"
         rgb_decoder.ReleaseFrame(rgb_packet)
         assert all(not b.shape for b in rgb_packet.ext_buf), "Released packet retains RGB exports"
-    test_rgb_dlpack(input_file_path, dec.decodercpu, memory_type, zero_latency=False)
+    test_rgb_dlpack(input_file_path, dec.decodercpu, memory_type, zero_latency=None)

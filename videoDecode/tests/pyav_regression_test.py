@@ -282,13 +282,9 @@ def check_cpu_options():
     assert PyFileStreamProvider is stream_provider
     assert PyRocVideoDecoderCpu is CpuClass
     codec = GetRocDecCodecID("h264")
-    for constructor, latency_option in (
-        (decodercpu, "b_force_zero_latency"),
-        (native.PyRocVideoDecoderCpu, "force_zero_latency"),
-    ):
-        constructor(codec=codec, **{latency_option: False, "max_width": 0, "max_height": 0})
+    for constructor in (decodercpu, native.PyRocVideoDecoderCpu):
+        constructor(codec=codec, max_width=0, max_height=0)
         for options, message in (
-            ({latency_option: True}, "zero_latency"),
             ({"max_width": 1920}, "max_width"),
             ({"max_height": 1080}, "max_height"),
             ({"max_width": 1920, "max_height": 1080}, "max_width"),
@@ -359,10 +355,127 @@ def check_provider_storage():
     print("File-backed provider memory and I/O checks passed")
 
 
+def check_empty_buffers():
+    packet = native.PyPacketData()
+    for obj in (packet, *packet.ext_buf):
+        for operation in (obj.__dlpack__, obj.__dlpack_device__):
+            try:
+                operation()
+            except RuntimeError as error:
+                assert "uninitialized buffer" in str(error)
+            else:
+                raise AssertionError("Uninitialized buffer accepted DLPack access")
+    for buffers in ([], [None], [None, None, None]):
+        packet.ext_buf = buffers
+        for name in ("shape", "shapeY", "shapeU", "shapeUV", "shapeV", "strides", "dtype",
+                     "__dlpack__", "__dlpack_device__"):
+            try:
+                value = getattr(packet, name)
+                if callable(value):
+                    value()
+            except RuntimeError as error:
+                assert "no buffer" in str(error)
+            else:
+                raise AssertionError(f"Missing packet buffer accepted {name}")
+    print("Empty and missing packet buffers raise Python errors")
+
+
+def check_full_range_rgb():
+    hip = ctypes.CDLL("libamdhip64.so")
+    hip.hipMemcpy.argtypes = (ctypes.c_void_p, ctypes.c_void_p, ctypes.c_size_t, ctypes.c_int)
+    hip.hipMemcpy.restype = ctypes.c_int
+    # Include real JPEG encode/decode, all chroma layouts and tagged non-JPEG
+    # full-range frames. Constant chroma avoids upsampling differences in references.
+    cases = [(fmt, 8, 2) for fmt in ("yuvj420p", "yuvj422p", "yuvj444p")]
+    cases += [(fmt, depth, matrix) for fmt, depth in
+              (("yuv420p", 8), ("yuv422p10le", 10), ("yuv444p16le", 16))
+              for matrix in (1, 6, 9)]
+    for fmt, depth, matrix in cases:
+        frame = av.VideoFrame(34, 26, fmt)
+        frame.color_range = 2
+        frame.colorspace = matrix
+        dtype = np.uint8 if depth == 8 else np.dtype("<u2")
+        shift = depth - 8
+        for index, plane in enumerate(frame.planes):
+            data = np.zeros(plane.buffer_size // np.dtype(dtype).itemsize, dtype=dtype)
+            rows = data.reshape(plane.height, plane.line_size // np.dtype(dtype).itemsize)
+            rows[:, :plane.width] = ((np.arange(plane.width) * 255 // (plane.width - 1)) << shift
+                                     if index == 0 else (104 if index == 1 else 152) << shift)
+            plane.update(data.tobytes())
+        if fmt.startswith("yuvj"):
+            encoder = av.CodecContext.create("mjpeg", "w")
+            encoder.width, encoder.height, encoder.pix_fmt = frame.width, frame.height, fmt
+            encoder.time_base = Fraction(1, 24)
+            encoded = encoder.encode(frame) + encoder.encode(None)
+            reference = av.CodecContext.create("mjpeg", "r")
+            decoded = [f for packet in encoded for f in reference.decode(packet)]
+            frame = decoded[0]
+        # Independent floating-point full-range YCbCr equations on decoded samples.
+        planes = [np.ndarray((p.height, p.width), dtype=dtype, buffer=memoryview(p),
+                             strides=(p.line_size, np.dtype(dtype).itemsize)).astype(np.float64)
+                  for p in frame.planes]
+        y, u, v = planes
+        u = np.repeat(np.repeat(u, y.shape[0] // u.shape[0], 0), y.shape[1] // u.shape[1], 1)
+        v = np.repeat(np.repeat(v, y.shape[0] // v.shape[0], 0), y.shape[1] // v.shape[1], 1)
+        u -= 1 << (depth - 1)
+        v -= 1 << (depth - 1)
+        kr, kb = {1: (0.2126, 0.0722), 9: (0.2627, 0.0593)}.get(matrix, (0.299, 0.114))
+        expected = np.stack((y + 2 * (1 - kr) * v,
+                             y - 2 * kb * (1 - kb) / (1 - kr - kb) * u
+                               - 2 * kr * (1 - kr) / (1 - kr - kb) * v,
+                             y + 2 * (1 - kb) * u), axis=-1)
+        expected = np.clip(expected, 0, (1 << depth) - 1).astype(np.uint32)
+        for memory in (1, 2):
+            cpu = decodercpu("mjpeg", mem_type=memory, crop_rect=(2, 2, 32, 24))
+            if memory == 2:
+                yuv = decodercpu("mjpeg")
+                yuv._frames.append(frame)
+                packet = native.PyPacketData()
+                assert yuv.GetFrameYuv(packet, separate_planes=True) != -1
+                assert b"".join(np.from_dlpack(b).tobytes() for b in packet.ext_buf) == frame_bytes(frame)
+                yuv.ReleaseFrame(packet)
+            for output_format in range(1, 9):
+                if fmt.startswith("yuvj"):
+                    cpu = decodercpu("mjpeg", mem_type=memory, crop_rect=(2, 2, 32, 24))
+                    for packet in encoded:
+                        cpu.DecodeFrame(native.GetRocPyDecPacket(0, packet.size, bytes(packet)))
+                    cpu.DecodeFrame(native.PyPacketData())
+                else:
+                    cpu._frames.append(frame)
+                packet = native.PyPacketData()
+                assert cpu.GetFrameRgb(packet, output_format) != -1
+                channels = 4 if output_format >= 5 else 3
+                bits = 16 if output_format % 2 == 0 else 8
+                actual = np.empty((22, 30, channels), dtype=np.uint16 if bits == 16 else np.uint8)
+                assert hip.hipMemcpy(actual.ctypes.data, packet.frame_adrs_rgb, actual.nbytes, 2) == 0
+                target = expected[2:24, 2:32].copy()
+                target = target << (bits - depth) if bits >= depth else target >> (depth - bits)
+                if output_format in (1, 2, 5, 6):
+                    target = target[:, :, ::-1]
+                tolerance = 1 << max(bits - depth, 0)
+                np.testing.assert_allclose(actual[:, :, :3], target, rtol=0, atol=tolerance)
+                if fmt.startswith("yuvj") and output_format == 3:
+                    reference_rgb = frame.to_ndarray(format="rgb24")[2:24, 2:32]
+                    np.testing.assert_allclose(actual, reference_rgb, rtol=0, atol=2)
+                if channels == 4:
+                    assert not actual[:, :, 3].any()
+                assert packet.__dlpack_device__() == (10, 0)
+                cpu.ReleaseFrame(packet)
+                try:
+                    packet.__dlpack_device__()
+                except RuntimeError:
+                    pass
+                else:
+                    raise AssertionError("Released packet still reports a tensor device")
+    print("Full-range RGB pixels: JPEG and tagged 8/10/16-bit frames, formats 1–8, host/device and crop passed")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input", type=Path, required=True)
     args = parser.parse_args()
+    check_empty_buffers()
+    check_full_range_rgb()
     check_provider_storage()
     check_cpu_options()
     with demuxer(args.input) as mux:

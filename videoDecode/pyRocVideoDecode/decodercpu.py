@@ -32,14 +32,12 @@ from .decoder import (GetOutputFormat, GetRocDecCodecID, GetRectangle, GetDim,
 
 class decodercpu:
     def __init__(self, codec, device_id=0, mem_type=dectypes.OUT_SURFACE_MEM_HOST_COPIED,
-                 b_force_zero_latency=False, crop_rect=None, max_width=0,
+                 crop_rect=None, max_width=0,
                  max_height=0, clk_rate=1000):
         if mem_type not in (1, 2):
             raise ValueError("CPU decoding supports host-copied or device-copied output")
         if device_id < 0 or max_width < 0 or max_height < 0 or clk_rate <= 0:
             raise ValueError("Invalid device, dimensions or clock rate")
-        if b_force_zero_latency:
-            raise ValueError("PyAV CPU decoding requires b_force_zero_latency=False")
         if max_width or max_height:
             raise ValueError("PyAV CPU decoding requires max_width=0 and max_height=0; dimensions follow the stream")
         self._crop = GetRectangle(crop_rect)
@@ -47,7 +45,9 @@ class decodercpu:
             raise ValueError("Invalid crop rectangle")
         self._av = require_av()
         self._codec = self._av.CodecContext.create(self._decoder_name(codec), "r")
-        # Slice threading does not introduce frame-threading delay.
+        # Decode slices of one frame on CPU threads where the codec supports it.
+        # Unlike FRAME threading, this adds no inter-frame buffering delay;
+        # codec reordering (for example, B-frames) can still delay output.
         self._codec.thread_type = "SLICE"
         self._device, self._memory, self._clock = device_id, mem_type, clk_rate
         self._frames = deque()
@@ -171,7 +171,9 @@ class decodercpu:
             if pts is None:
                 return -1
             packet.frame_pts = pts
-            self._surface.Rgb(packet, rgb_format)
+            frame = self._surface_frame
+            full_range = frame.color_range == 2 or frame.format.name.startswith("yuvj")
+            self._surface.Rgb(packet, rgb_format, full_range, int(frame.colorspace))
             self._active_packet = packet
             return pts
 
@@ -259,11 +261,11 @@ class decodercpu:
 class PyRocVideoDecoderCpu(decodercpu):
     """CPU decoder entry point with device and memory type as leading arguments."""
     def __init__(self, device_id=0, out_mem_type=dectypes.OUT_SURFACE_MEM_HOST_COPIED, codec=dectypes.rocDecVideoCodec_HEVC,
-                 force_zero_latency=False, p_crop_rect=None, max_width=0, max_height=0,
+                 p_crop_rect=None, max_width=0, max_height=0,
                  clk_rate=1000):
         crop = None if p_crop_rect is None else (p_crop_rect.left, p_crop_rect.top,
                                                 p_crop_rect.right, p_crop_rect.bottom)
         if crop == (0, 0, 0, 0):
             crop = None
-        super().__init__(codec, device_id, out_mem_type, force_zero_latency, crop,
+        super().__init__(codec, device_id, out_mem_type, crop,
                          max_width, max_height, clk_rate)

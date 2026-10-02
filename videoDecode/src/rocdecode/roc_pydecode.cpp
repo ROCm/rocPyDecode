@@ -25,7 +25,7 @@ THE SOFTWARE.
 #include "roc_pyvideodecode.h"
 
 using namespace std;
-#ifndef NDEBUG
+#if defined(ROCPYVIDEO_BUILD_TESTING) && !defined(NDEBUG)
 void TestAllClassCalls(const char*);
 void TestAll_roc_pybuffer();
 void Test_DLPackPyTensor_ConstructorsAndOperators();
@@ -34,11 +34,19 @@ void Test_CalculateRgbImageSize();
 #endif
 
 
+namespace {
+BufferInterface& PacketBuffer(const PyPacketData& packet, size_t index) {
+    if (index >= packet.ext_buf.size() || !packet.ext_buf[index])
+        throw std::runtime_error("Packet has no buffer at the requested plane");
+    return *packet.ext_buf[index];
+}
+}
+
 PYBIND11_MODULE(rocpydecode, m) {
  
     m.doc() = "Python bindings for the C++ portions of rocDecode ..";
 
-#ifndef NDEBUG
+#if defined(ROCPYVIDEO_BUILD_TESTING) && !defined(NDEBUG)
     m.def("TestAllClassCalls", &TestAllClassCalls);
     m.def("TestAll_roc_pybuffer", &TestAll_roc_pybuffer);
     m.def("Test_DLPack", &Test_DLPackPyTensor_ConstructorsAndOperators);
@@ -205,31 +213,31 @@ PYBIND11_MODULE(rocpydecode, m) {
 
         // DL Pack Tensor
         .def_property_readonly("shapeY", [](std::shared_ptr<PyPacketData>& self) {
-            return self->ext_buf[0]->shape();
+            return PacketBuffer(*self, 0).shape();
             }, "Get the shape of the Y plane buffer as an array")
         .def_property_readonly("shapeUV", [](std::shared_ptr<PyPacketData>& self) {
-            return self->ext_buf[1]->shape();
+            return PacketBuffer(*self, 1).shape();
             }, "Get the shape of the U plane buffer as an array")
         .def_property_readonly("shapeU", [](std::shared_ptr<PyPacketData>& self) {
-            return self->ext_buf[1]->shape();
+            return PacketBuffer(*self, 1).shape();
             }, "Get the shape of the U plane buffer as an array")
         .def_property_readonly("shapeV", [](std::shared_ptr<PyPacketData>& self) {
-            return self->ext_buf[2]->shape();
+            return PacketBuffer(*self, 2).shape();
             }, "Get the shape of the V plane buffer as an array")
         .def_property_readonly("shape", [](std::shared_ptr<PyPacketData>& self) {
-            return self->ext_buf[0]->shape();
+            return PacketBuffer(*self, 0).shape();
             }, "Get the shape of the buffer as an array")
         .def_property_readonly("strides", [](std::shared_ptr<PyPacketData>& self) {
-                return self->ext_buf[0]->strides();
+                return PacketBuffer(*self, 0).strides();
             }, "Get the strides of the buffer")
         .def_property_readonly("dtype", [](std::shared_ptr<PyPacketData>& self) {
-                return self->ext_buf[0]->dtype();
+                return PacketBuffer(*self, 0).dtype();
             }, "Get the data type of the buffer")
         .def("__dlpack__", [](std::shared_ptr<PyPacketData>& self, py::object stream) {
-            return self->ext_buf[0]->dlpack(stream);
+            return PacketBuffer(*self, 0).dlpack(stream);
             }, py::arg("stream") = NULL, "Export the buffer as a DLPack tensor")
         .def("__dlpack_device__", [](std::shared_ptr<PyPacketData>& self) {
-                return self->ext_buf[0]->dlpackDevice();
+                return PacketBuffer(*self, 0).dlpackDevice();
             }, "Get the device associated with the buffer");   
 
     // ConfigInfo

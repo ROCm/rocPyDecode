@@ -11,4 +11,6 @@ and direct raw H.264 and H.265 GPU decoding.
 
 Samples requiring PyAV, PyTorch, hip-python, or
 VAAPI remain available for explicit execution after those optional
-dependencies are installed.
+dependencies are installed. The ``videodecodeperf.py`` sample uses
+``hip-python`` to query GPU properties and the number of available devices;
+it is not required by the rocPyDecode library.
