@@ -28,6 +28,9 @@ concurrency:
 jobs:
   security:
     name: Security scan
+    permissions:
+      contents: read
+      security-events: write
     uses: ROCm/rocm-security-gh/.github/workflows/security-baseline.yml@62c2c4f3effcd47711da28276815c90cb4aa6444 # v1.0.2
     with:
       report_formats: human
