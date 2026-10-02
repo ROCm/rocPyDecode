@@ -6,8 +6,9 @@ Follow the [component installation instructions](../../README.md) for the
 complete SDK version requirements, development packages, test assets, and
 `PYTHONPATH`/`LD_LIBRARY_PATH` setup.
 
-Install FFmpeg and the rocDecode host library for demuxer/CPU samples, and
-ROCm-compatible PyTorch or hip-python for samples that import them.
+Install PyAV for demuxer/CPU samples using the component's
+[requirements.txt](../../requirements.txt), following the installation instructions
+above. Install ROCm-compatible PyTorch or hip-python for samples that import them.
 The default CTest suite does not require these optional packages.
 
 ## videodecode.py

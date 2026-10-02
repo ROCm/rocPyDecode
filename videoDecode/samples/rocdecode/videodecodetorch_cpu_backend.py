@@ -27,10 +27,11 @@ def Decoder(
     codec_id = dec.GetRocDecCodecID(demuxer.GetCodecId())
 
     # decoder instance
-    viddec = dec.decodercpu(       
+    viddec = dec.decodercpu(
         codec_id,
-        device_id,
-        mem_type)
+        device_id=device_id,
+        mem_type=mem_type,
+        crop_rect=crop_rect)
 
     # Print basic info
     print("\ninfo: Input file: " + input_file_path)
@@ -41,6 +42,7 @@ def Decoder(
     # -----------------
     n_frame = 0
     total_dec_time = 0.0
+    yuv_tensor = None
 
     if (resize_dim is not None):
         resize_dim = None if(resize_dim[0] == 0 or resize_dim[1] == 0) else resize_dim
@@ -99,10 +101,11 @@ def Decoder(
             print("info: frame count= ", n_frame)
 
     # print tensor details
-    print("Tensor Shape:   ", packet.ext_buf[0].shape)
-    print("Tensor Strides: ", packet.ext_buf[0].strides)
-    print("Tensor dType:   ", packet.ext_buf[0].dtype)
-    print("Tensor Device:  ", packet.ext_buf[0].__dlpack_device__(), "\n")
+    if yuv_tensor is not None:
+        print("Tensor Shape:   ", yuv_tensor.shape)
+        print("Tensor Strides: ", yuv_tensor.stride())
+        print("Tensor dType:   ", yuv_tensor.dtype)
+        print("Tensor Device:  ", yuv_tensor.device, "\n")
 
 
 if __name__ == "__main__":
@@ -167,8 +170,8 @@ if __name__ == "__main__":
         print("ERROR: input file doesn't exist.")
         sys.exit(1)
 
-    # torch GPU
-    print("\nPyTorch Using: ", torch.cuda.get_device_name(0))
+    print("\nPyTorch Using: ", torch.cuda.get_device_name(device_id)
+          if mem_type == dectypes.OUT_SURFACE_MEM_DEV_COPIED else "CPU")
 
     Decoder(
         input_file_path,

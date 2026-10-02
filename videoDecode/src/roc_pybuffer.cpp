@@ -124,6 +124,8 @@ py::capsule BufferInterface::dlpack(py::object /*stream*/) const {
 }
 
 py::tuple BufferInterface::dlpackDevice() const {
+    if (!m_dlTensor->data)
+        throw std::runtime_error("Cannot query the device of an uninitialized buffer");
     return py::make_tuple(py::int_(static_cast<int>(m_dlTensor->device.device_type)),
                           py::int_(static_cast<int>(m_dlTensor->device.device_id)));
 }

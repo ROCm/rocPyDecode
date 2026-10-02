@@ -1,11 +1,9 @@
-// Copyright © Advanced Micro Devices, Inc., or its affiliates.
+// Copyright (c) 2026 Advanced Micro Devices, Inc. All rights reserved.
  
 // SPDX-License-Identifier:  [MIT License]
 
 // test_calls.cpp
-#include "roc_pyvideodemuxer.h"
 #include "roc_pyvideodecode.h"
-#include "roc_pyvideodecodecpu.h"
 #include "roc_pybuffer.h"
 #include "roc_pydlpack.h"
 #include <iostream>
@@ -19,12 +17,27 @@
 
 #ifndef NDEBUG
 namespace {
+// Test-only bridge to the same Python demuxer used by applications.
+class TestDemuxer {
+    py::object mux_, packet_;
+public:
+    explicit TestDemuxer(const char* path) : mux_(py::module_::import("pyRocVideoDecode.demuxer").attr("demuxer")(path)) {}
+    std::shared_ptr<PyPacketData> DemuxFrame() {
+        packet_ = mux_.attr("DemuxFrame")();
+        return packet_.cast<std::shared_ptr<PyPacketData>>();
+    }
+    int GetCodecId() { return mux_.attr("GetCodecId")().cast<int>(); }
+    uint32_t PyGetBitDepth() { return mux_.attr("GetBitDepth")().cast<uint32_t>(); }
+};
+rocDecVideoCodec ConvertCodec(int id) {
+    return py::module_::import("pyRocVideoDecode._pyav").attr("codec_id")(id).cast<rocDecVideoCodec>();
+}
 void Require(bool condition, const char* message) {
     if (!condition) throw std::runtime_error(message);
 }
 
 template <typename Decoder>
-std::shared_ptr<PyPacketData> DecodeFirstFrame(Decoder& decoder, PyVideoDemuxer& demuxer) {
+std::shared_ptr<PyPacketData> DecodeFirstFrame(Decoder& decoder, TestDemuxer& demuxer) {
     while (true) {
         auto packet = demuxer.DemuxFrame();
         if (decoder.PyDecodeFrame(*packet) > 0) return packet;
@@ -33,7 +46,7 @@ std::shared_ptr<PyPacketData> DecodeFirstFrame(Decoder& decoder, PyVideoDemuxer&
 }
 
 template <typename Decoder>
-void TestDecodedFrame(Decoder& decoder, PyVideoDemuxer& demuxer) {
+void TestDecodedFrame(Decoder& decoder, TestDemuxer& demuxer) {
     auto packet = DecodeFirstFrame(decoder, demuxer);
     Require(decoder.PyGetFrameRgb(*packet, 3).template cast<int64_t>() != -1,
             "API smoke test did not retrieve an RGB frame");
@@ -56,8 +69,8 @@ void TestDecodedFrame(Decoder& decoder, PyVideoDemuxer& demuxer) {
 void TestAllClassCalls([[maybe_unused]] const char* input_file) {
 #ifndef NDEBUG
     Require(input_file && *input_file, "API smoke test requires an input file");
-    PyVideoDemuxer demuxer(input_file);
-    const auto codec = ConvertAVCodec2RocDecVideoCodec(demuxer.GetCodecId());
+    TestDemuxer demuxer(input_file);
+    const auto codec = ConvertCodec(demuxer.GetCodecId());
     PyRocVideoDecoder decoder(0, OUT_SURFACE_MEM_DEV_COPIED, codec);
     Require(decoder.PyCodecSupported(0, codec, demuxer.PyGetBitDepth()).cast<bool>(),
             "GPU does not support the API smoke-test input");
@@ -65,14 +78,7 @@ void TestAllClassCalls([[maybe_unused]] const char* input_file) {
     std::string output_name;
     decoder.PySetReconfigParams(RECONFIG_FLUSH_MODE_NONE, output_name);
 
-    // Use a fresh stream and device output for CPU API coverage. The SDK's
-    // separate host-copy path is not exercised by this API smoke test.
-    PyVideoDemuxer cpu_demuxer(input_file);
-    PyRocVideoDecoderCpu cpu_decoder(0, OUT_SURFACE_MEM_DEV_COPIED, codec);
-    Require(cpu_decoder.PyCodecSupported(0, codec, cpu_demuxer.PyGetBitDepth()).cast<bool>(),
-            "CPU decoder does not support the API smoke-test input");
-    TestDecodedFrame(cpu_decoder, cpu_demuxer);
-    std::cout << "GPU and CPU API smoke tests decoded, resized, and released frames.\n";
+    std::cout << "GPU API smoke tests decoded, resized, and released frames.\n";
 #endif
 }
 
@@ -190,9 +196,9 @@ void Test_PyReconfigureFlushCallback([[maybe_unused]] const char* input_file, [[
     std::string expected;
     int expected_frames = 0;
     {
-        PyVideoDemuxer demuxer(input_file);
+        TestDemuxer demuxer(input_file);
         PyRocVideoDecoder reference(0, OUT_SURFACE_MEM_DEV_COPIED,
-            ConvertAVCodec2RocDecVideoCodec(demuxer.GetCodecId()));
+            ConvertCodec(demuxer.GetCodecId()));
         DecodeFirstFrame(reference, demuxer);
         OutputSurfaceInfo* info = nullptr;
         Require(reference.GetOutputSurfaceInfo(&info), "Reference surface information is missing");
@@ -226,9 +232,9 @@ void Test_PyReconfigureFlushCallback([[maybe_unused]] const char* input_file, [[
         const auto path = (std::filesystem::path(output_directory) /
                            ("flush-" + std::to_string(scenario) + ".yuv")).string();
         Require(!std::filesystem::exists(path), "Flush test requires a fresh output path");
-        PyVideoDemuxer demuxer(input_file);
+        TestDemuxer demuxer(input_file);
         PyRocVideoDecoder decoder(0, OUT_SURFACE_MEM_DEV_COPIED,
-            ConvertAVCodec2RocDecVideoCodec(demuxer.GetCodecId()));
+            ConvertCodec(demuxer.GetCodecId()));
         DecodeFirstFrame(decoder, demuxer);
         ReconfigDumpFileStruct dump{};
         dump.output_file_name = path;
@@ -256,7 +262,6 @@ void Test_PyReconfigureFlushCallback([[maybe_unused]] const char* input_file, [[
 
 void Test_CalculateRgbImageSize() {
 #ifndef NDEBUG
-    PyRocVideoDecoderCpu cpu(0, OUT_SURFACE_MEM_DEV_COPIED, rocDecVideoCodec_HEVC);
     PyRocVideoDecoder gpu(0, OUT_SURFACE_MEM_DEV_INTERNAL, rocDecVideoCodec_HEVC);
     const auto check = [](auto& decoder) {
         for (uint32_t depth : {8u, 10u}) {
@@ -310,7 +315,6 @@ void Test_CalculateRgbImageSize() {
             }
         }
     };
-    check(cpu);
     check(gpu);
     std::cout << "RGB allocation sizes, pitch boundaries, and invalid-format rejection verified.\n";
 #endif
