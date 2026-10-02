@@ -261,8 +261,11 @@ class decodercpu:
 class PyRocVideoDecoderCpu(decodercpu):
     """CPU decoder entry point with device and memory type as leading arguments."""
     def __init__(self, device_id=0, out_mem_type=dectypes.OUT_SURFACE_MEM_HOST_COPIED, codec=dectypes.rocDecVideoCodec_HEVC,
-                 p_crop_rect=None, max_width=0, max_height=0,
+                 force_zero_latency=False, p_crop_rect=None, max_width=0, max_height=0,
                  clk_rate=1000):
+        # Preserve the legacy argument position without advertising CPU support.
+        if force_zero_latency:
+            raise ValueError("PyAV CPU decoding does not support force_zero_latency=True")
         crop = None if p_crop_rect is None else (p_crop_rect.left, p_crop_rect.top,
                                                 p_crop_rect.right, p_crop_rect.bottom)
         if crop == (0, 0, 0, 0):

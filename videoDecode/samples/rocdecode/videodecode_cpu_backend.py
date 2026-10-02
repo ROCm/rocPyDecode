@@ -33,26 +33,20 @@ def Decoder(
     print("info: rocPyDecode is using CPU backend!")
     viddec = dec.decodercpu(
         codec_id,
-        device_id,
-        mem_type,
-        False,
-        crop_rect,
-        0,
-        0,
-        1000)
-
-    # Get GPU device information
-    cfg = viddec.GetGpuInfo()
+        device_id=device_id,
+        mem_type=mem_type,
+        crop_rect=crop_rect)
 
     # check if codec is supported
     if (viddec.IsCodecSupported(device_id, codec_id, demuxer.GetBitDepth()) == False):
-        print("ERROR: Codec is not supported on this GPU " + cfg.device_name)
+        print("ERROR: Codec is not supported by the CPU decoder")
         sys.exit(1)
 
     #  print file name out
     print("\ninfo: Input file: "+input_file_path+'\n')
     # some GPU info out
     if(mem_type==dectypes.OUT_SURFACE_MEM_DEV_COPIED):
+        cfg = viddec.GetGpuInfo()
         print("info: Using GPU device "+str(device_id)+" - "+cfg.device_name+"["+cfg.gcn_arch_name+"] on PCI bus "+str(cfg.pci_bus_id)+":"+str(cfg.pci_domain_id)+"."+str(cfg.pci_device_id))
     print("info: decoding started, please wait! \n")
 

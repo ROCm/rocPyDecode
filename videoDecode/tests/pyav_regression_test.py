@@ -23,10 +23,13 @@ import argparse
 import ctypes
 import gc
 import hashlib
+import importlib.util
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import nullcontext
 from pathlib import Path
 import tempfile
+import subprocess
+import sys
 import tracemalloc
 from fractions import Fraction
 from types import SimpleNamespace
@@ -49,7 +52,8 @@ def frame_bytes(frame):
     return b"".join(parts)
 
 
-def check_decode(path, pts_offset=0, clear_timestamps=False, separate_planes=True, payload_eos=False, use_provider=False):
+def check_decode(path, pts_offset=0, clear_timestamps=False, separate_planes=True, payload_eos=False, use_provider=False,
+                 cpu_factory=decodercpu):
     references = []
     reference_depth = None
     with av.open(str(path)) as container:
@@ -70,7 +74,7 @@ def check_decode(path, pts_offset=0, clear_timestamps=False, separate_planes=Tru
         # Metadata queries before decoding must preserve the packet position.
         assert mux.GetBitDepth() == reference_depth
         assert mux.GetBitDepth() == reference_depth
-        cpu = decodercpu(GetRocDecCodecID(mux.GetCodecId()))
+        cpu = cpu_factory(GetRocDecCodecID(mux.GetCodecId()))
         packet = mux.DemuxFrame()
         while True:
             following = mux.DemuxFrame() if payload_eos and packet.bitstream_size else None
@@ -295,6 +299,47 @@ def check_cpu_options():
                 assert message in str(error), str(error)
             else:
                 raise AssertionError(f"Unsupported CPU options accepted: {options}")
+    for make_decoder in (
+        lambda: CpuClass(0, 2, codec, True),
+        lambda: CpuClass(codec=codec, force_zero_latency=True),
+    ):
+        try:
+            make_decoder()
+        except ValueError as error:
+            assert "force_zero_latency" in str(error), str(error)
+        else:
+            raise AssertionError("Unsupported CPU zero-latency option accepted")
+
+
+def check_cpu_samples(path):
+    samples = Path(__file__).resolve().parent.parent / "samples" / "rocdecode"
+    scripts = ["videodecode_cpu_backend.py"]
+    if importlib.util.find_spec("torch") is not None:
+        scripts.append("videodecodetorch_cpu_backend.py")
+    else:
+        print("SKIP PyTorch CPU sample: torch is not installed")
+    with av.open(str(path)) as container:
+        frames = list(container.decode(video=0))
+    with tempfile.TemporaryDirectory() as temporary:
+        for script in scripts:
+            for crop in (None, (2, 2, 34, 26)):
+                expected = bytearray()
+                for frame in frames:
+                    for index, plane in enumerate(frame.planes):
+                        scale = 1 if index == 0 else 2
+                        left, top, right, bottom = crop or (0, 0, frame.width, frame.height)
+                        rows = np.frombuffer(plane, dtype=np.uint8).reshape(plane.height, plane.line_size)
+                        expected.extend(rows[top // scale:bottom // scale, left // scale:right // scale].tobytes())
+                output = Path(temporary) / "decoded.yuv"
+                output.unlink(missing_ok=True)
+                command = [sys.executable, str(samples / script), "-i", str(path), "-o", str(output)]
+                if crop:
+                    command += ["--crop_rect", *map(str, crop)]
+                result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                        text=True, timeout=60)
+                assert result.returncode == 0, result.stdout
+                assert output.read_bytes() == expected, f"Incorrect sample pixels: {script}, crop={crop}"
+    print("CPU samples: complete and cropped output pixels passed")
 
 
 def check_provider_storage():
@@ -612,6 +657,11 @@ def main():
             check_decode(path)
             check_decode(path, separate_planes=False)
             if fmt == "yuv420p":
+                check_cpu_samples(path)
+                check_decode(path, cpu_factory=lambda codec: native.PyRocVideoDecoderCpu(
+                    0, 2, codec, False, None, 0, 0, 1000))
+                check_decode(path, cpu_factory=lambda codec: native.PyRocVideoDecoderCpu(
+                    codec=codec, force_zero_latency=False))
                 with av.open(str(path)) as container:
                     assert any(frame.pict_type == 3 for frame in container.decode(video=0)), "EOS fixture needs B-frames"
                 check_decode(path, payload_eos=True)
