@@ -32,8 +32,11 @@ from .decoder import (GetOutputFormat, GetRocDecCodecID, GetRectangle, GetDim,
 
 class decodercpu:
     def __init__(self, codec, device_id=0, mem_type=dectypes.OUT_SURFACE_MEM_HOST_COPIED,
-                 crop_rect=None, max_width=0,
+                 b_force_zero_latency=False, crop_rect=None, max_width=0,
                  max_height=0, clk_rate=1000):
+        # Retain the argument for existing callers; CPU zero-latency is unsupported.
+        if b_force_zero_latency:
+            raise ValueError("PyAV CPU decoding does not support b_force_zero_latency=True")
         if mem_type not in (1, 2):
             raise ValueError("CPU decoding supports host-copied or device-copied output")
         if device_id < 0 or max_width < 0 or max_height < 0 or clk_rate <= 0:
@@ -270,5 +273,6 @@ class PyRocVideoDecoderCpu(decodercpu):
                                                 p_crop_rect.right, p_crop_rect.bottom)
         if crop == (0, 0, 0, 0):
             crop = None
-        super().__init__(codec, device_id, out_mem_type, crop,
-                         max_width, max_height, clk_rate)
+        super().__init__(codec, device_id=device_id, mem_type=out_mem_type,
+                         crop_rect=crop, max_width=max_width,
+                         max_height=max_height, clk_rate=clk_rate)

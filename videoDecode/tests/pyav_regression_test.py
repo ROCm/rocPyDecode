@@ -300,6 +300,8 @@ def check_cpu_options():
             else:
                 raise AssertionError(f"Unsupported CPU options accepted: {options}")
     for make_decoder in (
+        lambda: decodercpu(codec, 0, 2, True),
+        lambda: decodercpu(codec=codec, b_force_zero_latency=True),
         lambda: CpuClass(0, 2, codec, True),
         lambda: CpuClass(codec=codec, force_zero_latency=True),
     ):
@@ -658,6 +660,10 @@ def main():
             check_decode(path, separate_planes=False)
             if fmt == "yuv420p":
                 check_cpu_samples(path)
+                check_decode(path, cpu_factory=lambda codec: decodercpu(
+                    codec, 0, 2, False, None, 0, 0, 1000))
+                check_decode(path, cpu_factory=lambda codec: decodercpu(
+                    codec=codec, b_force_zero_latency=False))
                 check_decode(path, cpu_factory=lambda codec: native.PyRocVideoDecoderCpu(
                     0, 2, codec, False, None, 0, 0, 1000))
                 check_decode(path, cpu_factory=lambda codec: native.PyRocVideoDecoderCpu(
