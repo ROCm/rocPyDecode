@@ -279,6 +279,111 @@ def packet_digest(mux):
     return result
 
 
+def check_seeking(path, bframes):
+    with av.open(str(path)) as container:
+        stream = container.streams.video[0]
+        rate, time_base, start = stream.average_rate, stream.time_base, stream.start_time or 0
+        frames = list(container.decode(video=0))
+    assert any(frame.pict_type == 3 for frame in frames) == bool(bframes)
+    frame_times = [frame.pts * frame.time_base for frame in frames]
+    with demuxer(path) as mux:
+        packets = []
+        while True:
+            packet = mux.DemuxFrame()
+            if packet.end_of_stream:
+                break
+            packets.append((packet._av_packet.pts, packet._av_packet.is_keyframe,
+                            hashlib.sha256(ctypes.string_at(packet.bitstream_adrs, packet.bitstream_size)).digest()))
+    assert sorted(pts * time_base for pts, _, _ in packets) == frame_times
+    # Include backwards seeks, GOP boundaries, the last frame, EOF and a seek after EOF.
+    positions = list(range(len(frames))) + [len(frames) + 2, 1, 0]
+    for use_provider in (False, True):
+        with (stream_provider(path) if use_provider else nullcontext(path)) as source, demuxer(source) as mux:
+            for criteria, values in ((0, positions), (1, (0, 1, 2, 10, 0))):
+                for value in values:
+                    target = Fraction(value, 1) / rate / time_base + start if criteria == 0 else Fraction(value, 1) / time_base + start
+                    if criteria == 0:
+                        target = int(target)
+                    candidates = [(pts, index) for index, (pts, _, _) in enumerate(packets) if pts >= target]
+                    actual = mux.SeekFrame(value, 0, criteria)
+                    if not candidates:
+                        assert actual.end_of_stream and mux.DemuxFrame().end_of_stream
+                        continue
+                    pts, index = min(candidates)
+                    assert actual._av_packet.pts == pts, (path, value, criteria, actual._av_packet.pts, pts)
+                    assert actual.frame_pts == int(pts * time_base * 1000)
+                    digest = hashlib.sha256(ctypes.string_at(actual.bitstream_adrs, actual.bitstream_size)).digest()
+                    assert digest == packets[index][2]
+                    # Lookahead must not consume packets belonging to subsequent reads.
+                    assert packet_digest(mux) == [(digest, int(pts * time_base * 1000))
+                                                 for pts, _, digest in packets[index + 1:]]
+            for value in (0, 11, 12, len(frames) - 1, 0):
+                target = int(Fraction(value, 1) / rate / time_base) + start
+                expected = max(pts for pts, key, _ in packets if key and pts <= target)
+                actual = mux.SeekFrame(value, 1, 0)
+                assert actual._av_packet.is_keyframe and actual._av_packet.pts == expected
+                # Recreate the decoder and verify actual pixels after a keyframe seek.
+                cpu = decodercpu(GetRocDecCodecID(mux.GetCodecId()))
+                decoded = []
+                while True:
+                    for _ in range(cpu.DecodeFrame(actual)):
+                        cpu.GetFrameYuv(actual, True)
+                        decoded.append((actual.frame_pts, b"".join(
+                            np.from_dlpack(buffer).tobytes() for buffer in actual.ext_buf if buffer.shape)))
+                        cpu.ReleaseFrame(actual)
+                    if actual.end_of_stream:
+                        break
+                    actual = mux.DemuxFrame()
+                reference = [(int(frame.pts * frame.time_base * 1000), frame_bytes(frame))
+                             for frame in frames if frame.pts * frame.time_base >= expected * time_base]
+                assert decoded == reference, "Incorrect decoded pixels/timestamps after keyframe seeking"
+    # Never silently substitute a decoding timestamp for missing presentation metadata.
+    with demuxer(path) as mux:
+        packet = av.Packet(b"packet")
+        packet.dts = 0
+        with patch.object(mux, "_next_packet", return_value=packet):
+            try:
+                mux.SeekFrame(0, 0, 0)
+            except ValueError as error:
+                assert "presentation timestamps" in str(error)
+            else:
+                raise AssertionError("Exact seeking accepted missing PTS")
+    # PTS-only streams must retain lookahead even when no DTS bounds are available.
+    with demuxer(path) as mux:
+        timestamps = [start + int(Fraction(n, 1) / time_base) for n in (4, 2, 3)]
+        packets = []
+        for pts in timestamps:
+            packet = av.Packet(b"packet")
+            packet.pts, packet.time_base = pts, time_base
+            packets.append(packet)
+        with patch.object(mux, "_next_packet", side_effect=[*packets, None]):
+            actual = mux.SeekFrame(1, 0, 1)
+        assert actual._av_packet is packets[1]
+        assert list(mux._pending) == packets[2:]
+    print("SEEK_PASS", path.name)
+
+
+def check_seek_variants(directory):
+    for extension in ("mp4", "mkv"):
+        for rate, offset, bframes in ((Fraction(24), 0, 3), (Fraction(30000, 1001), 150, 3),
+                                     (Fraction(24), 48, 0)):
+            path = Path(directory) / f"seek-{rate.numerator}-{offset}-{bframes}.{extension}"
+            with av.open(str(path), "w") as container:
+                stream = container.add_stream("libx264", rate=rate)
+                stream.width, stream.height, stream.pix_fmt = 64, 48, "yuv420p"
+                stream.options = {"crf": "20", "bf": str(bframes), "b-adapt": "0", "g": "12", "sc_threshold": "0"}
+                for index in range(48):
+                    frame = av.VideoFrame(64, 48, "yuv420p")
+                    frame.pts = offset + index
+                    for plane, value in zip(frame.planes, (32 + index * 3, 128, 128)):
+                        plane.update(bytes([value]) * plane.buffer_size)
+                    for packet in stream.encode(frame):
+                        container.mux(packet)
+                for packet in stream.encode(None):
+                    container.mux(packet)
+            check_seeking(path, bframes)
+
+
 def check_cpu_options():
     from pyRocVideoDecode import PyVideoDemuxer, PyFileStreamProvider, PyRocVideoDecoderCpu
     from pyRocVideoDecode.decodercpu import PyRocVideoDecoderCpu as CpuClass
@@ -631,6 +736,7 @@ def main():
             check_decode(sibling)
     # Use PyAV itself to prepare tiny compressed fixtures.
     with tempfile.TemporaryDirectory() as tmp:
+        check_seek_variants(tmp)
         for fmt in ("yuv420p", "yuv422p", "yuv444p", "yuv420p10le", "yuv422p10le", "yuv444p10le"):
             path = Path(tmp) / (fmt + ".mkv")
             with av.open(str(path), "w") as container:

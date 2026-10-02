@@ -146,22 +146,36 @@ class demuxer:
                 seconds = Fraction(value, 1) / stream.average_rate
             else:
                 seconds = Fraction(value, 1)  # Timestamp criterion uses seconds.
-            target = int(seconds / stream.time_base) + (stream.start_time or 0)
-            self._container.seek(target, stream=stream, backward=True, any_frame=seek_mode == 0)
+            target = seconds / stream.time_base + (stream.start_time or 0)
+            if seek_criteria == 0:
+                target = int(target)  # Frame timestamps may be quantized to stream ticks.
+            # Start at a keyframe so reordered packets before the target are not skipped.
+            self._container.seek(int(target), stream=stream, backward=True, any_frame=False)
             if self._filter:
                 self._filter.flush()
             self._pending.clear()
             self._drained = False
             self._packets = iter(self._container.demux(stream))
             packet = self._next_packet()
-            # Exact mode selects packets by DTS. Inter-predicted packets still
-            # require their reference frames for decoding.
             if seek_mode == 0:
+                selected = None
+                following = deque()
                 while packet is not None:
-                    timestamp = packet.dts if packet.dts is not None else packet.pts
-                    if timestamp is None or timestamp >= target:
+                    if packet.pts is None:
+                        raise ValueError("Exact packet seeking requires presentation timestamps")
+                    if packet.pts >= target and (selected is None or packet.pts < selected.pts):
+                        selected = packet
+                        following.clear()
+                    elif selected is not None:
+                        following.append(packet)
+                    # PTS chooses the result. Monotonic DTS only bounds lookahead:
+                    # later packets cannot present before their decoding timestamps.
+                    if selected is not None and (selected.pts == target or
+                            (packet.dts is not None and packet.dts >= selected.pts)):
                         break
                     packet = self._next_packet()
+                self._pending.extendleft(reversed(following))
+                packet = selected
             return self._wrap(packet)
 
     def close(self):
