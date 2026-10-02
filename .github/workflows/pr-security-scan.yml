@@ -18,6 +18,9 @@ on:
     # Spelled out the default to avoid confusion.
     types: [opened, synchronize, reopened]
 
+# Code scanning accepts uploads from pull_request runs with a read-only token.
+# Scheduled/manual uploads use the weekly workflow's security-events permission.
+# https://docs.github.com/en/code-security/reference/code-scanning/troubleshoot-analysis-errors/resource-not-accessible
 permissions:
   contents: read
 
@@ -28,9 +31,6 @@ concurrency:
 jobs:
   security:
     name: Security scan
-    permissions:
-      contents: read
-      security-events: write
     uses: ROCm/rocm-security-gh/.github/workflows/security-baseline.yml@62c2c4f3effcd47711da28276815c90cb4aa6444 # v1.0.2
     with:
       report_formats: human
