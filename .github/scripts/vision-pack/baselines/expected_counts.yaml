@@ -1,0 +1,45 @@
+# Copyright (c) 2026 Advanced Micro Devices, Inc. All rights reserved.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+# Floors on the number of result IDs per suite and group, so silently dropped
+# tests turn the night red (report/triage.py). `group` is a glob over the second
+# ID component (<suite>::<group>::<name>); `tiers` default to every tier the
+# suite runs in. Values come from the validation run of 27 Sep 2026 on
+# nightly-20260926. When upstream legitimately adds or removes tests, update the
+# floor in the same PR. Hardware-dependent groups (unsupported-GPU probes) and
+# environment-dependent ones (build.*, harness) are deliberately not guarded.
+#
+# The robustness and robustness-nogpu floors count only the rocPyDecode checks
+# of this copy of those suites.
+schema: 1
+counts:
+  # ----------------------------------------------------------- rocpydecode
+  - {suite: rocpydecode, group: layout, min: 2}
+  - {suite: rocpydecode, group: import, min: 8}
+  - {suite: rocpydecode, group: api, min: 2}
+  - {suite: rocpydecode, group: video, min: 9}
+  - {suite: rocpydecode, group: samples, min: 10}
+  - {suite: rocpydecode, group: jpeg, min: 5}
+
+  # ------------------------------------------------------------ robustness
+  - {suite: robustness, group: exit-code, min: 1}
+  - {suite: robustness-nogpu, group: env, min: 1}
+  - {suite: robustness-nogpu, group: import, min: 8}
+  - {suite: robustness-nogpu, group: rocpydecode, min: 2}

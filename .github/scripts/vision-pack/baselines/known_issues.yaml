@@ -1,0 +1,127 @@
+# Copyright (c) 2026 Advanced Micro Devices, Inc. All rights reserved.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+# Known findings: the only place a failing result becomes "known".
+#
+# This copy holds the entries for the rocPyDecode vision-pack QA workflow: the
+# rocpydecode suite and the rocPyDecode checks of robustness and
+# robustness-nogpu. Entries that also cover other libraries keep only the
+# globs for these result IDs; the IDs are the same in every library's copy.
+#
+# Seeded from the manual QA report of 25 Sep 2026 (C1-C2 critical, H1-H19 high,
+# M1-M23 medium, low items L-*) and the provisional findings N1-N4; N5 onwards
+# were found while porting the suites (27 Sep 2026).
+#
+# Each entry:
+#   id, title, severity (critical|high|medium|low), owner
+#   kind:   xfail (expected to fail; a pass is reported as "fixed"),
+#           flaky, skip (expected to be blocked/skipped), quarantine (ignored)
+#   match:  shell-style globs over result IDs <suite>::<group>::<name>. Match
+#           only the failing tests: a glob that also covers passing tests turns
+#           them into "fixed" every night. "[" must be written "[[]".
+#   gfx:    optional globs over the tested GPU (default: every GPU, and nights
+#           without one); [none] scopes an entry to nights on a runner without
+#           a usable GPU, when only the needs_gpu: false suites run
+#   tiers:  optional; issue: upstream URL; added / review_by: YYYY-MM-DD
+#   strict: report the entry in the verdict reasons once all its tests pass
+# Once review_by has passed, re-verify the finding and extend review_by (with an
+# upstream issue link), or remove the entry.
+schema: 1
+issues:
+  # ---------------------------------------------------------------------- high
+  - id: H2
+    title: Built without FFmpeg - rocAL video readers compiled out, rocPyDecode has no PyVideoDemuxer or host backend
+    severity: high
+    owner: vision-pack
+    kind: xfail
+    match:
+      - "rocpydecode::api::ffmpeg-demuxer-bindings"
+      - "rocpydecode::api::host-backend-bindings"
+      - "rocpydecode::video::demuxer_test"
+      - "rocpydecode::video::decoder_test"
+      - "rocpydecode::video::decoder_rgb_dlpack_test"
+      - "rocpydecode::video::decodercpu_test"
+      - "rocpydecode::samples::videodecode"
+      - "rocpydecode::samples::videodecodemem"
+      - "rocpydecode::samples::videodecodergb"
+      - "rocpydecode::samples::videodecode_cpu_backend"
+      - "rocpydecode::samples::videodecodetorch*"
+    # rocPyDecode side (a bare AttributeError instead of a clear error):
+    # https://github.com/ROCm/rocPyDecode/issues/299
+    issue: https://github.com/kiritigowda/vision-pack/issues/62
+    added: 2026-09-25
+    review_by: 2026-12-31
+    strict: true
+
+  # -------------------------------------------------------------------- medium
+  - id: M3
+    title: No install or usage documentation for the tarball (location, PYTHONPATH, Python 3.12 only, numpy)
+    severity: medium
+    owner: vision-pack
+    kind: xfail
+    match:
+      - "rocpydecode::layout::sample-readme-links"
+    issue: https://github.com/kiritigowda/vision-pack/issues/69
+    added: 2026-09-25
+    review_by: 2026-12-31
+
+  # ------------------------------------------- found while porting (N5 onwards)
+  - id: N9
+    title: Scripts exit 0 on bad input (rocPyDecode decoder_test exits 0 without arguments)
+    severity: low
+    owner: rocPyDecode
+    kind: xfail
+    match:
+      - "robustness::exit-code::rocpydecode-decoder-test-bad-args-exit0"
+    issue: https://github.com/ROCm/rocPyDecode/issues/300
+    added: 2026-09-27
+    review_by: 2026-12-31
+  - id: N10
+    title: rocPyJpegDecode initialize_hip() terminates the interpreter without a GPU instead of raising
+    severity: low
+    owner: rocPyDecode
+    kind: xfail
+    match:
+      - "robustness-nogpu::rocpydecode::jpeg-decoder-clean-error"
+    issue: https://github.com/ROCm/rocPyDecode/issues/298
+    added: 2026-09-27
+    review_by: 2026-12-31
+
+  # ------------------------------------------------ expected to be blocked
+  - id: L-extended-only
+    title: Checks that need ROCm torch, tensorflow or jax run only in the extended image
+    severity: low
+    owner: vision-pack QA
+    kind: skip
+    match:
+      - "rocpydecode::jpeg::jpeg_tensor_test"
+    added: 2026-09-27
+    review_by: 2026-12-31
+  - id: L-media-optional
+    title: rocPyDecode samples that need hip-python, mpi4py or PyAV (not in the media image)
+    severity: low
+    owner: vision-pack QA
+    kind: skip
+    match:
+      - "rocpydecode::samples::videodecodeperf"
+      - "rocpydecode::samples::videodecode_mpi"
+      - "rocpydecode::video::decoder_api_test"
+    added: 2026-09-27
+    review_by: 2026-12-31
