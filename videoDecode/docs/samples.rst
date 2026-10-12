@@ -9,8 +9,7 @@ Video samples are under ``videoDecode/samples/rocdecode`` and component tests
 are under ``videoDecode/tests``. The default CTest suite covers binding types
 and direct raw H.264 and H.265 GPU decoding.
 
-Samples requiring PyAV, PyTorch, hip-python, or
-VAAPI remain available for explicit execution after those optional
-dependencies are installed. The ``videodecodeperf.py`` sample uses
+Install PyAV for samples that demux video containers. Samples that import
+NumPy, PyTorch, hip-python, or mpi4py require those packages as well. The ``videodecodeperf.py`` sample uses
 ``hip-python`` to query GPU properties and the number of available devices;
 it is not required by the rocPyDecode library.

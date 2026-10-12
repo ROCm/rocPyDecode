@@ -47,5 +47,5 @@ if hasattr(rocpydecode, "TestAllClassCalls"):
     DLPackPyTensor.test_all()
     print('rocPyDecode DLPackPyTensor APIs test completed successfully.\n')
 else:
-    print("rocPyDecode debug host/CPU test APIs not built; skipping decoder_api_test.")
+    print("rocPyDecode debug test APIs not built; skipping decoder_api_test.")
     sys.exit(77)

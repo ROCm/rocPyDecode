@@ -71,11 +71,12 @@ The command above installs only wheels and fails if no compatible PyAV wheel
 is available. Building PyAV from source requires additional native dependencies.
 GPU decoding still requires HIP, the rocDecode SDK, and its GPU utility sources.
 Raw-stream GPU decoding and JPEG do not require PyAV. Optional PyAV tests are
-registered when it is available during configuration.
+registered when compatible PyAV, NumPy, and the H.264 MP4 test media are
+available during configuration.
 
-NumPy, ROCm-compatible PyTorch, and hip-python are needed only by samples that
-use them, not by the native build or default CTest suite. Install those optional
-packages according to the selected sample and SDK version.
+NumPy, ROCm-compatible PyTorch, and hip-python are needed only by samples or
+tests that use them, not by the native build or core CTest suite. Install those
+optional packages according to the selected sample or test and SDK version.
 
 Bundled build dependencies
 --------------------------

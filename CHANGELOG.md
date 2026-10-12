@@ -28,8 +28,8 @@ Full documentation for for rocPyDecode is available at [https://rocm.docs.amd.co
   video and JPEG extensions can coexist in one Python process.
 * Made ImageNet labels optional in the ResNet50 video sample through the
   `--labels` argument.
-* Limited default CTest registration to tests without optional FFmpeg host,
-  PyTorch, hip-python, or VAAPI-sensitive sample dependencies.
+* Core CTest coverage runs without optional PyAV, NumPy, PyTorch, or
+  hip-python sample dependencies.
 
 ### Removed
 

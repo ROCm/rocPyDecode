@@ -18,7 +18,15 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-"""Check PyAV packet ownership, timestamps, seeking and GPU decoding."""
+"""Check PyAV packet ownership, timestamps, seeking and GPU decoding.
+
+This test uses PyAV to decode on the CPU, then compares the result with
+rocDecode's GPU-decoded output to verify correctness.
+
+CPU decoding is used only as an independent test reference. The rocPyDecode
+CPU decoder APIs and samples have been removed; the library uses PyAV only
+for demuxing and rocDecode for GPU decoding.
+"""
 import argparse
 import ctypes
 import gc
