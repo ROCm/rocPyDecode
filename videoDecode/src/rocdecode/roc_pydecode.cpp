@@ -83,8 +83,6 @@ PYBIND11_MODULE(rocpydecode, m) {
             auto module = py::module_::import("pyRocVideoDecode.demuxer");
             return module.attr(name == "PyVideoDemuxer" ? "demuxer" : "stream_provider");
         }
-        if (name == "PyRocVideoDecoderCpu")
-            return py::module_::import("pyRocVideoDecode.decodercpu").attr("PyRocVideoDecoderCpu");
         if (name == "AVCodec2RocDecVideoCodec" || name == "AVCodecString2RocDecVideoCodec")
             return py::module_::import("pyRocVideoDecode._pyav").attr("codec_id");
         throw py::attribute_error("module rocpydecode has no attribute " + name);
@@ -248,8 +246,6 @@ PYBIND11_MODULE(rocpydecode, m) {
         .def_readwrite("pci_bus_id",    &ConfigInfo::pci_bus_id)
         .def_readwrite("pci_domain_id", &ConfigInfo::pci_domain_id)
         .def_readwrite("pci_device_id", &ConfigInfo::pci_device_id);
-
-    PyCpuSurfaceInitializer(m);
 
     py::class_<DLPackPyTensor>(m, "DLPackPyTensor")
         .def(py::init<>())

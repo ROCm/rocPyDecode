@@ -19,4 +19,3 @@
 # THE SOFTWARE.
 
 from .demuxer import demuxer as PyVideoDemuxer, stream_provider as PyFileStreamProvider
-from .decodercpu import PyRocVideoDecoderCpu

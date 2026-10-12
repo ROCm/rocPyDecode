@@ -118,7 +118,6 @@ set(ROCPYVIDEO_SOURCES
     src/roc_pybuffer.cpp
     src/roc_pydlpack.cpp
     src/rocdecode/roc_pydecode.cpp
-    src/rocdecode/roc_pycpu_surface.cpp
     src/rocdecode/roc_pyvideodecode.cpp)
 set(ROCPYVIDEO_SDK_SOURCES
     "${ROCPYVIDEO_UTILS}/colorspace_kernels.cpp"
@@ -177,5 +176,5 @@ if(BUILD_TESTING)
     add_subdirectory(tests)
 endif()
 message(STATUS "rocPyVideoDecode target: ${ROCPYVIDEO_TARGET}")
-message(STATUS "rocPyVideoDecode demuxing and CPU decoding: optional PyAV runtime")
+message(STATUS "rocPyVideoDecode demuxing: optional PyAV runtime")
 install(FILES requirements.txt DESTINATION ${CMAKE_INSTALL_DATADIR}/rocpydecode)

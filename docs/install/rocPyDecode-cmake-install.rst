@@ -73,8 +73,8 @@ Python 3 interpreter is available. Set
 ``-DBUILD_TESTING=OFF`` to omit test registration.
 
 When PyAV, NumPy and the H.264 MP4 fixture are available, CTest also
-registers the PyAV pixel/packet regression, debug API smoke test and CPU API
-smoke test. The debug test is reported as skipped in builds that define
+registers the PyAV demuxing/GPU pixel regression and debug API smoke test.
+The debug test is reported as skipped in builds that define
 ``NDEBUG``, including Release and RelWithDebInfo; it must run in Debug builds.
 
 Media-dependent tests are registered during configuration only when their

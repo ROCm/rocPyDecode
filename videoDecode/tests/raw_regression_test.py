@@ -107,7 +107,6 @@ def check_cli_errors():
     scripts += [Path(__file__).with_name(name) for name in
                 ("decoder_api_test.py", "decoder_rgb_dlpack_test.py", "demuxer_test.py")]
     if importlib.util.find_spec("numpy") is not None:
-        scripts.append(samples / "videodecode_cpu_backend.py")
         scripts.append(Path(__file__).with_name("decoder_test.py"))
     with tempfile.TemporaryDirectory() as directory:
         for script in scripts:
@@ -126,8 +125,6 @@ def check_cli_errors():
 def packet_and_session_boundaries(media):
     codec = native.decTypes.rocDecVideoCodec.rocDecVideoCodec_AVC
     classes = [native.PyRocVideoDecoder]
-    if av is not None:
-        classes.append(native.PyRocVideoDecoderCpu)
     for cls in classes:
         decoder = cls(codec=codec, out_mem_type=1)
         other = cls(codec=codec, out_mem_type=1)
@@ -145,7 +142,7 @@ def packet_and_session_boundaries(media):
             with ThreadPoolExecutor(max_workers=4) as pool:
                 list(pool.map(accumulate, range(4)))
             assert decoder.GetDecoderSessionOverHead(1) == 203.75
-        max_packet_size = 2**31 - 1 if cls is getattr(native, "PyRocVideoDecoderCpu", None) else 2**32 - 1
+        max_packet_size = 2**32 - 1
         data = ctypes.create_string_buffer(1)
         for address in [0, ctypes.addressof(data)]:
             for size in [-(2**63), -1, max_packet_size + 1, max_packet_size + 2, 2**63 - 1]:

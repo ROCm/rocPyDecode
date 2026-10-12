@@ -123,8 +123,8 @@ class demuxer:
         result = rocpydec.GetRocPyDecPacket(pts, packet.size, packet)
         if packet.pts is None:
             result.pkt_flags = 0
-        # Retain original timestamp units for PyAV CPU decoding; the public field
-        # preserves rocPyDecode's millisecond clock for the GPU decoder.
+        # Retain packet metadata in its original units; the public timestamp
+        # uses rocPyDecode's millisecond clock.
         result._av_packet = packet
         return result
 

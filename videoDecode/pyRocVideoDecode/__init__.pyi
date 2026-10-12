@@ -34,6 +34,5 @@ class PyRocVideoDecoder:
     def GetOutputSurfaceInfo(self) -> None: ...
     def GetNumOfFlushedFrames(self) -> None: ...
 
-# Demuxer, stream provider, and CPU decoder entry points.
+# Demuxer and stream provider entry points.
 from .demuxer import demuxer as PyVideoDemuxer, stream_provider as PyFileStreamProvider
-from .decodercpu import PyRocVideoDecoderCpu

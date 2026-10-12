@@ -70,7 +70,7 @@ packages installed inside a container do not provision the bare-metal host.
 
 ### Optional video features
 
-Demuxing and CPU decoding use PyAV, installed in the Python environment
+Container demuxing uses PyAV, installed in the Python environment
 that runs rocPyDecode. From the repository root, install it using
 [videoDecode/requirements.txt](videoDecode/requirements.txt):
 
@@ -169,8 +169,8 @@ Python 3 interpreter is available. Set
 `-DBUILD_TESTING=OFF` to omit test registration.
 
 When PyAV, NumPy and the H.264 MP4 fixture are available, CTest also
-registers the PyAV pixel/packet regression, debug API smoke test and CPU API
-smoke test. The debug test is reported as skipped in builds that define
+registers the PyAV demuxing/GPU pixel regression and debug API smoke test.
+The debug test is reported as skipped in builds that define
 `NDEBUG`, including Release and RelWithDebInfo; it must run in Debug builds.
 
 Media-dependent tests are registered during configuration only when their
@@ -219,5 +219,5 @@ error. Unrelated compiler or dependency errors can still fail configuration.
 
 `BUILD_VIDEO_DECODE=OFF` skips video configuration entirely in the combined build.
 The requested build option is not changed in the cache when video is skipped;
-correct the utility path and reconfigure to restore video support. Demuxing and CPU
-decoding require the optional PyAV runtime package.
+correct the utility path and reconfigure to restore video support. Container
+demuxing requires the optional PyAV runtime package.

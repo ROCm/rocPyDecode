@@ -50,9 +50,6 @@ if(_rocpyvideo_av_status EQUAL 0 AND EXISTS "${_rocpyvideo_api_media}")
         "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/decoder_api_test.py"
         -i "${_rocpyvideo_api_media}")
     set_tests_properties(video_decode_debug_api PROPERTIES SKIP_RETURN_CODE 77)
-    rocpyvideo_add_test(video_decode_cpu_api
-        "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/decodercpu_test.py"
-        -i "${_rocpyvideo_api_media}")
 endif()
 
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/" DESTINATION

@@ -64,4 +64,3 @@ struct ConfigInfo {
 };
 
 void PyRocVideoDecoderInitializer(py::module& m);
-void PyCpuSurfaceInitializer(py::module& m);

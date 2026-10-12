@@ -10,25 +10,15 @@ The rocPyDecode API is a ROCm rocDecode Python/C++ Binding, a tool that lets you
 
 .. image:: ../data/reference/rocPyDecodeArch.png
 
-The rocPyDecode API main classes are a decoder class and a demuxer class. All rocPyDecode APIs are exposed using the API files ``decoder.py`` and ``demuxer.py``. You can find these files in the ``pyRocVideoDecode`` directory. The demuxer.py class uses PyAV to supply compressed packets. The decoder.py class binds to the C++ PyRocVideoDecoder GPU class, while decodercpu.py uses PyAV for software decoding.
+The rocPyDecode API main classes are a decoder class and a demuxer class. All rocPyDecode APIs are exposed using the API files ``decoder.py`` and ``demuxer.py``. You can find these files in the ``pyRocVideoDecode`` directory. The demuxer.py class uses PyAV to supply compressed packets. The decoder.py class binds to the C++ PyRocVideoDecoder GPU class.
 
-Demuxing and CPU decoding
-=========================
+Demuxing
+========
 
-Demuxing and CPU decoding require PyAV. The ``rocpydecode.PyVideoDemuxer``,
-``PyFileStreamProvider`` and ``PyRocVideoDecoderCpu`` entry points are also
-available. Unsupported codec names or IDs raise ``ValueError``. Raw-stream GPU
-decoding does not require PyAV.
-
-CPU decoding supports host-copied and device-copied YUV outputs.
-RGB conversion and resizing use HIP and therefore
-require an AMD GPU even when the compressed stream is decoded on the CPU.
-Exported tensors retain their frame allocations. CPU decode calls on the same
-instance are serialized. Create a new CPU decoder after end of stream.
-
-For CPU decoding, use ``max_width=max_height=0``. Frame dimensions follow the
-input stream; requesting nonzero maximum dimensions raises ``ValueError``.
-This restriction does not apply to the GPU decoder.
+Container demuxing requires PyAV. The ``rocpydecode.PyVideoDemuxer`` and
+``PyFileStreamProvider`` entry points are also available. Unsupported codec
+names or IDs raise ``ValueError``. Video decoding uses the rocDecode GPU backend;
+CPU decoder APIs are not provided. Raw-stream GPU decoding does not require PyAV.
 
 Seeking supports modes 0 (exact packet) and 1 (previous keyframe), and criteria 0
 (frame number at a known constant rate) and 1 (timestamp in seconds). Packet

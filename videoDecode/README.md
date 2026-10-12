@@ -55,7 +55,7 @@ packages installed inside a container do not provision the bare-metal host.
 
 ### Optional video features
 
-Demuxing and CPU decoding use PyAV, installed in the Python environment
+Container demuxing uses PyAV, installed in the Python environment
 that runs rocPyDecode. From the `videoDecode` directory, install it using
 [requirements.txt](requirements.txt):
 
@@ -183,5 +183,5 @@ error. Unrelated compiler or dependency errors can still fail configuration.
 
 `BUILD_VIDEO_DECODE=OFF` skips video configuration entirely in the combined build.
 The requested build option is not changed in the cache when video is skipped;
-correct the utility path and reconfigure to restore video support. Demuxing and CPU
-decoding require the optional PyAV runtime package.
+correct the utility path and reconfigure to restore video support. Container
+demuxing requires the optional PyAV runtime package.

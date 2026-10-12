@@ -17,7 +17,7 @@ Full documentation for for rocPyDecode is available at [https://rocm.docs.amd.co
 
 ### Changed
 
-* Container demuxing and CPU decoding require the optional PyAV package.
+* Container demuxing requires the optional PyAV package.
 * Require Python 3.11 or newer. PyAV is not needed for raw GPU or JPEG decoding.
 
 * Replaced the monolithic root build with a lightweight umbrella orchestrator.
@@ -34,7 +34,9 @@ Full documentation for for rocPyDecode is available at [https://rocm.docs.amd.co
 ### Removed
 
 * System FFmpeg development packages and the rocDecode host library are no
-  longer required for demuxing and CPU decoding.
+  longer required for demuxing.
+* CPU decoding APIs (`decodercpu` and `PyRocVideoDecoderCpu`) and CPU backend samples.
+  Video decoding uses the rocDecode GPU backend.
 
 * Removed the root `data` and `conda-recipe` directories.
 * Removed obsolete wheel, setup, dependency-install, and Docker-install helper

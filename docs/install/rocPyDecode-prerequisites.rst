@@ -56,7 +56,7 @@ packages installed inside a container do not provision the bare-metal host.
 Optional video features
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Demuxing and CPU decoding use PyAV, installed in the Python environment
+Container demuxing uses PyAV, installed in the Python environment
 that runs rocPyDecode. From the repository root, install it using
 ``videoDecode/requirements.txt``:
 
