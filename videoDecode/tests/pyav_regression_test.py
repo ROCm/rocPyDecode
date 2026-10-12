@@ -37,6 +37,7 @@ from pathlib import Path
 import tempfile
 import tracemalloc
 from fractions import Fraction
+from threading import Event
 from types import SimpleNamespace
 from unittest.mock import patch
 import av
@@ -306,6 +307,7 @@ def main():
     for _ in range(5):
         mux = demuxer(args.input)
         mux.DemuxFrame()
+        closed = Event()
         def read_until_closed():
             for _ in range(20):
                 try:
@@ -313,9 +315,23 @@ def main():
                 except ValueError as error:
                     assert "closed" in str(error)
                     return
+            # The reader may finish its bounded loop before the closer runs.
+            # It must still observe a rejected read after close completes.
+            assert closed.wait(timeout=10), "Demuxer close did not complete"
+            try:
+                mux.DemuxFrame()
+            except ValueError as error:
+                assert "closed" in str(error)
+            else:
+                raise AssertionError("Concurrent reader accepted a read after close")
+        def close():
+            try:
+                mux.close()
+            finally:
+                closed.set()
         with ThreadPoolExecutor(max_workers=2) as workers:
             reading = workers.submit(read_until_closed)
-            closing = workers.submit(mux.close)
+            closing = workers.submit(close)
             reading.result(timeout=30)
             closing.result(timeout=30)
     with demuxer(args.input) as file_mux, stream_provider(args.input) as provider, demuxer(provider) as mem_mux:

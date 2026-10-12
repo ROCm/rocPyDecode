@@ -72,8 +72,9 @@ The configure suite also runs when video is skipped or disabled, provided a
 Python 3 interpreter is available. Set
 ``-DBUILD_TESTING=OFF`` to omit test registration.
 
-When PyAV, NumPy and the H.264 MP4 fixture are available, CTest also
-registers the PyAV demuxing/GPU pixel regression and debug API smoke test.
+When compatible PyAV and the H.264 MP4 fixture are available, CTest also
+registers the debug API smoke test. If NumPy is available, it additionally
+registers the PyAV demuxing/GPU pixel regression.
 The debug test is reported as skipped in builds that define
 ``NDEBUG``, including Release and RelWithDebInfo; it must run in Debug builds.
 

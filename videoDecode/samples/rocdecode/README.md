@@ -9,8 +9,9 @@ complete SDK version requirements, development packages, test assets, and
 Install PyAV for samples that demux video containers using the component's
 [requirements.txt](../../requirements.txt), following the installation instructions
 above. Install ROCm-compatible PyTorch or hip-python for samples that import them.
-Core CTest coverage runs without these packages. Optional PyAV tests require
-PyAV, NumPy, and the H.264 MP4 test media at configuration time.
+Core CTest coverage runs without these packages. The Debug API test requires
+compatible PyAV and the H.264 MP4 test media at configuration time. The pixel
+regression test additionally requires NumPy.
 
 ## videodecode.py
 

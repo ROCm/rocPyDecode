@@ -250,4 +250,22 @@ PYBIND11_MODULE(rocpydecode, m) {
     py::class_<DLPackPyTensor>(m, "DLPackPyTensor")
         .def(py::init<>())
         .def_static("test_all", &DLPackPyTensor::test_all);
+
+    // Keep lazy compatibility names visible without importing PyAV at startup.
+    py::list exports;
+    for (auto entry : m.attr("__dict__").cast<py::dict>()) {
+        const auto name = py::str(entry.first).cast<std::string>();
+        if (!name.empty() && name.front() != '_') exports.append(entry.first);
+    }
+    for (const char* name : {"PyVideoDemuxer", "PyFileStreamProvider",
+                             "AVCodec2RocDecVideoCodec", "AVCodecString2RocDecVideoCodec"})
+        exports.append(name);
+    m.attr("__all__") = exports;
+    m.def("__dir__", []() {
+        auto module = py::module_::import("rocpydecode");
+        py::set names(module.attr("__dict__").attr("keys")());
+        for (auto name : module.attr("__all__")) names.add(name);
+        return py::module_::import("builtins").attr("sorted")(names);
+    });
+
 }

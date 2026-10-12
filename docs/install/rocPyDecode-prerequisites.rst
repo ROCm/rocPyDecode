@@ -70,9 +70,9 @@ Use a prebuilt PyAV wheel compatible with your Python version and platform.
 The command above installs only wheels and fails if no compatible PyAV wheel
 is available. Building PyAV from source requires additional native dependencies.
 GPU decoding still requires HIP, the rocDecode SDK, and its GPU utility sources.
-Raw-stream GPU decoding and JPEG do not require PyAV. Optional PyAV tests are
-registered when compatible PyAV, NumPy, and the H.264 MP4 test media are
-available during configuration.
+Raw-stream GPU decoding and JPEG do not require PyAV. The Debug API test is
+registered when compatible PyAV and the H.264 MP4 test media are available
+during configuration. The pixel regression test additionally requires NumPy.
 
 NumPy, ROCm-compatible PyTorch, and hip-python are needed only by samples or
 tests that use them, not by the native build or core CTest suite. Install those

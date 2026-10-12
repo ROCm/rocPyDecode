@@ -67,9 +67,9 @@ PyAV wheels include their FFmpeg libraries. rocPyDecode does not require
 system FFmpeg headers, libraries, an executable, or the rocDecode host library.
 Building PyAV from source has separate native dependencies; use a supported wheel.
 GPU decoding still requires HIP, the rocDecode SDK and its GPU utility sources.
-Raw-stream GPU decoding and JPEG do not require PyAV. Optional PyAV tests are
-registered when compatible PyAV, NumPy, and the H.264 MP4 test media are
-available during configuration.
+Raw-stream GPU decoding and JPEG do not require PyAV. The Debug API test is
+registered when compatible PyAV and the H.264 MP4 test media are available
+during configuration. The pixel regression test additionally requires NumPy.
 
 NumPy, ROCm-compatible PyTorch, and hip-python are needed only by samples or
 tests that use them, not by the native build or core CTest suite. Install those

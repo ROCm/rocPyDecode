@@ -40,16 +40,20 @@ endif()
 # Exercise optional API smoke tests only when their backend and media exist.
 set(_rocpyvideo_api_media "${ROCPYVIDEO_MEDIA_DIR}/AMD_driving_virtual_20-H264.mp4")
 execute_process(COMMAND "${Python3_EXECUTABLE}" -c
-    "import av, numpy, sys; sys.exit(not (18, 1) <= tuple(map(int, av.__version__.split('.')[:2])) < (19, 0))"
+    "import av, sys; sys.exit(not (18, 1) <= tuple(map(int, av.__version__.split('.')[:2])) < (19, 0))"
     RESULT_VARIABLE _rocpyvideo_av_status OUTPUT_QUIET ERROR_QUIET)
 if(_rocpyvideo_av_status EQUAL 0 AND EXISTS "${_rocpyvideo_api_media}")
-    rocpyvideo_add_test(video_decode_pyav_regressions
-        "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/pyav_regression_test.py"
-        -i "${_rocpyvideo_api_media}")
     rocpyvideo_add_test(video_decode_debug_api
         "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/decoder_api_test.py"
         -i "${_rocpyvideo_api_media}")
     set_tests_properties(video_decode_debug_api PROPERTIES SKIP_RETURN_CODE 77)
+    execute_process(COMMAND "${Python3_EXECUTABLE}" -c "import numpy"
+        RESULT_VARIABLE _rocpyvideo_numpy_status OUTPUT_QUIET ERROR_QUIET)
+    if(_rocpyvideo_numpy_status EQUAL 0)
+        rocpyvideo_add_test(video_decode_pyav_regressions
+            "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/pyav_regression_test.py"
+            -i "${_rocpyvideo_api_media}")
+    endif()
 endif()
 
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/" DESTINATION

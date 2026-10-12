@@ -11,6 +11,9 @@ CMake, and a C++ compiler. It is also included in the regular CTest suite when
 BUILD_TESTING=ON, so running it separately is optional.
 """
 import os
+import json
+import shlex
+import sys
 import pathlib
 import shutil
 import subprocess
@@ -38,6 +41,50 @@ class ConfigureRegressions(unittest.TestCase):
         for install in (directory / "build").rglob("cmake_install.cmake"):
             self.assertNotIn("pyRocVideoDecode", install.read_text())
         return result.stdout
+
+    def test_video_api_registration_dependencies(self):
+        # Exercise the real test CMake file with isolated Python packages.
+        with tempfile.TemporaryDirectory() as temporary:
+            root = pathlib.Path(temporary)
+            modules = root / "modules"
+            modules.mkdir()
+            python = root / "python"
+            python.write_text("#!/bin/sh\nexec " + shlex.quote(sys.executable) + ' -S "$@"\n')
+            python.chmod(0o755)
+            media = root / "share/rocdecode/video"
+            media.mkdir(parents=True)
+            (media / "AMD_driving_virtual_20-H264.mp4").touch()
+            (root / "CMakeLists.txt").write_text(
+                'cmake_minimum_required(VERSION 3.18)\nproject(TestRegistration NONE)\n'
+                'enable_testing()\nset(CMAKE_INSTALL_DATADIR share)\n'
+                f'set(ROCM_PATH "{root}")\nset(Python3_EXECUTABLE "{python}")\n'
+                f'add_subdirectory("{self.source / "videoDecode/tests"}" video-tests)\n')
+            env = dict(os.environ, PYTHONPATH=str(modules), PYTHONDONTWRITEBYTECODE="1")
+            for version, numpy in ((None, False), (None, True), ("18.1.0", False),
+                                   ("18.1.0", True), ("19.0.0", True)):
+                with self.subTest(version=version, numpy=numpy):
+                    for name, content in (("av", f"__version__ = {version!r}\n" if version else None),
+                                          ("numpy", "" if numpy else None)):
+                        path = modules / (name + ".py")
+                        if path.exists():
+                            path.unlink()
+                        if content is not None:
+                            path.write_text(content)
+                    build = root / "build"
+                    result = subprocess.run(
+                        [os.environ.get("ROCPYDECODE_TEST_CMAKE", "cmake"),
+                         "-S", str(root), "-B", str(build)], env=env,
+                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+                    self.assertEqual(result.returncode, 0, result.stdout)
+                    listing = subprocess.check_output(
+                        ["ctest", "--test-dir", str(build), "--show-only=json-v1"], text=True)
+                    names = {test["name"] for test in json.loads(listing)["tests"]}
+                    expected = {"rocpydecode_test_types"}
+                    if version == "18.1.0":
+                        expected.add("video_decode_debug_api")
+                        if numpy:
+                            expected.add("video_decode_pyav_regressions")
+                    self.assertEqual(names, expected)
 
     def test_missing_default_directory(self):
         with tempfile.TemporaryDirectory() as temporary:
