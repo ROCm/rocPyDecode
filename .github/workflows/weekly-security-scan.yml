@@ -3,13 +3,8 @@
 #
 # Weekly security scan: runs on a fixed cadence and pushes SARIF findings
 # to the repository's code-scanning Security tab. Complements
-# `pr-security-scan.yml`, which selects scans based on PR changes and
-# requests human-readable matrix reports. CodeQL reports separately.
-#
-# `security-events: write` is granted on the `uses:` job itself, not just
-# the top-level `permissions:` block above it, since a `permissions:`
-# block (wherever declared) implicitly zeroes out anything it doesn't
-# list.
+# `pr-security-scan.yml`, which scans only what changed in a PR and
+# uploads reviewer-readable artifacts for in-review browsing.
 
 name: Security scan (Weekly)
 
@@ -29,7 +24,7 @@ jobs:
     permissions:
       contents: read
       security-events: write
-    uses: ROCm/rocm-security-gh/.github/workflows/security-baseline.yml@62c2c4f3effcd47711da28276815c90cb4aa6444 # v1.0.2
+    uses: ROCm/rocm-security-gh/.github/workflows/security-baseline.yml@228e62369c5d8b677215f8a112ea0c8e8119c58f # v1.0.6
     with:
       scan_mode: all
       report_formats: sarif
