@@ -25,7 +25,6 @@ from pathlib import Path
 import io
 import operator
 import os
-import threading
 import rocpydecode as rocpydec
 from ._pyav import require_av, _CODEC_IDS
 
@@ -54,8 +53,8 @@ class stream_provider(io.BufferedReader):
 
 
 class demuxer:
+    """One demuxer per decoding task; calls on an instance must not overlap."""
     def __init__(self, name):
-        self._lock = threading.RLock()
         self._closed = False
         av = require_av()
         self._container = av.open(str(name) if isinstance(name, Path) else name)
@@ -85,22 +84,20 @@ class demuxer:
             raise ValueError("Demuxer is closed")
 
     def GetCodecId(self):
-        with self._lock:
-            self._check_open()
-            # PyAV's native codec numbers can change between releases.
-            name = self._stream.codec_context.codec.canonical_name
-            for number, codec in _CODEC_IDS.items():
-                if codec == name:
-                    return number
-            raise ValueError(f"Unsupported video codec: {name}")
+        self._check_open()
+        # PyAV's native codec numbers can change between releases.
+        name = self._stream.codec_context.codec.canonical_name
+        for number, codec in _CODEC_IDS.items():
+            if codec == name:
+                return number
+        raise ValueError(f"Unsupported video codec: {name}")
 
     def GetBitDepth(self):
-        with self._lock:
-            self._check_open()
-            fmt = self._stream.codec_context.format
-            if fmt is None:
-                raise ValueError("Input does not report a pixel format/bit depth")
-            return max(component.bits for component in fmt.components)
+        self._check_open()
+        fmt = self._stream.codec_context.format
+        if fmt is None:
+            raise ValueError("Input does not report a pixel format/bit depth")
+        return max(component.bits for component in fmt.components)
 
     def _next_packet(self):
         while not self._pending:
@@ -134,59 +131,55 @@ class demuxer:
         return result
 
     def DemuxFrame(self):
-        with self._lock:
-            self._check_open()
-            return self._wrap(self._next_packet())
+        self._check_open()
+        return self._wrap(self._next_packet())
 
     def SeekFrame(self, frame_number, seek_mode, seek_criteria):
-        with self._lock:
-            self._check_open()
-            value = operator.index(frame_number) if seek_criteria == 0 else Fraction(frame_number)
-            if value < 0 or seek_mode not in (0, 1) or seek_criteria not in (0, 1):
-                raise ValueError("Invalid seek value, mode or criteria")
-            stream = self._stream
-            if seek_criteria == 0:
-                if not stream.average_rate or stream.average_rate != stream.base_rate:
-                    raise ValueError("Frame-number seeking requires a constant known frame rate; use timestamps")
-                seconds = Fraction(value, 1) / stream.average_rate
-            else:
-                seconds = Fraction(value, 1)  # Timestamp criterion uses seconds.
-            target = seconds / stream.time_base + (stream.start_time or 0)
-            if seek_criteria == 0:
-                target = int(target)  # Frame timestamps may be quantized to stream ticks.
-            # Start at a keyframe so reordered packets before the target are not skipped.
-            self._container.seek(int(target), stream=stream, backward=True, any_frame=False)
-            if self._filter:
-                self._filter.flush()
-            self._pending.clear()
-            self._drained = False
-            self._packets = iter(self._container.demux(stream))
-            packet = self._next_packet()
-            if seek_mode == 0:
-                while packet is not None:
-                    if packet.pts is None:
-                        raise ValueError("Exact packet seeking requires presentation timestamps")
-                    # Keep decode order: moving a closer PTS match ahead of this
-                    # packet could deliver a B-frame before its reference frame.
-                    if packet.pts >= target:
-                        break
-                    packet = self._next_packet()
-            return self._wrap(packet)
+        self._check_open()
+        value = operator.index(frame_number) if seek_criteria == 0 else Fraction(frame_number)
+        if value < 0 or seek_mode not in (0, 1) or seek_criteria not in (0, 1):
+            raise ValueError("Invalid seek value, mode or criteria")
+        stream = self._stream
+        if seek_criteria == 0:
+            if not stream.average_rate or stream.average_rate != stream.base_rate:
+                raise ValueError("Frame-number seeking requires a constant known frame rate; use timestamps")
+            seconds = Fraction(value, 1) / stream.average_rate
+        else:
+            seconds = Fraction(value, 1)  # Timestamp criterion uses seconds.
+        target = seconds / stream.time_base + (stream.start_time or 0)
+        if seek_criteria == 0:
+            target = int(target)  # Frame timestamps may be quantized to stream ticks.
+        # Start at a keyframe so reordered packets before the target are not skipped.
+        self._container.seek(int(target), stream=stream, backward=True, any_frame=False)
+        if self._filter:
+            self._filter.flush()
+        self._pending.clear()
+        self._drained = False
+        self._packets = iter(self._container.demux(stream))
+        packet = self._next_packet()
+        if seek_mode == 0:
+            while packet is not None:
+                if packet.pts is None:
+                    raise ValueError("Exact packet seeking requires presentation timestamps")
+                # Keep decode order: moving a closer PTS match ahead of this
+                # packet could deliver a B-frame before its reference frame.
+                if packet.pts >= target:
+                    break
+                packet = self._next_packet()
+        return self._wrap(packet)
 
     def close(self):
-        with self._lock:
-            if not self._closed:
-                self._closed = True
-                # Dispose of the suspended iterator before freeing its container.
-                self._packets.close()
-                self._pending.clear()
-                self._filter = None
-                self._container.close()
+        if not self._closed:
+            self._closed = True
+            # Dispose of the suspended iterator before freeing its container.
+            self._packets.close()
+            self._pending.clear()
+            self._filter = None
+            self._container.close()
 
     def __enter__(self):
-        with self._lock:
-            self._check_open()
-            return self
+        self._check_open()
+        return self
 
     def __exit__(self, *args):
         self.close()

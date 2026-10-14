@@ -73,7 +73,7 @@ Use a prebuilt PyAV wheel compatible with your Python version and platform.
 The command above installs only wheels and fails if no compatible PyAV wheel
 is available. Building PyAV from source requires additional native dependencies.
 GPU decoding still requires HIP, the rocDecode SDK, and its GPU utility sources.
-Raw-stream GPU decoding and JPEG do not require PyAV. With video testing enabled,
+Building the bindings and JPEG decoding do not require PyAV. With video testing enabled,
 the Python API and PyAV pixel tests are always registered. At runtime they report
 skipped if compatible PyAV or the H.264 MP4 test media are missing; the pixel test
 also needs NumPy. Installing these prerequisites does not require rerunning CMake.
@@ -116,8 +116,7 @@ Run from the project directory. Set ``ROCM_PATH`` to the complete SDK prefix;
    # Runtime GPU check; skip on build-only machines.
    "$ROCM_PATH/bin/rocminfo"
    test -d "$ROCM_PATH/share/rocdecode/utils/rocvideodecode"
-   ls "$ROCM_PATH/share/rocdecode/video/AMD_driving_virtual_20-H264.264"
-   ls "$ROCM_PATH/share/rocdecode/video/AMD_driving_virtual_20-H265.265"
+   ls "$ROCM_PATH/share/rocdecode/video/AMD_driving_virtual_20-H264.mp4"
 
 
 The ``rocm_sysdeps/lib`` directory is used by SDK distributions that bundle
@@ -169,13 +168,13 @@ The local install prefix does not require ``sudo``. Replace ``build`` and ``inst
 consistently if you need separate host, container, or SDK-specific builds.
 CTest uses the build-tree bindings; ``-V`` also displays successful tests' output.
 
-With both raw videos available, tests cover binding types, raw
-H.264 decoding, raw H.265 decoding, and frame-limit/error regressions.
+Video tests cover binding types, the Python demux/decode API, seeking, and
+GPU output correctness. The video runtime tests require PyAV and test media.
 
-Raw-video and JPEG tests are registered during configuration only when their
-assets are present. Install missing raw/JPEG media and rerun CMake before CTest.
+JPEG tests are registered during configuration only when their assets are
+present. Install missing JPEG media and rerun CMake before CTest.
 A passing run with omitted or skipped tests does not establish full runtime coverage.
-Check that each raw-video test reports a positive decoded-frame count; zero
+Check that the video API test reports a positive decoded-frame count; zero
 frames is a failure.
 
 Use the installed bindings

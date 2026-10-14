@@ -72,7 +72,7 @@ Use a prebuilt PyAV wheel compatible with your Python version and platform.
 The command above installs only wheels and fails if no compatible PyAV wheel
 is available. Building PyAV from source requires additional native dependencies.
 GPU decoding still requires HIP, the rocDecode SDK, and its GPU utility sources.
-Raw-stream GPU decoding and JPEG do not require PyAV. With video testing enabled,
+Building the bindings and JPEG decoding do not require PyAV. With video testing enabled,
 the Python API and PyAV pixel tests are always registered. At runtime they report
 skipped if compatible PyAV or the H.264 MP4 test media are missing; the pixel test
 also needs NumPy. Installing these prerequisites does not require rerunning CMake.
@@ -115,8 +115,7 @@ Run from the project directory. Set ``ROCM_PATH`` to the complete SDK prefix;
    # Runtime GPU check; skip on build-only machines.
    "$ROCM_PATH/bin/rocminfo"
    test -d "$ROCM_PATH/share/rocdecode/utils/rocvideodecode"
-   ls "$ROCM_PATH/share/rocdecode/video/AMD_driving_virtual_20-H264.264"
-   ls "$ROCM_PATH/share/rocdecode/video/AMD_driving_virtual_20-H265.265"
+   ls "$ROCM_PATH/share/rocdecode/video/AMD_driving_virtual_20-H264.mp4"
    ls "$ROCM_PATH/share/rocjpeg/images"
 
 

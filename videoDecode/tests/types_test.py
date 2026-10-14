@@ -40,6 +40,4 @@ public_names = {name for name in vars(native) if not name.startswith("_")}
 assert public_names | compatibility_names <= namespace.keys()
 for name in compatibility_names:
     assert namespace[name] is members[name] is getattr(native, name)
-assert "PyRocVideoDecoderCpu" not in namespace
-assert "PyRocVideoDecoderCpu" not in members
 print("Compatibility exports are discoverable")

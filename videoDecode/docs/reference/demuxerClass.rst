@@ -16,6 +16,9 @@ The demuxer accepts H.264, HEVC, VP9, and AV1 video. Other codecs raise
 ``ValueError`` before packets are submitted to rocDecode. Decoding also requires
 support for the selected codec on the GPU and installed rocDecode SDK.
 
+Use a separate demuxer for each decoding task. An instance is not thread-safe;
+reading, seeking, and closing that instance must not run concurrently.
+
 Example:
 --------
 

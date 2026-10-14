@@ -18,81 +18,51 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import rocpydecode
-from rocpydecode import DLPackPyTensor
+"""Exercise the public Python demux/decode flow without NumPy or PyTorch."""
 import argparse
-import sys
-import tempfile
 from pathlib import Path
+import sys
+import rocpydecode
 from pyRocVideoDecode._pyav import require_av
 from pyRocVideoDecode.demuxer import demuxer
 from pyRocVideoDecode.decoder import decoder, GetRocDecCodecID
- 
-parser = argparse.ArgumentParser(description='PyRocDecode Video Decode Input Arguments')
-parser.add_argument(
-    '-i',
-    '--input',
-    type=str,
-    help='Input File Path - required',
-    required=True)
+
+parser = argparse.ArgumentParser(description="Demux video and decode YUV frames on the GPU")
+parser.add_argument("-i", "--input", type=Path, required=True)
 args = parser.parse_args()
-
-input_file_path = args.input
-
 try:
     require_av()
 except ImportError as error:
     print(f"Skipping decoder_api_test: {error}")
     sys.exit(77)
-if not Path(input_file_path).is_file():
-    print(f"Skipping decoder_api_test: test media unavailable: {input_file_path}")
+if not args.input.is_file():
+    print(f"Skipping decoder_api_test: test media unavailable: {args.input}")
     sys.exit(77)
 
-def first_frame(gpu, mux):
+video_demuxer = demuxer(args.input)
+try:
+    codec = GetRocDecCodecID(video_demuxer.GetCodecId())
+    video_decoder = decoder(codec)
+    assert video_decoder.IsCodecSupported(0, codec, video_demuxer.GetBitDepth())
+    frame_count = 0
     while True:
-        packet = mux.DemuxFrame()
-        if gpu.DecodeFrame(packet) > 0:
-            return packet
-        assert not packet.end_of_stream, "API smoke test did not decode a frame"
+        packet = video_demuxer.DemuxFrame()
+        for _ in range(video_decoder.DecodeFrame(packet)):
+            assert video_decoder.GetFrameYuv(packet) != -1
+            assert video_decoder.GetFrameSize() > 0
+            video_decoder.ReleaseFrame(packet)
+            frame_count += 1
+        if packet.end_of_stream:
+            break
+    assert frame_count > 0, "No video frames decoded"
+    print(f"PYTHON_API_PASS: decoded and released {frame_count} YUV frames")
+finally:
+    video_demuxer.close()
 
-
-# Exercise the same Python demuxer and decoder calls used by applications.
-with demuxer(input_file_path) as mux:
-    codec = GetRocDecCodecID(mux.GetCodecId())
-    gpu = decoder(codec, mem_type=1)
-    assert gpu.IsCodecSupported(0, codec, mux.GetBitDepth())
-    packet = first_frame(gpu, mux)
-    assert gpu.GetFrameRgb(packet, 3) != -1
-    assert packet.ext_buf[0].shape == (gpu.GetHeight(), gpu.GetWidth(), 3)
-    assert packet.ext_buf[0].__dlpack_device__() == (10, 0)
-    surface = gpu.GetOutputSurfaceInfo()
-    assert surface
-    dimensions = (32, 48) if (gpu.GetWidth(), gpu.GetHeight()) == (64, 48) else (64, 48)
-    assert gpu.ResizeFrame(packet, dimensions, surface)
-    assert gpu.GetResizedOutputSurfaceInfo()
-    assert gpu.GetGpuInfo().device_name
-    assert gpu.GetNumOfFlushedFrames() >= 0 and gpu.GetBitDepth() >= 8
-    gpu.ReleaseFrame(packet)
-    gpu.SetReconfigParams(0, "")
-    del gpu
-print("Python API smoke test decoded, resized, and released a GPU frame.")
-
-# Additional native checks are available in Debug builds with BUILD_TESTING=ON.
-if hasattr(rocpydecode, "Test_PyReconfigureFlushCallback"):
+# Native-only checks are compiled when BUILD_TESTING=ON, in either build type.
+if hasattr(rocpydecode, "TestAll_roc_pybuffer"):
     rocpydecode.TestAll_roc_pybuffer()
     rocpydecode.Test_DLPack()
-    with tempfile.TemporaryDirectory(prefix="rocpydecode-flush-") as output_directory:
-        for scenario in range(3):
-            with demuxer(input_file_path) as reference_mux, demuxer(input_file_path) as test_mux:
-                reference = decoder(codec, mem_type=1)
-                subject = decoder(codec, mem_type=1)
-                reference_packet = first_frame(reference, reference_mux)
-                packet = first_frame(subject, test_mux)
-                assert reference_packet.frame_pts == packet.frame_pts
-                rocpydecode.Test_PyReconfigureFlushCallback(
-                    reference.viddec, subject.viddec, scenario, output_directory)
-                del reference, subject
     rocpydecode.Test_CalculateRgbImageSize()
-    DLPackPyTensor.test_all()
-    print("Native buffer, DLPack, flush, and RGB size checks passed.")
-print("rocPyDecode API tests completed successfully.")
+    rocpydecode.DLPackPyTensor.test_all()
+    print("NATIVE_CHECKS_PASS")

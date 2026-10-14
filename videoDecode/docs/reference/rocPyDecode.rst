@@ -18,7 +18,7 @@ Demuxing
 Container demuxing requires PyAV. The ``rocpydecode.PyVideoDemuxer`` and
 ``PyFileStreamProvider`` entry points are also available. Unsupported codec
 names or IDs raise ``ValueError``. Video decoding uses the rocDecode GPU backend;
-CPU decoder APIs are not provided. Raw-stream GPU decoding does not require PyAV.
+CPU decoder APIs and a standalone raw-bitstream sample are not provided.
 
 Seeking supports modes 0 (exact packet) and 1 (previous keyframe), and criteria 0
 (integer frame number at a known constant rate) and 1 (finite, non-negative

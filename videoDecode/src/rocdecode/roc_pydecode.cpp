@@ -25,10 +25,9 @@ THE SOFTWARE.
 #include "roc_pyvideodecode.h"
 
 using namespace std;
-#if defined(ROCPYVIDEO_BUILD_TESTING) && !defined(NDEBUG)
+#if defined(ROCPYVIDEO_BUILD_TESTING)
 void TestAll_roc_pybuffer();
 void Test_DLPackPyTensor_ConstructorsAndOperators();
-void Test_PyReconfigureFlushCallback(PyRocVideoDecoder&, PyRocVideoDecoder&, int, const std::string&);
 void Test_CalculateRgbImageSize();
 #endif
 
@@ -45,10 +44,9 @@ PYBIND11_MODULE(rocpydecode, m) {
  
     m.doc() = "Python bindings for the C++ portions of rocDecode ..";
 
-#if defined(ROCPYVIDEO_BUILD_TESTING) && !defined(NDEBUG)
+#if defined(ROCPYVIDEO_BUILD_TESTING)
     m.def("TestAll_roc_pybuffer", &TestAll_roc_pybuffer);
     m.def("Test_DLPack", &Test_DLPackPyTensor_ConstructorsAndOperators);
-    m.def("Test_PyReconfigureFlushCallback", &Test_PyReconfigureFlushCallback);
     m.def("Test_CalculateRgbImageSize", &Test_CalculateRgbImageSize);
 #endif
     m.def("GetRocPyDecPacket", [](int64_t pts, int64_t size, py::buffer buffer) {

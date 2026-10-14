@@ -26,11 +26,10 @@ import argparse
 import sys
 
 
-def test_geometry(input_file_path, decoder_class, mem_type, zero_latency=True):
+def test_geometry(input_file_path, decoder_class, mem_type):
     demuxer = dmx.demuxer(input_file_path)
     codec = dec.GetRocDecCodecID(demuxer.GetCodecId())
-    options = {} if zero_latency is None else {"b_force_zero_latency": zero_latency}
-    decoder = decoder_class(codec, mem_type=mem_type, **options,
+    decoder = decoder_class(codec, mem_type=mem_type, b_force_zero_latency=True,
                             crop_rect=(0, 0, 64, 48))
     while True:
         packet = demuxer.DemuxFrame()
@@ -60,13 +59,11 @@ def test_geometry(input_file_path, decoder_class, mem_type, zero_latency=True):
     decoder.ReleaseFrame(packet)
 
 
-def test_rgb_dlpack(input_file_path, decoder_class=dec.decoder, mem_type=OUT_SURFACE_MEM_DEV_COPIED,
-                    zero_latency=True):
-    options = {} if zero_latency is None else {"b_force_zero_latency": zero_latency}
+def test_rgb_dlpack(input_file_path, decoder_class=dec.decoder, mem_type=OUT_SURFACE_MEM_DEV_COPIED):
     for fmt in range(1, 9):
         demuxer = dmx.demuxer(input_file_path)
         codec_id = dec.GetRocDecCodecID(demuxer.GetCodecId())
-        decoder = decoder_class(codec_id, mem_type=mem_type, **options)
+        decoder = decoder_class(codec_id, mem_type=mem_type, b_force_zero_latency=True)
         while True:
             packet = demuxer.DemuxFrame()
             if decoder.DecodeFrame(packet):
@@ -80,12 +77,12 @@ def test_rgb_dlpack(input_file_path, decoder_class=dec.decoder, mem_type=OUT_SUR
                 break
             if packet.bitstream_size <= 0:
                 raise RuntimeError("no RGB frame decoded")
-    test_geometry(input_file_path, decoder_class, mem_type, zero_latency)
+    test_geometry(input_file_path, decoder_class, mem_type)
     # A 50-row planar 4:2:0 crop has two 25-row chroma planes. Their
     # concatenated size is 75 luma-width rows, not 74 after per-plane division.
     demuxer = dmx.demuxer(input_file_path)
     decoder = decoder_class(dec.GetRocDecCodecID(demuxer.GetCodecId()),
-                            mem_type=mem_type, **options,
+                            mem_type=mem_type, b_force_zero_latency=True,
                             crop_rect=(0, 0, 64, 50))
     while True:
         packet = demuxer.DemuxFrame()

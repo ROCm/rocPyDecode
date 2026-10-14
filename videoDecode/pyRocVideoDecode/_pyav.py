@@ -34,7 +34,7 @@ _CODEC_IDS = {1: "mpeg1video", 2: "mpeg2video", 7: "mjpeg", 12: "mpeg4",
 def require_av():
     if sys.version_info < (3, 11):
         raise ImportError("PyAV demuxing requires Python 3.11 or newer; "
-                          "raw-stream GPU decoding does not require PyAV")
+                          "building or importing the native bindings does not require PyAV")
     try:
         import av
     except ImportError as error:
