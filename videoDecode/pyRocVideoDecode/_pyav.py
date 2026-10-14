@@ -19,6 +19,7 @@
 # THE SOFTWARE.
 
 """Shared PyAV runtime loading and codec translation."""
+import sys
 import rocpydecode as native
 
 _NAMES = {"mpeg1video": "MPEG1", "mpeg2video": "MPEG2", "mpeg4": "MPEG4",
@@ -31,13 +32,16 @@ _CODEC_IDS = {1: "mpeg1video", 2: "mpeg2video", 7: "mjpeg", 12: "mpeg4",
               27: "h264", 139: "vp8", 167: "vp9", 173: "hevc", 225: "av1"}
 
 def require_av():
+    if sys.version_info < (3, 11):
+        raise ImportError("PyAV demuxing requires Python 3.11 or newer; "
+                          "raw-stream GPU decoding does not require PyAV")
     try:
         import av
     except ImportError as error:
         raise ImportError("Demuxing requires PyAV: "
-                          "python -m pip install 'av>=18.1,<19'") from error
-    if not (18, 1) <= tuple(map(int, av.__version__.split(".")[:2])) < (19, 0):
-        raise ImportError("rocPyDecode requires PyAV >=18.1,<19")
+                          "python -m pip install 'av>=18.1'") from error
+    if tuple(map(int, av.__version__.split(".")[:2])) < (18, 1):
+        raise ImportError("rocPyDecode demuxing requires PyAV >=18.1")
     return av
 
 def codec_name(value):

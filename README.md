@@ -38,7 +38,7 @@ Required build dependencies:
 
 - CMake 3.20 or newer for the commands below, including `ctest --test-dir`.
   The CMake project itself requires CMake 3.18 or newer for Python module discovery.
-- Python 3.11 or newer and matching development headers. The examples
+- Python 3.9 or newer and matching development headers. The examples
   select Python 3.12; change `PYTHON_VERSION_SUGGESTED` to your installed version.
 - pybind11 3.1.0 and DLPack 1.3 headers; bundled in the repository.
 - rocDecode **1.0.0 or newer**, including development files, CMake package
@@ -70,7 +70,9 @@ packages installed inside a container do not provision the bare-metal host.
 
 ### Optional video features
 
-Container demuxing uses PyAV, installed in the Python environment
+Container demuxing requires Python 3.11 or newer and PyAV >=18.1. Newer PyAV
+releases may require a newer Python; pip selects a compatible version.
+PyAV is installed in the Python environment
 that runs rocPyDecode. From the repository root, install it using
 [videoDecode/requirements.txt](videoDecode/requirements.txt):
 
@@ -82,9 +84,10 @@ PyAV wheels include their FFmpeg libraries. rocPyDecode does not require
 system FFmpeg headers, libraries, an executable, or the rocDecode host library.
 Building PyAV from source has separate native dependencies; use a supported wheel.
 GPU decoding still requires HIP, the rocDecode SDK and its GPU utility sources.
-Raw-stream GPU decoding and JPEG do not require PyAV. The Debug API test is
-registered when compatible PyAV and the H.264 MP4 test media are available
-during configuration. The pixel regression test additionally requires NumPy.
+Raw-stream GPU decoding and JPEG do not require PyAV. With video testing enabled,
+the Python API and PyAV pixel tests are always registered. At runtime they report
+skipped if compatible PyAV or the H.264 MP4 test media are missing; the pixel test
+also needs NumPy. Installing these prerequisites does not require rerunning CMake.
 
 NumPy, ROCm-compatible PyTorch, and hip-python are needed only by samples or
 tests that use them, not by the native build or core CTest suite. Install those
@@ -169,15 +172,17 @@ The configure suite also runs when video is skipped or disabled, provided a
 Python 3 interpreter is available. Set
 `-DBUILD_TESTING=OFF` to omit test registration.
 
-When compatible PyAV and the H.264 MP4 fixture are available, CTest also
-registers the debug API smoke test. If NumPy is available, it additionally
-registers the PyAV demuxing/GPU pixel regression.
-The debug test is reported as skipped in builds that define
-`NDEBUG`, including Release and RelWithDebInfo; it must run in Debug builds.
+CTest always registers the Python API smoke test and PyAV demuxing/GPU pixel
+regression for the video component. They check their optional dependencies and
+MP4 fixture at runtime and report missing prerequisites as skipped tests.
+Install the missing packages or MP4 fixture and rerun CTest; no reconfiguration
+is needed. The Python API smoke test runs in Debug and Release builds. Debug
+builds with `BUILD_TESTING=ON` also run native buffer, DLPack, flush-callback,
+and RGB allocation checks.
 
-Media-dependent tests are registered during configuration only when their
-assets are present. A passing run with fewer tests does not establish full
-runtime coverage. Install the missing media and rerun CMake before CTest.
+Raw-video and JPEG tests are registered during configuration only when their
+assets are present. Install missing raw/JPEG media and rerun CMake before CTest.
+A passing run with omitted or skipped tests does not establish full runtime coverage.
 Check that each raw-video test reports a positive decoded-frame count; zero
 frames is a failure.
 Check that the JPEG test processes images and reports zero bad files.

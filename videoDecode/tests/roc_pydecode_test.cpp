@@ -2,7 +2,6 @@
  
 // SPDX-License-Identifier:  [MIT License]
 
-// test_calls.cpp
 #include "roc_pyvideodecode.h"
 #include "roc_pybuffer.h"
 #include "roc_pydlpack.h"
@@ -17,70 +16,12 @@
 
 #ifndef NDEBUG
 namespace {
-// Test-only bridge to the same Python demuxer used by applications.
-class TestDemuxer {
-    py::object mux_, packet_;
-public:
-    explicit TestDemuxer(const char* path) : mux_(py::module_::import("pyRocVideoDecode.demuxer").attr("demuxer")(path)) {}
-    std::shared_ptr<PyPacketData> DemuxFrame() {
-        packet_ = mux_.attr("DemuxFrame")();
-        return packet_.cast<std::shared_ptr<PyPacketData>>();
-    }
-    int GetCodecId() { return mux_.attr("GetCodecId")().cast<int>(); }
-    uint32_t PyGetBitDepth() { return mux_.attr("GetBitDepth")().cast<uint32_t>(); }
-};
-rocDecVideoCodec ConvertCodec(int id) {
-    return py::module_::import("pyRocVideoDecode._pyav").attr("codec_id")(id).cast<rocDecVideoCodec>();
-}
+// Native-only assertions that cannot be reached through the public Python API.
 void Require(bool condition, const char* message) {
     if (!condition) throw std::runtime_error(message);
 }
-
-template <typename Decoder>
-std::shared_ptr<PyPacketData> DecodeFirstFrame(Decoder& decoder, TestDemuxer& demuxer) {
-    while (true) {
-        auto packet = demuxer.DemuxFrame();
-        if (decoder.PyDecodeFrame(*packet) > 0) return packet;
-        Require(packet->bitstream_size > 0, "API smoke test did not decode a frame");
-    }
-}
-
-template <typename Decoder>
-void TestDecodedFrame(Decoder& decoder, TestDemuxer& demuxer) {
-    auto packet = DecodeFirstFrame(decoder, demuxer);
-    Require(decoder.PyGetFrameRgb(*packet, 3).template cast<int64_t>() != -1,
-            "API smoke test did not retrieve an RGB frame");
-    uintptr_t surface = decoder.PyGetOutputSurfaceInfo();
-    Require(surface != 0, "Decoded surface information is missing");
-    Dim resized{64, 48};
-    if (decoder.PyGetWidth().template cast<int>() == resized.w &&
-        decoder.PyGetHeight().template cast<int>() == resized.h) resized.w = 32;
-    Require(decoder.PyResizeFrame(*packet, &resized, surface) != 0,
-            "API smoke test did not resize a frame");
-    Require(decoder.PyGetResizedOutputSurfaceInfo() != 0, "Resized surface information is missing");
-    decoder.PyGetDeviceinfo();
-    decoder.PyGetNumOfFlushedFrames();
-    Require(decoder.PyGetBitDepth() >= 8, "Decoded bit depth is invalid");
-    Require(decoder.PyReleaseFrame(*packet).template cast<bool>(), "Frame release failed");
-}
 }
 #endif
-
-void TestAllClassCalls([[maybe_unused]] const char* input_file) {
-#ifndef NDEBUG
-    Require(input_file && *input_file, "API smoke test requires an input file");
-    TestDemuxer demuxer(input_file);
-    const auto codec = ConvertCodec(demuxer.GetCodecId());
-    PyRocVideoDecoder decoder(0, OUT_SURFACE_MEM_DEV_COPIED, codec);
-    Require(decoder.PyCodecSupported(0, codec, demuxer.PyGetBitDepth()).cast<bool>(),
-            "GPU does not support the API smoke-test input");
-    TestDecodedFrame(decoder, demuxer);
-    std::string output_name;
-    decoder.PySetReconfigParams(RECONFIG_FLUSH_MODE_NONE, output_name);
-
-    std::cout << "GPU API smoke tests decoded, resized, and released frames.\n";
-#endif
-}
 
 void TestAll_roc_pybuffer() {
 #ifndef NDEBUG
@@ -185,38 +126,34 @@ void Test_DLPackPyTensor_ConstructorsAndOperators() {
 #endif //#ifndef NDEBUG
 }
 
-// The actual test
-void Test_PyReconfigureFlushCallback([[maybe_unused]] const char* input_file, [[maybe_unused]] const std::string& output_directory) {
+// Python prepares both decoders through its public demux/decode calls.
+void Test_PyReconfigureFlushCallback([[maybe_unused]] PyRocVideoDecoder& reference,
+                                    [[maybe_unused]] PyRocVideoDecoder& decoder,
+                                    [[maybe_unused]] int scenario,
+                                    [[maybe_unused]] const std::string& output_directory) {
 #ifndef NDEBUG
-    Require(input_file && *input_file, "Flush smoke test requires an input file");
+    Require(scenario >= 0 && scenario < 3, "Unknown flush test scenario");
     Require(PyReconfigureFlushCallback(nullptr, 0, nullptr) == 0, "Null flush callback failed");
 
-    // Build expected packed YUV bytes directly from a separate decode, without
-    // using the dump callback or SaveFrameToFile as the reference writer.
+    // Build expected packed YUV bytes without the dump callback or file writer.
     std::string expected;
     int expected_frames = 0;
-    {
-        TestDemuxer demuxer(input_file);
-        PyRocVideoDecoder reference(0, OUT_SURFACE_MEM_DEV_COPIED,
-            ConvertCodec(demuxer.GetCodecId()));
-        DecodeFirstFrame(reference, demuxer);
-        OutputSurfaceInfo* info = nullptr;
-        Require(reference.GetOutputSurfaceInfo(&info), "Reference surface information is missing");
-        const auto layout = rocpy::Planes(*info);
-        std::vector<uint8_t> host(info->output_surface_size_in_bytes);
-        int64_t pts = 0;
-        while (auto* frame = reference.GetFrame(&pts)) {
-            HIP_API_CALL(hipMemcpy(host.data(), frame, host.size(), hipMemcpyDeviceToHost));
-            for (size_t i = 0; i < layout.count; ++i) {
-                const auto& plane = layout.planes[i];
-                const size_t row_bytes = size_t(plane.width) * plane.channels * info->bytes_per_pixel;
-                for (uint32_t row = 0; row < plane.height; ++row)
-                    expected.append(reinterpret_cast<const char*>(host.data() + plane.offset + row * plane.pitch),
-                                    row_bytes);
-            }
-            Require(reference.ReleaseFrame(pts), "Reference frame release failed");
-            ++expected_frames;
+    OutputSurfaceInfo* info = nullptr;
+    Require(reference.GetOutputSurfaceInfo(&info), "Reference surface information is missing");
+    const auto layout = rocpy::Planes(*info);
+    std::vector<uint8_t> host(info->output_surface_size_in_bytes);
+    int64_t pts = 0;
+    while (auto* frame = reference.GetFrame(&pts)) {
+        HIP_API_CALL(hipMemcpy(host.data(), frame, host.size(), hipMemcpyDeviceToHost));
+        for (size_t i = 0; i < layout.count; ++i) {
+            const auto& plane = layout.planes[i];
+            const size_t row_bytes = size_t(plane.width) * plane.channels * info->bytes_per_pixel;
+            for (uint32_t row = 0; row < plane.height; ++row)
+                expected.append(reinterpret_cast<const char*>(host.data() + plane.offset + row * plane.pitch),
+                                row_bytes);
         }
+        Require(reference.ReleaseFrame(pts), "Reference frame release failed");
+        ++expected_frames;
     }
     Require(expected_frames > 0 && !expected.empty(), "Reference decode produced no frame data");
     const auto read_output = [](const std::string& path) {
@@ -225,37 +162,29 @@ void Test_PyReconfigureFlushCallback([[maybe_unused]] const char* input_file, [[
         return std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
     };
 
-    // Cover no-output mode, explicitly disabled dumping, and actual file output.
-    for (int scenario = 0; scenario < 3; ++scenario) {
-        const auto mode = scenario == 0 ? RECONFIG_FLUSH_MODE_NONE : RECONFIG_FLUSH_MODE_DUMP_TO_FILE;
-        const bool should_dump = scenario == 2;
-        const auto path = (std::filesystem::path(output_directory) /
-                           ("flush-" + std::to_string(scenario) + ".yuv")).string();
-        Require(!std::filesystem::exists(path), "Flush test requires a fresh output path");
-        TestDemuxer demuxer(input_file);
-        PyRocVideoDecoder decoder(0, OUT_SURFACE_MEM_DEV_COPIED,
-            ConvertCodec(demuxer.GetCodecId()));
-        DecodeFirstFrame(decoder, demuxer);
-        ReconfigDumpFileStruct dump{};
-        dump.output_file_name = path;
-        dump.b_dump_frames_to_file = scenario != 1;
-        Require(PyReconfigureFlushCallback(&decoder, mode, &dump) == expected_frames,
-                "Flush callback did not drain the expected frames");
-        // Close the SDK writer so buffered output is visible to the file check.
-        decoder.ResetSaveFrameToFile();
-        if (should_dump)
-            Require(read_output(path) == expected, "Dumped frame bytes do not match the reference decode");
-        else
-            Require(!std::filesystem::exists(path), "Non-dumping flush unexpectedly created a file");
+    const auto mode = scenario == 0 ? RECONFIG_FLUSH_MODE_NONE : RECONFIG_FLUSH_MODE_DUMP_TO_FILE;
+    const bool should_dump = scenario == 2;
+    const auto path = (std::filesystem::path(output_directory) /
+                       ("flush-" + std::to_string(scenario) + ".yuv")).string();
+    Require(!std::filesystem::exists(path), "Flush test requires a fresh output path");
+    ReconfigDumpFileStruct dump{};
+    dump.output_file_name = path;
+    dump.b_dump_frames_to_file = scenario != 1;
+    Require(PyReconfigureFlushCallback(&decoder, mode, &dump) == expected_frames,
+            "Flush callback did not drain the expected frames");
+    decoder.ResetSaveFrameToFile();
+    if (should_dump)
+        Require(read_output(path) == expected, "Dumped frame bytes do not match the reference decode");
+    else
+        Require(!std::filesystem::exists(path), "Non-dumping flush unexpectedly created a file");
 
-        Require(PyReconfigureFlushCallback(&decoder, mode, &dump) == 0,
-                "Flush callback retained frames after draining");
-        decoder.ResetSaveFrameToFile();
-        if (should_dump)
-            Require(read_output(path) == expected, "Empty flush changed the dumped frame data");
-        else
-            Require(!std::filesystem::exists(path), "Empty flush unexpectedly created a file");
-    }
+    Require(PyReconfigureFlushCallback(&decoder, mode, &dump) == 0,
+            "Flush callback retained frames after draining");
+    decoder.ResetSaveFrameToFile();
+    if (should_dump)
+        Require(read_output(path) == expected, "Empty flush changed the dumped frame data");
+    else
+        Require(!std::filesystem::exists(path), "Empty flush unexpectedly created a file");
     std::cout << "Flush callback output matches decoded bytes; empty flush leaves output unchanged.\n";
 #endif
 }

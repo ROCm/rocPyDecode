@@ -25,7 +25,7 @@ Required build dependencies:
 
 - CMake 3.20 or newer for the commands below, including ``ctest --test-dir``.
   The CMake project itself requires CMake 3.18 or newer for Python module discovery.
-- Python 3.11 or newer and matching development headers. The examples
+- Python 3.9 or newer and matching development headers. The examples
   select Python 3.12; change ``PYTHON_VERSION_SUGGESTED`` to your installed version.
 - pybind11 3.1.0 and DLPack 1.3 headers; bundled in the repository.
 - rocDecode **1.0.0 or newer**, including development files, CMake package
@@ -57,7 +57,9 @@ packages installed inside a container do not provision the bare-metal host.
 Optional video features
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Container demuxing uses PyAV, installed in the Python environment
+Container demuxing requires Python 3.11 or newer and PyAV >=18.1. Newer PyAV
+releases may require a newer Python; pip selects a compatible version.
+PyAV is installed in the Python environment
 that runs rocPyDecode. From the ``videoDecode`` directory, install it using
 ``requirements.txt``:
 
@@ -71,9 +73,10 @@ Use a prebuilt PyAV wheel compatible with your Python version and platform.
 The command above installs only wheels and fails if no compatible PyAV wheel
 is available. Building PyAV from source requires additional native dependencies.
 GPU decoding still requires HIP, the rocDecode SDK, and its GPU utility sources.
-Raw-stream GPU decoding and JPEG do not require PyAV. The Debug API test is
-registered when compatible PyAV and the H.264 MP4 test media are available
-during configuration. The pixel regression test additionally requires NumPy.
+Raw-stream GPU decoding and JPEG do not require PyAV. With video testing enabled,
+the Python API and PyAV pixel tests are always registered. At runtime they report
+skipped if compatible PyAV or the H.264 MP4 test media are missing; the pixel test
+also needs NumPy. Installing these prerequisites does not require rerunning CMake.
 
 NumPy, ROCm-compatible PyTorch, and hip-python are needed only by samples or
 tests that use them, not by the native build or core CTest suite. Install those
@@ -169,9 +172,9 @@ CTest uses the build-tree bindings; ``-V`` also displays successful tests' outpu
 With both raw videos available, tests cover binding types, raw
 H.264 decoding, raw H.265 decoding, and frame-limit/error regressions.
 
-Media-dependent tests are registered during configuration only when their
-assets are present. A passing run with fewer tests does not establish full
-runtime coverage. Install the missing media and rerun CMake before CTest.
+Raw-video and JPEG tests are registered during configuration only when their
+assets are present. Install missing raw/JPEG media and rerun CMake before CTest.
+A passing run with omitted or skipped tests does not establish full runtime coverage.
 Check that each raw-video test reports a positive decoded-frame count; zero
 frames is a failure.
 

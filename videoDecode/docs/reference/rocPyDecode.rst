@@ -21,12 +21,16 @@ names or IDs raise ``ValueError``. Video decoding uses the rocDecode GPU backend
 CPU decoder APIs are not provided. Raw-stream GPU decoding does not require PyAV.
 
 Seeking supports modes 0 (exact packet) and 1 (previous keyframe), and criteria 0
-(frame number at a known constant rate) and 1 (timestamp in seconds). Packet
+(integer frame number at a known constant rate) and 1 (finite, non-negative
+timestamp in seconds, including fractional values such as ``2.5``). Packet
 presentation timestamps use milliseconds for the default decoder clock. Exact
-mode selects the earliest presentation timestamp at or after the requested
-position and requires packets with presentation timestamps. Exact
-packet seeking does not supply missing reference frames; begin at a preceding
-keyframe when decoding inter-predicted video. Reset/recreate the decoder when
+mode returns the first packet in decode order whose presentation timestamp is
+at or after the requested position. Remaining packets retain their decode order;
+with B-frames, their presentation timestamps can be earlier than the returned
+packet's timestamp. Exact packet seeking requires presentation timestamps and
+does not supply missing reference frames. To reach an exact displayed frame in
+inter-predicted video, use mode 1, decode forward from the preceding keyframe,
+and select decoded frames by their timestamps. Reset/recreate the decoder when
 seeking to a different position. Input and seek failures raise exceptions.
 
 The memory stream provider accepts writable buffer objects in ``GetData``.

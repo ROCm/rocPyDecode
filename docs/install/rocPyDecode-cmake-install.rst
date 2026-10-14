@@ -72,15 +72,17 @@ The configure suite also runs when video is skipped or disabled, provided a
 Python 3 interpreter is available. Set
 ``-DBUILD_TESTING=OFF`` to omit test registration.
 
-When compatible PyAV and the H.264 MP4 fixture are available, CTest also
-registers the debug API smoke test. If NumPy is available, it additionally
-registers the PyAV demuxing/GPU pixel regression.
-The debug test is reported as skipped in builds that define
-``NDEBUG``, including Release and RelWithDebInfo; it must run in Debug builds.
+CTest always registers the Python API smoke test and PyAV demuxing/GPU pixel
+regression for the video component. They check their optional dependencies and
+MP4 fixture at runtime and report missing prerequisites as skipped tests.
+Install the missing packages or MP4 fixture and rerun CTest; no reconfiguration
+is needed. The Python API smoke test runs in Debug and Release builds. Debug
+builds with ``BUILD_TESTING=ON`` also run native buffer, DLPack, flush-callback,
+and RGB allocation checks.
 
-Media-dependent tests are registered during configuration only when their
-assets are present. A passing run with fewer tests does not establish full
-runtime coverage. Install the missing media and rerun CMake before CTest.
+Raw-video and JPEG tests are registered during configuration only when their
+assets are present. Install missing raw/JPEG media and rerun CMake before CTest.
+A passing run with omitted or skipped tests does not establish full runtime coverage.
 Check that each raw-video test reports a positive decoded-frame count; zero
 frames is a failure.
 Check that the JPEG test processes images and reports zero bad files.

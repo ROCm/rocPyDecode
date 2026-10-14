@@ -27,7 +27,7 @@ import operator
 import os
 import threading
 import rocpydecode as rocpydec
-from ._pyav import require_av
+from ._pyav import require_av, _CODEC_IDS
 
 
 class stream_provider(io.BufferedReader):
@@ -64,11 +64,11 @@ class demuxer:
                 raise ValueError("Input has no video stream")
             self._stream = self._container.streams.video[0]
             self._filter = None
-            codec = self._stream.codec_context.name
+            codec = self._stream.codec_context.codec.canonical_name
+            if codec not in ("h264", "hevc", "vp9", "av1"):
+                raise ValueError(f"Cannot decode '{codec}' using rocDecode; supported codecs are H.264, HEVC, VP9 and AV1")
             if codec in ("h264", "hevc"):
                 self._filter = av.bitstream.BitStreamFilterContext(codec + "_mp4toannexb", self._stream)
-            elif codec == "mpeg4":
-                self._filter = av.bitstream.BitStreamFilterContext("dump_extra", self._stream)
             self._packets = iter(self._container.demux(self._stream))
             self._pending = deque()
             self._drained = False
@@ -87,7 +87,12 @@ class demuxer:
     def GetCodecId(self):
         with self._lock:
             self._check_open()
-            return self._stream.codec_context.codec.id
+            # PyAV's native codec numbers can change between releases.
+            name = self._stream.codec_context.codec.canonical_name
+            for number, codec in _CODEC_IDS.items():
+                if codec == name:
+                    return number
+            raise ValueError(f"Unsupported video codec: {name}")
 
     def GetBitDepth(self):
         with self._lock:
@@ -136,7 +141,7 @@ class demuxer:
     def SeekFrame(self, frame_number, seek_mode, seek_criteria):
         with self._lock:
             self._check_open()
-            value = operator.index(frame_number)
+            value = operator.index(frame_number) if seek_criteria == 0 else Fraction(frame_number)
             if value < 0 or seek_mode not in (0, 1) or seek_criteria not in (0, 1):
                 raise ValueError("Invalid seek value, mode or criteria")
             stream = self._stream
@@ -158,25 +163,14 @@ class demuxer:
             self._packets = iter(self._container.demux(stream))
             packet = self._next_packet()
             if seek_mode == 0:
-                selected = None
-                buffered = deque()
                 while packet is not None:
                     if packet.pts is None:
                         raise ValueError("Exact packet seeking requires presentation timestamps")
-                    if selected is not None or packet.pts >= target:
-                        buffered.append(packet)
-                    if packet.pts >= target and (selected is None or packet.pts < selected.pts):
-                        selected = packet
-                    # PTS chooses the result. Monotonic DTS only bounds lookahead:
-                    # later packets cannot present before their decoding timestamps.
-                    if selected is not None and (selected.pts == target or
-                            (packet.dts is not None and packet.dts >= selected.pts)):
+                    # Keep decode order: moving a closer PTS match ahead of this
+                    # packet could deliver a B-frame before its reference frame.
+                    if packet.pts >= target:
                         break
                     packet = self._next_packet()
-                # A closer PTS match must not discard earlier lookahead packets.
-                # Return the selected packet once and retain the others in input order.
-                self._pending.extendleft(p for p in reversed(buffered) if p is not selected)
-                packet = selected
             return self._wrap(packet)
 
     def close(self):

@@ -18,7 +18,7 @@ Full documentation for for rocPyDecode is available at [https://rocm.docs.amd.co
 ### Changed
 
 * Container demuxing requires the optional PyAV package.
-* Require Python 3.11 or newer. PyAV is not needed for raw GPU or JPEG decoding.
+* PyAV demuxing requires Python 3.11 or newer. Native bindings require Python 3.9 or newer; raw GPU and JPEG decoding do not require PyAV.
 
 * Replaced the monolithic root build with a lightweight umbrella orchestrator.
 * Moved all video and JPEG files into their respective component directories.

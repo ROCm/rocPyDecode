@@ -36,22 +36,44 @@ from contextlib import nullcontext
 from pathlib import Path
 import tempfile
 import tracemalloc
+import sys
 from fractions import Fraction
+from collections import deque
 from threading import Event
 from types import SimpleNamespace
 from unittest.mock import patch
-import av
-import numpy as np
 import rocpydecode as native
+from pyRocVideoDecode._pyav import require_av
+try:
+    av = require_av()
+    import numpy as np
+except ImportError as error:
+    print(f"Skipping pyav_regression_test: {error}")
+    sys.exit(77)
 from pyRocVideoDecode.demuxer import demuxer, stream_provider
 from pyRocVideoDecode.decoder import decoder, GetRocDecCodecID
 
 
-def check_gpu_decode(path, seek_frame=None):
+def check_gpu_decode(path, seek_frame=None, seek_mode=1, seek_criteria=0):
     # Compare GPU NV12 pixels with an independent software reference. PyAV
     # decoding is used only by this test, never by the rocPyDecode API.
     with demuxer(path) as mux:
-        packet = mux.DemuxFrame() if seek_frame is None else mux.SeekFrame(seek_frame, 1, 0)
+        prefix = deque()
+        if seek_frame is not None and seek_mode == 0:
+            # Supply the same preceding packets as uninterrupted decoding. This
+            # isolates packet reordering from missing reference frames at a seek.
+            stream = mux._stream
+            seconds = Fraction(seek_frame) / stream.average_rate if seek_criteria == 0 else Fraction(seek_frame)
+            target = seconds / stream.time_base + (stream.start_time or 0)
+            if seek_criteria == 0:
+                target = int(target)
+            while not (packet := mux.DemuxFrame()).end_of_stream:
+                if packet._av_packet.pts >= target:
+                    break
+                prefix.append(packet)
+        packet = mux.DemuxFrame() if seek_frame is None else mux.SeekFrame(seek_frame, seek_mode, seek_criteria)
+        prefix.append(packet)
+        packet = prefix.popleft()
         start = packet._av_packet.pts * packet._av_packet.time_base
         expected = []
         with av.open(str(path)) as reference:
@@ -63,6 +85,13 @@ def check_gpu_decode(path, seek_frame=None):
         gpu = decoder(GetRocDecCodecID(mux.GetCodecId()), mem_type=2)
         actual = []
         while True:
+            if packet.end_of_stream:
+                # Both EOS producers must agree. Flush through the public helper
+                # to verify it also drains delayed frames without manual flag edits.
+                eos = native.GetRocPyDecPacket(packet.frame_pts, 0, b"")
+                assert eos.pkt_flags == packet.pkt_flags == int(native.decTypes.ROCDEC_PKT_ENDOFSTREAM)
+                assert eos.end_of_stream and eos.bitstream_adrs == 0
+                packet = eos
             for _ in range(gpu.DecodeFrame(packet)):
                 pts = gpu.GetFrameYuv(packet, separate_planes=True)
                 assert pts != -1
@@ -72,13 +101,14 @@ def check_gpu_decode(path, seek_frame=None):
                 gpu.ReleaseFrame(packet)
             if packet.end_of_stream:
                 break
-            packet = mux.DemuxFrame()
+            packet = prefix.popleft() if prefix else mux.DemuxFrame()
         assert expected and actual == expected, ("GPU pixels/timestamps differ", path, seek_frame,
                                                  len(actual), len(expected),
                                                  [(i, a[0], e[0], a[1] == e[1])
                                                   for i, (a, e) in enumerate(zip(actual, expected))
                                                   if a != e][:5])
-    print("GPU_PIXELS_PASS", path.name, "seek", seek_frame, "frames", len(actual))
+    print("GPU_PIXELS_PASS", path.name, "seek", seek_frame, "mode", seek_mode,
+          "criteria", seek_criteria, "frames", len(actual))
 
 
 def packet_digest(mux):
@@ -86,7 +116,7 @@ def packet_digest(mux):
     while True:
         p = mux.DemuxFrame()
         if p.end_of_stream:
-            assert p.bitstream_size == 0
+            assert p.bitstream_size == 0 and p.pkt_flags == int(native.decTypes.ROCDEC_PKT_ENDOFSTREAM)
             break
         result.append((hashlib.sha256(ctypes.string_at(p.bitstream_adrs, p.bitstream_size)).digest(), p.frame_pts))
     return result
@@ -110,11 +140,12 @@ def check_seeking(path, bframes):
     assert sorted(pts * time_base for pts, _, _ in packets) == frame_times
     # Include backwards seeks, GOP boundaries, the last frame, EOF and a seek after EOF.
     positions = list(range(len(frames))) + [len(frames) + 2, 1, 0]
+    timestamps = (0, 0.1, 0.5, Fraction(1, 3), 1, 1.25, 2.5, 10, 0.0)
     for use_provider in (False, True):
         with (stream_provider(path) if use_provider else nullcontext(path)) as source, demuxer(source) as mux:
-            for criteria, values in ((0, positions), (1, (0, 1, 2, 10, 0))):
+            for criteria, values in ((0, positions), (1, timestamps)):
                 for value in values:
-                    target = Fraction(value, 1) / rate / time_base + start if criteria == 0 else Fraction(value, 1) / time_base + start
+                    target = Fraction(value) / rate / time_base + start if criteria == 0 else Fraction(value) / time_base + start
                     if criteria == 0:
                         target = int(target)
                     candidates = [(pts, index) for index, (pts, _, _) in enumerate(packets) if pts >= target]
@@ -122,22 +153,39 @@ def check_seeking(path, bframes):
                     if not candidates:
                         assert actual.end_of_stream and mux.DemuxFrame().end_of_stream
                         continue
-                    pts, index = min(candidates)
+                    # The first qualifying packet in decode order must remain
+                    # ahead of dependent B-frames with an earlier PTS.
+                    pts, index = candidates[0]
                     assert actual._av_packet.pts == pts, (path, value, criteria, actual._av_packet.pts, pts)
                     assert actual.frame_pts == int(pts * time_base * 1000)
                     digest = hashlib.sha256(ctypes.string_at(actual.bitstream_adrs, actual.bitstream_size)).digest()
                     assert digest == packets[index][2]
-                    # Retain all packets from the first candidate onward, including
-                    # larger PTS values encountered before the selected packet.
-                    first = min(i for _, i in candidates)
                     assert packet_digest(mux) == [(digest, int(pts * time_base * 1000))
                                                  for i, (pts, _, digest) in enumerate(packets)
-                                                 if i >= first and i != index]
-            for value in (0, 11, 12, len(frames) - 1, 0):
-                target = int(Fraction(value, 1) / rate / time_base) + start
-                expected = max(pts for pts, key, _ in packets if key and pts <= target)
-                actual = mux.SeekFrame(value, 1, 0)
-                assert actual._av_packet.is_keyframe and actual._av_packet.pts == expected
+                                                 if i > index]
+            for criteria, values in ((0, (0, 11, 12, len(frames) - 1, 0)), (1, timestamps)):
+                for value in values:
+                    seconds = Fraction(value) / rate if criteria == 0 else Fraction(value)
+                    target = int(seconds / time_base + start)
+                    expected = max(pts for pts, key, _ in packets if key and pts <= target)
+                    actual = mux.SeekFrame(value, 1, criteria)
+                    assert actual._av_packet.is_keyframe and actual._av_packet.pts == expected
+            # Invalid values must not seek or consume the next packet.
+            for value, criteria, error_type in ((2.0, 0, TypeError), (2.5, 0, TypeError),
+                                               (Fraction(5, 2), 0, TypeError),
+                                               (-0.5, 1, ValueError), (float("nan"), 1, ValueError),
+                                               (float("inf"), 1, OverflowError),
+                                               (float("-inf"), 1, OverflowError)):
+                mux.SeekFrame(0, 1, 1)
+                with patch.object(mux, "_container") as container:
+                    try:
+                        mux.SeekFrame(value, 0, criteria)
+                    except error_type:
+                        pass
+                    else:
+                        raise AssertionError(("Invalid seek value accepted", value, criteria))
+                    container.seek.assert_not_called()
+                assert mux.DemuxFrame()._av_packet.pts == packets[1][0]
     # Never silently substitute a decoding timestamp for missing presentation metadata.
     with demuxer(path) as mux:
         packet = av.Packet(b"packet")
@@ -149,10 +197,9 @@ def check_seeking(path, bframes):
                 assert "presentation timestamps" in str(error)
             else:
                 raise AssertionError("Exact seeking accepted missing PTS")
-    # Replacing a seek candidate must not lose it or any intervening lookahead.
-    # Exercise EOF, an exact match, repeated replacements and equal timestamps,
-    # both with DTS bounds and with PTS-only metadata.
-    for timestamps in ((4, 2, 3), (4, 3, 2, 5, 6), (4, 0, 1, 3), (4, 2, 2, 3)):
+    # Preserve reference/dependent packet order, including I0,P3,B1,B2,
+    # later earlier-PTS packets and equal timestamps, with or without DTS.
+    for timestamps in ((0, 3, 1, 2), (4, 2, 3), (4, 3, 2, 5, 6), (4, 0, 1, 3), (4, 2, 2, 3)):
         for with_dts in (False, True):
             with demuxer(path) as mux:
                 packets = []
@@ -167,13 +214,12 @@ def check_seeking(path, bframes):
                 source = SimpleNamespace(seek=mux._container.seek, demux=lambda stream: (p for p in packets))
                 with patch.object(mux, "_container", source), patch.object(mux, "_filter", None):
                     actual = mux.SeekFrame(1, 0, 1)
-                    selected = min((p for p in packets if p.pts >= start + 1 / time_base),
-                                   key=lambda p: p.pts)
-                    assert actual._av_packet is selected
+                    first = next(i for i, p in enumerate(packets) if p.pts >= start + 1 / time_base)
+                    assert actual._av_packet is packets[first]
                     remaining = []
                     while not (packet := mux.DemuxFrame()).end_of_stream:
                         remaining.append(packet._av_packet)
-                    assert remaining == [p for p in packets if p is not selected]
+                    assert remaining == packets[first + 1:]
                     assert mux.DemuxFrame().end_of_stream
     print("SEEK_PASS", path.name)
 
@@ -197,6 +243,31 @@ def check_seek_variants(directory):
                 for packet in stream.encode(None):
                     container.mux(packet)
             check_seeking(path, bframes)
+
+
+def check_unsupported_codecs(directory):
+    for codec, extension in (("mpeg4", "mp4"), ("ffv1", "mkv")):
+        path = Path(directory) / f"unsupported-{codec}.{extension}"
+        with av.open(str(path), "w") as container:
+            stream = container.add_stream(codec, rate=24)
+            stream.width, stream.height, stream.pix_fmt = 64, 48, "yuv420p"
+            frame = av.VideoFrame(64, 48, "yuv420p")
+            for plane in frame.planes:
+                plane.update(bytes([128]) * plane.buffer_size)
+            for packet in stream.encode(frame):
+                container.mux(packet)
+            for packet in stream.encode(None):
+                container.mux(packet)
+        for use_provider in (False, True):
+            with (stream_provider(path) if use_provider else nullcontext(path)) as source:
+                try:
+                    with demuxer(source):
+                        raise AssertionError(f"Unsupported codec accepted: {codec}")
+                except ValueError as error:
+                    assert f"Cannot decode '{codec}' using rocDecode" in str(error), error
+                if use_provider:
+                    assert not source.closed, "Rejected demuxer closed its caller-owned input"
+    print("UNSUPPORTED_CODECS_PASS")
 
 
 def check_provider_storage():
@@ -286,9 +357,28 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input", type=Path, required=True)
     args = parser.parse_args()
+    if not args.input.is_file():
+        print(f"Skipping pyav_regression_test: test media unavailable: {args.input}")
+        sys.exit(77)
     check_empty_buffers()
     check_provider_storage()
     with demuxer(args.input) as mux:
+        # Keep the public codec IDs independent of PyAV's native numbering.
+        for name, number in (("mpeg1video", 1), ("mpeg2video", 2), ("mjpeg", 7),
+                             ("mpeg4", 12), ("h264", 27), ("vp8", 139),
+                             ("vp9", 167), ("hevc", 173), ("av1", 225)):
+            stream = SimpleNamespace(codec_context=SimpleNamespace(codec=av.Codec(name, "r")))
+            with patch.object(mux, "_stream", stream):
+                assert mux.GetCodecId() == number, name
+                assert GetRocDecCodecID(mux.GetCodecId()) == GetRocDecCodecID(av.Codec(name, "r").canonical_name)
+        stream = SimpleNamespace(codec_context=SimpleNamespace(codec=av.Codec("ffv1", "r")))
+        with patch.object(mux, "_stream", stream):
+            try:
+                mux.GetCodecId()
+            except ValueError as error:
+                assert "Unsupported video codec: ffv1" in str(error), error
+            else:
+                raise AssertionError("Unsupported demuxed codec accepted")
         first = mux.DemuxFrame()
         expected = ctypes.string_at(first.bitstream_adrs, first.bitstream_size)
         mux.DemuxFrame()
@@ -401,8 +491,11 @@ def main():
     # PyAV supplies test references only; rocPyDecode decodes on the GPU.
     check_gpu_decode(args.input)
     check_gpu_decode(args.input, seek_frame=300)
+    check_gpu_decode(args.input, seek_frame=1, seek_mode=0)
+    check_gpu_decode(args.input, seek_frame=2.5, seek_criteria=1)
     with tempfile.TemporaryDirectory() as tmp:
         check_seek_variants(tmp)
+        check_unsupported_codecs(tmp)
     print("PYAV_REGRESSIONS_PASS")
 
 

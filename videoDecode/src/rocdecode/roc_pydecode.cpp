@@ -26,10 +26,9 @@ THE SOFTWARE.
 
 using namespace std;
 #if defined(ROCPYVIDEO_BUILD_TESTING) && !defined(NDEBUG)
-void TestAllClassCalls(const char*);
 void TestAll_roc_pybuffer();
 void Test_DLPackPyTensor_ConstructorsAndOperators();
-void Test_PyReconfigureFlushCallback(const char*, const std::string&);
+void Test_PyReconfigureFlushCallback(PyRocVideoDecoder&, PyRocVideoDecoder&, int, const std::string&);
 void Test_CalculateRgbImageSize();
 #endif
 
@@ -47,7 +46,6 @@ PYBIND11_MODULE(rocpydecode, m) {
     m.doc() = "Python bindings for the C++ portions of rocDecode ..";
 
 #if defined(ROCPYVIDEO_BUILD_TESTING) && !defined(NDEBUG)
-    m.def("TestAllClassCalls", &TestAllClassCalls);
     m.def("TestAll_roc_pybuffer", &TestAll_roc_pybuffer);
     m.def("Test_DLPack", &Test_DLPackPyTensor_ConstructorsAndOperators);
     m.def("Test_PyReconfigureFlushCallback", &Test_PyReconfigureFlushCallback);
@@ -66,7 +64,7 @@ PYBIND11_MODULE(rocpydecode, m) {
         }
         auto packet = make_shared<PyPacketData>();
         packet->frame_pts = pts;
-        packet->pkt_flags = ROCDEC_PKT_TIMESTAMP;
+        packet->pkt_flags = size == 0 ? ROCDEC_PKT_ENDOFSTREAM : ROCDEC_PKT_TIMESTAMP;
         packet->bitstream_size = size;
         packet->bitstream_adrs = size ? reinterpret_cast<uintptr_t>(info.ptr) : 0;
         packet->end_of_stream = size == 0;

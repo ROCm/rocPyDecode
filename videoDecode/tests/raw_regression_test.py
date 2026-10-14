@@ -42,18 +42,26 @@ except ImportError:
 
 
 def pyav_version_boundaries():
+    for python_version in ((3, 9), (3, 10)):
+        with patch.object(sys, "version_info", python_version), patch.dict(sys.modules, {"av": None}):
+            try:
+                require_av()
+            except ImportError as error:
+                assert "Python 3.11 or newer" in str(error), error
+            else:
+                raise AssertionError("Demuxing accepted an unsupported Python version")
     for version, supported in (("17.0.0", False), ("18.0.0", False),
                                ("18.1.0", True), ("18.2.0", True),
-                               ("19.0.0", False), ("20.0.0", False)):
+                               ("19.0.0", True), ("19.0.1", True), ("20.0.0", True)):
         module = SimpleNamespace(__version__=version)
-        with patch.dict(sys.modules, {"av": module}):
+        with patch.object(sys, "version_info", (3, 12)), patch.dict(sys.modules, {"av": module}):
             if supported:
                 assert require_av() is module, version
             else:
                 try:
                     require_av()
                 except ImportError as error:
-                    assert ">=18.1,<19" in str(error), error
+                    assert ">=18.1" in str(error), error
                 else:
                     raise AssertionError(f"Unsupported PyAV accepted: {version}")
     print("PyAV version boundary checks passed")
@@ -82,7 +90,7 @@ def codec_translation():
                 raise AssertionError(f"Unsupported codec accepted: {value}")
     if av is not None:
         for number, name, _ in codecs:
-            assert av.Codec(name, "r").id == number, name
+            assert GetRocDecCodecID(av.Codec(name, "r").canonical_name) == GetRocDecCodecID(number), name
     print("Codec translation with and without PyAV passed")
 
 
@@ -123,6 +131,17 @@ def check_cli_errors():
 
 
 def packet_and_session_boundaries(media):
+    for buffer, size in ((b"", 0), (bytearray(), 0), (memoryview(b""), 0),
+                         (b"packet", 0), (b"packet", 6)):
+        packet = native.GetRocPyDecPacket(2**40, size, buffer)
+        eos = size == 0
+        flag = native.decTypes.ROCDEC_PKT_ENDOFSTREAM if eos else native.decTypes.ROCDEC_PKT_TIMESTAMP
+        assert packet.end_of_stream == eos and packet.pkt_flags == int(flag)
+        assert packet.frame_pts == 2**40 and packet.bitstream_size == size
+        if eos:
+            assert packet.bitstream_adrs == 0
+        else:
+            assert ctypes.string_at(packet.bitstream_adrs, size) == b"packet"
     codec = native.decTypes.rocDecVideoCodec.rocDecVideoCodec_AVC
     classes = [native.PyRocVideoDecoder]
     for cls in classes:
