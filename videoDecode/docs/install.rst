@@ -185,23 +185,36 @@ Packages built with ``BUILD_TESTING=ON`` (the default) include an independent
 CTest setup. It needs CMake 3.20 or newer, Python matching the installed extension,
 compatible ROCm runtime libraries, a supported GPU, and both raw videos.
 No source checkout, compiler, or Python development headers are required.
-Keep the SDK runtime library path from the setup above.
+CMake discovers Python from the active environment and uses ``ROCM_PATH`` from
+the environment when set, otherwise ``/opt/rocm``. Python must match the installed
+extension.
 
 .. code-block:: shell
 
    prefix=/path/to/installed/package
-   export LD_LIBRARY_PATH="$prefix/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-   cmake -S "$prefix/share/rocpydecode/tests" -B installed-tests \
-       -DPython3_EXECUTABLE="$(command -v python3.12)" -DROCM_PATH="$ROCM_PATH"
-   ctest --test-dir installed-tests --output-on-failure --no-tests=error
+   cmake -S "$prefix/share/rocpydecode/tests" -B installed-tests
+   ctest --test-dir installed-tests -V --no-tests=error
 
+From the configured test build directory, you can also run ``ctest -V``.
+CMake uses the selected package's bindings and fails configuration if they
+cannot be imported or the required test media is missing.
 
-CMake uses the installed bindings and fails configuration if they cannot be
-imported or the required test media is missing. Set ``ROCPYVIDEO_MEDIA_DIR``
-to use media outside the SDK prefix. Adjust ``lib`` and ``share`` in the commands
-for custom installation directories; the test setup retains their relative layout
-when the package is moved. Use a fresh test build directory after moving a package
-or changing Python or SDKs.
+Optional settings for non-default installations:
+
+- Add ``-DPython3_EXECUTABLE=/path/to/python`` to select a different interpreter,
+  or activate its virtual environment before configuring.
+- Add ``-DROCM_PATH=/path/to/rocm`` to select a different SDK and its test media.
+- Set ``ROCPYVIDEO_MEDIA_DIR`` to use media outside the SDK prefix.
+- If importing the bindings reports a missing shared library, make that library
+  available through the runtime loader configuration. For a custom SDK, this
+  may require ``LD_LIBRARY_PATH`` pointing to its library directories. CMake's
+  ``ROCM_PATH`` setting selects test media; it does not change the runtime loader's
+  search paths. No additional library-path export is needed when the installed
+  runtime libraries are already discoverable.
+
+Adjust ``share`` for custom data directories; the test setup retains the relative
+library/data layout when moved. Use a fresh test build directory after moving a
+package or changing Python or SDKs.
 
 Use the installed bindings
 --------------------------

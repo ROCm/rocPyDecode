@@ -26,9 +26,13 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
 import rocpydecode as native
 import pyRocVideoDecode as wrapper
 expected = pathlib.Path(sys.argv[1]).resolve()
-if (pathlib.Path(native.__file__).resolve().parent != expected or
-        pathlib.Path(wrapper.__file__).resolve().parent.parent != expected):
-    raise ImportError("Bindings were imported from outside the selected package")
+native_path = pathlib.Path(native.__file__).resolve()
+wrapper_path = pathlib.Path(wrapper.__file__).resolve()
+if native_path.parent != expected or wrapper_path.parent.parent != expected:
+    raise ImportError(
+        f"Expected bindings under {expected}, but imported native extension "
+        f"{native_path} and Python wrapper {wrapper_path}. "
+        "Tests must use the selected installation, not another installed copy.")
 print(int(hasattr(native, "PyRocVideoDecoderCpu")))]=]
             "${ROCPYVIDEO_TEST_PYTHONPATH}"
         RESULT_VARIABLE _import_status OUTPUT_VARIABLE _import_output
@@ -36,8 +40,8 @@ print(int(hasattr(native, "PyRocVideoDecoderCpu")))]=]
     if(NOT _import_status EQUAL 0)
         message(FATAL_ERROR
             "Cannot import the installed rocpydecode bindings from ${ROCPYVIDEO_TEST_PYTHONPATH} "
-            "with ${Python3_EXECUTABLE}. Select a matching Python3_EXECUTABLE and ensure "
-            "the package and ROCm runtime libraries are on LD_LIBRARY_PATH.\n${_import_error}")
+            "with ${Python3_EXECUTABLE}. Check the Python version, package location, "
+            "and runtime library availability.\n${_import_error}")
     endif()
     set(ROCPYVIDEO_ENABLE_HOST "${_import_output}")
 else()
