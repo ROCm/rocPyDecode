@@ -185,6 +185,50 @@ Check that each raw-video test reports a positive decoded-frame count; zero
 frames is a failure.
 Check that the JPEG test processes images and reports zero bad files.
 
+## Test an installed package
+
+Packages built with `BUILD_TESTING=ON` (the default) install a CTest setup for
+each component. No source checkout, compiler, or Python development headers
+are needed to run these installed tests. Use CMake 3.20 or newer, a Python
+interpreter matching the installed extension, compatible ROCm runtime libraries,
+a supported GPU, and the SDK test media described above.
+
+Set `prefix` to the installed or extracted package directory. CMake discovers
+Python from the active environment and uses `ROCM_PATH` from the environment
+when set, otherwise `/opt/rocm`. Python must match the installed extension.
+
+```bash
+prefix=/path/to/installed/package
+cmake -S "$prefix/share/rocpydecode/tests" -B video-tests
+ctest --test-dir video-tests -V --no-tests=error
+
+cmake -S "$prefix/share/rocpyjpegdecode/tests" -B jpeg-tests
+ctest --test-dir jpeg-tests -V --no-tests=error
+```
+
+Run only the commands for installed components. From a configured test build
+directory, you can also run `ctest -V`. CMake sets the test Python path to the
+selected package's bindings. Adjust `share` if the package uses a custom data
+directory; the test setup retains the relative library/data layout when moved.
+
+Optional settings for non-default installations:
+
+- Add `-DPython3_EXECUTABLE=/path/to/python` to the CMake command to select a
+  different interpreter, or activate its virtual environment before configuring.
+- Add `-DROCM_PATH=/path/to/rocm` to select a different SDK and its test media.
+- If importing the bindings reports a missing shared library, make that library
+  available through the runtime loader configuration. For a custom SDK, this
+  may require `LD_LIBRARY_PATH` pointing to its library directories. CMake's
+  `ROCM_PATH` setting selects test media; it does not change the runtime loader's
+  search paths. No additional library-path export is needed when the installed
+  runtime libraries are already discoverable.
+
+Installed configuration fails if the bindings cannot be imported, either required
+raw video is missing, or no JPEG `*.jpg` fixtures are found. To use media outside
+the SDK prefix, set `ROCPYVIDEO_MEDIA_DIR` or `ROCPYJPEG_MEDIA_DIR` when configuring.
+Use a fresh test build directory after moving a package or changing Python or SDKs.
+The source-configuration regression suite remains a source-build test.
+
 ## Use the installed bindings
 
 Keep the selected SDK's runtime library path from the setup above. For the
