@@ -117,60 +117,63 @@ void Test_DLPackPyTensor_ConstructorsAndOperators() {
     std::cout << "All DLPackPyTensor constructor/operator tests passed.\n";
 }
 
-void Test_CalculateRgbImageSize() {
-    PyRocVideoDecoder gpu(0, OUT_SURFACE_MEM_DEV_INTERNAL, rocDecVideoCodec_HEVC);
-    const auto check = [](auto& decoder) {
-        for (uint32_t depth : {8u, 10u}) {
-            OutputSurfaceInfo info{};
-            info.bit_depth = depth;
-            info.output_width = 1919;
-            info.output_height = 1080;
-            // Expected allocations include one alignment pixel per row.
-            const size_t expected[] = {6220800, 12441600, 6220800, 12441600,
-                                       8294400, 16588800, 8294400, 16588800};
+void Test_CalculateRgbImageSize(PyRocVideoDecoder& video_decoder) {
+    OutputSurfaceInfo* output_info = nullptr;
+    Require(video_decoder.GetOutputSurfaceInfo(&output_info) && output_info &&
+            output_info->output_width > 0 && output_info->output_height > 0,
+            "Decode a frame before checking RGB allocation sizes");
+    for (uint32_t depth : {8u, 10u}) {
+        OutputSurfaceInfo info = *output_info;
+        info.bit_depth = depth;
+        // Check the decoded dimensions and an odd width to exercise row alignment.
+        for (uint32_t width : {output_info->output_width, output_info->output_width | 1u}) {
+            info.output_width = width;
+            const size_t aligned_pixels = (size_t(width) + width % 2) * info.output_height;
+            const size_t bytes_per_pixel[] = {3, 6, 3, 6, 4, 8, 4, 8};
             for (int value = 1; value <= 8; ++value) {
                 auto format = static_cast<OutputFormatEnum>(value);
-                Require(decoder.CalculateRgbImageSize(format, &info) == expected[value - 1],
+                Require(video_decoder.CalculateRgbImageSize(format, &info) ==
+                        aligned_pixels * bytes_per_pixel[value - 1],
                         "Incorrect RGB allocation size");
             }
-            for (int value : {0, 9, 999}) {
-                auto format = static_cast<OutputFormatEnum>(value);
-                bool rejected = false;
-                try {
-                    decoder.CalculateRgbImageSize(format, &info);
-                } catch (const std::invalid_argument&) {
-                    rejected = true;
-                }
-                Require(rejected, "Invalid RGB format was accepted");
-            }
         }
-        OutputSurfaceInfo info{};
-        info.output_height = 1;
-        for (int value = 1; value <= 8; ++value) {
+        for (int value : {0, 9, 999}) {
             auto format = static_cast<OutputFormatEnum>(value);
-            const uint32_t bytes_per_pixel = (value >= 5 ? 4u : 3u) * (value % 2 == 0 ? 2u : 1u);
-            const uint32_t max_width = (static_cast<uint32_t>(std::numeric_limits<int>::max()) /
-                                        bytes_per_pixel) & ~1u;
-            for (uint32_t width : {max_width - 1, max_width}) {
-                info.output_width = width;
-                Require(decoder.CalculateRgbImageSize(format, &info) == size_t(max_width) * bytes_per_pixel,
-                        "Largest representable RGB pitch was rejected or changed");
+            bool rejected = false;
+            try {
+                video_decoder.CalculateRgbImageSize(format, &info);
+            } catch (const std::invalid_argument&) {
+                rejected = true;
             }
-            const uint32_t wrapped_width = (std::numeric_limits<uint32_t>::max() / bytes_per_pixel & ~1u) + 2;
-            for (uint32_t width : {max_width + 1, max_width + 2, wrapped_width,
-                                   static_cast<uint32_t>(std::numeric_limits<int>::max()),
-                                   std::numeric_limits<uint32_t>::max()}) {
-                info.output_width = width;
-                bool rejected = false;
-                try {
-                    decoder.CalculateRgbImageSize(format, &info);
-                } catch (const std::invalid_argument&) {
-                    rejected = true;
-                }
-                Require(rejected, "Unrepresentable RGB pitch was accepted");
-            }
+            Require(rejected, "Invalid RGB format was accepted");
         }
-    };
-    check(gpu);
+    }
+    // Synthetic one-row surfaces isolate pitch limits without allocating large images.
+    OutputSurfaceInfo info{};
+    info.output_height = 1;
+    for (int value = 1; value <= 8; ++value) {
+        auto format = static_cast<OutputFormatEnum>(value);
+        const uint32_t bytes_per_pixel = (value >= 5 ? 4u : 3u) * (value % 2 == 0 ? 2u : 1u);
+        const uint32_t max_width = (static_cast<uint32_t>(std::numeric_limits<int>::max()) /
+                                    bytes_per_pixel) & ~1u;
+        for (uint32_t width : {max_width - 1, max_width}) {
+            info.output_width = width;
+            Require(video_decoder.CalculateRgbImageSize(format, &info) == size_t(max_width) * bytes_per_pixel,
+                    "Largest representable RGB pitch was rejected or changed");
+        }
+        const uint32_t wrapped_width = (std::numeric_limits<uint32_t>::max() / bytes_per_pixel & ~1u) + 2;
+        for (uint32_t width : {max_width + 1, max_width + 2, wrapped_width,
+                               static_cast<uint32_t>(std::numeric_limits<int>::max()),
+                               std::numeric_limits<uint32_t>::max()}) {
+            info.output_width = width;
+            bool rejected = false;
+            try {
+                video_decoder.CalculateRgbImageSize(format, &info);
+            } catch (const std::invalid_argument&) {
+                rejected = true;
+            }
+            Require(rejected, "Unrepresentable RGB pitch was accepted");
+        }
+    }
     std::cout << "RGB allocation sizes, pitch boundaries, and invalid-format rejection verified.\n";
 }

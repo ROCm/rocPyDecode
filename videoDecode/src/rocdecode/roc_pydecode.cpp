@@ -28,7 +28,7 @@ using namespace std;
 #if defined(ROCPYVIDEO_BUILD_TESTING)
 void TestAll_roc_pybuffer();
 void Test_DLPackPyTensor_ConstructorsAndOperators();
-void Test_CalculateRgbImageSize();
+void Test_CalculateRgbImageSize(PyRocVideoDecoder& video_decoder);
 #endif
 
 

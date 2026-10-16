@@ -63,6 +63,6 @@ finally:
 if hasattr(rocpydecode, "TestAll_roc_pybuffer"):
     rocpydecode.TestAll_roc_pybuffer()
     rocpydecode.Test_DLPack()
-    rocpydecode.Test_CalculateRgbImageSize()
+    rocpydecode.Test_CalculateRgbImageSize(video_decoder.viddec)
     rocpydecode.DLPackPyTensor.test_all()
     print("NATIVE_CHECKS_PASS")
