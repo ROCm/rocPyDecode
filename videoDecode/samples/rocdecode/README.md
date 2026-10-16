@@ -6,9 +6,14 @@ Follow the [component installation instructions](../../README.md) for the
 complete SDK version requirements, development packages, test assets, and
 `PYTHONPATH`/`LD_LIBRARY_PATH` setup.
 
-Install FFmpeg and the rocDecode host library for demuxer/CPU samples, and
-ROCm-compatible PyTorch or hip-python for samples that import them.
-The default CTest suite does not require these optional packages.
+Install PyAV for samples that demux video containers using the component's
+[requirements.txt](../../requirements.txt), following the installation instructions
+above. Install ROCm-compatible PyTorch or hip-python for samples that import them.
+The samples accept H.264, HEVC, VP9, and AV1, subject to GPU and SDK support.
+The Python API test uses an H.264 MP4 file from the SDK as its test fixture;
+this does not limit the codecs supported by the samples. Both video runtime
+tests require PyAV, and the pixel regression test also needs NumPy. Both tests remain registered when prerequisites are missing and report
+skipped at runtime. Install the prerequisites and rerun CTest without reconfiguring.
 
 ## videodecode.py
 
@@ -133,31 +138,4 @@ The following are full list of arguments that can be passed to the sample.
 -h, --help                                    : Show detail help message and exit
 -i INPUT, --input INPUT                       : Input File Path - required
 -o OUTPUT, --output OUTPUT                    : Output File Path - optional
-```
-
-## videodecoderaw.py
-
-This sample decodes a raw (Annex-B) H.264/H.265 bitstream directly without using FFmpeg or the Python demuxer. It can optionally dump decoded YUV frames to a file. Provide a raw bitstream file; other arguments are optional.
-
-### Arguments
-The following are full list of arguments that can be passed to the sample.
-```bash
--h, --help                                    : Show detail help message and exit
--i INPUT, --input INPUT                       : Raw input bitstream file - required
--o OUTPUT, --output OUTPUT                    : Output YUV file or directory - optional
--d DEVICE, --device DEVICE                    : GPU device ID - optional, default 0
--m MEM_TYPE, --mem_type MEM_TYPE              : Output surface memory type [0:internal 1:dev_copied 2:host_copied 3:not_mapped] - optional, default 0
--f FRAMES, --frames FRAMES                    : Number of frames to decode (-1 = all) - optional, default -1
--z, --zero_latency                            : Force zero latency (flush ASAP) - optional
--crop LEFT TOP RIGHT BOTTOM, --crop_rect ...  : Crop rectangle - optional, default none
--c CODEC, --codec CODEC                       : Codec of raw stream [h264|h265]; guessed from extension if omitted
-```
-### Example
-How to launch it:
-```bash
-python3 samples/rocdecode/videodecoderaw.py \
-  -i $ROCM_PATH/share/rocdecode/video/AMD_driving_virtual_20-H264.264 \
-  --codec h264 \
-  -o /tmp/output.yuv \
-  -d 0
 ```

@@ -56,21 +56,30 @@ packages installed inside a container do not provision the bare-metal host.
 Optional video features
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-FFmpeg development libraries enable demuxing. The matching rocDecode host
-library and its utility sources additionally enable the CPU backend:
+Container demuxing requires Python 3.11 or newer and PyAV >=18.1. Newer PyAV
+releases may require a newer Python; pip selects a compatible version.
+PyAV is installed in the Python environment
+that runs rocPyDecode. From the repository root, install it using
+``videoDecode/requirements.txt``:
 
-.. code-block:: shell
+.. code:: shell
 
-   sudo apt-get install -y libavcodec-dev libavformat-dev libavutil-dev \
-       libswscale-dev rocdecode-host
+   python -m pip install --only-binary=:all: -r videoDecode/requirements.txt
 
+PyAV wheels include their FFmpeg libraries. rocPyDecode does not require
+system FFmpeg headers, libraries, an executable, or the rocDecode host library.
+Use a prebuilt PyAV wheel compatible with your Python version and platform.
+The command above installs only wheels and fails if no compatible PyAV wheel
+is available. Building PyAV from source requires additional native dependencies.
+GPU decoding still requires HIP, the rocDecode SDK, and its GPU utility sources.
+Building the bindings and JPEG decoding do not require PyAV. With video testing enabled,
+the Python API and PyAV pixel tests are always registered. At runtime they report
+skipped if compatible PyAV or the H.264 MP4 test media are missing; the pixel test
+also needs NumPy. Installing these prerequisites does not require rerunning CMake.
 
-These paths are omitted when their complete dependencies are unavailable.
-The default raw-video tests do not require them.
-
-NumPy, ROCm-compatible PyTorch, and hip-python are needed only by samples that
-use them, not by the native build or default CTest suite. Install those optional
-packages according to the selected sample and SDK version.
+NumPy, ROCm-compatible PyTorch, and hip-python are needed only by samples or
+tests that use them, not by the native build or core CTest suite. Install those
+optional packages according to the selected sample or test and SDK version.
 
 Bundled build dependencies
 --------------------------
@@ -106,8 +115,7 @@ Run from the project directory. Set ``ROCM_PATH`` to the complete SDK prefix;
    # Runtime GPU check; skip on build-only machines.
    "$ROCM_PATH/bin/rocminfo"
    test -d "$ROCM_PATH/share/rocdecode/utils/rocvideodecode"
-   ls "$ROCM_PATH/share/rocdecode/video/AMD_driving_virtual_20-H264.264"
-   ls "$ROCM_PATH/share/rocdecode/video/AMD_driving_virtual_20-H265.265"
+   ls "$ROCM_PATH/share/rocdecode/video/AMD_driving_virtual_20-H264.mp4"
    ls "$ROCM_PATH/share/rocjpeg/images"
 
 

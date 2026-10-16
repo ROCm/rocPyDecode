@@ -9,51 +9,19 @@ function(rocpyvideo_add_test test_name)
         TIMEOUT 300)
 endfunction()
 
-# Keep the default suite independent of FFmpeg, the rocDecode host library,
-# PyTorch, hip-python, and other optional sample dependencies.
 rocpyvideo_add_test(rocpydecode_test_types
     "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/types_test.py")
 
-if(EXISTS "${ROCPYVIDEO_MEDIA_DIR}/AMD_driving_virtual_20-H264.264")
-    rocpyvideo_add_test(video_decode_raw_python
-        "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/../samples/rocdecode/videodecoderaw.py"
-        -i "${ROCPYVIDEO_MEDIA_DIR}/AMD_driving_virtual_20-H264.264")
-else()
-    message(STATUS "H.264 raw test media unavailable; skipping raw H.264 CTest")
-endif()
-
-if(EXISTS "${ROCPYVIDEO_MEDIA_DIR}/AMD_driving_virtual_20-H265.265")
-    rocpyvideo_add_test(video_decode_raw_python_h265
-        "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/../samples/rocdecode/videodecoderaw.py"
-        -i "${ROCPYVIDEO_MEDIA_DIR}/AMD_driving_virtual_20-H265.265" --codec h265)
-else()
-    message(STATUS "H.265 raw test media unavailable; skipping raw H.265 CTest")
-endif()
-
-if(EXISTS "${ROCPYVIDEO_MEDIA_DIR}/AMD_driving_virtual_20-H264.264" AND
-   EXISTS "${ROCPYVIDEO_MEDIA_DIR}/AMD_driving_virtual_20-H265.265")
-    rocpyvideo_add_test(video_decode_raw_regressions
-        "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/raw_regression_test.py"
-        --media-dir "${ROCPYVIDEO_MEDIA_DIR}")
-endif()
-
-# Exercise optional API smoke tests only when their backend and media exist.
+# Check optional dependencies at runtime so installing them needs no reconfigure.
 set(_rocpyvideo_api_media "${ROCPYVIDEO_MEDIA_DIR}/AMD_driving_virtual_20-H264.mp4")
-if(ROCPYVIDEO_ENABLE_HOST AND EXISTS "${_rocpyvideo_api_media}")
-    rocpyvideo_add_test(video_decode_debug_api
-        "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/decoder_api_test.py"
-        -i "${_rocpyvideo_api_media}")
-    set_tests_properties(video_decode_debug_api PROPERTIES SKIP_RETURN_CODE 77)
-    execute_process(COMMAND "${Python3_EXECUTABLE}" -c "import numpy"
-        RESULT_VARIABLE _rocpyvideo_numpy_status OUTPUT_QUIET ERROR_QUIET)
-    if(_rocpyvideo_numpy_status EQUAL 0)
-        rocpyvideo_add_test(video_decode_cpu_api
-            "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/decodercpu_test.py"
-            -i "${_rocpyvideo_api_media}")
-    else()
-        message(STATUS "NumPy unavailable; skipping optional CPU API smoke test")
-    endif()
-endif()
+rocpyvideo_add_test(video_decode_api
+    "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/decoder_api_test.py"
+    -i "${_rocpyvideo_api_media}")
+rocpyvideo_add_test(video_decode_pyav_regressions
+    "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/pyav_regression_test.py"
+    -i "${_rocpyvideo_api_media}")
+set_tests_properties(video_decode_api video_decode_pyav_regressions
+    PROPERTIES SKIP_RETURN_CODE 77)
 
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/" DESTINATION
     "${CMAKE_INSTALL_DATADIR}/rocpydecode/tests"
