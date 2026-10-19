@@ -135,6 +135,13 @@ class demuxer:
         return self._wrap(self._next_packet())
 
     def SeekFrame(self, frame_number, seek_mode, seek_criteria):
+        """Seek by frame number (criteria 0) or seconds (criteria 1).
+
+        Mode 0 scans for a packet at or after the target presentation time.
+        If that scan reaches the end, return a normal end-of-stream packet,
+        including when the target is beyond the last packet. Mode 1 returns
+        a keyframe at or before the target. Underlying seek errors propagate.
+        """
         self._check_open()
         value = operator.index(frame_number) if seek_criteria == 0 else Fraction(frame_number)
         if value < 0 or seek_mode not in (0, 1) or seek_criteria not in (0, 1):
@@ -151,6 +158,7 @@ class demuxer:
             target = int(target)  # Frame timestamps may be quantized to stream ticks.
         # Start at a keyframe so reordered packets before the target are not skipped.
         self._container.seek(int(target), stream=stream, backward=True, any_frame=False)
+        self._packets.close()
         if self._filter:
             self._filter.flush()
         self._pending.clear()

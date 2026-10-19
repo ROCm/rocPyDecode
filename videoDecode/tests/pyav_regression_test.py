@@ -100,6 +100,10 @@ def check_seeking(path):
     for use_provider in (False, True):
         with (stream_provider(path) if use_provider else nullcontext(path)) as source:
             with demuxer(source) as video_demuxer:
+                video_demuxer.DemuxFrame()
+                previous_packets = video_demuxer._packets
+                video_demuxer.SeekFrame(0, 1, 0)
+                assert next(previous_packets, None) is None, "Seek left the previous demux iterator open"
                 for criteria, values in ((0, (0, 1, 2, 11, 12, len(packets) - 1, len(packets) + 2, 0)),
                                          (1, (0, 0.1, Fraction(1, 3), 1.25, 2.5, 10, 0))):
                     for value in values:
@@ -110,6 +114,9 @@ def check_seeking(path):
                         # Exact packet seeking must retain decode order, including B-frames.
                         first = next((i for i, (pts, _) in enumerate(packets) if pts >= target), len(packets))
                         packet = video_demuxer.SeekFrame(value, 0, criteria)
+                        if first == len(packets):
+                            assert packet.end_of_stream, "Seek past the end must return EOS"
+                            assert packet.bitstream_size == 0 and packet.bitstream_adrs == 0
                         actual = []
                         while not packet.end_of_stream:
                             actual.append(packet_data(packet))
