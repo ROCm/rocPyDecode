@@ -26,3 +26,18 @@ print('rocPyDecode types')
 rocpydecodeTypes = getmembers(types, isfunction)
 for i in range(len(rocpydecodeTypes)):
     print(rocpydecodeTypes[i])
+
+# Legacy exports must behave like the eagerly bound public API, even without PyAV.
+import rocpydecode as native
+
+compatibility_names = {"PyVideoDemuxer", "PyFileStreamProvider",
+                       "AVCodec2RocDecVideoCodec", "AVCodecString2RocDecVideoCodec"}
+assert compatibility_names <= set(dir(native))
+members = dict(getmembers(native))
+namespace = {}
+exec("from rocpydecode import *", namespace)
+public_names = {name for name in vars(native) if not name.startswith("_")}
+assert public_names | compatibility_names <= namespace.keys()
+for name in compatibility_names:
+    assert namespace[name] is members[name] is getattr(native, name)
+print("Compatibility exports are discoverable")

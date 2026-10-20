@@ -18,34 +18,51 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import rocpydecode
-from rocpydecode import DLPackPyTensor
+"""Exercise the public Python demux/decode flow without NumPy or PyTorch."""
 import argparse
+from pathlib import Path
 import sys
-import tempfile
- 
-parser = argparse.ArgumentParser(description='PyRocDecode Video Decode Input Arguments')
-parser.add_argument(
-    '-i',
-    '--input',
-    type=str,
-    help='Input File Path - required',
-    required=True)
+import rocpydecode
+from pyRocVideoDecode._pyav import require_av
+from pyRocVideoDecode.demuxer import demuxer
+from pyRocVideoDecode.decoder import decoder, GetRocDecCodecID
+
+parser = argparse.ArgumentParser(description="Demux video and decode YUV frames on the GPU")
+parser.add_argument("-i", "--input", type=Path, required=True)
 args = parser.parse_args()
+try:
+    require_av()
+except ImportError as error:
+    print(f"Skipping decoder_api_test: {error}")
+    sys.exit(77)
+if not args.input.is_file():
+    print(f"Skipping decoder_api_test: test media unavailable: {args.input}")
+    sys.exit(77)
 
-input_file_path = args.input
+video_demuxer = demuxer(args.input)
+try:
+    codec = GetRocDecCodecID(video_demuxer.GetCodecId())
+    video_decoder = decoder(codec)
+    assert video_decoder.IsCodecSupported(0, codec, video_demuxer.GetBitDepth())
+    frame_count = 0
+    while True:
+        packet = video_demuxer.DemuxFrame()
+        for _ in range(video_decoder.DecodeFrame(packet)):
+            assert video_decoder.GetFrameYuv(packet) != -1
+            assert video_decoder.GetFrameSize() > 0
+            video_decoder.ReleaseFrame(packet)
+            frame_count += 1
+        if packet.end_of_stream:
+            break
+    assert frame_count > 0, "No video frames decoded"
+    print(f"PYTHON_API_PASS: decoded and released {frame_count} YUV frames")
+finally:
+    video_demuxer.close()
 
-if hasattr(rocpydecode, "TestAllClassCalls"):
-    rocpydecode.TestAllClassCalls(input_file_path)
+# Native-only checks are compiled when BUILD_TESTING=ON, in either build type.
+if hasattr(rocpydecode, "TestAll_roc_pybuffer"):
     rocpydecode.TestAll_roc_pybuffer()
     rocpydecode.Test_DLPack()
-    with tempfile.TemporaryDirectory(prefix="rocpydecode-flush-") as output_directory:
-        rocpydecode.Test_PyReconfigureFlushCallback(input_file_path, output_directory)
-    rocpydecode.Test_CalculateRgbImageSize()
-    print('rocPyDecode APIs test finished.\n')
-
-    DLPackPyTensor.test_all()
-    print('rocPyDecode DLPackPyTensor APIs test completed successfully.\n')
-else:
-    print("rocPyDecode debug host/CPU test APIs not built; skipping decoder_api_test.")
-    sys.exit(77)
+    rocpydecode.Test_CalculateRgbImageSize(video_decoder.viddec)
+    rocpydecode.DLPackPyTensor.test_all()
+    print("NATIVE_CHECKS_PASS")

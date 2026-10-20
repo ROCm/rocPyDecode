@@ -57,30 +57,30 @@ packages installed inside a container do not provision the bare-metal host.
 Optional video features
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-FFmpeg development libraries enable demuxing. The matching rocDecode host
-library and its utility sources additionally enable the CPU backend:
+Container demuxing requires Python 3.11 or newer and PyAV >=18.1. Newer PyAV
+releases may require a newer Python; pip selects a compatible version.
+PyAV is installed in the Python environment
+that runs rocPyDecode. From the ``videoDecode`` directory, install it using
+``requirements.txt``:
 
-.. code-block:: shell
+.. code:: shell
 
-   sudo apt-get install -y libavcodec-dev libavformat-dev libavutil-dev \
-       libswscale-dev
+   python -m pip install --only-binary=:all: -r requirements.txt
 
+PyAV wheels include their FFmpeg libraries. rocPyDecode does not require
+system FFmpeg headers, libraries, an executable, or the rocDecode host library.
+Use a prebuilt PyAV wheel compatible with your Python version and platform.
+The command above installs only wheels and fails if no compatible PyAV wheel
+is available. Building PyAV from source requires additional native dependencies.
+GPU decoding still requires HIP, the rocDecode SDK, and its GPU utility sources.
+Building the bindings and JPEG decoding do not require PyAV. With video testing enabled,
+the Python API and PyAV pixel tests are always registered. At runtime they report
+skipped if compatible PyAV or the H.264 MP4 test media are missing; the pixel test
+also needs NumPy. Installing these prerequisites does not require rerunning CMake.
 
-The CPU backend additionally requires a matching rocDecode host library and its
-FFmpeg decoder utility sources under the selected SDK prefix. Some SDK
-repositories do not provide a separate rocdecode-host package. Check
-``apt-cache policy rocdecode-host`` before installing it; if unavailable,
-use a complete matching SDK that supplies these files to enable CPU decoding.
-Do not mix host libraries from another ROCm release.
-
-GPU decoding and the default CTests do not require the CPU backend.
-
-These paths are omitted when their complete dependencies are unavailable.
-The default raw-video tests do not require them.
-
-NumPy, ROCm-compatible PyTorch, and hip-python are needed only by samples that
-use them, not by the native build or default CTest suite. Install those optional
-packages according to the selected sample and SDK version.
+NumPy, ROCm-compatible PyTorch, and hip-python are needed only by samples or
+tests that use them, not by the native build or core CTest suite. Install those
+optional packages according to the selected sample or test and SDK version.
 
 Bundled build dependencies
 --------------------------
@@ -116,8 +116,7 @@ Run from the project directory. Set ``ROCM_PATH`` to the complete SDK prefix;
    # Runtime GPU check; skip on build-only machines.
    "$ROCM_PATH/bin/rocminfo"
    test -d "$ROCM_PATH/share/rocdecode/utils/rocvideodecode"
-   ls "$ROCM_PATH/share/rocdecode/video/AMD_driving_virtual_20-H264.264"
-   ls "$ROCM_PATH/share/rocdecode/video/AMD_driving_virtual_20-H265.265"
+   ls "$ROCM_PATH/share/rocdecode/video/AMD_driving_virtual_20-H264.mp4"
 
 
 The ``rocm_sysdeps/lib`` directory is used by SDK distributions that bundle
@@ -169,13 +168,13 @@ The local install prefix does not require ``sudo``. Replace ``build`` and ``inst
 consistently if you need separate host, container, or SDK-specific builds.
 CTest uses the build-tree bindings; ``-V`` also displays successful tests' output.
 
-With both raw videos available, tests cover binding types, raw
-H.264 decoding, raw H.265 decoding, and frame-limit/error regressions.
+Video tests cover binding types, the Python demux/decode API, seeking, and
+GPU output correctness. The video runtime tests require PyAV and test media.
 
-Media-dependent tests are registered during configuration only when their
-assets are present. A passing run with fewer tests does not establish full
-runtime coverage. Install the missing media and rerun CMake before CTest.
-Check that each raw-video test reports a positive decoded-frame count; zero
+JPEG tests are registered during configuration only when their assets are
+present. Install missing JPEG media and rerun CMake before CTest.
+A passing run with omitted or skipped tests does not establish full runtime coverage.
+Check that the video API test reports a positive decoded-frame count; zero
 frames is a failure.
 
 Test an installed package
@@ -183,7 +182,8 @@ Test an installed package
 
 Packages built with ``BUILD_TESTING=ON`` (the default) include an independent
 CTest setup. It needs CMake 3.20 or newer, Python matching the installed extension,
-compatible ROCm runtime libraries, a supported GPU, and both raw videos.
+compatible ROCm runtime libraries, a supported GPU, PyAV, and the H.264 MP4
+fixture. The pixel test also needs NumPy.
 No source checkout, compiler, or Python development headers are required.
 CMake discovers Python from the active environment and uses ``ROCM_PATH`` from
 the environment when set, otherwise ``/opt/rocm``. Python must match the installed
@@ -197,7 +197,10 @@ extension.
 
 From the configured test build directory, you can also run ``ctest -V``.
 CMake uses the selected package's bindings and fails configuration if they
-cannot be imported or the required test media is missing.
+cannot be imported. Video API and pixel tests report a CTest skip when PyAV
+or the MP4 fixture is unavailable; the pixel test also skips without NumPy.
+Skipped tests do not establish decoding correctness. Install the missing
+prerequisites and rerun CTest; no reconfiguration is needed.
 
 Optional settings for non-default installations:
 

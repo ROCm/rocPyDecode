@@ -10,7 +10,34 @@ The rocPyDecode API is a ROCm rocDecode Python/C++ Binding, a tool that lets you
 
 .. image:: ../data/reference/rocPyDecodeArch.png
 
-The rocPyDecode API main classes are a decoder class and a demuxer class. All rocPyDecode APIs are exposed using the API files ``decoder.py`` and ``demuxer.py``. You can find these files in the ``pyRocVideoDecode`` directory. The demuxer.py class is a Python class that binds to the C++ class PyVideoDemuxer, and the decoder.py class binds to the C++ PyRocVideoDecoder class.
+The rocPyDecode API main classes are a decoder class and a demuxer class. All rocPyDecode APIs are exposed using the API files ``decoder.py`` and ``demuxer.py``. You can find these files in the ``pyRocVideoDecode`` directory. The demuxer.py class uses PyAV to supply compressed packets. The decoder.py class binds to the C++ PyRocVideoDecoder GPU class.
+
+Demuxing
+========
+
+Container demuxing requires PyAV. The ``rocpydecode.PyVideoDemuxer`` and
+``PyFileStreamProvider`` entry points are also available. Unsupported codec
+names or IDs raise ``ValueError``. Video decoding uses the rocDecode GPU backend;
+CPU decoder APIs and a standalone raw-bitstream sample are not provided.
+
+Seeking supports modes 0 (exact packet) and 1 (previous keyframe), and criteria 0
+(integer frame number at a known constant rate) and 1 (finite, non-negative
+timestamp in seconds, including fractional values such as ``2.5``). Packet
+presentation timestamps use milliseconds for the default decoder clock. Exact
+mode returns the first packet in decode order whose presentation timestamp is
+at or after the requested position. Remaining packets retain their decode order;
+with B-frames, their presentation timestamps can be earlier than the returned
+packet's timestamp. Exact packet seeking requires presentation timestamps and
+does not supply missing reference frames. To reach an exact displayed frame in
+inter-predicted video, use mode 1, decode forward from the preceding keyframe,
+and select decoded frames by their timestamps. Reset/recreate the decoder when
+seeking to a different position. Input and seek failures raise exceptions.
+
+The memory stream provider accepts writable buffer objects in ``GetData``.
+The demuxer's ``close()`` or
+context-manager interface releases its container; subsequent reads and seeks
+raise ``ValueError``. Caller-supplied file-like objects remain owned by the
+caller and should be closed separately, for example with their own ``with`` block.
 
 The decoder class
 ==================

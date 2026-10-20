@@ -65,22 +65,25 @@ standalone build, run the same commands directly inside ``videoDecode`` or
 ``jpegDecode``.
 
 For a root build with both components available, testing enabled, and all test
-assets present, the core suite covers binding types, raw H.264,
-raw H.265, batched JPEG decoding, video/JPEG regression checks, JPEG input conversion,
+assets present, the suite covers binding types, video demuxing and GPU decoding,
+batched JPEG decoding, video/JPEG regression checks, JPEG input conversion,
 and configuration regressions for missing SDK utilities and GPU target selection.
 The configure suite also runs when video is skipped or disabled, provided a
 Python 3 interpreter is available. Set
 ``-DBUILD_TESTING=OFF`` to omit test registration.
 
-When the optional CPU backend and H.264 MP4 fixture are available, CTest also
-registers the debug API smoke test and, when NumPy is available, the CPU API
-smoke test. The debug test is reported as skipped in builds that define
-``NDEBUG``, including Release and RelWithDebInfo; it must run in Debug builds.
+CTest always registers the Python API smoke test and PyAV demuxing/GPU pixel
+regression for the video component. They check their optional dependencies and
+MP4 fixture at runtime and report missing prerequisites as skipped tests.
+Install the missing packages or MP4 fixture and rerun CTest; no reconfiguration
+is needed. The Python API smoke test runs in Debug and Release builds.
+Builds with ``BUILD_TESTING=ON`` also run native buffer, DLPack, and RGB
+allocation checks in both build types.
 
-Media-dependent tests are registered during configuration only when their
-assets are present. A passing run with fewer tests does not establish full
-runtime coverage. Install the missing media and rerun CMake before CTest.
-Check that each raw-video test reports a positive decoded-frame count; zero
+JPEG tests are registered during configuration only when their assets are
+present. Install missing JPEG media and rerun CMake before CTest.
+A passing run with omitted or skipped tests does not establish full runtime coverage.
+Check that the video API test reports a positive decoded-frame count; zero
 frames is a failure.
 Check that the JPEG test processes images and reports zero bad files.
 
@@ -124,9 +127,11 @@ Optional settings for non-default installations:
   search paths. No additional library-path export is needed when the installed
   runtime libraries are already discoverable.
 
-Installed configuration fails if the bindings cannot be imported, either required
-raw video is missing, or no JPEG ``*.jpg`` fixtures are found. To use media outside
-the SDK prefix, set ``ROCPYVIDEO_MEDIA_DIR`` or ``ROCPYJPEG_MEDIA_DIR`` when configuring.
+Installed configuration fails if the bindings cannot be imported or no JPEG
+``*.jpg`` fixtures are found. Video API and pixel tests report a CTest skip
+when PyAV or the H.264 MP4 fixture is unavailable; the pixel test also needs NumPy.
+Skipped tests do not establish decoding correctness. To use media outside the SDK
+prefix, set ``ROCPYVIDEO_MEDIA_DIR`` or ``ROCPYJPEG_MEDIA_DIR`` when configuring.
 Use a fresh test build directory after moving a package or changing Python or SDKs.
 The source-configuration regression suite remains a source-build test.
 

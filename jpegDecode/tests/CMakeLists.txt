@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.18)
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     project(rocpyjpegdecodeInstalledTests LANGUAGES NONE)
     enable_testing()
+    # Minimum version, not an exact pin: Python 3.12+ is accepted.
+    # The interpreter must match the installed extension's Python ABI.
     find_package(Python3 3.9 REQUIRED COMPONENTS Interpreter)
 
     if(NOT DEFINED ROCM_PATH)
