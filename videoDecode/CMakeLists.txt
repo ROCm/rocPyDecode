@@ -114,21 +114,6 @@ endfunction()
 rocpyvideo_check_gpu_targets()
 
 find_package(rocdecode 1.0.0 REQUIRED)
-find_package(FFmpeg QUIET)
-
-find_library(ROCPYVIDEO_HOST_LIBRARY NAMES rocdecode-host rocdecodehost
-    PATHS "${ROCM_PATH}/lib" NO_DEFAULT_PATH)
-set(ROCPYVIDEO_USE_FFMPEG OFF)
-if(FFMPEG_FOUND AND EXISTS "${ROCPYVIDEO_UTILS}/video_demuxer.h")
-    set(ROCPYVIDEO_USE_FFMPEG ON)
-endif()
-
-set(ROCPYVIDEO_ENABLE_HOST OFF)
-if(ROCPYVIDEO_USE_FFMPEG AND ROCPYVIDEO_HOST_LIBRARY AND
-   EXISTS "${ROCPYVIDEO_UTILS}/ffmpegvideodecode/ffmpeg_video_dec.h")
-    set(ROCPYVIDEO_ENABLE_HOST ON)
-endif()
-
 set(ROCPYVIDEO_SOURCES
     src/roc_pybuffer.cpp
     src/roc_pydlpack.cpp
@@ -137,17 +122,6 @@ set(ROCPYVIDEO_SOURCES
 set(ROCPYVIDEO_SDK_SOURCES
     "${ROCPYVIDEO_UTILS}/colorspace_kernels.cpp"
     "${ROCPYVIDEO_UTILS}/rocvideodecode/roc_video_dec.cpp")
-if(ROCPYVIDEO_USE_FFMPEG)
-    list(APPEND ROCPYVIDEO_SOURCES src/rocdecode/roc_pyvideodemuxer.cpp)
-endif()
-if(ROCPYVIDEO_ENABLE_HOST)
-    list(APPEND ROCPYVIDEO_SOURCES
-        src/rocdecode/roc_pydecode_test.cpp
-        src/rocdecode/roc_pyvideodecodecpu.cpp)
-    file(GLOB ROCPYVIDEO_FFMPEG_SOURCES "${ROCPYVIDEO_UTILS}/ffmpegvideodecode/*.cpp")
-    list(APPEND ROCPYVIDEO_SDK_SOURCES ${ROCPYVIDEO_FFMPEG_SOURCES})
-endif()
-
 set(Python3_FIND_VIRTUALENV FIRST)
 if(PYTHON_VERSION_SUGGESTED)
     find_package(Python3 ${PYTHON_VERSION_SUGGESTED} EXACT REQUIRED COMPONENTS Interpreter Development.Module)
@@ -181,26 +155,8 @@ target_include_directories(${ROCPYVIDEO_TARGET} SYSTEM PRIVATE
     "${ROCM_PATH}/include/rocdecode"
     "${ROCPYVIDEO_UTILS}"
     "${ROCPYVIDEO_UTILS}/rocvideodecode"
-    "${ROCPYVIDEO_UTILS}/ffmpegvideodecode"
     ${rocdecode_INCLUDE_DIR})
 target_link_libraries(${ROCPYVIDEO_TARGET} PRIVATE dlpack::dlpack hip::device rocdecode::rocdecode)
-target_compile_definitions(${ROCPYVIDEO_TARGET} PRIVATE
-    ROCPYDECODE_ENABLE_HOST=$<BOOL:${ROCPYVIDEO_ENABLE_HOST}>
-    ROCPYDECODE_USE_FFMPEG=$<BOOL:${ROCPYVIDEO_USE_FFMPEG}>)
-if(ROCPYVIDEO_USE_FFMPEG)
-    target_include_directories(${ROCPYVIDEO_TARGET} PRIVATE
-        ${AVUTIL_INCLUDE_DIR} ${AVCODEC_INCLUDE_DIR} ${AVFORMAT_INCLUDE_DIR})
-    target_link_libraries(${ROCPYVIDEO_TARGET} PRIVATE ${FFMPEG_LIBRARIES})
-    if(_FFMPEG_AVCODEC_VERSION VERSION_LESS_EQUAL 58.134.100)
-        target_compile_definitions(${ROCPYVIDEO_TARGET} PRIVATE USE_AVCODEC_GREATER_THAN_58_134=0)
-    else()
-        target_compile_definitions(${ROCPYVIDEO_TARGET} PRIVATE USE_AVCODEC_GREATER_THAN_58_134=1)
-    endif()
-endif()
-if(ROCPYVIDEO_ENABLE_HOST)
-    target_link_libraries(${ROCPYVIDEO_TARGET} PRIVATE ${ROCPYVIDEO_HOST_LIBRARY})
-endif()
-
 set(ROCPYVIDEO_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/${ROCPYVIDEO_TARGET}")
 file(COPY pyRocVideoDecode DESTINATION "${ROCPYVIDEO_OUTPUT_DIR}")
 set_target_properties(${ROCPYVIDEO_TARGET} PROPERTIES PREFIX "" OUTPUT_NAME rocpydecode
@@ -215,8 +171,10 @@ install(DIRECTORY pyRocVideoDecode DESTINATION ${CMAKE_INSTALL_LIBDIR})
 install(DIRECTORY samples/rocdecode DESTINATION ${CMAKE_INSTALL_DATADIR}/rocpydecode/samples)
 install(FILES LICENSE.txt DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/rocpydecode)
 if(BUILD_TESTING)
+    target_sources(${ROCPYVIDEO_TARGET} PRIVATE tests/roc_pydecode_test.cpp)
+    target_compile_definitions(${ROCPYVIDEO_TARGET} PRIVATE ROCPYVIDEO_BUILD_TESTING)
     add_subdirectory(tests)
 endif()
 message(STATUS "rocPyVideoDecode target: ${ROCPYVIDEO_TARGET}")
-message(STATUS "rocPyVideoDecode FFmpeg support: ${ROCPYVIDEO_USE_FFMPEG}")
-message(STATUS "rocPyVideoDecode CPU backend support: ${ROCPYVIDEO_ENABLE_HOST}")
+message(STATUS "rocPyVideoDecode demuxing: optional PyAV runtime")
+install(FILES requirements.txt DESTINATION ${CMAKE_INSTALL_DATADIR}/rocpydecode)
