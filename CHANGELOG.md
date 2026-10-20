@@ -12,10 +12,12 @@ Full documentation for for rocPyDecode is available at [https://rocm.docs.amd.co
 * Added root options to build both components or select either component
   independently.
 * Added component ownership, implementation-plan, and validation documents.
-* Added dependency-minimal CTest suites for direct H.264/H.265 raw video
-  decoding and batched JPEG decoding.
+* Added CTest suites for video demuxing, GPU decoding, and batched JPEG decoding.
 
 ### Changed
+
+* Container demuxing requires the optional PyAV package.
+* PyAV demuxing requires Python 3.11 or newer. Native bindings require Python 3.9 or newer; building the bindings and JPEG decoding do not require PyAV.
 
 * Replaced the monolithic root build with a lightweight umbrella orchestrator.
 * Moved all video and JPEG files into their respective component directories.
@@ -25,10 +27,16 @@ Full documentation for for rocPyDecode is available at [https://rocm.docs.amd.co
   video and JPEG extensions can coexist in one Python process.
 * Made ImageNet labels optional in the ResNet50 video sample through the
   `--labels` argument.
-* Limited default CTest registration to tests without optional FFmpeg host,
-  PyTorch, hip-python, or VAAPI-sensitive sample dependencies.
+* Core CTest coverage runs without optional PyAV, NumPy, PyTorch, or
+  hip-python sample dependencies.
 
 ### Removed
+
+* System FFmpeg development packages and the rocDecode host library are no
+  longer required for demuxing.
+* Standalone raw-bitstream sample and its dedicated regression tests.
+* CPU decoding APIs (`decodercpu` and `PyRocVideoDecoderCpu`) and CPU backend samples.
+  Video decoding uses the rocDecode GPU backend.
 
 * Removed the root `data` and `conda-recipe` directories.
 * Removed obsolete wheel, setup, dependency-install, and Docker-install helper

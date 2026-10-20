@@ -1,0 +1,179 @@
+// Copyright (c) 2026 Advanced Micro Devices, Inc. All rights reserved.
+ 
+// SPDX-License-Identifier:  [MIT License]
+
+#include "roc_pyvideodecode.h"
+#include "roc_pybuffer.h"
+#include "roc_pydlpack.h"
+#include <iostream>
+#include <vector>
+#include <cstdint>
+#include <memory>
+#include <limits>
+
+namespace {
+// Native-only assertions that cannot be reached through the public Python API.
+void Require(bool condition, const char* message) {
+    if (!condition) throw std::runtime_error(message);
+}
+}
+
+void TestAll_roc_pybuffer() {
+    std::cout << "Running TestAll_roc_pybuffer()..." << std::endl;
+
+    // Step 1: Create test tensor via DLPackPyTensor
+    std::vector<size_t> shape = {2, 3};
+    std::vector<size_t> strides = {3, 1};
+    std::vector<uint8_t> buffer(6, 42);
+
+    py::buffer_info info(buffer.data(), sizeof(uint8_t), py::format_descriptor<uint8_t>::format(), 2, shape, strides);
+    DLDevice dev;
+    dev.device_type = kDLCPU;
+    dev.device_id = 0;
+    DLPackPyTensor tensor(info, dev);
+
+    // Step 2: Construct BufferInterface
+    std::shared_ptr<BufferInterface> buf = std::make_shared<BufferInterface>(std::move(tensor));
+
+    // Step 3: Call shape()
+    auto sh = buf->shape();
+    std::cout << "Shape: (" << sh[0].cast<int>() << ", " << sh[1].cast<int>() << ")\n";
+
+    // Step 4: Call strides()
+    auto st = buf->strides();
+    std::cout << "Strides: (" << st[0].cast<int>() << ", " << st[1].cast<int>() << ")\n";
+
+    // Step 5: dtype()
+    std::string dtype = buf->dtype();
+    std::cout << "Dtype: " << dtype << std::endl;
+
+    // Step 6: data()
+    void* data_ptr = buf->data();
+    std::cout << "Data ptr: " << data_ptr << std::endl;
+
+    // Step 7: dlTensor()
+    const DLTensor& t = buf->dlTensor();
+    std::cout << "DLTensor ndim: " << t.ndim << ", device_id: " << t.device.device_id << std::endl;
+
+    // Step 8: dlpack() and dlpackDevice()
+    auto cap = buf->dlpack(py::int_(1));
+    auto devinfo = buf->dlpackDevice();
+    std::cout << "Device tuple: (" << devinfo[0].cast<int>() << ", " << devinfo[1].cast<int>() << ")\n";
+
+    // Step 9: Test LoadDLPack()
+    std::shared_ptr<BufferInterface> buf2 = std::make_shared<BufferInterface>();
+    std::string typstr = "|u1";
+    int ret = buf2->LoadDLPack(shape, strides, 8, typstr, buffer.data(), 0);
+    std::cout << "LoadDLPack returned: " << ret << std::endl;
+
+    std::cout << "TestAll_roc_pybuffer() completed successfully.\n";
+}
+
+void Test_DLPackPyTensor_ConstructorsAndOperators() {
+    std::cout << "Testing DLPackPyTensor constructors and operators...\n";
+
+    // Step 1: Manually create DLTensor
+    std::vector<int64_t> shape = {2, 3};
+    std::vector<int64_t> strides = {3, 1};
+    std::vector<uint8_t> data(6, 99);
+
+    DLDevice device;
+    device.device_type = kDLCPU;
+    device.device_id = 0;
+
+    DLTensor tensor;
+    tensor.data = data.data();
+    tensor.device = device;
+    tensor.ndim = 2;
+    tensor.dtype = DLDataType{uint8_t(1), 8, 1};
+    tensor.shape = shape.data();
+    tensor.strides = strides.data();
+    tensor.byte_offset = 0;
+
+    // Step 2: Test constructor: DLPackPyTensor(const DLTensor&)
+    DLPackPyTensor tensor_from_dl(tensor);
+    std::cout << "Constructed DLPackPyTensor from DLTensor.\n";
+
+    // Step 3: Access underlying tensor using operator->
+    const DLTensor* ptr = tensor_from_dl.operator->();
+    std::cout << "Accessed ndim via operator->: " << ptr->ndim << std::endl;
+
+    // Step 4: Access underlying tensor using operator*
+    const DLTensor& ref = *tensor_from_dl;
+    std::cout << "Accessed shape[0] via operator*: " << ref.shape[0] << std::endl;
+
+    // Step 5: Test move constructor DLPackPyTensor(DLManagedTensor&&)
+    DLManagedTensor m_tensor;
+    m_tensor.dl_tensor = tensor; // Copy the tensor struct
+    m_tensor.manager_ctx = nullptr;
+    m_tensor.deleter = nullptr;
+
+    DLPackPyTensor moved_tensor(std::move(m_tensor));
+    std::cout << "Constructed DLPackPyTensor by moving DLManagedTensor.\n";
+
+    // Confirm internal access still works
+    std::cout << "Moved tensor shape[1]: " << moved_tensor->shape[1] << std::endl;
+
+    std::cout << "All DLPackPyTensor constructor/operator tests passed.\n";
+}
+
+void Test_CalculateRgbImageSize(PyRocVideoDecoder& video_decoder) {
+    OutputSurfaceInfo* output_info = nullptr;
+    Require(video_decoder.GetOutputSurfaceInfo(&output_info) && output_info &&
+            output_info->output_width > 0 && output_info->output_height > 0,
+            "Decode a frame before checking RGB allocation sizes");
+    for (uint32_t depth : {8u, 10u}) {
+        OutputSurfaceInfo info = *output_info;
+        info.bit_depth = depth;
+        // Check the decoded dimensions and an odd width to exercise row alignment.
+        for (uint32_t width : {output_info->output_width, output_info->output_width | 1u}) {
+            info.output_width = width;
+            const size_t aligned_pixels = (size_t(width) + width % 2) * info.output_height;
+            const size_t bytes_per_pixel[] = {3, 6, 3, 6, 4, 8, 4, 8};
+            for (int value = 1; value <= 8; ++value) {
+                auto format = static_cast<OutputFormatEnum>(value);
+                Require(video_decoder.CalculateRgbImageSize(format, &info) ==
+                        aligned_pixels * bytes_per_pixel[value - 1],
+                        "Incorrect RGB allocation size");
+            }
+        }
+        for (int value : {0, 9, 999}) {
+            auto format = static_cast<OutputFormatEnum>(value);
+            bool rejected = false;
+            try {
+                video_decoder.CalculateRgbImageSize(format, &info);
+            } catch (const std::invalid_argument&) {
+                rejected = true;
+            }
+            Require(rejected, "Invalid RGB format was accepted");
+        }
+    }
+    // Synthetic one-row surfaces isolate pitch limits without allocating large images.
+    OutputSurfaceInfo info{};
+    info.output_height = 1;
+    for (int value = 1; value <= 8; ++value) {
+        auto format = static_cast<OutputFormatEnum>(value);
+        const uint32_t bytes_per_pixel = (value >= 5 ? 4u : 3u) * (value % 2 == 0 ? 2u : 1u);
+        const uint32_t max_width = (static_cast<uint32_t>(std::numeric_limits<int>::max()) /
+                                    bytes_per_pixel) & ~1u;
+        for (uint32_t width : {max_width - 1, max_width}) {
+            info.output_width = width;
+            Require(video_decoder.CalculateRgbImageSize(format, &info) == size_t(max_width) * bytes_per_pixel,
+                    "Largest representable RGB pitch was rejected or changed");
+        }
+        const uint32_t wrapped_width = (std::numeric_limits<uint32_t>::max() / bytes_per_pixel & ~1u) + 2;
+        for (uint32_t width : {max_width + 1, max_width + 2, wrapped_width,
+                               static_cast<uint32_t>(std::numeric_limits<int>::max()),
+                               std::numeric_limits<uint32_t>::max()}) {
+            info.output_width = width;
+            bool rejected = false;
+            try {
+                video_decoder.CalculateRgbImageSize(format, &info);
+            } catch (const std::invalid_argument&) {
+                rejected = true;
+            }
+            Require(rejected, "Unrepresentable RGB pitch was accepted");
+        }
+    }
+    std::cout << "RGB allocation sizes, pitch boundaries, and invalid-format rejection verified.\n";
+}

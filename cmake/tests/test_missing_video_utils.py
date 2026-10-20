@@ -2,8 +2,18 @@
 
 No ROCm SDK or GPU is needed. Check missing utilities and target selection
 before SDK discovery, and compiler-check failures with mocked SDK modules.
+
+CI usage: Run
+`python3 cmake/tests/test_missing_video_utils.py` from the repository root as an
+early build-configuration check, and fail the job if it fails. It verifies that
+missing SDK utility sources are handled correctly. It needs only Python 3,
+CMake, and a C++ compiler. It is also included in the regular CTest suite when
+BUILD_TESTING=ON, so running it separately is optional.
 """
 import os
+import json
+import shlex
+import sys
 import pathlib
 import shutil
 import subprocess
@@ -31,6 +41,34 @@ class ConfigureRegressions(unittest.TestCase):
         for install in (directory / "build").rglob("cmake_install.cmake"):
             self.assertNotIn("pyRocVideoDecode", install.read_text())
         return result.stdout
+
+    def test_video_api_registration_dependencies(self):
+        # Optional tests remain visible without installed packages or test media.
+        with tempfile.TemporaryDirectory() as temporary:
+            root = pathlib.Path(temporary)
+            python = root / "python"
+            python.write_text("#!/bin/sh\nexec " + shlex.quote(sys.executable) + ' -S "$@"\n')
+            python.chmod(0o755)
+            (root / "CMakeLists.txt").write_text(
+                'cmake_minimum_required(VERSION 3.18)\nproject(TestRegistration NONE)\n'
+                'enable_testing()\nset(CMAKE_INSTALL_DATADIR share)\n'
+                f'set(ROCM_PATH "{root}")\nset(Python3_EXECUTABLE "{python}")\n'
+                f'add_subdirectory("{self.source / "videoDecode/tests"}" video-tests)\n')
+            env = dict(os.environ, PYTHONPATH=str(root), PYTHONDONTWRITEBYTECODE="1")
+            build = root / "build"
+            result = subprocess.run(
+                [os.environ.get("ROCPYDECODE_TEST_CMAKE", "cmake"),
+                 "-S", str(root), "-B", str(build)], env=env,
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+            self.assertEqual(result.returncode, 0, result.stdout)
+            listing = subprocess.check_output(
+                ["ctest", "--test-dir", str(build), "--show-only=json-v1"], text=True)
+            tests = {test["name"]: test for test in json.loads(listing)["tests"]}
+            optional = {"video_decode_api", "video_decode_pyav_regressions"}
+            self.assertEqual(set(tests), {"rocpydecode_test_types"} | optional)
+            for name in optional:
+                properties = {prop["name"]: prop["value"] for prop in tests[name]["properties"]}
+                self.assertEqual(properties["SKIP_RETURN_CODE"], 77)
 
     def test_missing_default_directory(self):
         with tempfile.TemporaryDirectory() as temporary:
