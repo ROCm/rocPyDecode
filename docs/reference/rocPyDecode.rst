@@ -56,30 +56,20 @@ The demuxer class contains API functions used to demux input video frames before
 rocPyDecode Structures
 =======================
 
-The rocPyDecode generic structures described here are used in some decode or demuxer API calls to set, get or retrieve related elements.  
+The rocPyDecode generic structures described here are used in some decode or demuxer API calls to set, get or retrieve related elements.
 
 * :doc:`Structures <structures>`
 
-API Functions and Features
-===========================
-- **Parser Support:**
-  Yes
-- **Feature:**
-  Decoding
-- **Codec:**
-  H.264, HEVC - 8/10 bit
-- **Format Conversion:**
-  GPU color space & pixel format conversions
-- **Exporting GPU MEM:**
-  Yes (no copies between host & device)
-- **OS:**
-  Linux
-- **Scaling Support:**
-  Yes using HIP kernels
-- **Resolution:**
-  4K for H.264, 8K for HEVC 
+API functions and features
+==========================
+
+The GPU decoder supports video parsing, decoded-frame retrieval, YUV resizing,
+RGB conversion, and tensor exports. Codec, bit-depth, and resolution limits
+are described in :doc:`rocPyDecode-codecs-and-hardware`.
+Buffer ownership and copy behavior depend on the operation; see
+:doc:`decoderClass` and :doc:`../conceptual/rocPyDecode-mem-types`.
 
 rocPyDecode API Usage Examples
 ==============================
 
-Examples of how to use the rocPyDecode API classes and functions can be found under ``samples/rocdecode``.
+Examples of how to use the rocPyDecode API classes and functions can be found under ``videoDecode/samples/rocdecode``.

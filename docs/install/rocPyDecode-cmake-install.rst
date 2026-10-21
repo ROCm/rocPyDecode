@@ -1,5 +1,5 @@
-CMake installation
-==================
+Build and install rocPyDecode from source
+=========================================
 
 Prepare the SDK, development dependencies, and media described in
 :doc:`rocPyDecode-prerequisites` before configuring.
@@ -43,7 +43,14 @@ To use the current defaults, configure a new build directory without
 Build, install, and test
 ------------------------
 
-Run these commands from the project directory after preparing the prerequisites:
+Obtain the source and enter the repository:
+
+.. code-block:: shell
+
+   git clone https://github.com/ROCm/rocPyDecode.git
+   cd rocPyDecode
+
+After preparing :doc:`rocPyDecode-prerequisites`, run:
 
 .. code-block:: shell
 
@@ -52,7 +59,8 @@ Run these commands from the project directory after preparing the prerequisites:
        -DPYTHON_VERSION_SUGGESTED=3.12
    cmake --build build --parallel
    cmake --install build
-   ctest --test-dir build --output-on-failure -V
+   # Requires a supported GPU and test media. Skip on build-only machines.
+   ctest --test-dir build --output-on-failure -V --no-tests=error
 
 
 The local install prefix does not require ``sudo``. Replace ``build`` and ``install``
@@ -87,65 +95,37 @@ Check that the video API test reports a positive decoded-frame count; zero
 frames is a failure.
 Check that the JPEG test processes images and reports zero bad files.
 
-Test an installed package
--------------------------
+Test the installed files using :ref:`installed-package-tests`.
+To use the bindings in an application, follow :ref:`installed-python-bindings`.
 
-Packages built with ``BUILD_TESTING=ON`` (the default) install a CTest setup for
-each component. No source checkout, compiler, or Python development headers
-are needed to run these installed tests. Use CMake 3.20 or newer, a Python
-interpreter matching the installed extension, compatible ROCm runtime libraries,
-a supported GPU, and the SDK test media described above.
+Standalone component builds
+---------------------------
 
-Set ``prefix`` to the installed or extracted package directory. CMake discovers
-Python from the active environment and uses ``ROCM_PATH`` from the environment
-when set, otherwise ``/opt/rocm``. Python must match the installed extension.
+The same configure, build, and install commands work from ``videoDecode`` or
+``jpegDecode`` without the other component. Install only that component's SDK
+requirements. Its local ``third_party`` directory supplies its bundled headers.
 
-.. code-block:: shell
+For build-tree imports in a standalone Python 3.12 build, add
+``build/rocpydecode_3_12/lib`` and ``build/rocpydecode_3_12`` to ``PYTHONPATH`` for
+video, or ``build/rocpyjpegdecode_3_12/lib`` and ``build/rocpyjpegdecode_3_12`` for
+JPEG. In a combined build these paths are under ``build/videoDecode`` and
+``build/jpegDecode``, respectively. Adjust the version suffix for your Python.
+CTest sets the appropriate paths automatically.
 
-   prefix=/path/to/installed/package
-   cmake -S "$prefix/share/rocpydecode/tests" -B video-tests
-   ctest --test-dir video-tests -V --no-tests=error
+Missing rocDecode utility sources
+---------------------------------
 
-   cmake -S "$prefix/share/rocpyjpegdecode/tests" -B jpeg-tests
-   ctest --test-dir jpeg-tests -V --no-tests=error
+Video builds use utility sources under ``$ROCM_PATH/share/rocdecode/utils``.
+To use compatible external sources, configure with
+``-DROCPYVIDEO_UTILS_DIR=/path/to/rocDecode/utils``. Sources remain external and
+must match the installed rocDecode headers and libraries.
 
+If required files are absent, CMake lists them and skips video targets, tests,
+and installation. An explicit override does not fall back to the SDK directory.
+JPEG still builds when enabled. If no component remains, configuration warns
+that nothing will be built. Check the configuration output before treating a
+successful command as a successful video build.
 
-Run only the commands for installed components. From a configured test build
-directory, you can also run ``ctest -V``. CMake sets the test Python path to the
-selected package's bindings. Adjust ``share`` if the package uses a custom data
-directory; the test setup retains the relative library/data layout when moved.
-
-Optional settings for non-default installations:
-
-- Add ``-DPython3_EXECUTABLE=/path/to/python`` to the CMake command to select a
-  different interpreter, or activate its virtual environment before configuring.
-- Add ``-DROCM_PATH=/path/to/rocm`` to select a different SDK and its test media.
-- If importing the bindings reports a missing shared library, make that library
-  available through the runtime loader configuration. For a custom SDK, this
-  may require ``LD_LIBRARY_PATH`` pointing to its library directories. CMake's
-  ``ROCM_PATH`` setting selects test media; it does not change the runtime loader's
-  search paths. No additional library-path export is needed when the installed
-  runtime libraries are already discoverable.
-
-Installed configuration fails if the bindings cannot be imported or no JPEG
-``*.jpg`` fixtures are found. Video API and pixel tests report a CTest skip
-when PyAV or the H.264 MP4 fixture is unavailable; the pixel test also needs NumPy.
-Skipped tests do not establish decoding correctness. To use media outside the SDK
-prefix, set ``ROCPYVIDEO_MEDIA_DIR`` or ``ROCPYJPEG_MEDIA_DIR`` when configuring.
-Use a fresh test build directory after moving a package or changing Python or SDKs.
-The source-configuration regression suite remains a source-build test.
-
-Use the installed bindings
---------------------------
-
-Keep the selected SDK's runtime library path from the setup above. For the
-local install prefix and Python 3.12 used here:
-
-.. code-block:: shell
-
-   export PYTHONPATH="$PWD/install/lib${PYTHONPATH:+:$PYTHONPATH}"
-   python3.12 -c 'import rocpydecode, rocpyjpegdecode; import pyRocVideoDecode.decoder, pyRocJpegDecode.decoder; print("Installed bindings imported successfully")'
-
-
-If you change ``CMAKE_INSTALL_LIBDIR`` or the Python version, adjust these paths
-and the interpreter accordingly.
+The build option is retained in the cache. Correct the utility path and
+reconfigure to restore video support. ``BUILD_VIDEO_DECODE=OFF`` instead skips
+video configuration explicitly.
