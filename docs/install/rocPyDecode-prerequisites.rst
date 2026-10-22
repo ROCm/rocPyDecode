@@ -3,11 +3,12 @@ Prerequisites
 
 Use Linux. GPU decoding and runtime tests require an AMD GPU supported by the
 selected ROCm release and decoder library; building and installing do not require
-a GPU. Install a complete ROCm 7.0 or newer SDK with
-AMD Clang 18 or newer and C++17 support. See the
+a GPU. Install a compatible ROCm SDK providing HIP and
+AMD Clang version 18 or later with C++17 support, together with the rocDecode
+and/or rocJPEG development packages listed below. See the
 `ROCm installation guide <https://rocm.docs.amd.com/projects/install-on-linux/en/latest/>`_ for OS, GPU, driver,
 and repository setup. The Ubuntu package examples below target Ubuntu 24.04
-and Python 3.12; use packages appropriate to your OS and selected ROCm release.
+and Python 3.12. Use packages appropriate to your OS and selected ROCm release.
 
 Video builds require a compiler that supports all selected GPU targets. See
 :doc:`rocPyDecode-cmake-install` for the default list and explicit selection.
@@ -16,14 +17,14 @@ Install only the SDK dependencies for the components you intend to build.
 
 Required build dependencies:
 
-- CMake 3.20 or newer for the commands below, including ``ctest --test-dir``.
-  The CMake project itself requires CMake 3.18 or newer for Python module discovery.
-- Python 3.9 or newer and matching development headers. The examples
+- CMake 3.20 or later for the commands below, including ``ctest --test-dir``.
+  The CMake project itself requires CMake 3.18 or later for Python module discovery.
+- Python 3.9 or later, and matching development headers. The examples
   select Python 3.12; change ``PYTHON_VERSION_SUGGESTED`` to your installed version.
-- pybind11 3.1.0 and DLPack 1.3 headers; bundled in the repository.
-- rocDecode **1.0.0 or newer**, including development files, CMake package
+- pybind11 3.1.0 and DLPack 1.3 headers, bundled in the repository.
+- rocDecode **1.0.0 or later**, including development files, CMake package
   configuration, and utility sources under ``share/rocdecode/utils``.
-- rocJPEG **1.0.0 or newer**, including development files and CMake package
+- rocJPEG **1.0.0 or later**, including development files and CMake package
   configuration.
 
 Install the build tools. For Ubuntu 24.04 and Python 3.12:
@@ -54,7 +55,7 @@ The test package supplies utility sources needed to build the video binding,
 as well as test media. Installing only the development package is insufficient.
 For JPEG development files, install ``amdrocm-jpeg-dev`` and obtain its matching
 JPEG test images. On RHEL or SLES, the development suffix is ``-devel`` instead
-of ``-dev``; follow the SDK guide for repository and version selection.
+of ``-dev``. Follow the SDK guide for repository and version selection.
 
 Older ROCm repositories use names such as ``rocdecode-dev``, ``rocdecode-test``,
 ``rocjpeg-dev``, and ``rocjpeg-test``. Use the package names for your release,
@@ -73,7 +74,7 @@ packages installed inside a container do not provision the bare-metal host.
 Optional Python packages
 ------------------------
 
-Container demuxing requires Python 3.11 or newer and PyAV >=18.1. Newer PyAV
+Container demuxing requires Python 3.11 or later and PyAV >=18.1. Newer PyAV
 releases may require a newer Python; pip selects a compatible version.
 PyAV is installed in the Python environment
 that runs rocPyDecode. From the repository root, install it using
