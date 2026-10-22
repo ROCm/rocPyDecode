@@ -13,7 +13,7 @@ import those packages; the default CTest suite does not require them.
 ## jpegdecode.py
 
 Decode one JPEG image and optionally save the output. Supply the image
-path with `-i`; other arguments are optional.
+path with `-i`. All other arguments are optional.
 
 ### Arguments
 
@@ -74,6 +74,6 @@ The sample directory also contains these notebooks:
 
 | Notebook File             | Description |
 |---------------------------|-------------|
-| `batch_sample.ipynb`      | This sample decodes a batch of multiple JPEG images, passing all the images full path as a list, or loading their data and passes it as a list of memory buffers. |
-| `decode_rgb_planar.ipynb` | This sample decodes a JPEG image into 3 planes, red, green and blue, then it views each of those planes as a separate image and combines them in one RGB image in one row. |
-| `decode_source.ipynb`     | This sample decodes one JPEG image, passing the image full path, or loading its data and passing it as memory buffer, and as a NumPy array. |
+| `batch_sample.ipynb` | Decodes a batch of multiple JPEG images. Images are passed to the decoder either as a list of paths or by loading their data and passing a list of image buffers. |
+| `decode_rgb_planar.ipynb` | Decodes a JPEG image into red, green, and blue planes. Displays the separate planes and the combined RGB image in one row. |
+| `decode_source.ipynb` | Decodes one JPEG image. The image is passed to the decoder as a NumPy array, a memory buffer, or by providing its path. |

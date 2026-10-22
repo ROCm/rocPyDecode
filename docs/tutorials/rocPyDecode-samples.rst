@@ -1,24 +1,33 @@
-rocPyDecode samples and tests
-=============================
+.. meta::
+  :description: rocPyDecode samples and tests
+  :keywords: rocPyJpegDecode, rocPyDecode, rocDecode, rocJPEG, ROCm, API, documentation, video, decode, decoding, samples
 
-Prepare :doc:`../install/rocPyDecode-install` before running samples. Samples
+*******
+Samples
+*******
+
+Follow :doc:`../install/rocPyDecode-install` before running samples. Samples
 that import NumPy, ROCm-compatible PyTorch, hip-python, or mpi4py also need those
 packages in the selected Python environment.
 
 Video
 -----
 
-:doc:`video-samples` describes the scripts under
-``videoDecode/samples/rocdecode``. Container-demuxing samples require PyAV.
-``videodecodeperf.py`` uses hip-python to query GPU properties and device counts;
+See :doc:`video-samples` for information about the samples in
+``videoDecode/samples/rocdecode``.
+
+Container-demuxing samples require PyAV.
+``videodecodeperf.py`` uses hip-python to query GPU properties and device counts.
 hip-python is not a dependency of the rocPyDecode library itself.
 
 JPEG
 ----
 
-:doc:`jpeg-samples` describes the scripts and notebooks under
-``jpegDecode/samples/rocjpeg``. Batched decoding reports and skips bad inputs;
-a folder containing no decodable images causes the sample to fail.
+See :doc:`jpeg-samples` for information about the samples in
+``jpegDecode/samples/rocjpeg``.
+
+Batched decoding skips bad inputs and reports them. A folder containing no
+decodable images causes the sample to fail.
 Performance and PyTorch examples are available after installing their optional
 dependencies.
 

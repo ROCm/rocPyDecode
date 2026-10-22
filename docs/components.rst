@@ -1,5 +1,10 @@
+.. meta::
+  :description: Independent video and JPEG components in rocPyDecode
+  :keywords: rocPyDecode, rocPyJpegDecode, rocDecode, rocJPEG, ROCm, components
+
+*************************
 Video and JPEG components
-=========================
+*************************
 
 ``videoDecode`` provides GPU video decoding through rocDecode and container
 demuxing through PyAV. ``jpegDecode`` provides GPU JPEG decoding through rocJPEG.

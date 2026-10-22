@@ -5,12 +5,11 @@ root: index
 subtrees:
 - caption: Install
   entries:
-  - file: install/rocPyDecode-install
   - file: install/rocPyDecode-prerequisites
+  - file: install/rocPyDecode-install
   - file: install/rocPyDecode-cmake-install
 - caption: Conceptual
   entries:
-  - file: components
   - file: conceptual/rocPyDecode-mem-types
 - caption: Samples
   entries:
@@ -22,6 +21,7 @@ subtrees:
   - file: how-to/using-rocPydecode
 - caption: Reference
   entries:
+  - file: components
   - file: reference/rocPyDecode
     entries:
     - file: reference/decoderClass

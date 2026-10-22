@@ -1,28 +1,44 @@
 # rocPyVideoDecode samples
 
+The video samples demonstrate GPU decoding, color conversion, resizing, and
+PyTorch interoperability. They also include examples of decoding from memory
+and distributing work across processes.
+
 ## Prerequisites
 
 Follow the [installation instructions](../install/rocPyDecode-install.rst) for the
 complete SDK version requirements, development packages, test assets, and
 `PYTHONPATH`/`LD_LIBRARY_PATH` setup.
 
-Install PyAV for samples that demux video containers using the component's
-[requirements.txt](https://github.com/ROCm/rocPyDecode/blob/develop/videoDecode/requirements.txt), following the installation instructions
-above. Install ROCm-compatible PyTorch or hip-python for samples that import them.
-The ResNet-50 example also imports torchvision. The MPI example imports
-mpi4py, PyTorch, NumPy, and PyAV and requires an MPI runtime.
-The samples accept H.264, HEVC, VP9, and AV1, subject to GPU and SDK support.
-For scripts with a `--mem_type` option, the default is copied device memory (1),
-except the performance sample, which defaults to unmapped output (3).
-The Python API test uses an H.264 MP4 file from the SDK as its test fixture;
-this does not limit the codecs supported by the samples. Both video runtime
-tests require PyAV, and the pixel regression test also needs NumPy. Both tests remain registered when prerequisites are missing and report
-skipped at runtime. Install the prerequisites and rerun CTest without reconfiguring.
+Install the dependencies required by the samples you want to run:
+
+- **Container demuxing:** Install PyAV using the component's
+  [requirements.txt](https://github.com/ROCm/rocPyDecode/blob/develop/videoDecode/requirements.txt),
+  following the installation instructions above.
+- **PyTorch samples:** Install ROCm-compatible PyTorch. The ResNet-50 sample also
+  requires torchvision.
+- **Performance sample:** Install hip-python for GPU-property and device-count
+  queries.
+- **MPI sample:** Install an MPI runtime, mpi4py, ROCm-compatible PyTorch,
+  NumPy, and PyAV.
+
+The following settings apply to the video samples and tests:
+
+- **Codecs:** Samples accept H.264, HEVC, VP9, and AV1, subject to GPU and SDK
+  support.
+- **Output memory:** For scripts with a `--mem_type` option, the default is copied
+  device memory (1). The performance sample defaults to unmapped output (3).
+- **Test input:** The Python API test uses an H.264 MP4 file from the SDK. This
+  fixture does not limit the codecs supported by the samples.
+- **Test dependencies:** Both video runtime tests require PyAV. The pixel
+  regression test also requires NumPy. Both tests remain registered when
+  prerequisites are missing and report a skip at runtime. Install the missing
+  prerequisites and rerun CTest without reconfiguring.
 
 ## videodecode.py
 
 Demux and decode a video file, optionally saving decoded YUV frames. Supply
-the input path with `-i`; other arguments are optional.
+the input path with `-i`. All other arguments are optional.
 
 ### Arguments
 The sample accepts the following arguments. Use `--help` to view the current CLI.
@@ -72,7 +88,7 @@ The sample accepts the following arguments. Use `--help` to view the current CLI
 ## videodecodergb.py
 
 Decode video frames and convert them to the selected RGB output format.
-Supply the input path with `-i`; use `-o` to save raw output bytes.
+Supply the input path with `-i`. Use `-o` to save raw output bytes.
 
 ### Arguments
 The sample accepts the following arguments. Use `--help` to view the current CLI.
@@ -90,7 +106,7 @@ The sample accepts the following arguments. Use `--help` to view the current CLI
 ## videodecodetorch.py
 
 Decode video and export frames to PyTorch through DLPack. Supply the input
-path with `-i`; output-file saving is optional.
+path with `-i`. Output-file saving is optional.
 
 ### Arguments
 The sample accepts the following arguments. Use `--help` to view the current CLI.
@@ -127,7 +143,7 @@ The sample accepts the following arguments. Use `--help` to view the current CLI
 
 Decode frames, export them to PyTorch through DLPack, and resize them for
 ResNet-50 inference. The sample prints the top five predictions for each frame.
-Supply the input path with `-i`; an ImageNet labels file is optional.
+Supply the input path with `-i`. An ImageNet labels file is optional.
 
 ### Arguments
 The sample accepts the following arguments. Use `--help` to view the current CLI.
