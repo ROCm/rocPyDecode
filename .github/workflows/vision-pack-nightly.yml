@@ -1,0 +1,504 @@
+# Copyright (c) 2026 Advanced Micro Devices, Inc. All rights reserved.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+# Nightly check of the rocPyDecode that ships in the latest vision-pack nightly bundle.
+#
+# Starts from a bare Ubuntu 24.04 container on the shark39 GPU runners, installs the latest TheRock
+# ROCm nightly (the -tests variant for the runner's GPU) and the latest vision-pack nightly tarball
+# on top of it, then runs import smoke tests and the upstream CTest commands. The bundle ships the
+# test scripts but no CTest metadata, so the commands are run directly. Everything decodes on the
+# GPU: the bundle is built without FFmpeg, so there is no CPU backend to test. The tests come from
+# the installed bundle (share/rocpydecode/tests and share/rocpyjpegdecode/tests), so nothing from
+# this repository is checked out or built.
+#
+# KNOWN_FAILING (job env below) is a regular expression for tests that fail with the current bundle
+# because of known bugs. They still run and are reported, but do not fail the job. Keep it short
+# and remove entries once the bundle is fixed.
+# The expression is matched against the test names with bash extended regular expressions; anchor
+# whole test names with ^ and $.
+#
+# The pull_request trigger only lets this file run in its own pull request before it is merged.
+# Remove it once the first runs look right.
+
+name: rocPyDecode vision-pack nightly
+
+on:
+  schedule:
+    - cron: '30 11 * * *'
+  workflow_dispatch:
+    inputs:
+      vision_pack_tag:
+        description: 'vision-pack release tag, for example nightly-20261005 (empty: the latest nightly)'
+        required: false
+        default: ''
+      rocm_date:
+        description: 'TheRock nightly date as YYYYMMDD (empty: the latest nightly)'
+        required: false
+        default: ''
+  pull_request:
+    branches: [master, main, develop]
+    paths:
+      - '.github/workflows/vision-pack-nightly.yml'
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+# Runs of the same kind (schedule, manual, pull request) queue behind each other, so a manual run
+# never cancels the nightly; a new push to a pull request supersedes that pull request's earlier run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  nightly:
+    name: rocPyDecode on the latest ROCm and vision-pack nightlies
+    runs-on:
+      group: linux-shark39-runner-group
+    container:
+      image: ubuntu:24.04
+      options: --device /dev/kfd --device /dev/dri --ulimit core=0
+    timeout-minutes: 120
+    env:
+      # The runner sets HIP_VISIBLE_DEVICES to the same host index as ROCR_VISIBLE_DEVICES. HIP applies
+      # it to the device list that ROCr has already filtered, so the two filters stack and HIP finds no
+      # device when the assigned GPU has a host index above 0. Index 0 of the filtered list is the
+      # assigned GPU (the MIVisionX and rocAL HIP workflows use the same workaround).
+      HIP_VISIBLE_DEVICES: 0
+      DEBIAN_FRONTEND: noninteractive
+      KNOWN_FAILING: ''
+      VISION_PACK_REPO: kiritigowda/vision-pack
+      ROCM_NIGHTLY_URL: https://nightly.repo.amd.com/rocm/core/tarball
+    steps:
+      - name: Install system packages
+        timeout-minutes: 20
+        run: |
+          apt-get -o Acquire::Retries=5 update -qq
+          apt-get -o Acquire::Retries=5 install -y -qq --no-install-recommends \
+            ca-certificates curl jq pigz python3 \
+            python3-numpy
+
+      - name: Find the GPU and the TheRock family
+        id: gpu
+        run: |
+          # ROCr numbers the GPU agents in KFD node order; the runner assigns one of them.
+          idx="${ROCR_VISIBLE_DEVICES:-0}"
+          idx="${idx%%,*}"
+          if [[ ! "${idx}" =~ ^[0-9]+$ ]]; then
+            echo "::warning::ROCR_VISIBLE_DEVICES='${ROCR_VISIBLE_DEVICES}' is not a numeric index; assuming 0"
+            idx=0
+          fi
+          idx=$((10#${idx}))
+          n=0
+          gfx=""
+          while IFS= read -r node; do
+            v="$(awk '$1 == "gfx_target_version" {print $2}' "${node}/properties")"
+            [[ "${v:-0}" -gt 0 ]] || continue
+            if [[ "${n}" -eq "${idx}" ]]; then
+              gfx="$(printf 'gfx%d%d%x' $((v / 10000)) $(((v / 100) % 100)) $((v % 100)))"
+              break
+            fi
+            n=$((n + 1))
+          done < <(find /sys/class/kfd/kfd/topology/nodes -mindepth 1 -maxdepth 1 | sort -V)
+          if [[ -z "${gfx}" ]]; then
+            echo "::error::no GPU at index ${idx} under /sys/class/kfd/kfd/topology/nodes (is /dev/kfd passed into the container?)"
+            exit 1
+          fi
+          # The -tests variants carry rpp, rocDecode, rocJPEG and the rocDecode utils the vision libraries need.
+          case "${gfx}" in
+            gfx1100|gfx1101|gfx1102|gfx1103) family=gfx110X-all-tests ;;
+            gfx1200|gfx1201) family=gfx120X-all-tests ;;
+            *) family=multiarch-tests ;;
+          esac
+          echo "GPU ${gfx} (ROCr index ${idx}), TheRock family ${family}"
+          {
+            echo "gfx=${gfx}"
+            echo "family=${family}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Resolve the latest TheRock nightly
+        id: rocm_resolve
+        timeout-minutes: 10
+        env:
+          FAMILY: ${{ steps.gpu.outputs.family }}
+          ROCM_DATE: ${{ inputs.rocm_date }}
+        run: |
+          if [[ -n "${ROCM_DATE}" && ! "${ROCM_DATE}" =~ ^[0-9]{8}$ ]]; then
+            echo "::error::the rocm_date input must be empty or YYYYMMDD"
+            exit 1
+          fi
+          index="$(curl -fsSL --proto '=https' --proto-redir '=https' --retry 5 --retry-delay 5 --retry-all-errors \
+            --connect-timeout 30 --max-time 120 "${ROCM_NIGHTLY_URL}/")"
+          # Names look like therock-dist-linux-gfx120X-all-tests-10.2.0a20261006.tar.gz; newest date first.
+          candidates="$(grep -oE "therock-dist-linux-${FAMILY}-[0-9][A-Za-z0-9.+~_-]*[A-Za-z.+~_-][0-9]{8}\.tar\.gz" <<<"${index}" \
+            | sort -u | sed -E 's/^.*[^0-9]([0-9]{8})\.tar\.gz$/\1 &/' | sort -r || true)"
+          if [[ -n "${ROCM_DATE}" ]]; then
+            candidates="$(awk -v d="${ROCM_DATE}" '$1 == d' <<<"${candidates}")"
+          fi
+          if [[ -z "${candidates}" ]]; then
+            echo "::error::no TheRock nightly for ${FAMILY}${ROCM_DATE:+ dated ${ROCM_DATE}}"
+            exit 1
+          fi
+          # The newest three: a nightly that is still being published can be incomplete.
+          names="$(awk 'NR <= 3 {print $2}' <<<"${candidates}")"
+          echo "TheRock candidates, newest first:"
+          echo "${names}"
+          {
+            echo "names<<EOF"
+            echo "${names}"
+            echo "EOF"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Install the TheRock nightly
+        id: rocm
+        timeout-minutes: 60
+        env:
+          GFX: ${{ steps.gpu.outputs.gfx }}
+          NAMES: ${{ steps.rocm_resolve.outputs.names }}
+        run: |
+          prefix="${RUNNER_TEMP}/rocm"
+          tarball="${RUNNER_TEMP}/therock.tar.gz"
+          sdk=""
+          sdk_sha=""
+          while IFS= read -r name; do
+            echo "::group::${name}"
+            rm -rf "${prefix}"
+            mkdir -p "${prefix}"
+            if curl -fL --proto '=https' --proto-redir '=https' --retry 5 --retry-delay 10 --retry-all-errors \
+              --connect-timeout 30 --no-progress-meter -o "${tarball}" -- "${ROCM_NIGHTLY_URL}/${name}" \
+              && tar -I pigz -xf "${tarball}" -C "${prefix}" --strip-components=1 --no-same-owner; then
+              sdk="${name}"
+              # The index publishes no checksums; the hash in the job summary identifies exactly what was installed.
+              sdk_sha="$(sha256sum "${tarball}" | cut -d' ' -f1)"
+            fi
+            echo "::endgroup::"
+            [[ -z "${sdk}" ]] || break
+            echo "::warning::${name} could not be downloaded or unpacked; trying the next newest nightly"
+          done <<<"${NAMES}"
+          rm -f "${tarball}"
+          if [[ -z "${sdk}" ]]; then
+            echo "::error::no TheRock nightly could be installed"
+            exit 1
+          fi
+          info="${prefix}/share/therock/dist_info.json"
+          if [[ ! -f "${info}" ]]; then
+            echo "::error::${sdk} has no share/therock/dist_info.json"
+            exit 1
+          fi
+          targets="$(jq -r '.dist_amdgpu_targets // ""' "${info}")"
+          if [[ ";${targets};" != *";${GFX};"* ]]; then
+            echo "::error::${sdk} was not built for ${GFX} (dist_amdgpu_targets: ${targets})"
+            exit 1
+          fi
+          for f in include/rpp/rpp.h include/rocjpeg/rocjpeg.h share/rocdecode/utils; do
+            if [[ ! -e "${prefix}/${f}" ]]; then
+              echo "::error::${sdk} lacks ${f}; it is not a -tests SDK"
+              exit 1
+            fi
+          done
+          {
+            echo "ROCM_PATH=${prefix}"
+            echo "HIP_PLATFORM=amd"
+            echo "PYTHONPATH=${prefix}/lib"
+            echo "PYTHONDONTWRITEBYTECODE=1"
+            echo "HIP_VISIBLE_DEVICES=0"
+          } >> "${GITHUB_ENV}"
+          {
+            echo "${prefix}/bin"
+            echo "${prefix}/lib/llvm/bin"
+          } >> "${GITHUB_PATH}"
+          {
+            echo "sdk=${sdk}"
+            echo "sdk_sha256=${sdk_sha}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Resolve the latest vision-pack nightly
+        id: vp_resolve
+        timeout-minutes: 10
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VP_TAG: ${{ inputs.vision_pack_tag }}
+        run: |
+          if [[ -n "${VP_TAG}" && ! "${VP_TAG}" =~ ^(nightly-)?[0-9]{8}$ ]]; then
+            echo "::error::the vision_pack_tag input must be empty, YYYYMMDD or nightly-YYYYMMDD"
+            exit 1
+          fi
+          pin="${VP_TAG}"
+          [[ -z "${pin}" || "${pin}" == nightly-* ]] || pin="nightly-${pin}"
+          api="https://api.github.com/repos/${VISION_PACK_REPO}/releases?per_page=30"
+          # The repository is public: the token only raises the rate limit, and a rejected token must
+          # not fail the step, so fall back to an anonymous request.
+          auth=()
+          [[ -z "${GH_TOKEN}" ]] || auth=(-H "Authorization: Bearer ${GH_TOKEN}")
+          releases="$(curl -fsSL --retry 5 --retry-delay 5 --max-time 120 -H "Accept: application/vnd.github+json" "${auth[@]}" "${api}" \
+            || curl -fsSL --retry 5 --retry-delay 5 --max-time 120 -H "Accept: application/vnd.github+json" "${api}")"
+          # The nightlies are prereleases, so /releases/latest does not list them. Tags are nightly-YYYYMMDD.
+          asset="$(jq -c --arg pin "${pin}" '
+            [ .[]
+              | select(.draft | not)
+              | select(.tag_name | test("^nightly-[0-9]{8}$"))
+              | select($pin == "" or .tag_name == $pin)
+              | . as $r
+              | first($r.assets[] | select(.name | test("^vision-pack-dist-linux-multiarch-.*[.]tar[.]gz$")))
+              | {tag: $r.tag_name, published: $r.published_at, name: .name, url: .browser_download_url, digest: (.digest // "")} ]
+            | sort_by(.tag) | last // empty' <<<"${releases}")"
+          if [[ -z "${asset}" ]]; then
+            echo "::error::no vision-pack nightly release${pin:+ named ${pin}} with a dist tarball"
+            exit 1
+          fi
+          jq . <<<"${asset}"
+          tag="$(jq -r .tag <<<"${asset}")"
+          name="$(jq -r .name <<<"${asset}")"
+          url="$(jq -r .url <<<"${asset}")"
+          digest="$(jq -r .digest <<<"${asset}")"
+          # These values come from the GitHub API and end up in a file name, a URL and step outputs.
+          if [[ ! "${tag}" =~ ^nightly-[0-9]{8}$ \
+            || ! "${name}" =~ ^vision-pack-dist-linux-multiarch-[A-Za-z0-9._+-]+\.tar\.gz$ \
+            || ! "${url}" =~ ^https://github\.com/${VISION_PACK_REPO}/releases/download/${tag}/[A-Za-z0-9._%+-]+$ ]]; then
+            echo "::error::the release metadata has an unexpected shape (tag, asset name or download URL)"
+            exit 1
+          fi
+          if [[ ! "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "::error::the release asset has no sha256 digest; refusing to install an unverified download"
+            exit 1
+          fi
+          {
+            echo "tag=${tag}"
+            echo "name=${name}"
+            echo "url=${url}"
+            echo "digest=${digest}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Install the vision-pack nightly
+        id: vp
+        timeout-minutes: 30
+        env:
+          NAME: ${{ steps.vp_resolve.outputs.name }}
+          URL: ${{ steps.vp_resolve.outputs.url }}
+          DIGEST: ${{ steps.vp_resolve.outputs.digest }}
+        run: |
+          tarball="${RUNNER_TEMP}/${NAME}"
+          curl -fL --proto '=https' --proto-redir '=https' --retry 5 --retry-delay 10 --retry-all-errors \
+            --connect-timeout 30 --no-progress-meter -o "${tarball}" -- "${URL}"
+          echo "${DIGEST#sha256:}  ${tarball}" | sha256sum -c -
+          tar -xzf "${tarball}" -C "${ROCM_PATH}" --no-same-owner
+          rm -f "${tarball}"
+          if [[ ! -x "${ROCM_PATH}/bin/runvx" ]]; then
+            echo "::error::bin/runvx is missing after the overlay"
+            exit 1
+          fi
+          manifest="${ROCM_PATH}/share/vision-pack/vision-pack-manifest.json"
+          if [[ ! -f "${manifest}" ]]; then
+            echo "::error::the bundle has no ${manifest}"
+            exit 1
+          fi
+          {
+            echo "version=$(jq -r .version "${manifest}")"
+            echo "sha=$(jq -r '(.sha // "")[0:12]' "${manifest}")"
+            echo "built_on=$(jq -r '.rocm_sdk // ""' "${manifest}")"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Validate the installation
+        id: prefix
+        env:
+          GFX: ${{ steps.gpu.outputs.gfx }}
+          FAMILY: ${{ steps.gpu.outputs.family }}
+          SDK: ${{ steps.rocm.outputs.sdk }}
+          SDK_SHA: ${{ steps.rocm.outputs.sdk_sha256 }}
+          TAG: ${{ steps.vp_resolve.outputs.tag }}
+          VERSION: ${{ steps.vp.outputs.version }}
+          SHA: ${{ steps.vp.outputs.sha }}
+          BUILT_ON: ${{ steps.vp.outputs.built_on }}
+        run: |
+          mkdir -p "${GITHUB_WORKSPACE}/logs"
+          rocminfo > "${GITHUB_WORKSPACE}/logs/rocminfo.txt"
+          grep -E 'Marketing Name|Name: +gfx' "${GITHUB_WORKSPACE}/logs/rocminfo.txt" || true
+          if ! grep -Eq "Name: +${GFX}" "${GITHUB_WORKSPACE}/logs/rocminfo.txt"; then
+            echo "::error::rocminfo does not list ${GFX}"
+            exit 1
+          fi
+          amdclang++ --version
+          # The bundle was built on an older TheRock nightly than the one just installed. A soname change
+          # in between shows up here, by name, instead of as an import error in a later step.
+          unresolved=0
+          for pattern in lib/rocpydecode*.so lib/rocpyjpegdecode*.so; do
+            # shellcheck disable=SC2086
+            for f in "${ROCM_PATH}"/${pattern}; do
+              if [[ ! -e "${f}" ]]; then
+                echo "::error::${pattern} is missing from the bundle"
+                unresolved=1
+              elif missing="$(ldd "${f}" 2>&1 | grep 'not found')"; then
+                echo "::error::unresolved libraries for ${f#"${ROCM_PATH}"/}:"
+                echo "${missing}"
+                unresolved=1
+              fi
+            done
+          done
+          [[ "${unresolved}" -eq 0 ]] || exit 1
+          {
+            echo "### rocPyDecode vision-pack nightly"
+            echo "- GPU: \`${GFX}\`, TheRock family \`${FAMILY}\`"
+            echo "- ROCm: \`${SDK}\` (tarball sha256 \`${SDK_SHA}\`)"
+            echo "- vision-pack: \`${TAG}\` (\`${VERSION}\`, manifest sha \`${SHA}\`, built on \`${BUILT_ON}\`)"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Write the test helpers
+        run: |
+          cat > "${RUNNER_TEMP}/vp-helpers.sh" <<'VPHELPERS'
+          # Helpers for the test steps; every step sources this file.
+          mkdir -p "${GITHUB_WORKSPACE}/logs"
+
+          # vp_va_env: use TheRock's VA-API libraries and driver, as rocAL's own CI does for rocJPEG and rocDecode.
+          vp_va_env() {
+            local d="${ROCM_PATH}/lib/rocm_sysdeps/lib"
+            if [[ -f "${d}/librocm_sysdeps_va.so.2" && -f "${d}/librocm_sysdeps_va-drm.so.2" && -f "${d}/radeonsi_drv_video.so" ]]; then
+              export LIBVA_DRIVERS_PATH="${d}"
+              export LD_PRELOAD="${d}/librocm_sysdeps_va.so.2:${d}/librocm_sysdeps_va-drm.so.2"
+            else
+              echo "::warning::TheRock's VA-API libraries are missing under ${d}; rocJPEG and rocDecode tests may fail"
+            fi
+          }
+
+          # vp_case <name> <timeout in seconds> <regex the output must match, or -> -- <command...>
+          # Runs one test command in a fresh directory. Exit status 77 means skipped. A failing test whose name
+          # matches KNOWN_FAILING is reported but does not fail the step.
+          vp_case() {
+            local name="$1" limit="$2" need="$3" status=pass rc=0
+            local log="${GITHUB_WORKSPACE}/logs/${name}.log" dir="${RUNNER_TEMP}/cases/${name}"
+            shift 4
+            rm -rf "${dir}"
+            mkdir -p "${dir}"
+            echo "::group::${name}"
+            set +e
+            (cd "${dir}" && timeout -k 30 "${limit}" "$@") 2>&1 | tee "${log}"
+            rc="${PIPESTATUS[0]}"
+            set -e
+            echo "::endgroup::"
+            if [[ "${rc}" -eq 77 ]]; then
+              status=skip
+            elif [[ "${rc}" -ne 0 ]]; then
+              status=fail
+            elif [[ "${need}" != "-" ]] && ! grep -Eq "${need}" "${log}"; then
+              status=fail
+              echo "::error::${name}: the output does not match ${need}"
+            fi
+            if [[ -n "${KNOWN_FAILING}" && "${name}" =~ ${KNOWN_FAILING} ]]; then
+              if [[ "${status}" == fail ]]; then
+                status=known
+              elif [[ "${status}" == pass ]]; then
+                status="pass (remove from KNOWN_FAILING)"
+              fi
+            fi
+            if [[ "${status}" == fail ]]; then
+              echo "::error::${name} failed (exit ${rc})"
+            fi
+            printf '%s\t%s\n' "${name}" "${status}" >> "${RUNNER_TEMP}/cases.tsv"
+            return 0
+          }
+
+          # vp_cases_report: writes the table to the job summary and fails if a test failed that is not known to fail.
+          vp_cases_report() {
+            local failed
+            {
+              echo "#### rocPyDecode tests"
+              echo
+              echo "| test | result |"
+              echo "|---|---|"
+              awk -F'\t' '{printf "| %s | %s |\n", $1, $2}' "${RUNNER_TEMP}/cases.tsv"
+            } >> "${GITHUB_STEP_SUMMARY}"
+            failed="$(awk -F'\t' '$2 == "fail" {n++} END {print n + 0}' "${RUNNER_TEMP}/cases.tsv")"
+            [[ "${failed}" -eq 0 ]]
+          }
+          VPHELPERS
+
+      - name: Smoke tests - rocPyDecode and rocPyJpegDecode imports
+        if: ${{ !cancelled() && steps.prefix.outcome == 'success' }}
+        timeout-minutes: 10
+        run: |
+          failed=0
+          modules=(rocpydecode rocpyjpegdecode pyRocVideoDecode.decoder pyRocVideoDecode.decodercpu
+            pyRocVideoDecode.demuxer pyRocVideoDecode.types pyRocJpegDecode.decoder pyRocJpegDecode.types)
+          for module in "${modules[@]}"; do
+            if python3 -c "import ${module}"; then
+              echo "import ${module}: ok"
+            else
+              echo "::error::import ${module} failed"
+              failed=1
+            fi
+          done
+          result=passed
+          [[ "${failed}" -eq 0 ]] || result=FAILED
+          echo "- rocPyDecode imports: ${result}" >> "${GITHUB_STEP_SUMMARY}"
+          exit "${failed}"
+
+      - name: Tests - the upstream CTest commands, run directly
+        if: ${{ !cancelled() && steps.prefix.outcome == 'success' }}
+        timeout-minutes: 30
+        run: |
+          # The bundle installs the test scripts but no CTest metadata, so the commands registered by
+          # videoDecode/tests/CMakeLists.txt and jpegDecode/tests/CMakeLists.txt are run directly. The tests
+          # decode on the GPU. video_decode_debug_api and video_decode_cpu_api need the CPU (host) backend,
+          # which needs FFmpeg and librocdecode-host; the bundle is built without it, upstream does not
+          # register them for such a build, and they are left out here too. The _fmt4 case is not an
+          # upstream test.
+          source "${RUNNER_TEMP}/vp-helpers.sh"
+          vp_va_env
+          export PYTHONUNBUFFERED=1
+          vid="${ROCM_PATH}/share/rocdecode/video"
+          img="${ROCM_PATH}/share/rocjpeg/images"
+          if [[ ! -d "${vid}" || ! -d "${img}" ]]; then
+            echo "::error::the TheRock -tests SDK ships no test media under ${vid} or ${img}"
+            exit 1
+          fi
+          vt="${ROCM_PATH}/share/rocpydecode/tests"
+          vs="${ROCM_PATH}/share/rocpydecode/samples/rocdecode"
+          jt="${ROCM_PATH}/share/rocpyjpegdecode/tests"
+          js="${ROCM_PATH}/share/rocpyjpegdecode/samples/rocjpeg"
+          decoded='info: Decoded [1-9][0-9]* frames'
+          nobad='Total Bad files found : 0$'
+          : > "${RUNNER_TEMP}/cases.tsv"
+          vp_case rocpydecode_test_types 120 '^rocPyDecode types' -- python3 "${vt}/types_test.py"
+          vp_case video_decode_raw_python 120 "${decoded}" -- python3 "${vs}/videodecoderaw.py" -i "${vid}/AMD_driving_virtual_20-H264.264"
+          vp_case video_decode_raw_python_h265 120 "${decoded}" -- python3 "${vs}/videodecoderaw.py" -i "${vid}/AMD_driving_virtual_20-H265.265" --codec h265
+          vp_case video_decode_raw_regressions 120 'Raw video frame-limit and empty-input regressions passed' -- python3 "${vt}/raw_regression_test.py" --media-dir "${vid}"
+          vp_case jpeg_decode_batched_python 120 "${nobad}" -- python3 "${js}/jpegdecodebatched.py" -i "${img}"
+          vp_case jpeg_decode_batched_python_fmt4 120 "${nobad}" -- python3 "${js}/jpegdecodebatched.py" -i "${img}" -fmt 4
+          vp_case jpeg_decode_regressions 120 - -- python3 "${jt}/jpeg_regression_test.py" --media-dir "${img}"
+          vp_case jpeg_decode_input_regressions 120 'NumPy available: True' -- python3 "${jt}/jpeg_input_test.py" --media-dir "${img}"
+          vp_cases_report
+
+      - name: Upload the logs
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: rocpydecode-nightly-logs-${{ github.run_attempt }}
+          path: logs
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Remove the ROCm prefix and the build trees
+        if: ${{ always() }}
+        run: |
+          rm -rf "${RUNNER_TEMP}/rocm" "${RUNNER_TEMP}/build" "${RUNNER_TEMP}/cases" \
+            "${RUNNER_TEMP}/therock.tar.gz" "${RUNNER_TEMP}"/vision-pack-dist-*.tar.gz \
+            "${RUNNER_TEMP}/cases.tsv" "${RUNNER_TEMP}/vp-helpers.sh" "${GITHUB_WORKSPACE}/logs"
