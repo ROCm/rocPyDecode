@@ -1,14 +1,21 @@
-Component documentation
-=======================
+.. meta::
+  :description: Independent video and JPEG components in rocPyDecode
+  :keywords: rocPyDecode, rocPyJpegDecode, rocDecode, rocJPEG, ROCm, components
 
-rocPyDecode contains two buildable and installable components. Documentation
-for each component is available alongside its implementation:
+*************************
+Video and JPEG components
+*************************
 
-* `videoDecode documentation <https://github.com/ROCm/rocPyDecode/tree/develop/videoDecode/docs>`_
-  covers the video API, decoder and demuxer classes, memory types, supported
-  codecs, installation, and samples.
-* `jpegDecode documentation <https://github.com/ROCm/rocPyDecode/tree/develop/jpegDecode/docs>`_
-  covers the JPEG API, installation, and samples.
+``videoDecode`` provides GPU video decoding through rocDecode and container
+demuxing through PyAV. ``jpegDecode`` provides GPU JPEG decoding through rocJPEG.
+The native bindings and JPEG decoding do not require PyAV.
 
-The top-level documentation describes configuration and installation from the
-repository root.
+Both components support independent builds. The repository root builds both by
+default; see :doc:`install/rocPyDecode-cmake-install` for component selection.
+
+* :doc:`Video API <reference/rocPyDecode>`
+* :doc:`JPEG API <reference/rocPyJPEGDecode-api>`
+* :doc:`Video memory types <conceptual/rocPyDecode-mem-types>`
+* :doc:`Supported video codecs and hardware <reference/rocPyDecode-codecs-and-hardware>`
+* :doc:`Using the video API <how-to/using-rocPydecode>`
+* :doc:`Samples and tests <tutorials/rocPyDecode-samples>`

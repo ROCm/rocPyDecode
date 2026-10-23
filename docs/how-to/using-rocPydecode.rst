@@ -6,13 +6,10 @@
 Using rocPyDecode
 ********************************************************************
 
-Two rocPyDecode classes, |demuxer|_ and |decoder|_, contain the APIs needed to demultiplex and decode a video file. These can be found in ``pyRocVideoDecode/demuxer.py`` and ``pyRocVideoDecode/decoder.py``, respectively.
-
-.. |demuxer| replace:: ``demuxer``
-.. _demuxer: https://rocm.docs.amd.com/projects/rocPyDecode/en/latest/reference/demuxerClass.html
-
-.. |decoder| replace:: ``decoder``
-.. _decoder: https://rocm.docs.amd.com/projects/rocPyDecode/en/latest/reference/decoderClass.html
+The :doc:`demuxer <../reference/demuxerClass>` and
+:doc:`decoder <../reference/decoderClass>` classes demultiplex and decode video.
+Their wrappers are ``videoDecode/pyRocVideoDecode/demuxer.py`` and
+``videoDecode/pyRocVideoDecode/decoder.py``.
 
 Before decoding a video file with rocPyDecode, a ``demuxer`` and a ``decoder`` need to be instantiated.
 
@@ -95,7 +92,7 @@ From the ``videodecode.py`` example:
     # Instantiate a demuxer
     demuxer = dmx.demuxer(input_file_path)
 
-    # Get the coded id
+    # Get the codec ID
     codec_id = dec.GetRocDecCodecID(demuxer.GetCodecId())
 
     # Instantiate a decoder
@@ -190,4 +187,4 @@ From the ``videodecode.py`` example:
 
 Decoder resources are destroyed when the Python class object is released.
 
-The rocPyDecode samples are available in ``samples/rocdecode``.
+The rocPyDecode samples are available in ``videoDecode/samples/rocdecode``.

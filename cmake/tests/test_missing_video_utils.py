@@ -52,6 +52,7 @@ class ConfigureRegressions(unittest.TestCase):
             (root / "CMakeLists.txt").write_text(
                 'cmake_minimum_required(VERSION 3.18)\nproject(TestRegistration NONE)\n'
                 'enable_testing()\nset(CMAKE_INSTALL_DATADIR share)\n'
+                'set(CMAKE_INSTALL_LIBDIR lib)\ninclude(GNUInstallDirs)\n'
                 f'set(ROCM_PATH "{root}")\nset(Python3_EXECUTABLE "{python}")\n'
                 f'add_subdirectory("{self.source / "videoDecode/tests"}" video-tests)\n')
             env = dict(os.environ, PYTHONPATH=str(root), PYTHONDONTWRITEBYTECODE="1")

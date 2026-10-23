@@ -16,7 +16,8 @@ left_nav_title = f"rocPyDecode {version_number} Documentation"
 extensions = ["rocm_docs"]
 external_toc_path = "./sphinx/_toc.yml"
 external_projects_current_project = "rocpydecode"
-external_projects_remote_repository = ""
+# These guides use local cross-references and explicit links to other projects.
+external_projects = []
 
 html_theme = "rocm_docs_theme"
 html_theme_options = {"flavor": "rocm"}

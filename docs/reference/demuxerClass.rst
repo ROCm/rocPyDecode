@@ -42,21 +42,17 @@ Example:
 
 .. code-block:: python
 
-                while True:
-                        packet = demuxer.DemuxFrame()
-                        n_frame_returned = viddec.DecodeFrame(packet)
-
-                        for i in range(n_frame_returned):
-                                viddec.GetFrame(packet)
-
-                                # save frames
-                                surface_info = viddec.GetOutputSurfaceInfo()
-                                viddec.SaveFrameToFile(output_file_path, packet.frame_adrs, surface_info)
-
-                                # release frame
-                                viddec.ReleaseFrame(packet)
-                                if (packet.frame_size <= 0):  # EOF: no more to decode
-                                        break
+    while True:
+        packet = demuxer.DemuxFrame()
+        n_frame_returned = viddec.DecodeFrame(packet)
+        for _ in range(n_frame_returned):
+            viddec.GetFrameYuv(packet)
+            surface_info = viddec.GetOutputSurfaceInfo()
+            viddec.SaveFrameToFile(output_file_path, packet.frame_adrs, surface_info)
+            viddec.ReleaseFrame(packet)
+        # Submit the end-of-stream packet to drain the decoder before stopping.
+        if packet.bitstream_size <= 0:
+            break
 
 GetCodecId()
 ------------
@@ -85,6 +81,7 @@ SeekFrame(frame_number, seek_mode, seek_criteria)
 Demux the input video file starting from the specified seek parameters. Returns a :ref:`packet` for use in decoding the demuxed frames.
 
 Input:
+
 - **frame_number**:   Non-negative integer frame number, or finite non-negative seconds when ``seek_criteria=1`` (for example, ``2.5``)
 - **seek_mode**:      0 - First packet in decode order at or after the target presentation timestamp, 1 - Previous keyframe
 - **seek_criteria**:  0 - Seek by frame number, 1 - Seek by timestamp in seconds, including fractional seconds
@@ -100,17 +97,15 @@ Example:
 
 .. code-block:: python
 
-                not_seeking = False
-
-                seek_frame = 100     # seek to the 100th frames
-                seek_mode = 1        # start at a preceding keyframe for decoding
-                seek_criteria = 0    # by frame number
-
-                # The decoding loop to start by seek
-                while True:
-                        start_time = datetime.datetime.now()
-                        if(not_seeking):
-                                packet = demuxer.DemuxFrame()
-                        else:
-                                packet = demuxer.SeekFrame(seek_frame, seek_mode, seek_criteria)
-                                not_seeking = True
+    # Start with a fresh decoder when seeking to a different position.
+    viddec = dec.decoder(dec.GetRocDecCodecID(demuxer.GetCodecId()))
+    packet = demuxer.SeekFrame(100, 1, 0)  # Previous keyframe, by frame number
+    while True:
+        n_frame_returned = viddec.DecodeFrame(packet)
+        for _ in range(n_frame_returned):
+            viddec.GetFrameYuv(packet)
+            # Process this frame before releasing its decoder surface.
+            viddec.ReleaseFrame(packet)
+        if packet.bitstream_size <= 0:
+            break
+        packet = demuxer.DemuxFrame()

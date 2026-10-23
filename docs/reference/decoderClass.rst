@@ -43,7 +43,7 @@ Decodes video frames described by the input :ref:`packet` obtained from demux fu
 
 
 GetFrameYuv(packet, separate_planes=False)
------------------------------------------
+------------------------------------------
 
 Retrieves the next decoded YUV frame, updates ``packet.frame_adrs`` and
 ``packet.ext_buf``, and returns its presentation timestamp, or -1 if no frame
@@ -73,7 +73,7 @@ Example:
             break
 
 GetFrameRgb(packet, rgb_format)
-------------------------------
+-------------------------------
 
 Retrieves the next decoded frame, converts it to interleaved RGB/RGBA or
 BGR/BGRA in device memory, and updates ``packet.frame_adrs_rgb`` and
@@ -149,7 +149,7 @@ before this call returns.
 Dimensions must be positive and align to the chroma subsampling (even width and
 height for YUV 4:2:0). Invalid dimensions raise ``ValueError``. A request matching
 the input dimensions returns zero without resizing. Otherwise, use
-``packet.frame_adrs_resized`` and the returned surface information while the
+``packet.frame_adrs_resized`` and ``GetResizedOutputSurfaceInfo()`` while the
 decoder remains alive and before the next resize overwrites that buffer.
 
 - **packet**: The demuxed packet contains the demuxed frames information, and the desired rgb format
@@ -172,7 +172,7 @@ Example:
 			frame_is_resized = True
 
 SaveFrameToFile(output_file_path, frame_adrs, surface_info=0, output_format=native)
--------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
 
 Appends the supplied frame to a raw output file. The default output format is
 native YUV. For an RGB frame, pass the matching enum from

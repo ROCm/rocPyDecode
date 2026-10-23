@@ -36,8 +36,8 @@ The rocPyDecode public repository is located at `https://github.com/ROCm/rocPyDe
 
   .. grid-item-card:: Reference
 
-    * `videoDecode documentation <https://github.com/ROCm/rocPyDecode/tree/develop/videoDecode/docs>`_
-    * `jpegDecode documentation <https://github.com/ROCm/rocPyDecode/tree/develop/jpegDecode/docs>`_
+    * :doc:`Video API <reference/rocPyDecode>`
+    * :doc:`JPEG API <reference/rocPyJPEGDecode-api>`
 
 
 To contribute to the documentation, refer to

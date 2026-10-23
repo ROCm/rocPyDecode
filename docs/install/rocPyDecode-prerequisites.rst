@@ -3,48 +3,64 @@ Prerequisites
 
 Use Linux. GPU decoding and runtime tests require an AMD GPU supported by the
 selected ROCm release and decoder library; building and installing do not require
-a GPU. Install a complete ROCm 7.0 or newer SDK with
-AMD Clang 18 or newer and C++17 support. See the
+a GPU. Install a compatible ROCm SDK providing HIP and
+AMD Clang version 18 or later with C++17 support, together with the rocDecode
+and/or rocJPEG development packages listed below. See the
 `ROCm installation guide <https://rocm.docs.amd.com/projects/install-on-linux/en/latest/>`_ for OS, GPU, driver,
 and repository setup. The Ubuntu package examples below target Ubuntu 24.04
-and Python 3.12; use packages appropriate to your OS and selected ROCm release.
+and Python 3.12. Use packages appropriate to your OS and selected ROCm release.
 
-For video builds, the compiler must support every selected GPU target. The full
-25-target default has been verified with AMD Clang 24 from a ROCm development SDK;
-the minimum versions above do not guarantee support for that entire list.
-CMake checks each selected target and stops configuration if any cannot compile.
-With an older compiler, select a supported subset explicitly, for example
-``-DGPU_TARGETS=gfx1100``. Targets are never removed automatically.
-The JPEG binding compiles host code only and uses the installed rocJPEG library
-for GPU kernels; it does not require this target list.
+Video builds require a compiler that supports all selected GPU targets. See
+:doc:`rocPyDecode-cmake-install` for the default list and explicit selection.
+JPEG compiles host code and uses the installed rocJPEG library's GPU kernels.
+Install only the SDK dependencies for the components you intend to build.
 
 Required build dependencies:
 
-- CMake 3.20 or newer for the commands below, including ``ctest --test-dir``.
-  The CMake project itself requires CMake 3.18 or newer for Python module discovery.
-- Python 3.9 or newer and matching development headers. The examples
+- CMake 3.20 or later for the commands below, including ``ctest --test-dir``.
+  The CMake project itself requires CMake 3.18 or later for Python module discovery.
+- Python 3.9 or later, and matching development headers. The examples
   select Python 3.12; change ``PYTHON_VERSION_SUGGESTED`` to your installed version.
-- pybind11 3.1.0 and DLPack 1.3 headers; bundled in the repository.
-- rocDecode **1.0.0 or newer**, including development files, CMake package
+- pybind11 3.1.0 and DLPack 1.3 headers, bundled in the repository.
+- rocDecode **1.0.0 or later**, including development files, CMake package
   configuration, and utility sources under ``share/rocdecode/utils``.
-- rocJPEG **1.0.0 or newer**, including development files and CMake package
+- rocJPEG **1.0.0 or later**, including development files and CMake package
   configuration.
 
-Install the build tools after configuring the appropriate ROCm repositories:
+Install the build tools. For Ubuntu 24.04 and Python 3.12:
 
 .. code-block:: shell
 
    sudo apt-get update
-   sudo apt-get install -y build-essential cmake pkg-config \
-       python3.12-dev
-   sudo apt-get install -y rocdecode-dev rocdecode-test rocjpeg-dev rocjpeg-test
+   sudo apt-get install -y build-essential cmake pkg-config python3.12-dev
 
+Install the decoder SDK dependencies
+------------------------------------
 
-The ``-dev`` packages supply build dependencies; the ``-test`` packages request
-runtime test assets. Packaging varies between SDK distributions: verify the
-media paths below even after installing these packages. For an SDK archive,
-install its complete development and test assets into the same SDK prefix.
-A particular nightly SDK or container is not required.
+Follow the `rocDecode installation guide
+<https://rocm.docs.amd.com/projects/rocDecode/en/latest/install/rocDecode-install.html>`_
+and the `rocJPEG installation guide
+<https://rocm.docs.amd.com/projects/rocJPEG/en/latest/install/rocjpeg-install.html>`_
+for your selected ROCm release. Use the same release for its runtime,
+development files, utility sources, and test media.
+
+For repositories using the current ``amdrocm`` package names, the Ubuntu
+video build dependencies include:
+
+.. code-block:: shell
+
+   sudo apt install amdrocm-decode-dev amdrocm-decode-test
+
+The test package supplies utility sources needed to build the video binding,
+as well as test media. Installing only the development package is insufficient.
+For JPEG development files, install ``amdrocm-jpeg-dev`` and obtain its matching
+JPEG test images. On RHEL or SLES, the development suffix is ``-devel`` instead
+of ``-dev``. Follow the SDK guide for repository and version selection.
+
+Older ROCm repositories use names such as ``rocdecode-dev``, ``rocdecode-test``,
+``rocjpeg-dev``, and ``rocjpeg-test``. Use the package names for your release,
+not a mixture of release streams. For SDK archives, include the development
+and test artifacts in the same SDK prefix. The media locations are listed below.
 
 Check the candidate versions with ``apt-cache policy`` before installing. An old
 ROCm repository can offer decoder packages below the required version; merely
@@ -53,14 +69,17 @@ SDK instead of mixing decoder libraries from one release with another SDK.
 Run dependency setup in the environment where you will build and test:
 packages installed inside a container do not provision the bare-metal host.
 
-Optional video features
-~~~~~~~~~~~~~~~~~~~~~~~
+.. _optional-python-packages:
 
-Container demuxing requires Python 3.11 or newer and PyAV >=18.1. Newer PyAV
+Optional Python packages
+------------------------
+
+Container demuxing requires Python 3.11 or later and PyAV >=18.1. Newer PyAV
 releases may require a newer Python; pip selects a compatible version.
 PyAV is installed in the Python environment
 that runs rocPyDecode. From the repository root, install it using
-``videoDecode/requirements.txt``:
+``videoDecode/requirements.txt`` in the same Python environment used to
+build or run the bindings:
 
 .. code:: shell
 
@@ -77,9 +96,23 @@ the Python API and PyAV pixel tests are always registered. At runtime they repor
 skipped if compatible PyAV or the H.264 MP4 test media are missing; the pixel test
 also needs NumPy. Installing these prerequisites does not require rerunning CMake.
 
-NumPy, ROCm-compatible PyTorch, and hip-python are needed only by samples or
-tests that use them, not by the native build or core CTest suite. Install those
-optional packages according to the selected sample or test and SDK version.
+The installed test suite does not contain a source checkout. In that case,
+install PyAV directly:
+
+.. code-block:: shell
+
+   python -m pip install --only-binary=:all: "av>=18.1"
+
+The video pixel regression also requires NumPy:
+
+.. code-block:: shell
+
+   python -m pip install numpy
+
+NumPy is not required to build the bindings or decode JPEG inputs that do not
+use NumPy arrays. ROCm-compatible PyTorch, hip-python, and mpi4py are required
+only by samples or additional tests that import them. See
+:doc:`../tutorials/rocPyDecode-samples`.
 
 Bundled build dependencies
 --------------------------
@@ -99,11 +132,15 @@ instead of silently substituting another dependency version.
 Dependency licenses are included under third_party and installed with the
 project documentation.
 
-Select the SDK and check test assets
-------------------------------------
+.. _sdk-environment:
 
-Run from the project directory. Set ``ROCM_PATH`` to the complete SDK prefix;
-``/opt/rocm`` is the default. Activate your intended Python environment first.
+Select the SDK
+--------------
+
+Set ``ROCM_PATH`` to the actual SDK prefix; ``/opt/rocm`` is the default.
+Some distributions use a versioned directory instead. Activate your intended
+Python environment first. For a custom SDK, the following settings expose its
+tools, CMake packages, and runtime libraries:
 
 .. code-block:: shell
 
@@ -114,9 +151,6 @@ Run from the project directory. Set ``ROCM_PATH`` to the complete SDK prefix;
 
    # Runtime GPU check; skip on build-only machines.
    "$ROCM_PATH/bin/rocminfo"
-   test -d "$ROCM_PATH/share/rocdecode/utils/rocvideodecode"
-   ls "$ROCM_PATH/share/rocdecode/video/AMD_driving_virtual_20-H264.mp4"
-   ls "$ROCM_PATH/share/rocjpeg/images"
 
 
 The ``rocm_sysdeps/lib`` directory is used by SDK distributions that bundle
@@ -130,3 +164,26 @@ package or a corrected SDK prefix. Changing ``CMAKE_PREFIX_PATH`` cannot supply
 an absent or incompatible library. After changing SDKs, Python environments,
 or moving between a container and the host, use a new build directory to avoid
 reusing cached compiler and dependency paths.
+
+.. _sdk-test-media:
+
+Locate utility sources and test media
+-------------------------------------
+
+Check only the paths for the components you will build or test:
+
+.. code-block:: shell
+
+   # Video build utility sources
+   test -d "$ROCM_PATH/share/rocdecode/utils/rocvideodecode"
+   # Video runtime fixture
+   ls "$ROCM_PATH/share/rocdecode/video/AMD_driving_virtual_20-H264.mp4"
+   # JPEG runtime fixtures (top-level .jpg files)
+   ls "$ROCM_PATH/share/rocjpeg/images/"*.jpg
+
+Installed video tests can use a different media location through
+``-DROCPYVIDEO_MEDIA_DIR=/path/to/video``; JPEG tests use
+``-DROCPYJPEG_MEDIA_DIR=/path/to/images``. These CMake settings select directories,
+not individual filenames. Missing video prerequisites cause runtime skips;
+missing JPEG fixtures prevent installed-test configuration. For source-build
+behavior and utility-source overrides, see :doc:`rocPyDecode-cmake-install`.
