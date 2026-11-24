@@ -62,7 +62,7 @@ endif()
 # Select GPU targets before HIP discovery, without probing local devices.
 if(NOT DEFINED GPU_TARGETS)
     set(GPU_TARGETS
-        gfx950 gfx942 gfx90a gfx908 gfx1250
+        gfx950 gfx942 gfx90a gfx908 gfx1250 gfx1250-strict gfx1251
         gfx1201 gfx1200 gfx1153 gfx1152 gfx1151 gfx1150
         gfx1103 gfx1102 gfx1101 gfx1100
         gfx1036 gfx1035 gfx1034 gfx1033 gfx1032 gfx1031 gfx1030
