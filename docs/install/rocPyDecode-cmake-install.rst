@@ -78,15 +78,19 @@ batched JPEG decoding, video/JPEG regression checks, JPEG input conversion,
 and configuration regressions for missing SDK utilities and GPU target selection.
 The configure suite also runs when video is skipped or disabled, provided a
 Python 3 interpreter is available. Set
-``-DBUILD_TESTING=OFF`` to omit test registration.
+``-DBUILD_TESTING=OFF`` to omit build-tree test registration. The installed
+test suite is controlled separately by ``-DROCPYDECODE_INSTALL_TESTS``
+(default ``ON``), so packages can ship ``share/rocpydecode/tests`` and
+``share/rocpyjpegdecode/tests`` with ``BUILD_TESTING=OFF``.
 
 CTest always registers the Python API smoke test and PyAV demuxing/GPU pixel
 regression for the video component. They check their optional dependencies and
 MP4 fixture at runtime and report missing prerequisites as skipped tests.
 Install the missing packages or MP4 fixture and rerun CTest; no reconfiguration
 is needed. The Python API smoke test runs in Debug and Release builds.
-Builds with ``BUILD_TESTING=ON`` also run native buffer, DLPack, and RGB
-allocation checks in both build types.
+Builds with ``-DROCPYDECODE_BUILD_NATIVE_TESTS=ON`` also compile and run native
+buffer, DLPack, and RGB allocation checks in both build types. This option is
+``OFF`` by default because it adds test-only entry points to the shipped module.
 
 JPEG tests are registered during configuration only when their assets are
 present. Install missing JPEG media and rerun CMake before CTest.

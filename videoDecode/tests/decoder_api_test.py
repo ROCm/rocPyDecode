@@ -59,7 +59,7 @@ try:
 finally:
     video_demuxer.close()
 
-# Native-only checks are compiled when BUILD_TESTING=ON, in either build type.
+# Native-only checks exist only when ROCPYDECODE_BUILD_NATIVE_TESTS=ON; otherwise skip them.
 if hasattr(rocpydecode, "TestAll_roc_pybuffer"):
     rocpydecode.TestAll_roc_pybuffer()
     rocpydecode.Test_DLPack()

@@ -68,7 +68,12 @@ install(TARGETS ${ROCPYJPEG_TARGET} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 install(DIRECTORY pyRocJpegDecode DESTINATION ${CMAKE_INSTALL_LIBDIR})
 install(DIRECTORY samples/rocjpeg DESTINATION ${CMAKE_INSTALL_DATADIR}/rocpyjpegdecode/samples)
 install(FILES LICENSE.txt DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/rocpyjpegdecode)
-if(BUILD_TESTING)
+# Build-tree CTest targets follow BUILD_TESTING; the test install is controlled
+# separately so packages can ship the suite without BUILD_TESTING=ON.
+option(ROCPYDECODE_INSTALL_TESTS
+    "Install share/rocpyjpegdecode/tests, including the installed-tests CMakeLists.txt"
+    ON)
+if(BUILD_TESTING OR ROCPYDECODE_INSTALL_TESTS)
     add_subdirectory(tests)
 endif()
 message(STATUS "rocPyJpegDecode target: ${ROCPYJPEG_TARGET}")
