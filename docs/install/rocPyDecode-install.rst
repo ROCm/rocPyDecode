@@ -64,8 +64,8 @@ run the installed tests below.
 Test an installed package
 -------------------------
 
-Packages built with ``BUILD_TESTING=ON`` (the default) install a CTest setup for
-each component. No source checkout, compiler, or Python development headers
+Packages built with ``ROCPYDECODE_INSTALL_TESTS=ON`` (the default) install a
+CTest setup for each component, even when ``BUILD_TESTING=OFF``. No source checkout, compiler, or Python development headers
 are needed to run these installed tests. Use CMake 3.20 or newer, a Python
 interpreter matching the installed extension, compatible ROCm runtime libraries,
 a supported GPU, and the :ref:`SDK test media <sdk-test-media>`.
@@ -139,4 +139,5 @@ and input conversion. No PyTorch installation is required for these suites.
 If ``share/rocpydecode/tests/CMakeLists.txt`` or
 ``share/rocpyjpegdecode/tests/CMakeLists.txt`` is absent, that installation does
 not contain the installed test setup. Obtain matching test files from its
-package provider, or build and install from source with ``BUILD_TESTING=ON``.
+package provider, or build and install from source with
+``ROCPYDECODE_INSTALL_TESTS=ON``.

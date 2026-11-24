@@ -6,6 +6,11 @@ Full documentation for for rocPyDecode is available at [https://rocm.docs.amd.co
 
 ### Added
 
+* Added `ROCPYDECODE_BUILD_NATIVE_TESTS` (default `OFF`) so native test hooks
+  are compiled into the `rocpydecode` module only when explicitly requested.
+* Added `ROCPYDECODE_INSTALL_TESTS` (default `ON`) so the installed test suites
+  (`share/rocpydecode/tests`, `share/rocpyjpegdecode/tests`) are installed
+  independently of `BUILD_TESTING`.
 * Added independent `videoDecode` and `jpegDecode` CMake projects, each with
   component-owned bindings, samples, tests, support sources, documentation,
   installation rules, and licensing.

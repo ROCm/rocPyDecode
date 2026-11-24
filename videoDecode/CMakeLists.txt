@@ -170,9 +170,21 @@ install(TARGETS ${ROCPYVIDEO_TARGET} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 install(DIRECTORY pyRocVideoDecode DESTINATION ${CMAKE_INSTALL_LIBDIR})
 install(DIRECTORY samples/rocdecode DESTINATION ${CMAKE_INSTALL_DATADIR}/rocpydecode/samples)
 install(FILES LICENSE.txt DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/rocpydecode)
-if(BUILD_TESTING)
+# Native test hooks change the shipped module's exports, so they are opt-in and
+# independent of the test-suite install. Developer builds enable them explicitly.
+option(ROCPYDECODE_BUILD_NATIVE_TESTS
+    "Compile native test hooks (TestAll_roc_pybuffer, Test_DLPack, ...) into the rocpydecode module"
+    OFF)
+option(ROCPYDECODE_INSTALL_TESTS
+    "Install share/rocpydecode/tests, including the installed-tests CMakeLists.txt"
+    ON)
+if(ROCPYDECODE_BUILD_NATIVE_TESTS)
     target_sources(${ROCPYVIDEO_TARGET} PRIVATE tests/roc_pydecode_test.cpp)
     target_compile_definitions(${ROCPYVIDEO_TARGET} PRIVATE ROCPYVIDEO_BUILD_TESTING)
+endif()
+# Build-tree CTest targets are registered under BUILD_TESTING. The test install
+# is registered whenever requested, even when BUILD_TESTING is OFF.
+if(BUILD_TESTING OR ROCPYDECODE_INSTALL_TESTS)
     add_subdirectory(tests)
 endif()
 message(STATUS "rocPyVideoDecode target: ${ROCPYVIDEO_TARGET}")
