@@ -18,6 +18,7 @@ Full documentation for for rocPyDecode is available at [https://rocm.docs.amd.co
   independently.
 * Added component ownership, implementation-plan, and validation documents.
 * Added CTest suites for video demuxing, GPU decoding, and batched JPEG decoding.
+* Support for `gfx1250-strict` and `gfx1251`
 
 ### Changed
 

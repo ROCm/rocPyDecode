@@ -107,7 +107,7 @@ class ConfigureRegressions(unittest.TestCase):
 
     def test_gpu_target_selection(self):
         defaults = (
-            "gfx950;gfx942;gfx90a;gfx908;gfx1250;gfx1201;gfx1200;gfx1153;gfx1152;"
+            "gfx950;gfx942;gfx90a;gfx908;gfx1250;gfx1250-strict;gfx1251;gfx1201;gfx1200;gfx1153;gfx1152;"
             "gfx1151;gfx1150;gfx1103;gfx1102;gfx1101;gfx1100;gfx1036;gfx1035;"
             "gfx1034;gfx1033;gfx1032;gfx1031;gfx1030;gfx1012;gfx1011;gfx1010"
         )
@@ -238,7 +238,7 @@ class ConfigureRegressions(unittest.TestCase):
                 for selection, rejected in (("gfx1100;gfx942", ""),
                                             ("gfx1100;gfx942", "gfx942"),
                                             ("gfx942;gfx1100", "gfx942"),
-                                            ("gfx1250;gfx-invalid", "gfx1250;gfx-invalid"),
+                                            ("gfx1250;gfx1250-strict;gfx1251;gfx-invalid", "gfx1250;gfx1250-strict;gfx1251;gfx-invalid"),
                                             ("gfx1100", "")):
                     with self.subTest(build=label, selection=selection, rejected=rejected):
                         observed = build / "checked.txt"
